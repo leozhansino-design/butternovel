@@ -15,7 +15,7 @@ const featuredBooks = [
   },
   {
     id: 2,
-    title: 'Shadow Realm Chronicles',
+    title: 'Shadow died twice',
     slug: 'shadow-realm-chronicles',
     coverImage: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=450&fit=crop',
     description: 'Master the darkness to save the light',
