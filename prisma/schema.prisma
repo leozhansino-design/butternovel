@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== 分类 =====
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  icon      String
+  order     Int      @default(0)
+  novels    Novel[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+// ===== 小说 =====
+model Novel {
+  id          Int         @id @default(autoincrement())
+  title       String
+  slug        String      @unique
+  coverImage  String
+  description String      @db.Text
+  
+  categoryId  Int
+  category    Category    @relation(fields: [categoryId], references: [id])
+  tags        String[]
+  
+  status      NovelStatus @default(COMPLETED)
+  isPublished Boolean     @default(true)
+  
+  totalChapters Int       @default(0)
+  wordCount     Int       @default(0)
+  likeCount     Int       @default(0)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  chapters        Chapter[]
+  library         Library[]
+  readingHistory  ReadingHistory[]
+  likes           NovelLike[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@map("novels")
+}
+
+enum NovelStatus {
+  ONGOING
+  COMPLETED
+}
+
+// ===== 章节 =====
+model Chapter {
+  id            Int     @id @default(autoincrement())
+  novelId       Int
+  novel         Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  chapterNumber Int
+  title         String
+  content       String  @db.Text
+  wordCount     Int     @default(0)
+  
+  isPublished   Boolean @default(true)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  readingHistory   ReadingHistory[]
+  chapterProgress  ChapterProgress[]
+  
+  @@unique([novelId, chapterNumber])
+  @@index([novelId])
+  @@map("chapters")
+}
+
+// ===== 用户 =====
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String?
+  name       String?
+  avatar     String?
+  
+  googleId   String?  @unique
+  facebookId String?  @unique
+  
+  isVerified Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  library         Library[]
+  readingHistory  ReadingHistory[]
+  likes           NovelLike[]
+  chapterProgress ChapterProgress[]
+
+  @@map("users")
+}
+
+// ===== 书架 =====
+model Library {
+  id      String   @id @default(cuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  novelId Int
+  novel   Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  addedAt DateTime @default(now())
+  
+  @@unique([userId, novelId])
+  @@index([userId])
+  @@map("library")
+}
+
+// ===== 阅读历史 =====
+model ReadingHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  novelId    Int
+  novel      Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  chapterId  Int
+  chapter    Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  
+  lastReadAt DateTime @default(now())
+  
+  @@unique([userId, novelId])
+  @@index([userId])
+  @@map("reading_history")
+}
+
+// ===== 章节进度 =====
+model ChapterProgress {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  chapterId      Int
+  chapter        Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  
+  scrollPosition Int      @default(0)
+  percentage     Int      @default(0)
+  isCompleted    Boolean  @default(false)
+  
+  updatedAt      DateTime @updatedAt
+  
+  @@unique([userId, chapterId])
+  @@map("chapter_progress")
+}
+
+// ===== 点赞 =====
+model NovelLike {
+  id        String   @id @default(cuid())
+  
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  guestId   String?
+  ipAddress String?
+  
+  novelId   Int
+  novel     Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, novelId])
+  @@unique([guestId, novelId])
+  @@map("novel_likes")
+}
+
+// ===== 管理员 =====
+model Admin {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  password String
+  name     String
+  isActive Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admins")
+}
