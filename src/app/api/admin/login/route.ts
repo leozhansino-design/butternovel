@@ -7,7 +7,7 @@ const ADMIN_ACCOUNTS = [
   {
     email: 'admin@butternovel.com',
     // 你生成的密码哈希 - 密码: mySecretPassword123
-    password: '$2b$10$97gcStAx/C8eaoM25YTwo.tP9v9kkz1XXp0ouI.fad0Uq9WtpMsK2',
+    password: '$2b$10$Uv8oQom7iY.ifYFiVY9i4eXwSiEUngoQa14jGWvMxyS2c/hpSyZ5C',
     name: 'Admin',
     role: 'super_admin'
   },
