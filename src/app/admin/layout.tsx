@@ -12,7 +12,7 @@ export default async function AdminLayout({
   const session = await getAdminSession()
   
   if (!session) {
-    redirect('/admin/login')
+    redirect('/admin-login')  // ⭐ 改这里！从 /admin/login 改为 /admin-login
   }
 
   return (

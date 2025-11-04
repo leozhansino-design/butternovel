@@ -48,7 +48,7 @@ export default function AdminSidebar({ adminName, adminEmail }: Props) {
     if (!confirm('Are you sure you want to logout?')) return
     try {
       await fetch('/api/admin/logout', { method: 'POST' })
-      router.push('/admin-login')  // ✅ 应该是这个
+      router.push('/auth/admin-login')  // ✅ 应该是这个
       router.refresh()
     } catch (error) {
       alert('Logout failed')
