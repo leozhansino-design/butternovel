@@ -1,3 +1,6 @@
+// prisma/schema.prisma
+// 🦋 ButterNovel - Complete Database Schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,191 +10,325 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ===== 分类 =====
-model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  slug      String   @unique
-  icon      String
-  order     Int      @default(0)
-  novels    Novel[]
-  
+// ============================================
+// 用户系统
+// ============================================
+
+// 用户表（读者 = 作者）
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  password String?
+
+  // 基础信息（可修改）
+  name   String? // 显示名称
+  avatar String? // 头像 URL
+  bio    String? @db.Text // 个人简介
+
+  // OAuth
+  googleId   String? @unique
+  facebookId String? @unique
+
+  // 作家信息
+  isWriter   Boolean @default(false) // 是否激活作家模式
+  writerName String? // 笔名（可选）
+  writerBio  String? @db.Text // 作家简介
+
+  // 账号状态
+  isVerified Boolean @default(false)
+  isActive   Boolean @default(true)
+  isBanned   Boolean @default(false) // 是否被封禁
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("categories")
-}
-
-// ===== 小说 =====
-model Novel {
-  id          Int         @id @default(autoincrement())
-  title       String
-  slug        String      @unique
-  coverImage  String
-  description String      @db.Text
-  
-  categoryId  Int
-  category    Category    @relation(fields: [categoryId], references: [id])
-  tags        String[]
-  
-  status      NovelStatus @default(COMPLETED)
-  isPublished Boolean     @default(true)
-  
-  totalChapters Int       @default(0)
-  wordCount     Int       @default(0)
-  likeCount     Int       @default(0)
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  chapters        Chapter[]
-  library         Library[]
-  readingHistory  ReadingHistory[]
-  likes           NovelLike[]
-
-  @@index([slug])
-  @@index([categoryId])
-  @@map("novels")
-}
-
-enum NovelStatus {
-  ONGOING
-  COMPLETED
-}
-
-// ===== 章节 =====
-model Chapter {
-  id            Int     @id @default(autoincrement())
-  novelId       Int
-  novel         Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
-  
-  chapterNumber Int
-  title         String
-  content       String  @db.Text
-  wordCount     Int     @default(0)
-  
-  isPublished   Boolean @default(true)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  readingHistory   ReadingHistory[]
-  chapterProgress  ChapterProgress[]
-  
-  @@unique([novelId, chapterNumber])
-  @@index([novelId])
-  @@map("chapters")
-}
-
-// ===== 用户 =====
-model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  password   String?
-  name       String?
-  avatar     String?
-  
-  googleId   String?  @unique
-  facebookId String?  @unique
-  
-  isVerified Boolean  @default(false)
-  isActive   Boolean  @default(true)
-  
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  
+  // 关系
+  novels          Novel[]
   library         Library[]
   readingHistory  ReadingHistory[]
   likes           NovelLike[]
   chapterProgress ChapterProgress[]
+  comments        Comment[]
 
-  @@map("users")
+  // 社区功能（后期）
+  forumPosts   ForumPost[]
+  forumReplies ForumReply[]
+  helpedCount  Int         @default(0) // 拯救了多少人的书荒
+
+  @@index([email])
+  @@index([isWriter])
 }
 
-// ===== 书架 =====
-model Library {
-  id      String   @id @default(cuid())
-  userId  String
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  novelId Int
-  novel   Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
-  
-  addedAt DateTime @default(now())
-  
-  @@unique([userId, novelId])
-  @@index([userId])
-  @@map("library")
-}
+// ============================================
+// 内容系统
+// ============================================
 
-// ===== 阅读历史 =====
-model ReadingHistory {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  novelId    Int
-  novel      Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
-  
-  chapterId  Int
-  chapter    Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  
-  lastReadAt DateTime @default(now())
-  
-  @@unique([userId, novelId])
-  @@index([userId])
-  @@map("reading_history")
-}
+// 分类（Genre）
+model Category {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  slug  String  @unique
+  icon  String?
+  order Int     @default(0)
 
-// ===== 章节进度 =====
-model ChapterProgress {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  chapterId      Int
-  chapter        Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  
-  scrollPosition Int      @default(0)
-  percentage     Int      @default(0)
-  isCompleted    Boolean  @default(false)
-  
-  updatedAt      DateTime @updatedAt
-  
-  @@unique([userId, chapterId])
-  @@map("chapter_progress")
-}
+  novels Novel[]
 
-// ===== 点赞 =====
-model NovelLike {
-  id        String   @id @default(cuid())
-  
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  guestId   String?
-  ipAddress String?
-  
-  novelId   Int
-  novel     Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  
-  @@unique([userId, novelId])
-  @@unique([guestId, novelId])
-  @@map("novel_likes")
-}
-
-// ===== 管理员 =====
-model Admin {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  password String
-  name     String
-  isActive Boolean @default(true)
-  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("admins")
+  @@index([slug])
+}
+
+// 小说表
+model Novel {
+  id         Int    @id @default(autoincrement())
+  title      String
+  slug       String @unique
+  coverImage String
+  blurb      String @db.Text // 简介
+
+  // 作者
+  authorId   String
+  author     User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorName String @default("ButterNovel Official")
+
+  // 分类
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // 状态
+  status      NovelStatus @default(ONGOING)
+  isPublished Boolean     @default(false)
+  isDraft     Boolean     @default(true)
+
+  // 审核（管理员用）
+  isApproved Boolean @default(true) // 是否通过审核
+  reviewNote String? @db.Text // 审核备注
+
+  // 统计
+  totalChapters Int @default(0)
+  wordCount     Int @default(0)
+  viewCount     Int @default(0)
+  likeCount     Int @default(0)
+  commentCount  Int @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  // 关系
+  chapters       Chapter[]
+  library        Library[]
+  readingHistory ReadingHistory[]
+  likes          NovelLike[]
+  comments       Comment[]
+
+  @@index([slug])
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([isPublished])
+  @@index([isApproved])
+}
+
+enum NovelStatus {
+  ONGOING // 连载中
+  COMPLETED // 已完结
+}
+
+// 章节表
+model Chapter {
+  id            Int     @id @default(autoincrement())
+  novelId       Int
+  novel         Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  chapterNumber Int
+  title         String
+  content       String  @db.Text
+  wordCount     Int     @default(0)
+  isPublished   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  readingHistory  ReadingHistory[]
+  chapterProgress ChapterProgress[]
+
+  @@unique([novelId, chapterNumber])
+  @@index([novelId])
+}
+
+// ============================================
+// 阅读系统
+// ============================================
+
+// 书架
+model Library {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novelId Int
+  novel   Novel  @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  addedAt DateTime @default(now())
+
+  @@unique([userId, novelId])
+  @@index([userId])
+}
+
+// 阅读历史（记录读到第几章）
+model ReadingHistory {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novelId   Int
+  novel     Novel  @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  chapterId Int
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  lastReadAt DateTime @default(now())
+
+  @@unique([userId, novelId])
+  @@index([userId])
+  @@index([lastReadAt])
+}
+
+// 章节阅读进度
+model ChapterProgress {
+  id             String  @id @default(cuid())
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapterId      Int
+  chapter        Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  scrollPosition Int     @default(0)
+  percentage     Int     @default(0)
+  isCompleted    Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, chapterId])
+}
+
+// ============================================
+// 互动系统
+// ============================================
+
+// 点赞
+model NovelLike {
+  id        String  @id @default(cuid())
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId   String?
+  ipAddress String?
+  novelId   Int
+  novel     Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, novelId])
+  @@unique([guestId, novelId])
+  @@index([ipAddress, createdAt])
+}
+
+// 评论
+model Comment {
+  id      String @id @default(cuid())
+  content String @db.Text
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  novelId Int
+  novel   Novel  @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  // 审核
+  isApproved Boolean @default(true)
+  isHidden   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([novelId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================
+// 社区系统（后期）
+// ============================================
+
+// 论坛帖子（书荒求助）
+model ForumPost {
+  id      String        @id @default(cuid())
+  title   String
+  content String        @db.Text
+  type    ForumPostType @default(HELP) // HELP=求书, RECOMMEND=推荐
+  userId  String
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 统计
+  viewCount   Int     @default(0)
+  replyCount  Int     @default(0)
+  helpedCount Int     @default(0) // 拯救了多少人
+  isResolved  Boolean @default(false) // 是否解决
+  isClosed    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  replies ForumReply[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum ForumPostType {
+  HELP // 求书
+  RECOMMEND // 推荐书单
+  DISCUSSION // 讨论
+}
+
+// 论坛回复
+model ForumReply {
+  id      String @id @default(cuid())
+  content String @db.Text
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId  String
+  post    ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // 推荐的小说（可选）
+  novelId Int?
+
+  // 互动
+  helpfulCount Int @default(0) // 有帮助的票数
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([userId])
+}
+
+// ============================================
+// 管理系统
+// ============================================
+
+// 管理员
+model Admin {
+  id       String    @id @default(cuid())
+  email    String    @unique
+  password String
+  name     String
+  role     AdminRole @default(MODERATOR)
+  isActive Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+enum AdminRole {
+  SUPER_ADMIN // 超级管理员
+  ADMIN // 管理员
+  MODERATOR // 内容审核员
 }

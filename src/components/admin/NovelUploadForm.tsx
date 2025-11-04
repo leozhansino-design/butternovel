@@ -18,9 +18,9 @@ const genres = [
 
 // 字数限制
 const LIMITS = {
-  TITLE_MAX: 100,
-  BLURB_MAX: 500,
-  CHAPTER_TITLE_MAX: 100,
+  TITLE_MAX: 120,           // 标题最大 120 字符
+  BLURB_MAX: 3000,          // 简介最大 3000 字符
+  CHAPTER_TITLE_MAX: 100,   // 章节标题 100 字符
 }
 
 // 图片规格限制（固定尺寸）
@@ -295,7 +295,7 @@ export default function NovelUploadForm() {
                   setFormData({ ...formData, blurb: value })
                 }
               }}
-              rows={5}
+              rows={10}
               placeholder="Write a compelling description..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               maxLength={LIMITS.BLURB_MAX}
@@ -389,10 +389,19 @@ export default function NovelUploadForm() {
               <input
                 type="text"
                 value={currentChapter.title}
-                onChange={(e) => setCurrentChapter({ ...currentChapter, title: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length <= LIMITS.CHAPTER_TITLE_MAX) {
+                    setCurrentChapter({ ...currentChapter, title: value })
+                  }
+                }}
                 placeholder="e.g., Chapter 1: The Beginning"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxLength={LIMITS.CHAPTER_TITLE_MAX}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {currentChapter.title.length} / {LIMITS.CHAPTER_TITLE_MAX} characters
+              </p>
             </div>
             
             <div>
