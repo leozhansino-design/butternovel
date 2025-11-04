@@ -21,29 +21,31 @@ model User {
   password String?
 
   // 基础信息（可修改）
-  name   String? // 显示名称
-  avatar String? // 头像 URL
-  bio    String? @db.Text // 个人简介
+  name   String?
+  avatar String?
+  bio    String? @db.Text
+
+  role String @default("USER")
 
   // OAuth
   googleId   String? @unique
   facebookId String? @unique
 
   // 作家信息
-  isWriter   Boolean @default(false) // 是否激活作家模式
-  writerName String? // 笔名（可选）
-  writerBio  String? @db.Text // 作家简介
+  isWriter   Boolean @default(false)
+  writerName String?
+  writerBio  String? @db.Text
 
   // 账号状态
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
-  isBanned   Boolean @default(false) // 是否被封禁
+  isBanned   Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 关系
-  novels          Novel[]
+  // 关系（暂时移除 novels）
+  // novels          Novel[]  // ❌ 注释掉
   library         Library[]
   readingHistory  ReadingHistory[]
   likes           NovelLike[]
@@ -53,7 +55,7 @@ model User {
   // 社区功能（后期）
   forumPosts   ForumPost[]
   forumReplies ForumReply[]
-  helpedCount  Int         @default(0) // 拯救了多少人的书荒
+  helpedCount  Int         @default(0)
 
   @@index([email])
   @@index([isWriter])
@@ -85,12 +87,12 @@ model Novel {
   title      String
   slug       String @unique
   coverImage String
-  blurb      String @db.Text // 简介
+  blurb      String @db.Text
 
-  // 作者
+  // 作者（暂时移除外键）
   authorId   String
-  author     User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorName String @default("ButterNovel Official")
+  // author     User    @relation(fields: [authorId], references: [id])  // ❌ 注释掉
+  authorName String  @default("ButterNovel Official")
 
   // 分类
   categoryId Int
@@ -102,8 +104,8 @@ model Novel {
   isDraft     Boolean     @default(true)
 
   // 审核（管理员用）
-  isApproved Boolean @default(true) // 是否通过审核
-  reviewNote String? @db.Text // 审核备注
+  isApproved Boolean @default(true)
+  reviewNote String? @db.Text
 
   // 统计
   totalChapters Int @default(0)
@@ -143,6 +145,7 @@ model Chapter {
   novel         Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
   chapterNumber Int
   title         String
+  slug          String
   content       String  @db.Text
   wordCount     Int     @default(0)
   isPublished   Boolean @default(true)

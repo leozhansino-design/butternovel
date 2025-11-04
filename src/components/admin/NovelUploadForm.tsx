@@ -18,14 +18,14 @@ const genres = [
 
 // 字数限制
 const LIMITS = {
-  TITLE_MAX: 120,           // 标题最大 120 字符
-  BLURB_MAX: 3000,          // 简介最大 3000 字符
-  CHAPTER_TITLE_MAX: 100,   // 章节标题 100 字符
+  TITLE_MAX: 120,
+  BLURB_MAX: 3000,
+  CHAPTER_TITLE_MAX: 100,
 }
 
-// 图片规格限制（固定尺寸）
+// 图片规格限制
 const IMAGE_LIMITS = {
-  MAX_SIZE: 2 * 1024 * 1024, // 2MB
+  MAX_SIZE: 2 * 1024 * 1024,
   REQUIRED_WIDTH: 300,
   REQUIRED_HEIGHT: 400,
   ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
@@ -40,24 +40,22 @@ type Chapter = {
 }
 
 export default function NovelUploadForm() {
-  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [coverPreview, setCoverPreview] = useState<string>('')
   const [showChapterForm, setShowChapterForm] = useState(false)
   
-  // 小说基本信息
   const [formData, setFormData] = useState({
     title: '',
     coverImage: '',
     categoryId: '',
     blurb: '',
-    status: 'COMPLETED',
+    status: 'ONGOING',
     isPublished: false,
+    chapters: [] as any[],
   })
   
-  // 章节列表
   const [chapters, setChapters] = useState<Chapter[]>([])
   
-  // 当前编辑的章节
   const [currentChapter, setCurrentChapter] = useState({
     title: '',
     content: '',
@@ -68,21 +66,18 @@ export default function NovelUploadForm() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // 1. 验证文件类型
     if (!IMAGE_LIMITS.ALLOWED_TYPES.includes(file.type)) {
       alert('❌ Invalid file type. Please upload JPG, PNG, or WebP image.')
-      e.target.value = '' // 清空输入
+      e.target.value = ''
       return
     }
 
-    // 2. 验证文件大小
     if (file.size > IMAGE_LIMITS.MAX_SIZE) {
       alert(`❌ File too large. Maximum size is ${IMAGE_LIMITS.MAX_SIZE / 1024 / 1024}MB.\nYour file: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
       e.target.value = ''
       return
     }
 
-    // 3. 验证图片尺寸（必须是 300x400）
     const img = new window.Image()
     const objectUrl = URL.createObjectURL(file)
     
@@ -90,27 +85,22 @@ export default function NovelUploadForm() {
       const width = img.width
       const height = img.height
       
-      // 释放内存
       URL.revokeObjectURL(objectUrl)
       
-      // 检查是否为固定尺寸 300x400
       if (width !== IMAGE_LIMITS.REQUIRED_WIDTH || height !== IMAGE_LIMITS.REQUIRED_HEIGHT) {
         alert(`❌ Invalid image size.\nRequired: ${IMAGE_LIMITS.REQUIRED_WIDTH}x${IMAGE_LIMITS.REQUIRED_HEIGHT}px (exactly)\nYour image: ${width}x${height}px\n\nPlease resize your image to exactly 300x400 pixels.`)
         e.target.value = ''
         return
       }
       
-      // 所有验证通过，显示预览
       const reader = new FileReader()
       reader.onload = (e) => {
-        setCoverPreview(e.target?.result as string)
+        const base64 = e.target?.result as string
+        setCoverPreview(base64)
+        setFormData({ ...formData, coverImage: base64 })
       }
       reader.readAsDataURL(file)
       
-      // TODO: 实际上传到 Cloudinary
-      setFormData({ ...formData, coverImage: 'uploaded-url' })
-      
-      // 成功提示
       alert(`✅ Image validated successfully!\nSize: ${width}x${height}px\nFile size: ${(file.size / 1024).toFixed(0)}KB`)
     }
     
@@ -135,7 +125,7 @@ export default function NovelUploadForm() {
       number: chapters.length + 1,
       title: currentChapter.title,
       content: currentChapter.content,
-      wordCount: currentChapter.content.split(/\s+/).length,
+      wordCount: currentChapter.content.split(/\s+/).filter(w => w).length,
     }
     
     setChapters([...chapters, newChapter])
@@ -145,36 +135,103 @@ export default function NovelUploadForm() {
 
   // 删除章节
   const handleDeleteChapter = (id: string) => {
-    setChapters(chapters.filter(c => c.id !== id))
+    const filtered = chapters.filter(c => c.id !== id)
+    // 重新编号
+    const renumbered = filtered.map((ch, index) => ({
+      ...ch,
+      number: index + 1
+    }))
+    setChapters(renumbered)
   }
 
   // 提交表单
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    
+    console.log('🚀 [Form] Starting submission...')
     
     // 验证
-    if (!formData.title || !formData.categoryId || !formData.blurb) {
-      alert('Please fill in all required fields')
-      setLoading(false)
+    if (!formData.title.trim()) {
+      alert('Please enter a title')
       return
     }
     
+    if (!formData.coverImage) {
+      alert('Please upload a cover image')
+      return
+    }
+    
+    if (!formData.categoryId) {
+      alert('Please select a category')
+      return
+    }
+    
+    if (!formData.blurb.trim()) {
+      alert('Please enter a description')
+      return
+    }
+
     if (chapters.length === 0) {
       alert('Please add at least one chapter')
-      setLoading(false)
       return
     }
-    
-    // TODO: 实际提交到 API
-    console.log('Submitting:', { ...formData, chapters })
-    
-    setTimeout(() => {
-      alert('Novel uploaded successfully! ✅')
-      setLoading(false)
+
+    setUploading(true)
+
+    try {
+      console.log('📤 [Form] Sending request to API...')
+
+      const response = await fetch('/api/admin/novels', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          coverImage: formData.coverImage,
+          categoryId: formData.categoryId,
+          blurb: formData.blurb,
+          status: formData.status,
+          isPublished: formData.isPublished,
+          chapters: chapters.map(ch => ({
+            title: ch.title,
+            content: ch.content,
+          })),
+        }),
+      })
+
+      console.log('📨 [Form] Response status:', response.status)
+
+      const data = await response.json()
+      console.log('📨 [Form] Response data:', data)
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed')
+      }
+
+      console.log('✅ [Form] Upload successful!')
+
+      alert(`✅ Success!\n\nNovel "${data.novel.title}" has been uploaded!\n\nID: ${data.novel.id}\nChapters: ${data.novel.totalChapters}\nWords: ${data.novel.wordCount.toLocaleString()}`)
+      
       // 重置表单
-      // router.push('/admin/novels')
-    }, 1000)
+      setFormData({
+        title: '',
+        coverImage: '',
+        categoryId: '',
+        blurb: '',
+        status: 'ONGOING',
+        isPublished: false,
+        chapters: [],
+      })
+      setChapters([])
+      setCoverPreview('')
+
+    } catch (error: any) {
+      console.error('❌ [Form] Upload error:', error)
+      alert('❌ Error: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -225,7 +282,7 @@ export default function NovelUploadForm() {
             </label>
             
             {coverPreview ? (
-              <div className="relative w-48 h-72 rounded-lg overflow-hidden border-2 border-gray-300">
+              <div className="relative w-48 h-64 rounded-lg overflow-hidden border-2 border-gray-300">
                 <Image
                   src={coverPreview}
                   alt="Cover preview"
@@ -325,22 +382,22 @@ export default function NovelUploadForm() {
               <label className="flex items-center">
                 <input
                   type="radio"
-                  value="COMPLETED"
-                  checked={formData.status === 'COMPLETED'}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="mr-2"
-                />
-                <span className="text-sm">Completed</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
                   value="ONGOING"
                   checked={formData.status === 'ONGOING'}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="mr-2"
                 />
                 <span className="text-sm">Ongoing</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="COMPLETED"
+                  checked={formData.status === 'COMPLETED'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="mr-2"
+                />
+                <span className="text-sm">Completed</span>
               </label>
             </div>
           </div>
@@ -481,10 +538,10 @@ export default function NovelUploadForm() {
       <div className="flex gap-4">
         <button
           type="submit"
-          disabled={loading}
+          disabled={uploading}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
         >
-          {loading ? 'Uploading...' : formData.isPublished ? 'Publish Novel' : 'Save as Draft'}
+          {uploading ? 'Uploading...' : formData.isPublished ? 'Publish Novel' : 'Save as Draft'}
         </button>
         <button
           type="button"

@@ -7,7 +7,7 @@ import {
   BookOpen, 
   Users,
   Plus,
-  LogOut  // ⭐ 新增
+  LogOut
 } from 'lucide-react'
 
 const menuItems = [
@@ -33,7 +33,6 @@ const menuItems = [
   },
 ]
 
-// ⭐ 添加 Props 类型
 type Props = {
   adminName?: string
   adminEmail?: string
@@ -43,12 +42,11 @@ export default function AdminSidebar({ adminName, adminEmail }: Props) {
   const pathname = usePathname()
   const router = useRouter()
 
-  // ⭐ 新增登出处理函数
   const handleLogout = async () => {
     if (!confirm('Are you sure you want to logout?')) return
     try {
       await fetch('/api/admin/logout', { method: 'POST' })
-      router.push('/auth/admin-login')  // ✅ 应该是这个
+      router.push('/auth/admin-login')
       router.refresh()
     } catch (error) {
       alert('Logout failed')
@@ -56,23 +54,19 @@ export default function AdminSidebar({ adminName, adminEmail }: Props) {
   }
 
   return (
-    <aside className="w-72 bg-white border-r border-gray-200 min-h-screen fixed left-0 top-0 flex flex-col">
+    <aside className="w-80 bg-[#1a1a1a] min-h-screen fixed left-0 top-0 flex flex-col">
       {/* Logo Section */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-200">
+      <div className="h-20 flex items-center px-8 border-b border-white/10">
         <Link href="/admin" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-            <span className="text-xl">🦋</span>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">ButterNovel</h1>
-            <p className="text-xs text-gray-500">Admin Panel</p>
+          <div className="text-[#D4A574] font-bold text-2xl tracking-tight">
+            ButterNovel
           </div>
         </Link>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="p-4 flex-1">
-        <ul className="space-y-1">
+      <nav className="flex-1 px-4 py-8">
+        <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -82,16 +76,16 @@ export default function AdminSidebar({ adminName, adminEmail }: Props) {
                 <Link
                   href={item.href}
                   className={`
-                    flex items-center gap-3 px-4 py-3 rounded-lg
+                    flex items-center gap-4 px-6 py-4 rounded-lg text-base font-medium
                     transition-all duration-200
                     ${isActive 
-                      ? 'bg-gray-900 text-white shadow-md' 
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-[#D4A574] text-[#1a1a1a]' 
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }
                   `}
                 >
-                  <Icon size={20} />
-                  <span className="font-medium text-sm">{item.title}</span>
+                  <Icon size={22} />
+                  <span>{item.title}</span>
                 </Link>
               </li>
             )
@@ -99,22 +93,22 @@ export default function AdminSidebar({ adminName, adminEmail }: Props) {
         </ul>
       </nav>
 
-      {/* ⭐ 新增：Footer - Admin Info + Logout */}
-      <div className="border-t border-gray-200">
+      {/* Footer */}
+      <div className="border-t border-white/10">
         {/* Admin Info */}
         {adminName && (
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-bold">
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 bg-[#D4A574] rounded-full flex items-center justify-center">
+                <span className="text-[#1a1a1a] text-base font-bold">
                   {adminName[0].toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-base font-medium text-white truncate">
                   {adminName}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-sm text-gray-500 truncate">
                   {adminEmail}
                 </p>
               </div>
@@ -122,26 +116,15 @@ export default function AdminSidebar({ adminName, adminEmail }: Props) {
           </div>
         )}
 
-        {/* Logout Button */}
+        {/* Logout */}
         <div className="p-4">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-6 py-3.5 text-base font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
           >
-            <LogOut size={16} />
+            <LogOut size={20} />
             <span>Logout</span>
           </button>
-        </div>
-
-        {/* Back to Site */}
-        <div className="p-4 pt-0">
-          <Link
-            href="/"
-            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-          >
-            <span>←</span>
-            <span>Back to Site</span>
-          </Link>
         </div>
       </div>
     </aside>

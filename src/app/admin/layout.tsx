@@ -8,20 +8,18 @@ export default async function AdminLayout({
 }: {
   children: ReactNode
 }) {
-  // ⭐ 取消注释，启用权限检查
   const session = await getAdminSession()
   
   if (!session) {
-    redirect('/auth/admin-login')  // ⭐ 改这里！从 /admin/login 改为 /admin-login
+    redirect('/auth/admin-login')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar - 传递管理员信息 */}
+    <div className="min-h-screen bg-[#fafafa]">
       <AdminSidebar adminName={session.name} adminEmail={session.email} />
       
-      {/* Main Content */}
-      <div className="ml-72">
+      {/* ⭐ 改这里：从 ml-64 改为 ml-80 */}
+      <div className="ml-80">
         <main className="min-h-screen p-8">
           {children}
         </main>

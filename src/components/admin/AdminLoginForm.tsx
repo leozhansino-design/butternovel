@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react'
+import { Lock, Mail } from 'lucide-react'
 
 export default function AdminLoginForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   
   const [formData, setFormData] = useState({
@@ -33,7 +32,6 @@ export default function AdminLoginForm() {
         throw new Error(data.error || 'Login failed')
       }
 
-      // 登录成功,跳转到后台
       router.push('/admin')
       router.refresh()
       
@@ -45,24 +43,21 @@ export default function AdminLoginForm() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="bg-white border border-gray-200 rounded-lg p-8">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
+            Email
           </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-              placeholder="admin@butternovel.com"
-            />
-          </div>
+          <input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4A574] focus:border-transparent outline-none transition-all"
+            placeholder="admin@butternovel.com"
+          />
         </div>
 
         {/* Password */}
@@ -70,48 +65,37 @@ export default function AdminLoginForm() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Password
           </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-              placeholder="Enter your password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
+          <input
+            type="password"
+            required
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D4A574] focus:border-transparent outline-none transition-all"
+            placeholder="Enter your password"
+          />
         </div>
 
-        {/* Error Message */}
+        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Submit Button */}
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#1a1a1a] text-white py-3 rounded-lg font-medium hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
 
-      {/* Demo Credentials */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-xs text-blue-800 font-medium mb-2">Demo Credentials:</p>
-        <p className="text-xs text-blue-700">Email: admin@butternovel.com</p>
-        <p className="text-xs text-blue-700">Password: mySecretPassword123</p>
+      {/* Demo Info */}
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <p className="text-xs text-gray-500 mb-2">Demo Credentials:</p>
+        <p className="text-xs text-gray-600">admin@butternovel.com / mySecretPassword123</p>
       </div>
     </div>
   )
