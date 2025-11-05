@@ -57,12 +57,8 @@ export default async function NovelDetailPage({ params }: PageProps) {
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section - 唯一的黄色背景+毛玻璃区域 */}
-        <section className="py-8 md:py-12 relative">
-          {/* 黄色渐变背景 */}
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-100 via-yellow-100 to-orange-100" />
-          
-          <div className="container mx-auto px-4 relative z-10">
+        <section className="py-8 md:py-12 bg-white">
+        <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
               {/* 毛玻璃卡片 */}
               <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/40 p-8 md:p-12">
