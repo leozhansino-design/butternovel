@@ -18,7 +18,7 @@ type Props = {
 
 export default async function ManageNovelsPage(props: Props) {
   const searchParams = await props.searchParams
-  
+
   const session = await getAdminSession()
   if (!session) {
     redirect('/admin/login')
@@ -29,7 +29,7 @@ export default async function ManageNovelsPage(props: Props) {
   const pageSize = 10
 
   const where: any = {}
-  
+
   if (query) {
     where.OR = [
       { title: { contains: query, mode: 'insensitive' } },
@@ -57,7 +57,7 @@ export default async function ManageNovelsPage(props: Props) {
         authorName: true,
         status: true,
         createdAt: true,
-        isBanned: true,  // ⭐ 关键：明确选择这个字段
+        isBanned: true,
         category: {
           select: {
             id: true,
@@ -100,7 +100,7 @@ export default async function ManageNovelsPage(props: Props) {
         </Link>
       </div>
 
-      <NovelSearchBar 
+      <NovelSearchBar
         categories={categories}
         initialQuery={query}
       />
@@ -194,11 +194,10 @@ export default async function ManageNovelsPage(props: Props) {
                   </td>
 
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      novel.status === 'COMPLETED' 
-                        ? 'bg-green-100 text-green-800' 
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${novel.status === 'COMPLETED'
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                      }`}>
                       {novel.status}
                     </span>
                   </td>
@@ -248,15 +247,15 @@ export default async function ManageNovelsPage(props: Props) {
           <div className="text-sm text-gray-500">
             Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, total)} of {total} results
           </div>
-          
+
           <div className="flex gap-2">
             {currentPage > 1 && (
               <Link
-                href={`/admin/novels?${new URLSearchParams({ 
+                href={`/admin/novels?${new URLSearchParams({
                   ...(query && { q: query }),
                   ...(searchParams.category && { category: searchParams.category }),
                   ...(searchParams.status && { status: searchParams.status }),
-                  page: String(currentPage - 1) 
+                  page: String(currentPage - 1)
                 }).toString()}`}
                 className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
               >
@@ -273,17 +272,16 @@ export default async function ManageNovelsPage(props: Props) {
                 return (
                   <Link
                     key={page}
-                    href={`/admin/novels?${new URLSearchParams({ 
+                    href={`/admin/novels?${new URLSearchParams({
                       ...(query && { q: query }),
                       ...(searchParams.category && { category: searchParams.category }),
                       ...(searchParams.status && { status: searchParams.status }),
-                      page: String(page) 
+                      page: String(page)
                     }).toString()}`}
-                    className={`px-4 py-2 border rounded transition-colors ${
-                      page === currentPage
+                    className={`px-4 py-2 border rounded transition-colors ${page === currentPage
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'border-gray-300 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {page}
                   </Link>
@@ -296,11 +294,11 @@ export default async function ManageNovelsPage(props: Props) {
 
             {currentPage < totalPages && (
               <Link
-                href={`/admin/novels?${new URLSearchParams({ 
+                href={`/admin/novels?${new URLSearchParams({
                   ...(query && { q: query }),
                   ...(searchParams.category && { category: searchParams.category }),
                   ...(searchParams.status && { status: searchParams.status }),
-                  page: String(currentPage + 1) 
+                  page: String(currentPage + 1)
                 }).toString()}`}
                 className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
               >
