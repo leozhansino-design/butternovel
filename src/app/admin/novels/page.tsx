@@ -5,9 +5,10 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import NovelSearchBar from '@/components/admin/NovelSearchBar'
+import BanButton from '@/components/admin/BanButton'  // ⭐ 加这行
 
 type Props = {
-  searchParams: Promise<{  // ⭐ 改这里
+  searchParams: Promise<{
     q?: string
     page?: string
     category?: string
@@ -15,8 +16,8 @@ type Props = {
   }>
 }
 
-export default async function ManageNovelsPage(props: Props) {  // ⭐ 改这里
-  const searchParams = await props.searchParams  // ⭐ 加这行
+export default async function ManageNovelsPage(props: Props) {
+  const searchParams = await props.searchParams
   
   const session = await getAdminSession()
   if (!session) {
@@ -48,8 +49,21 @@ export default async function ManageNovelsPage(props: Props) {  // ⭐ 改这里
   const [novels, total] = await Promise.all([
     prisma.novel.findMany({
       where,
-      include: {
-        category: true,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        coverImage: true,
+        authorName: true,
+        status: true,
+        createdAt: true,
+        isBanned: true,  // ⭐ 关键：明确选择这个字段
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
         _count: {
           select: {
             chapters: true,
@@ -156,6 +170,11 @@ export default async function ManageNovelsPage(props: Props) {  // ⭐ 改这里
                       <div className="min-w-0">
                         <div className="font-medium text-gray-900 truncate">
                           {novel.title}
+                          {novel.isBanned && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                              BANNED
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500 truncate">
                           ID: {novel.id}
@@ -214,6 +233,7 @@ export default async function ManageNovelsPage(props: Props) {  // ⭐ 改这里
                       >
                         View
                       </Link>
+                      <BanButton novelId={novel.id} isBanned={novel.isBanned} />
                     </div>
                   </td>
                 </tr>
