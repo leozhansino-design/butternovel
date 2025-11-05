@@ -11,7 +11,6 @@ type Props = {
 export default async function EditChapterPage(props: Props) {
   const params = await props.params
   
-  // 验证管理员权限
   const session = await getAdminSession()
   if (!session) {
     redirect('/admin/login')
@@ -24,7 +23,6 @@ export default async function EditChapterPage(props: Props) {
     notFound()
   }
 
-  // 获取章节数据
   const chapter = await prisma.chapter.findUnique({
     where: { id: chapterId },
     include: {
@@ -42,11 +40,8 @@ export default async function EditChapterPage(props: Props) {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Edit Chapter</h1>
-        <p className="text-gray-600 mt-1">
-          Novel: {chapter.novel.title}
-        </p>
+        <p className="text-gray-600 mt-1">Novel: {chapter.novel.title}</p>
       </div>
-
       <ChapterEditForm chapter={chapter} novelId={novelId} />
     </div>
   )
