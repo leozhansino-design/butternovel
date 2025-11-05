@@ -5,17 +5,19 @@ import { redirect, notFound } from 'next/navigation'
 import EditNovelForm from '@/components/admin/EditNovelForm'
 
 type Props = {
-  params: { id: string }
+  params: Promise<{ id: string }>  // ⭐ 改这里
 }
 
-export default async function EditNovelPage({ params }: Props) {
+export default async function EditNovelPage(props: Props) {  // ⭐ 改这里
+  const params = await props.params  // ⭐ 加这一行
+  
   // 验证管理员权限
   const session = await getAdminSession()
   if (!session) {
     redirect('/admin/login')
   }
 
-  // ⭐ 修复：将字符串转换为数字
+  // 将字符串转换为数字
   const novelId = parseInt(params.id)
   
   // 检查 ID 是否有效
@@ -25,7 +27,7 @@ export default async function EditNovelPage({ params }: Props) {
 
   // 获取小说数据
   const novel = await prisma.novel.findUnique({
-    where: { id: novelId },  // ⭐ 现在是数字了
+    where: { id: novelId },
     include: {
       category: true,
       chapters: {

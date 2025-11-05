@@ -7,9 +7,10 @@ import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 // PUT /api/admin/novels/[id] - 更新小说（增量更新）
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }  // ⭐ Next.js 15
 ) {
   try {
+    const params = await props.params  // ⭐ await params
     console.log('📝 [API] Received update request for novel:', params.id)
 
     // 验证管理员权限
@@ -146,9 +147,10 @@ export async function PUT(
 // DELETE /api/admin/novels/[id] - 删除小说
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }  // ⭐ Next.js 15
 ) {
   try {
+    const params = await props.params  // ⭐ await params
     console.log('🗑️ [API] Received delete request for novel:', params.id)
 
     // 验证管理员权限
