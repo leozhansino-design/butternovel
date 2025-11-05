@@ -23,6 +23,7 @@ model User {
   // 基础信息（可修改）
   name   String?
   avatar String?
+  avatarPublicId  String? // ⭐ 新增字段
   bio    String? @db.Text
 
   role String @default("USER")
@@ -87,6 +88,7 @@ model Novel {
   title      String
   slug       String @unique
   coverImage String
+  coverImagePublicId  String? // ⭐ 新增字段
   blurb      String @db.Text
 
   // 作者（暂时移除外键）

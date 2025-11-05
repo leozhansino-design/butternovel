@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
+import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 
 // POST /api/admin/novels - 创建小说
 export async function POST(request: Request) {
@@ -40,7 +41,19 @@ export async function POST(request: Request) {
                 { status: 400 }
             )
         }
-
+        // 4. ⭐ 上传封面到 Cloudinary
+        console.log('📤 [API] Uploading cover to Cloudinary...')
+        let coverResult
+        try {
+            coverResult = await uploadNovelCover(coverImage, title)
+            console.log('✅ [API] Cover uploaded to Cloudinary:', coverResult.url)
+        } catch (uploadError: any) {
+            console.error('❌ [API] Cloudinary upload failed:', uploadError)
+            return NextResponse.json(
+                { error: `Failed to upload cover to Cloudinary: ${uploadError.message}` },
+                { status: 500 }
+            )
+        }
         // 4. 生成 slug（URL友好的标题）
         const slug = title
             .toLowerCase()
@@ -63,7 +76,8 @@ export async function POST(request: Request) {
             data: {
                 title,
                 slug,
-                coverImage,
+                coverImage: coverResult.url,              // ⭐ 改这一行
+                coverImagePublicId: coverResult.publicId, // ⭐ 新增这一行
                 categoryId: parseInt(categoryId),
                 blurb,
                 status: status || 'ONGOING',
@@ -95,7 +109,9 @@ export async function POST(request: Request) {
         console.log('📚 [API] Novel ID:', novel.id)
         console.log('📚 [API] Novel Title:', novel.title)
         console.log('📚 [API] Chapters:', novel.chapters.length)
-
+        console.log('🖼️ [API] Cover Image URL:', novel.coverImage)        // ⭐ 新增
+        console.log('🆔 [API] Cover Public ID:', novel.coverImagePublicId) // ⭐ 新增
+        
         return NextResponse.json({
             success: true,
             novel: {
