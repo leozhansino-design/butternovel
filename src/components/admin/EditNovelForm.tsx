@@ -289,6 +289,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
               <Image
                 src={coverPreview}
                 alt={title}
+                sizes="(max-width: 768px) 100vw, 300px"
                 fill
                 className="object-cover"
               />
