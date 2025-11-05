@@ -108,6 +108,11 @@ model Novel {
   // 审核（管理员用）
   isApproved Boolean @default(true)
   reviewNote String? @db.Text
+  
+  // ⭐ 添加 Ban 功能字段
+  isBanned    Boolean   @default(false)   // 是否被封禁
+  bannedUntil DateTime?                    // 封禁到期时间（null = 永久封禁）
+  banReason   String?   @db.Text          // 封禁原因
 
   // 统计
   totalChapters Int @default(0)
