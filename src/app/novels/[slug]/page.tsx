@@ -1,4 +1,4 @@
-// src/app/novels/[slug]/page.tsx - 完整版
+// src/app/novels/[slug]/page.tsx - 添加渐变过渡效果
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
@@ -58,13 +58,13 @@ export default async function NovelDetailPage({
   const secondChapter = novel.chapters[1]
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <Header user={session?.user} />
 
       <main className="flex-1">
-        {/* Hero Section with Novel Card */}
-        <section className="py-12 md:py-16">
+        {/* Hero Section with Novel Card - 垂直渐变背景 */}
+        <section className="py-12 md:py-16 bg-gradient-to-b from-amber-50 via-orange-50 to-[#fff7ed]">
           <div className="container mx-auto px-4">
             <div className="max-w-7xl mx-auto">
               {/* Main Card */}
@@ -113,24 +113,24 @@ export default async function NovelDetailPage({
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-blue-100 text-blue-700'
                       }`}>
-                        {novel.status === 'COMPLETED' ? '✓ Completed' : '📖 Ongoing'}
+                        {novel.status === 'COMPLETED' ? '✓ Completed' : '📝 Ongoing'}
                       </span>
                     </div>
 
                     {/* Stats */}
-                    <div className="flex items-center gap-6 text-gray-600">
+                    <div className="flex flex-wrap items-center gap-6 text-gray-600">
                       <div className="flex items-center gap-2">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        <span className="font-medium">{novel.viewCount}</span>
+                        <span className="font-medium">{novel.viewCount.toLocaleString()}</span>
                         <span className="text-sm">Reads</span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                         </svg>
                         <span className="font-medium">{novel._count.likes}</span>
                         <span className="text-sm">Votes</span>
@@ -162,29 +162,26 @@ export default async function NovelDetailPage({
                         Blurb
                       </h2>
                       <div className="prose prose-gray max-w-none">
-                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2">
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-amber-300 scrollbar-track-amber-50">
                           {novel.blurb}
                         </p>
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-200">
-                      {firstChapter && (
-                        <Link
-                          href={`/novels/${novel.slug}/chapters/${firstChapter.chapterNumber}`}
-                          className="px-8 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] flex items-center gap-2 border border-[#f5d85a]/30"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                          Start Reading
-                        </Link>
-                      )}
-                      
-                      {/* Add to Library Button */}
+                    {/* CTA Buttons */}
+                    <div className="flex flex-wrap items-center gap-4 pt-2">
+                      <Link
+                        href={`/novels/${novel.slug}/chapters/1`}
+                        className="flex items-center gap-2 px-8 py-4 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-xl transition-all shadow-[0_4px_14px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] hover:scale-105"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        Start Reading
+                      </Link>
+
                       <button 
-                        className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] flex items-center justify-center shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] transition-all hover:scale-105 border border-[#f5d85a]/30"
+                        className="p-4 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg hover:shadow-xl hover:scale-110"
                         aria-label="Add to Library"
                       >
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,9 +197,12 @@ export default async function NovelDetailPage({
           </div>
         </section>
 
+        {/* ⭐ 自然渐变过渡 - 新方案 */}
+        <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
+
         {/* Chapter 1 Preview - 白色背景 */}
         {firstChapter && (
-          <section className="py-12 md:py-16 bg-white border-t border-gray-200">
+          <section className="pt-6 pb-12 md:pb-16 bg-white">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto space-y-8">
                 {/* Chapter Header */}
@@ -236,7 +236,7 @@ export default async function NovelDetailPage({
                     </Link>
                   ) : (
                     <div className="text-gray-500 text-lg">
-                      {novel.status === 'COMPLETED' ? '🎉 End of Story' : '📝 More chapters coming soon...'}
+                      {novel.status === 'COMPLETED' ? 'This is the final chapter' : 'More chapters coming soon...'}
                     </div>
                   )}
                 </div>
