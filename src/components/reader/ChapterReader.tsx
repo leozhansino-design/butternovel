@@ -1,0 +1,496 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+interface Chapter {
+  id: number
+  chapterNumber: number
+  title: string
+  content: string
+}
+
+interface ChapterInfo {
+  id: number
+  chapterNumber: number
+  title: string
+}
+
+interface Novel {
+  id: number
+  title: string
+  slug: string
+}
+
+interface ChapterReaderProps {
+  novel: Novel
+  chapter: Chapter
+  chapters: ChapterInfo[]
+  totalChapters: number
+}
+
+type ReadMode = 'scroll' | 'page'
+type BgColor = 'white' | 'beige' | 'dark' | 'green'
+
+const bgColors = {
+  white: { bg: 'bg-white', text: 'text-gray-900' },
+  beige: { bg: 'bg-[#f5f1e8]', text: 'text-gray-900' },
+  dark: { bg: 'bg-[#1a1a1a]', text: 'text-gray-100' },
+  green: { bg: 'bg-[#e8f4e8]', text: 'text-gray-900' }
+}
+
+const fontSizes = {
+  small: { class: 'text-base', lineHeight: 1.75 },
+  medium: { class: 'text-lg', lineHeight: 1.8 },
+  large: { class: 'text-xl', lineHeight: 1.85 },
+  xlarge: { class: 'text-2xl', lineHeight: 1.9 }
+}
+
+export default function ChapterReader({ novel, chapter, chapters, totalChapters }: ChapterReaderProps) {
+  const router = useRouter()
+  const contentRef = useRef<HTMLDivElement>(null)
+  
+  // Reading settings
+  const [readMode, setReadMode] = useState<ReadMode>('scroll')
+  const [bgColor, setBgColor] = useState<BgColor>('beige')
+  const [fontSize, setFontSize] = useState<keyof typeof fontSizes>('medium')
+  
+  // UI state
+  const [showToc, setShowToc] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [pages, setPages] = useState<string[]>([])
+
+  // Load saved settings
+  useEffect(() => {
+    const savedMode = localStorage.getItem('readMode') as ReadMode
+    const savedBg = localStorage.getItem('bgColor') as BgColor
+    const savedSize = localStorage.getItem('fontSize') as keyof typeof fontSizes
+    
+    if (savedMode) setReadMode(savedMode)
+    if (savedBg) setBgColor(savedBg)
+    if (savedSize) setFontSize(savedSize)
+  }, [])
+
+  // Calculate pages based on viewport height for page mode
+  useEffect(() => {
+    if (readMode === 'page' && contentRef.current) {
+      const calculatePages = () => {
+        const container = contentRef.current
+        if (!container) return
+
+        // Create temporary element to measure
+        const tempDiv = document.createElement('div')
+        tempDiv.style.position = 'absolute'
+        tempDiv.style.visibility = 'hidden'
+        tempDiv.style.width = container.offsetWidth + 'px'
+        tempDiv.className = `${fontSizes[fontSize].class} leading-loose whitespace-pre-wrap`
+        document.body.appendChild(tempDiv)
+
+        const viewportHeight = window.innerHeight - 300 // Account for header and padding
+        const words = chapter.content.split(' ')
+        const pageArray: string[] = []
+        let currentPageText = ''
+
+        for (let i = 0; i < words.length; i++) {
+          const testText = currentPageText + (currentPageText ? ' ' : '') + words[i]
+          tempDiv.textContent = testText
+          
+          if (tempDiv.offsetHeight > viewportHeight && currentPageText) {
+            pageArray.push(currentPageText)
+            currentPageText = words[i]
+          } else {
+            currentPageText = testText
+          }
+        }
+
+        if (currentPageText) {
+          pageArray.push(currentPageText)
+        }
+
+        document.body.removeChild(tempDiv)
+        setPages(pageArray)
+        setCurrentPage(0)
+      }
+
+      calculatePages()
+      window.addEventListener('resize', calculatePages)
+      return () => window.removeEventListener('resize', calculatePages)
+    }
+  }, [readMode, chapter.content, fontSize])
+
+  // Save settings
+  const updateReadMode = (mode: ReadMode) => {
+    setReadMode(mode)
+    localStorage.setItem('readMode', mode)
+    setCurrentPage(0)
+  }
+
+  const updateBgColor = (color: BgColor) => {
+    setBgColor(color)
+    localStorage.setItem('bgColor', color)
+  }
+
+  const updateFontSize = (size: keyof typeof fontSizes) => {
+    setFontSize(size)
+    localStorage.setItem('fontSize', size)
+  }
+
+  const hasPrev = chapter.chapterNumber > 1
+  const hasNext = chapter.chapterNumber < totalChapters
+
+  const goToPrevChapter = () => {
+    if (hasPrev) {
+      router.push(`/novels/${novel.slug}/chapters/${chapter.chapterNumber - 1}`)
+    }
+  }
+
+  const goToNextChapter = () => {
+    if (hasNext) {
+      router.push(`/novels/${novel.slug}/chapters/${chapter.chapterNumber + 1}`)
+    }
+  }
+
+  const goToChapter = (chapterNumber: number) => {
+    router.push(`/novels/${novel.slug}/chapters/${chapterNumber}`)
+    setShowToc(false)
+  }
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (readMode === 'page') {
+        if (e.key === 'ArrowLeft' && currentPage > 0) {
+          setCurrentPage(currentPage - 1)
+        } else if (e.key === 'ArrowRight' && currentPage < pages.length - 1) {
+          setCurrentPage(currentPage + 1)
+        } else if (e.key === 'ArrowLeft' && currentPage === 0 && hasPrev) {
+          goToPrevChapter()
+        } else if (e.key === 'ArrowRight' && currentPage === pages.length - 1 && hasNext) {
+          goToNextChapter()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [readMode, currentPage, pages.length, hasPrev, hasNext])
+
+  const currentContent = readMode === 'page' && pages.length > 0 ? pages[currentPage] : chapter.content
+
+  return (
+    <div className={`min-h-screen ${bgColors[bgColor].bg} ${bgColors[bgColor].text} transition-colors`}>
+      {/* Top Navigation Bar */}
+      <div className={`sticky top-0 z-40 ${bgColors[bgColor].bg} border-b border-gray-200 shadow-sm`}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Back Button */}
+            <Link
+              href={`/novels/${novel.slug}`}
+              className="flex items-center gap-2 hover:text-[#e8b923] transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="font-medium hidden md:inline">Back to Novel</span>
+            </Link>
+
+            {/* Novel Title */}
+            <div className="flex-1 text-center px-4">
+              <h1 className="font-bold text-sm md:text-base truncate">{novel.title}</h1>
+              <p className="text-xs text-gray-500 truncate">
+                Chapter {chapter.chapterNumber}: {chapter.title}
+              </p>
+            </div>
+
+            {/* Right Buttons */}
+            <div className="flex items-center gap-2">
+              {/* Table of Contents Button */}
+              <button
+                onClick={() => setShowToc(!showToc)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Table of Contents"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              {/* Settings Button */}
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Settings"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Chapter Title */}
+        <div className="text-center mb-8">
+          <div className="text-sm text-gray-500 mb-2">Chapter {chapter.chapterNumber}</div>
+          <h2 className="text-2xl md:text-3xl font-bold">{chapter.title}</h2>
+        </div>
+
+        {/* Chapter Content */}
+        <div 
+          ref={contentRef}
+          className={`prose prose-lg max-w-none ${fontSizes[fontSize].class}`}
+          style={{ lineHeight: fontSizes[fontSize].lineHeight }}
+        >
+          <div className="leading-loose whitespace-pre-wrap">
+            {currentContent}
+          </div>
+        </div>
+
+        {/* Page Navigation for Page Mode */}
+        {readMode === 'page' && pages.length > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-8 py-4 border-t border-gray-200">
+            <button
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+              className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Previous Page"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            <span className="text-sm font-medium">
+              Page {currentPage + 1} / {pages.length}
+            </span>
+            
+            <button
+              onClick={() => setCurrentPage(Math.min(pages.length - 1, currentPage + 1))}
+              disabled={currentPage === pages.length - 1}
+              className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Next Page"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Chapter Navigation */}
+        <div className="flex items-center justify-between mt-12 pt-8 border-t border-gray-200">
+          {hasPrev ? (
+            <button
+              onClick={goToPrevChapter}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous Chapter
+            </button>
+          ) : (
+            <div></div>
+          )}
+
+          {hasNext && (
+            <button
+              onClick={goToNextChapter}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg ml-auto"
+            >
+              Next Chapter
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Table of Contents Sidebar */}
+      {showToc && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setShowToc(false)}
+          />
+          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
+            <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
+              <h3 className="font-bold text-lg">Table of Contents</h3>
+              <button
+                onClick={() => setShowToc(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              {chapters.map((ch) => (
+                <button
+                  key={ch.id}
+                  onClick={() => goToChapter(ch.chapterNumber)}
+                  className={`w-full text-left p-3 rounded-lg mb-2 transition-colors ${
+                    ch.chapterNumber === chapter.chapterNumber
+                      ? 'bg-[#e8b923] text-white font-semibold'
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="text-sm opacity-75">Chapter {ch.chapterNumber}</div>
+                  <div className="truncate">{ch.title}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Settings Sidebar */}
+      {showSettings && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setShowSettings(false)}
+          />
+          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
+            <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
+              <h3 className="font-bold text-lg">Reader Settings</h3>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-6">
+              {/* Reading Mode */}
+              <div>
+                <h4 className="font-semibold mb-3">Reading Mode</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => updateReadMode('scroll')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      readMode === 'scroll'
+                        ? 'border-[#e8b923] bg-[#e8b923]/10'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <svg className="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
+                      <div className="text-sm font-medium">Scroll</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => updateReadMode('page')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      readMode === 'page'
+                        ? 'border-[#e8b923] bg-[#e8b923]/10'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <svg className="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <div className="text-sm font-medium">Page</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Background Color */}
+              <div>
+                <h4 className="font-semibold mb-3">Background</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => updateBgColor('white')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      bgColor === 'white'
+                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="w-full h-12 bg-white rounded mb-2 border border-gray-200"></div>
+                    <div className="text-xs text-center">White</div>
+                  </button>
+                  <button
+                    onClick={() => updateBgColor('beige')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      bgColor === 'beige'
+                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="w-full h-12 bg-[#f5f1e8] rounded mb-2 border border-gray-200"></div>
+                    <div className="text-xs text-center">Sepia</div>
+                  </button>
+                  <button
+                    onClick={() => updateBgColor('dark')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      bgColor === 'dark'
+                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="w-full h-12 bg-[#1a1a1a] rounded mb-2 border border-gray-200"></div>
+                    <div className="text-xs text-center">Dark</div>
+                  </button>
+                  <button
+                    onClick={() => updateBgColor('green')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      bgColor === 'green'
+                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="w-full h-12 bg-[#e8f4e8] rounded mb-2 border border-gray-200"></div>
+                    <div className="text-xs text-center">Green</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Font Size */}
+              <div>
+                <h4 className="font-semibold mb-3">Font Size</h4>
+                <div className="space-y-2">
+                  {(Object.keys(fontSizes) as Array<keyof typeof fontSizes>).map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => updateFontSize(size)}
+                      className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                        fontSize === size
+                          ? 'border-[#e8b923] bg-[#e8b923]/10'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className={fontSizes[size].class}>
+                        {size === 'small' && 'Small'}
+                        {size === 'medium' && 'Medium'}
+                        {size === 'large' && 'Large'}
+                        {size === 'xlarge' && 'Extra Large'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}

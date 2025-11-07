@@ -57,8 +57,9 @@ export default async function NovelDetailPage({ params }: PageProps) {
       <Header />
 
       <main className="flex-1">
+        {/* Hero Section - 白色背景 */}
         <section className="py-8 md:py-12 bg-white">
-        <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
               {/* 毛玻璃卡片 */}
               <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/40 p-8 md:p-12">
@@ -143,7 +144,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
                       {firstChapter && (
                         <Link
                           href={`/novels/${novel.slug}/chapters/${firstChapter.chapterNumber}`}
-                          className="px-8 py-3 bg-gradient-to-r from-[#b39320] to-[#d4af37] hover:from-[#9a7d1a] hover:to-[#b39320] text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                          className="px-8 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] flex items-center gap-2 border border-[#f5d85a]/30"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -154,7 +155,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
                       
                       {/* 爱心按钮 */}
                       <button 
-                        className="w-12 h-12 rounded-full bg-gradient-to-br from-[#b39320] to-[#d4af37] hover:from-[#9a7d1a] hover:to-[#b39320] flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-110"
+                        className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] flex items-center justify-center shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] transition-all hover:scale-105 border border-[#f5d85a]/30"
                         aria-label="Add to Library"
                       >
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,7 +175,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <svg className="w-7 h-7 text-[#b39320]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-7 h-7 text-[#e8b923]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Blurb
@@ -215,7 +216,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
                   {secondChapter ? (
                     <Link
                       href={`/novels/${novel.slug}/chapters/${secondChapter.chapterNumber}`}
-                      className="inline-flex items-center gap-3 px-12 py-4 bg-gradient-to-r from-[#b39320] to-[#d4af37] hover:from-[#9a7d1a] hover:to-[#b39320] text-white font-bold text-lg rounded-xl transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+                      className="inline-flex items-center gap-3 px-12 py-4 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-bold text-lg rounded-xl transition-all shadow-[0_6px_20px_rgba(228,185,35,0.4)] hover:shadow-[0_8px_28px_rgba(228,185,35,0.5)] transform hover:-translate-y-1 border border-[#f5d85a]/30"
                     >
                       <span>Continue Reading</span>
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +228,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
                       <p className="mb-4">🎉 You've reached the end of available chapters!</p>
                       <Link
                         href="/"
-                        className="text-[#b39320] hover:text-[#9a7d1a] font-semibold"
+                        className="text-[#e8b923] hover:text-[#d4a017] font-semibold"
                       >
                         Browse more novels →
                       </Link>
@@ -261,5 +262,3 @@ export async function generateStaticParams() {
     slug: novel.slug,
   }))
 }
-
-
