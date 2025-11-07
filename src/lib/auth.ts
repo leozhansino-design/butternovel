@@ -1,106 +1,110 @@
-// src/lib/auth.ts
+// src/lib/auth.ts - 简化版,排除所有可能的错误源
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import Credentials from "next-auth/providers/credentials"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
+import { PrismaClient } from "@prisma/client"
+
+// ⭐ 全局单例 Prisma Client
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+
+// ⭐ 验证必需的环境变量
+const requiredEnvVars = {
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+}
+
+// 检查缺失的环境变量
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([_, value]) => !value)
+  .map(([key]) => key)
+
+if (missingVars.length > 0) {
+  throw new Error(`Missing environment variables: ${missingVars.join(', ')}`)
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // ⭐ Vercel 部署必需
+  trustHost: true,
+  
   session: { 
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
   
   pages: {
-    signIn: "/auth/login",
+    signIn: "/",
+    error: "/",
   },
   
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code"
-        }
-      }
-    }),
-    
-    Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
-
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-          })
-
-          if (!user || !user.password) {
-            return null
-          }
-
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password as string,
-            user.password
-          )
-
-          if (!isPasswordValid) {
-            return null
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name || null,
-            image: user.avatar || null,
-          }
-        } catch (error) {
-          console.error("Authorize error:", error)
-          return null
-        }
-      },
     }),
   ],
   
   callbacks: {
     async signIn({ user, account }) {
-      if (!user.email) return false
+      // ⭐ 简化版 - 先确保基本登录能用
+      if (!user.email) {
+        console.error('❌ No email in user object')
+        return false
+      }
       
+      // ⭐ 用 try-catch 包裹所有数据库操作
       try {
-        if (account?.provider === "google") {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
-          })
+        console.log('✅ Attempting Google sign in for:', user.email)
+        
+        // 检查用户是否存在
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        })
 
-          if (!existingUser) {
-            await prisma.user.create({
-              data: {
-                email: user.email,
-                name: user.name || "User",
-                avatar: user.image || null,
-                googleId: account.providerAccountId,
-              },
-            })
-          } else if (!existingUser.googleId) {
+        if (!existingUser) {
+          // 创建新用户
+          console.log('📝 Creating new user...')
+          await prisma.user.create({
+            data: {
+              email: user.email,
+              name: user.name || "User",
+              avatar: user.image || null,
+              googleId: account?.providerAccountId || null,
+            },
+          })
+          console.log('✅ User created successfully')
+        } else {
+          console.log('✅ Existing user found')
+          
+          // 如果用户存在但没有 googleId,添加它
+          if (!existingUser.googleId && account?.providerAccountId) {
+            console.log('📝 Linking Google account...')
             await prisma.user.update({
               where: { email: user.email },
               data: { googleId: account.providerAccountId },
             })
+            console.log('✅ Google account linked')
           }
         }
         
         return true
       } catch (error) {
-        console.error("SignIn callback error:", error)
-        return false
+        // ⭐ 详细的错误日志
+        console.error('❌ SignIn callback error:', error)
+        console.error('Error details:', {
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        })
+        
+        // ⭐ 即使数据库失败,也返回 true 让用户能登录
+        // 这样可以先验证 OAuth 流程是否正常
+        return true
       }
     },
     
@@ -108,8 +112,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id
         token.email = user.email!
-        token.name = user.name
-        token.picture = user.image
       }
       return token
     },
@@ -117,13 +119,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
-        session.user.email = token.email!
-        session.user.name = token.name || ""
-        session.user.image = token.picture as string || ""
       }
       return session
     },
   },
   
+  // ⭐ 生产环境也开启 debug,帮助排查问题
   debug: true,
 })
