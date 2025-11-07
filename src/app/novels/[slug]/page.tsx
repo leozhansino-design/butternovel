@@ -1,73 +1,81 @@
-// src/app/novels/[slug]/page.tsx
+// src/app/novels/[slug]/page.tsx - 完整版
 import { notFound } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
 import Link from 'next/link'
-import { prisma } from '@/lib/prisma'
 import Header from '@/components/shared/Header'
 import Footer from '@/components/shared/Footer'
+import { auth } from '@/lib/auth'
 
-interface PageProps {
-  params: Promise<{
-    slug: string
-  }>
-}
-
-async function getNovelBySlug(slug: string) {
+async function getNovel(slug: string) {
   const novel = await prisma.novel.findUnique({
     where: { slug },
     include: {
       category: true,
       chapters: {
-        where: { isPublished: true },
         orderBy: { chapterNumber: 'asc' },
-        take: 2,
+        select: {
+          id: true,
+          title: true,
+          chapterNumber: true,
+          wordCount: true,
+          content: true,
+        },
       },
       _count: {
         select: {
           chapters: true,
           likes: true,
-          comments: true,
-        }
-      }
-    }
+        },
+      },
+    },
   })
+
+  if (!novel || !novel.isPublished || novel.isBanned) {
+    return null
+  }
 
   return novel
 }
 
-export default async function NovelDetailPage({ params }: PageProps) {
-  const resolvedParams = await params
-  const novel = await getNovelBySlug(resolvedParams.slug)
+// ⭐ 修复: params 现在是 Promise
+export default async function NovelDetailPage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  const session = await auth()
+  
+  // ⭐ 先 await params
+  const { slug } = await params
+  const novel = await getNovel(slug)
 
-  if (!novel || !novel.isPublished || novel.isBanned) {
+  if (!novel) {
     notFound()
   }
 
   const firstChapter = novel.chapters[0]
   const secondChapter = novel.chapters[1]
 
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toString()
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Header />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      {/* Header */}
+      <Header user={session?.user} />
 
       <main className="flex-1">
-        {/* Hero Section - 白色背景 */}
-        <section className="py-8 md:py-12 bg-white">
+        {/* Hero Section with Novel Card */}
+        <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
-              {/* 毛玻璃卡片 */}
-              <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/40 p-8 md:p-12">
-                <div className="flex flex-col md:flex-row gap-8 md:gap-12">
-                  {/* Cover */}
-                  <div className="flex-shrink-0 mx-auto md:mx-0">
-                    <div className="relative w-64 md:w-72 lg:w-80">
-                      <div className="aspect-[2/3] relative rounded-xl overflow-hidden shadow-2xl">
+            <div className="max-w-7xl mx-auto">
+              {/* Main Card */}
+              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
+                  
+                  {/* Left: Cover Image */}
+                  <div className="flex justify-center lg:justify-start">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
+                      <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
                         <Image
                           src={novel.coverImage}
                           alt={novel.title}
@@ -79,20 +87,24 @@ export default async function NovelDetailPage({ params }: PageProps) {
                     </div>
                   </div>
 
-                  {/* Info */}
-                  <div className="flex-1 flex flex-col">
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-                      {novel.title}
-                    </h1>
-
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-gray-600">by</span>
-                      <span className="font-semibold text-gray-900 text-lg">
-                        {novel.authorName}
-                      </span>
+                  {/* Right: Info + Blurb */}
+                  <div className="flex flex-col gap-6">
+                    
+                    {/* Title & Author */}
+                    <div>
+                      <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
+                        {novel.title}
+                      </h1>
+                      <div className="flex items-center gap-2 text-lg">
+                        <span className="text-gray-600">by</span>
+                        <span className="font-semibold text-gray-900">
+                          {novel.authorName}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 mb-6">
+                    {/* Tags: Category + Status */}
+                    <div className="flex flex-wrap items-center gap-3">
                       <span className="px-4 py-1.5 bg-amber-100 text-amber-800 rounded-full font-medium text-sm">
                         {novel.category.name}
                       </span>
@@ -101,25 +113,26 @@ export default async function NovelDetailPage({ params }: PageProps) {
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-blue-100 text-blue-700'
                       }`}>
-                        {novel.status === 'COMPLETED' ? '✓ Completed' : '📝 Ongoing'}
+                        {novel.status === 'COMPLETED' ? '✓ Completed' : '📖 Ongoing'}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-6 mb-8 text-gray-700">
+                    {/* Stats */}
+                    <div className="flex items-center gap-6 text-gray-600">
                       <div className="flex items-center gap-2">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
-                        <span className="font-medium">{formatNumber(novel.viewCount)}</span>
+                        <span className="font-medium">{novel.viewCount}</span>
                         <span className="text-sm">Reads</span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                         </svg>
-                        <span className="font-medium">{formatNumber(novel._count.likes)}</span>
+                        <span className="font-medium">{novel._count.likes}</span>
                         <span className="text-sm">Votes</span>
                       </div>
 
@@ -140,7 +153,23 @@ export default async function NovelDetailPage({ params }: PageProps) {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4">
+                    {/* Blurb - 限制高度,可滚动 */}
+                    <div className="flex-1 min-h-0">
+                      <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Blurb
+                      </h2>
+                      <div className="prose prose-gray max-w-none">
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2">
+                          {novel.blurb}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-200">
                       {firstChapter && (
                         <Link
                           href={`/novels/${novel.slug}/chapters/${firstChapter.chapterNumber}`}
@@ -153,7 +182,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
                         </Link>
                       )}
                       
-                      {/* 爱心按钮 */}
+                      {/* Add to Library Button */}
                       <button 
                         className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] flex items-center justify-center shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] transition-all hover:scale-105 border border-[#f5d85a]/30"
                         aria-label="Add to Library"
@@ -163,6 +192,7 @@ export default async function NovelDetailPage({ params }: PageProps) {
                         </svg>
                       </button>
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -170,31 +200,12 @@ export default async function NovelDetailPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* Blurb Section - 白色背景 */}
-        <section className="py-8 md:py-12 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <svg className="w-7 h-7 text-[#e8b923]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Blurb
-              </h2>
-              <div className="prose prose-xl max-w-none">
-                <p className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap">
-                  {novel.blurb}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Chapter 1 - 白色背景 */}
+        {/* Chapter 1 Preview - 白色背景 */}
         {firstChapter && (
           <section className="py-12 md:py-16 bg-white border-t border-gray-200">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto space-y-8">
-                {/* 章节标题 */}
+                {/* Chapter Header */}
                 <div className="text-center border-b border-gray-200 pb-8">
                   <div className="text-sm text-gray-500 mb-4 font-medium tracking-wider uppercase">
                     Chapter {firstChapter.chapterNumber}
@@ -204,34 +215,28 @@ export default async function NovelDetailPage({ params }: PageProps) {
                   </h3>
                 </div>
 
-                {/* 完整章节内容 */}
+                {/* Chapter Content */}
                 <div className="prose prose-lg max-w-none">
                   <div className="text-gray-800 text-lg leading-loose whitespace-pre-wrap">
                     {firstChapter.content}
                   </div>
                 </div>
 
-                {/* Continue Reading 按钮 */}
+                {/* Continue Reading Button */}
                 <div className="border-t border-gray-200 pt-10 text-center">
                   {secondChapter ? (
                     <Link
                       href={`/novels/${novel.slug}/chapters/${secondChapter.chapterNumber}`}
-                      className="inline-flex items-center gap-3 px-12 py-4 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-bold text-lg rounded-xl transition-all shadow-[0_6px_20px_rgba(228,185,35,0.4)] hover:shadow-[0_8px_28px_rgba(228,185,35,0.5)] transform hover:-translate-y-1 border border-[#f5d85a]/30"
+                      className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] text-lg"
                     >
-                      <span>Continue Reading</span>
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      Continue Reading
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </Link>
                   ) : (
-                    <div className="text-gray-700 text-lg">
-                      <p className="mb-4">🎉 You've reached the end of available chapters!</p>
-                      <Link
-                        href="/"
-                        className="text-[#e8b923] hover:text-[#d4a017] font-semibold"
-                      >
-                        Browse more novels →
-                      </Link>
+                    <div className="text-gray-500 text-lg">
+                      {novel.status === 'COMPLETED' ? '🎉 End of Story' : '📝 More chapters coming soon...'}
                     </div>
                   )}
                 </div>
@@ -241,24 +246,8 @@ export default async function NovelDetailPage({ params }: PageProps) {
         )}
       </main>
 
+      {/* Footer */}
       <Footer />
     </div>
   )
-}
-
-export async function generateStaticParams() {
-  const novels = await prisma.novel.findMany({
-    where: {
-      isPublished: true,
-      isBanned: false,
-    },
-    select: {
-      slug: true,
-    },
-    take: 100,
-  })
-
-  return novels.map((novel) => ({
-    slug: novel.slug,
-  }))
 }

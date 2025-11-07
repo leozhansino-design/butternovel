@@ -1,10 +1,9 @@
-// src/components/front/CategorySection.tsx
+// src/components/front/CategorySection.tsx - 优化版
 import BookCard from './BookCard'
 import Link from 'next/link'
 
 interface CategorySectionProps {
   title: string
-  icon: string
   categorySlug?: string
   books: Array<{
     id: number
@@ -19,47 +18,50 @@ interface CategorySectionProps {
 
 export default function CategorySection({ 
   title, 
-  icon, 
   books, 
   categorySlug 
 }: CategorySectionProps) {
   return (
-    <section className="mb-16">
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">{icon}</span>
-          <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)]">
+    <section className="w-full">
+      {/* Section Header - 简洁设计,无图标 */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
             {title}
           </h2>
-          <span className="text-sm text-gray-500 mt-1">
-            ({books.length})
+          <span className="text-sm text-gray-400 font-medium">
+            {books.length} {books.length === 1 ? 'novel' : 'novels'}
           </span>
         </div>
         
         {categorySlug && books.length > 0 && (
           <Link 
             href={`/novels?category=${categorySlug}`}
-            className="text-[var(--text-secondary)] hover:text-[#b39320] transition-colors font-medium flex items-center gap-1"
+            className="group flex items-center gap-2 text-gray-600 hover:text-amber-600 transition-colors font-medium"
           >
             <span>View All</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg 
+              className="w-5 h-5 group-hover:translate-x-1 transition-transform" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </Link>
         )}
       </div>
 
-      {/* Books Grid */}
+      {/* Books Grid - 优化间距 */}
       {books.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
           {books.map((book) => (
             <BookCard key={book.id} {...book} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No novels in this category yet.</p>
+        <div className="text-center py-16 bg-gray-50 rounded-xl border border-gray-100">
+          <p className="text-gray-400">No novels in this category yet.</p>
         </div>
       )}
     </section>
