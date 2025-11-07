@@ -10,6 +10,8 @@ type Props = {
   novelTitle: string
 }
 
+const MAX_WORDS = 5000 // ⭐ 新增: 最大字数限制
+
 export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: Props) {
   const router = useRouter()
   const [title, setTitle] = useState('')
@@ -18,13 +20,26 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const wordCount = content.trim().length
+  // ⭐ 计算字数 (words, 不是 characters)
+  const wordCount = content.trim().split(/\s+/).filter(w => w).length
+
+  // ⭐ 检查是否超过限制
+  const isOverLimit = wordCount > MAX_WORDS
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     if (!title.trim() || !content.trim()) {
       setMessage({ type: 'error', text: 'Title and content are required' })
+      return
+    }
+
+    // ⭐ 新增: 检查字数限制
+    if (isOverLimit) {
+      setMessage({ 
+        type: 'error', 
+        text: `Chapter exceeds maximum word limit of ${MAX_WORDS} words. Current: ${wordCount} words.` 
+      })
       return
     }
 
@@ -41,7 +56,7 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
           content,
           chapterNumber,
           isPublished,
-          wordCount: content.trim().length
+          wordCount: content.trim().length // 保存字符数用于统计
         })
       })
 
@@ -59,7 +74,9 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {message && (
-        <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+        <div className={`p-4 rounded-lg ${message.type === 'success' 
+          ? 'bg-green-50 border border-green-200 text-green-800' 
+          : 'bg-red-50 border border-red-200 text-red-800'}`}>
           {message.text}
         </div>
       )}
@@ -75,39 +92,77 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
         </div>
         <div>
           <p className="text-sm text-gray-500">Word Count</p>
-          <p className="text-lg font-semibold">{wordCount.toLocaleString()}</p>
+          {/* ⭐ 显示字数和限制,超过限制时变红 */}
+          <p className={`text-lg font-semibold ${isOverLimit ? 'text-red-600' : 'text-gray-900'}`}>
+            {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()}
+          </p>
         </div>
       </div>
 
       <div className="bg-white border rounded-lg p-6 space-y-6">
         <div>
           <label className="block text-sm font-medium mb-2">Title *</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+          <input 
+            type="text" 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+            maxLength={100}
+            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+            required 
+          />
           <p className="text-sm text-gray-500 mt-1">{title.length}/100</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Content *</label>
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={20}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm" required />
-          <p className="text-sm text-gray-500 mt-1">{wordCount.toLocaleString()} chars</p>
+          <label className="block text-sm font-medium mb-2">
+            Content * 
+            {/* ⭐ 显示字数限制提示 */}
+            <span className={`ml-2 text-xs ${isOverLimit ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+              ({wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} words)
+            </span>
+          </label>
+          <textarea 
+            value={content} 
+            onChange={(e) => setContent(e.target.value)} 
+            rows={20}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 font-mono text-sm ${
+              isOverLimit ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+            }`}
+            required 
+          />
+          {/* ⭐ 超过限制时显示警告 */}
+          {isOverLimit && (
+            <p className="text-sm text-red-600 mt-2 font-medium">
+              ⚠️ Warning: Chapter exceeds maximum word limit by {(wordCount - MAX_WORDS).toLocaleString()} words
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
-          <input type="checkbox" id="isPublished" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)}
-            className="w-5 h-5 rounded" />
+          <input 
+            type="checkbox" 
+            id="isPublished" 
+            checked={isPublished} 
+            onChange={(e) => setIsPublished(e.target.checked)}
+            className="w-5 h-5 rounded" 
+          />
           <label htmlFor="isPublished" className="text-sm font-medium">Publish this chapter</label>
         </div>
       </div>
 
       <div className="flex gap-3">
-        <button type="submit" disabled={saving}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400">
+        <button 
+          type="submit" 
+          disabled={saving || isOverLimit}
+          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
           {saving ? 'Creating...' : 'Create Chapter'}
         </button>
-        <button type="button" onClick={() => router.back()}
-          className="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400">
+        <button 
+          type="button" 
+          onClick={() => router.back()}
+          className="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400"
+        >
           Cancel
         </button>
       </div>

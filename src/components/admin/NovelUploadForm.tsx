@@ -21,6 +21,7 @@ const LIMITS = {
   TITLE_MAX: 120,
   BLURB_MAX: 3000,
   CHAPTER_TITLE_MAX: 100,
+  CHAPTER_WORDS_MAX: 5000, // ⭐ 章节最大字数限制
 }
 
 // 图片规格限制
@@ -60,6 +61,10 @@ export default function NovelUploadForm() {
     title: '',
     content: '',
   })
+
+  // ⭐ 计算当前章节字数
+  const currentWordCount = currentChapter.content.trim().split(/\s+/).filter(w => w).length
+  const isOverLimit = currentWordCount > LIMITS.CHAPTER_WORDS_MAX
 
   // 处理封面上传
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,12 +125,19 @@ export default function NovelUploadForm() {
       return
     }
     
+    // ⭐ 检查字数限制
+    const wordCount = currentChapter.content.trim().split(/\s+/).filter(w => w).length
+    if (wordCount > LIMITS.CHAPTER_WORDS_MAX) {
+      alert(`❌ Chapter exceeds maximum word limit!\n\nMax: ${LIMITS.CHAPTER_WORDS_MAX.toLocaleString()} words\nCurrent: ${wordCount.toLocaleString()} words\n\nPlease reduce the content.`)
+      return
+    }
+    
     const newChapter: Chapter = {
       id: Math.random().toString(36).substr(2, 9),
       number: chapters.length + 1,
       title: currentChapter.title,
       content: currentChapter.content,
-      wordCount: currentChapter.content.split(/\s+/).filter(w => w).length,
+      wordCount: wordCount,
     }
     
     setChapters([...chapters, newChapter])
@@ -464,24 +476,34 @@ export default function NovelUploadForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Chapter Content
+                {/* ⭐ 显示字数和限制 */}
+                <span className={`ml-2 text-xs ${isOverLimit ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                  ({currentWordCount.toLocaleString()} / {LIMITS.CHAPTER_WORDS_MAX.toLocaleString()} words)
+                </span>
               </label>
               <textarea
                 value={currentChapter.content}
                 onChange={(e) => setCurrentChapter({ ...currentChapter, content: e.target.value })}
                 rows={10}
                 placeholder="Write your chapter content here..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono text-sm"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 resize-none font-mono text-sm ${
+                  isOverLimit ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                }`}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Word count: {currentChapter.content.split(/\s+/).filter(w => w).length}
-              </p>
+              {/* ⭐ 超过限制时显示警告 */}
+              {isOverLimit && (
+                <p className="text-sm text-red-600 mt-2 font-medium">
+                  ⚠️ Warning: Chapter exceeds maximum word limit by {(currentWordCount - LIMITS.CHAPTER_WORDS_MAX).toLocaleString()} words
+                </p>
+              )}
             </div>
             
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={handleAddChapter}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={isOverLimit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 Save Chapter
               </button>

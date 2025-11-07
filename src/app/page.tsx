@@ -1,13 +1,15 @@
-// src/app/page.tsx - 优化版
+// src/app/page.tsx
 import { prisma } from '@/lib/prisma'
 import Header from '@/components/shared/Header'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategorySection from '@/components/front/CategorySection'
-import { auth } from '@/lib/auth'
 
 /**
  * 获取精选小说
+ * 前台显示规则:
+ * 1. 必须已发布 (isPublished = true)
+ * 2. 未被封禁 (isBanned = false)
  */
 async function getFeaturedNovels() {
   return await prisma.novel.findMany({
@@ -66,8 +68,7 @@ async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
 }
 
 export default async function HomePage() {
-  const session = await auth()
-  
+  // ⭐ 关键优化: 不调用 auth() 避免数据库连接池超时
   // 并行获取所有数据
   const [featuredNovels, fantasyNovels, urbanNovels, romanceNovels] = await Promise.all([
     getFeaturedNovels(),
@@ -76,7 +77,7 @@ export default async function HomePage() {
     getNovelsByCategory('romance', 10),
   ])
 
-  // 转换数据格式
+  // 转换数据格式以适配现有组件
   const featuredBooks = featuredNovels.map(novel => ({
     id: novel.id,
     title: novel.title,
@@ -122,10 +123,11 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={session?.user} />
+      {/* ⭐ Header 不传 user,避免 auth() 调用 */}
+      <Header />
 
       <main className="flex-1">
-        {/* Featured Section - 渐变背景 */}
+        {/* Featured Section */}
         {featuredBooks.length > 0 ? (
           <section className="bg-gradient-to-b from-amber-50/50 to-white py-12 md:py-16">
             <div className="container mx-auto px-4 max-w-7xl">
@@ -148,11 +150,10 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* Category Sections - 白色背景,统一间距 */}
+        {/* Category Sections */}
         <div className="bg-white">
           <div className="container mx-auto px-4 max-w-7xl py-16 space-y-20">
             
-            {/* Fantasy */}
             {fantasyBooks.length > 0 && (
               <CategorySection 
                 title="Fantasy Novels" 
@@ -161,7 +162,6 @@ export default async function HomePage() {
               />
             )}
             
-            {/* Urban */}
             {urbanBooks.length > 0 && (
               <CategorySection 
                 title="Urban Stories" 
@@ -170,7 +170,6 @@ export default async function HomePage() {
               />
             )}
             
-            {/* Romance */}
             {romanceBooks.length > 0 && (
               <CategorySection 
                 title="Romance Collection" 
@@ -179,7 +178,6 @@ export default async function HomePage() {
               />
             )}
             
-            {/* 如果没有任何小说 */}
             {fantasyBooks.length === 0 && urbanBooks.length === 0 && romanceBooks.length === 0 && (
               <div className="text-center py-20">
                 <p className="text-xl text-gray-400">More stories coming soon...</p>

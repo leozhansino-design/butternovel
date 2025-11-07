@@ -1,4 +1,4 @@
-// src/components/admin/EditNovelForm.tsx
+// src/components/admin/EditNovelForm.tsx - 优化版
 'use client'
 
 import { useState } from 'react'
@@ -87,9 +87,19 @@ export default function EditNovelForm({ novel, categories }: Props) {
     setHasChanges(changed)
   }
 
-  // 保存修改（增量更新）
-  async function handleSave() {
-    if (!hasChanges) {
+  // ⭐ 保存为草稿 (不发布)
+  async function handleSaveDraft() {
+    return handleSave(false)
+  }
+
+  // ⭐ 保存并发布
+  async function handlePublish() {
+    return handleSave(true)
+  }
+
+  // 统一保存函数
+  async function handleSave(publish: boolean) {
+    if (!hasChanges && isPublished === publish) {
       setMessage({ type: 'error', text: 'No changes to save' })
       return
     }
@@ -98,17 +108,19 @@ export default function EditNovelForm({ novel, categories }: Props) {
     setMessage(null)
 
     try {
-      // 只发送改动的字段
+      // 构建更新数据
       const updates: any = {}
 
       if (title !== novel.title) updates.title = title
       if (blurb !== novel.blurb) updates.blurb = blurb
       if (categoryId !== novel.categoryId.toString()) updates.categoryId = parseInt(categoryId)
       if (status !== novel.status) updates.status = status
-      if (isPublished !== novel.isPublished) updates.isPublished = isPublished
       if (newCoverImage) updates.newCoverImage = newCoverImage
+      
+      // ⭐ 根据按钮设置发布状态
+      updates.isPublished = publish
 
-      console.log('📤 Sending updates:', Object.keys(updates))
+      console.log('📤 Sending updates:', Object.keys(updates), '| Publish:', publish)
 
       const response = await fetch(`/api/admin/novels/${novel.id}`, {
         method: 'PUT',
@@ -122,15 +134,52 @@ export default function EditNovelForm({ novel, categories }: Props) {
         throw new Error(data.error || 'Failed to update novel')
       }
 
-      setMessage({ type: 'success', text: '✅ Novel updated successfully!' })
+      setMessage({ 
+        type: 'success', 
+        text: publish ? '✅ Novel published successfully!' : '✅ Draft saved successfully!' 
+      })
       setHasChanges(false)
       setNewCoverImage(null)
+      setIsPublished(publish) // 更新本地状态
 
       // 刷新页面数据
       router.refresh()
 
     } catch (error: any) {
       console.error('Save error:', error)
+      setMessage({ type: 'error', text: error.message })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // 切换章节发布状态
+  async function toggleChapterPublish(chapterId: number, currentStatus: boolean) {
+    setSaving(true)
+    setMessage(null)
+
+    try {
+      const response = await fetch(`/api/admin/chapters/${chapterId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublished: !currentStatus })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update chapter')
+      }
+
+      setMessage({ 
+        type: 'success', 
+        text: !currentStatus ? '✅ Chapter published!' : '📝 Chapter unpublished' 
+      })
+      
+      router.refresh()
+
+    } catch (error: any) {
+      console.error('Toggle error:', error)
       setMessage({ type: 'error', text: error.message })
     } finally {
       setSaving(false)
@@ -156,7 +205,6 @@ export default function EditNovelForm({ novel, categories }: Props) {
         throw new Error(data.error || 'Failed to delete novel')
       }
 
-      // 跳转回列表页
       router.push('/admin/novels')
       router.refresh()
 
@@ -169,6 +217,44 @@ export default function EditNovelForm({ novel, categories }: Props) {
 
   return (
     <div className="space-y-8">
+      {/* ⭐ 发布状态横幅 */}
+      <div className={`p-4 rounded-lg border-2 ${
+        isPublished 
+          ? 'bg-green-50 border-green-300' 
+          : 'bg-yellow-50 border-yellow-300'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {isPublished ? (
+              <>
+                <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+                <div>
+                  <p className="font-bold text-green-900">✅ Published</p>
+                  <p className="text-sm text-green-700">This novel is live and visible to readers</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                </svg>
+                <div>
+                  <p className="font-bold text-yellow-900">📝 Draft</p>
+                  <p className="text-sm text-yellow-700">This novel is not published yet</p>
+                </div>
+              </>
+            )}
+          </div>
+          {hasChanges && (
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
+              Unsaved changes
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* 消息提示 */}
       {message && (
         <div className={`p-4 rounded-lg ${
@@ -258,148 +344,149 @@ export default function EditNovelForm({ novel, categories }: Props) {
               </select>
             </div>
           </div>
-
-          {/* 发布状态 */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isPublished"
-              checked={isPublished}
-              onChange={(e) => {
-                setIsPublished(e.target.checked)
-                detectChanges()
-              }}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <label htmlFor="isPublished" className="text-sm font-medium text-gray-700">
-              Publish this novel (visible to readers)
-            </label>
-          </div>
         </div>
       </div>
 
       {/* 封面 */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Cover Image</h2>
-
-        <div className="flex items-start gap-6">
-          {/* 预览 */}
-          <div>
-            <div className="relative w-48 h-64 border-2 border-gray-300 rounded-lg overflow-hidden">
-              <Image
-                src={coverPreview}
-                alt={title}
-                sizes="(max-width: 768px) 100vw, 300px"
-                fill
-                className="object-cover"
-              />
-            </div>
-            {newCoverImage && (
-              <p className="text-sm text-green-600 mt-2">✅ New cover selected</p>
+        
+        <div className="flex gap-6">
+          <div className="flex-shrink-0">
+            {coverPreview && (
+              <div className="relative w-48 h-64 rounded-lg overflow-hidden border-2 border-gray-200">
+                <Image
+                  src={coverPreview}
+                  alt="Cover preview"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             )}
           </div>
 
-          {/* 上传 */}
           <div className="flex-1">
-            <label className="block">
-              <span className="sr-only">Choose new cover</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleCoverChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100
-                  cursor-pointer"
-              />
-            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverChange}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
             <p className="text-sm text-gray-500 mt-2">
               Recommended: 300x400px, max 2MB
             </p>
-            {newCoverImage && (
-              <p className="text-sm text-orange-600 mt-2">
-                ⚠️ Old cover will be deleted from Cloudinary
-              </p>
-            )}
           </div>
         </div>
       </div>
 
-      {/* 章节管理 */}
+      {/* 章节列表 */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">
             Chapters ({novel.chapters.length})
           </h2>
           <Link
             href={`/admin/novels/${novel.id}/chapters/new`}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
           >
             + Add Chapter
           </Link>
         </div>
 
-        {novel.chapters.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No chapters yet</p>
-        ) : (
+        {novel.chapters.length > 0 ? (
           <div className="space-y-2">
             {novel.chapters.map((chapter) => (
               <div
                 key={chapter.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">
-                    Chapter {chapter.chapterNumber}: {chapter.title}
+                  <div className="flex items-center gap-3">
+                    <p className="font-medium text-gray-900">
+                      Chapter {chapter.chapterNumber}: {chapter.title}
+                    </p>
+                    {/* ⭐ 章节发布状态标识 */}
+                    <span className={`px-2 py-1 text-xs font-medium rounded ${
+                      chapter.isPublished 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {chapter.isPublished ? '✅ Published' : '📝 Draft'}
+                    </span>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {chapter.wordCount} words · {chapter.isPublished ? '✅ Published' : '📝 Draft'}
-                  </div>
+                  <p className="text-sm text-gray-500">
+                    {chapter.wordCount.toLocaleString()} words
+                  </p>
                 </div>
+                
                 <div className="flex gap-2">
                   <Link
                     href={`/admin/novels/${novel.id}/chapters/${chapter.id}/edit`}
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                   >
                     Edit
                   </Link>
+                  {/* ⭐ 快速发布/取消发布按钮 */}
+                  <button
+                    onClick={() => toggleChapterPublish(chapter.id, chapter.isPublished)}
+                    disabled={saving}
+                    className={`px-3 py-1.5 text-sm rounded font-medium ${
+                      chapter.isPublished
+                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    } disabled:opacity-50`}
+                  >
+                    {chapter.isPublished ? 'Unpublish' : 'Publish'}
+                  </button>
                 </div>
               </div>
             ))}
           </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            No chapters yet. Add your first chapter to get started.
+          </div>
         )}
       </div>
 
-      {/* 操作按钮 */}
+      {/* ⭐ 操作按钮 - 双按钮设计 */}
       <div className="flex justify-between items-center">
         <button
           onClick={handleDelete}
           disabled={saving}
-          className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
         >
           Delete Novel
         </button>
 
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <Link
             href="/admin/novels"
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
           >
             Cancel
           </Link>
+          
+          {/* ⭐ Save Draft 按钮 */}
           <button
-            onClick={handleSave}
-            disabled={saving || !hasChanges}
-            className={`px-6 py-3 rounded-lg transition-colors ${
-              hasChanges
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
+            onClick={handleSaveDraft}
+            disabled={saving || (!hasChanges && !isPublished)}
+            className={`px-6 py-3 rounded-lg transition-colors font-medium ${
+              hasChanges || isPublished
+                ? 'bg-gray-600 text-white hover:bg-gray-700'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}
+            {saving ? 'Saving...' : 'Save Draft'}
+          </button>
+
+          {/* ⭐ Publish 按钮 */}
+          <button
+            onClick={handlePublish}
+            disabled={saving}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+          >
+            {saving ? 'Publishing...' : isPublished ? 'Update & Publish' : 'Publish Now'}
           </button>
         </div>
       </div>
