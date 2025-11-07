@@ -138,6 +138,8 @@ model Novel {
   @@index([status])
   @@index([isPublished])
   @@index([isApproved])
+  @@index([isPublished, isBanned, likeCount])
+  @@index([categoryId, isPublished, isBanned])
 }
 
 enum NovelStatus {
@@ -165,6 +167,8 @@ model Chapter {
 
   @@unique([novelId, chapterNumber])
   @@index([novelId])
+  @@index([novelId, chapterNumber])
+  @@index([novelId, isPublished])
 }
 
 // ============================================
