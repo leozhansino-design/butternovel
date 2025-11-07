@@ -1,17 +1,29 @@
+// src/lib/prisma.ts
 import { PrismaClient } from '@prisma/client'
 
-const prismaClientSingleton = () => {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: ['error', 'warn'],
+    // 优化连接池配置
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   })
-}
-
-declare global {
-  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
-}
-
-export const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
 
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.prismaGlobal = prisma
+  globalForPrisma.prisma = prisma
+}
+
+// 优雅关闭连接
+if (process.env.NODE_ENV !== 'production') {
+  process.on('beforeExit', async () => {
+    await prisma.$disconnect()
+  })
 }
