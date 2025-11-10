@@ -31,6 +31,11 @@ const menuItems = [
     href: '/admin/users',
     icon: Users,
   },
+  {
+    title: 'Admin Profile',
+    href: '/admin/profile',
+    icon: Users,
+  },
 ]
 
 type Props = {

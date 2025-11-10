@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Upload, BookOpen, Plus, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Upload, BookOpen, Plus, X, Edit2, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 
 // 分类数据（Genres）
@@ -21,7 +22,7 @@ const LIMITS = {
   TITLE_MAX: 120,
   BLURB_MAX: 3000,
   CHAPTER_TITLE_MAX: 100,
-  CHAPTER_WORDS_MAX: 5000, // ⭐ 章节最大字数限制
+  CHAPTER_WORDS_MAX: 5000,
 }
 
 // 图片规格限制
@@ -41,9 +42,11 @@ type Chapter = {
 }
 
 export default function NovelUploadForm() {
+  const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [coverPreview, setCoverPreview] = useState<string>('')
   const [showChapterForm, setShowChapterForm] = useState(false)
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null) // ⭐ 编辑状态
   
   const [formData, setFormData] = useState({
     title: '',
@@ -118,42 +121,61 @@ export default function NovelUploadForm() {
     img.src = objectUrl
   }
 
-  // 添加章节
+  // ⭐ 添加或更新章节
   const handleAddChapter = () => {
     if (!currentChapter.title || !currentChapter.content) {
       alert('Please fill in chapter title and content')
       return
     }
     
-    // ⭐ 检查字数限制
     const wordCount = currentChapter.content.trim().split(/\s+/).filter(w => w).length
     if (wordCount > LIMITS.CHAPTER_WORDS_MAX) {
       alert(`❌ Chapter exceeds maximum word limit!\n\nMax: ${LIMITS.CHAPTER_WORDS_MAX.toLocaleString()} words\nCurrent: ${wordCount.toLocaleString()} words\n\nPlease reduce the content.`)
       return
     }
     
-    const newChapter: Chapter = {
-      id: Math.random().toString(36).substr(2, 9),
-      number: chapters.length + 1,
-      title: currentChapter.title,
-      content: currentChapter.content,
-      wordCount: wordCount,
+    if (editingChapterId) {
+      // ⭐ 编辑现有章节
+      setChapters(chapters.map(ch =>
+        ch.id === editingChapterId
+          ? { ...ch, title: currentChapter.title, content: currentChapter.content, wordCount }
+          : ch
+      ))
+      setEditingChapterId(null)
+    } else {
+      // ⭐ 添加新章节
+      const newChapter: Chapter = {
+        id: Math.random().toString(36).substr(2, 9),
+        number: chapters.length + 1,
+        title: currentChapter.title,
+        content: currentChapter.content,
+        wordCount: wordCount,
+      }
+      setChapters([...chapters, newChapter])
     }
     
-    setChapters([...chapters, newChapter])
     setCurrentChapter({ title: '', content: '' })
     setShowChapterForm(false)
   }
 
+  // ⭐ 编辑章节
+  const handleEditChapter = (chapter: Chapter) => {
+    setEditingChapterId(chapter.id)
+    setCurrentChapter({ title: chapter.title, content: chapter.content })
+    setShowChapterForm(true)
+  }
+
   // 删除章节
   const handleDeleteChapter = (id: string) => {
-    const filtered = chapters.filter(c => c.id !== id)
-    // 重新编号
-    const renumbered = filtered.map((ch, index) => ({
-      ...ch,
-      number: index + 1
-    }))
-    setChapters(renumbered)
+    if (confirm('Are you sure you want to delete this chapter?')) {
+      const filtered = chapters.filter(c => c.id !== id)
+      // 重新编号
+      const renumbered = filtered.map((ch, index) => ({
+        ...ch,
+        number: index + 1
+      }))
+      setChapters(renumbered)
+    }
   }
 
   // 提交表单
@@ -237,6 +259,9 @@ export default function NovelUploadForm() {
       })
       setChapters([])
       setCoverPreview('')
+
+      // ⭐ 重定向到管理页面
+      router.push('/admin/novels')
 
     } catch (error: any) {
       console.error('❌ [Form] Upload error:', error)
@@ -440,7 +465,11 @@ export default function NovelUploadForm() {
           </h2>
           <button
             type="button"
-            onClick={() => setShowChapterForm(!showChapterForm)}
+            onClick={() => {
+              setEditingChapterId(null)
+              setCurrentChapter({ title: '', content: '' })
+              setShowChapterForm(!showChapterForm)
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus size={18} />
@@ -503,17 +532,18 @@ export default function NovelUploadForm() {
                 type="button"
                 onClick={handleAddChapter}
                 disabled={isOverLimit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
               >
-                Save Chapter
+                {editingChapterId ? 'Update Chapter' : 'Save Chapter'}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setShowChapterForm(false)
                   setCurrentChapter({ title: '', content: '' })
+                  setEditingChapterId(null)
                 }}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium"
               >
                 Cancel
               </button>
@@ -527,23 +557,35 @@ export default function NovelUploadForm() {
             {chapters.map((chapter) => (
               <div
                 key={chapter.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">
                     Chapter {chapter.number}: {chapter.title}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 mt-1">
                     {chapter.wordCount.toLocaleString()} words
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteChapter(chapter.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <X size={18} />
-                </button>
+                {/* ⭐ Edit 和 Delete 按钮 */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEditChapter(chapter)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium"
+                  >
+                    <Edit2 size={16} />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteChapter(chapter.id)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -560,14 +602,14 @@ export default function NovelUploadForm() {
       <div className="flex gap-4">
         <button
           type="submit"
-          disabled={uploading}
+          disabled={uploading || chapters.length === 0}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
         >
           {uploading ? 'Uploading...' : formData.isPublished ? 'Publish Novel' : 'Save as Draft'}
         </button>
         <button
           type="button"
-          onClick={() => window.history.back()}
+          onClick={() => router.back()}
           className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition-colors"
         >
           Cancel
