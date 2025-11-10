@@ -120,7 +120,11 @@ async function HomeContent() {
   return (
     <main className="flex-1">
       {featuredBooks.length > 0 ? (
-        <FeaturedCarousel books={featuredBooks} />
+        <section className="bg-gradient-to-b from-amber-50/50 to-white py-12 md:py-16">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <FeaturedCarousel books={featuredBooks} />
+          </div>
+        </section>
       ) : (
         <section className="bg-gradient-to-b from-amber-50/50 to-white py-12 md:py-16">
           <div className="container mx-auto px-4 max-w-7xl text-center">

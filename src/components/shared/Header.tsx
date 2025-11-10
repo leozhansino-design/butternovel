@@ -130,10 +130,8 @@ export default function Header({ user }: HeaderProps) {
             {/* User Menu - Desktop */}
             <div className="hidden md:flex items-center gap-4">
               {user ? (
-                // ✅ 使用UserMenu组件替换原来的用户菜单代码
                 <UserMenu user={user} />
               ) : (
-                // 未登录 - 显示登录/注册按钮
                 <>
                   <button 
                     onClick={() => openAuthModal('login')}
@@ -172,7 +170,6 @@ export default function Header({ user }: HeaderProps) {
           {/* Mobile Menu */}
           {isMenuOpen && (
             <div className="md:hidden py-4 border-t border-gray-200">
-              {/* Mobile Search */}
               <form onSubmit={handleSearch} className="mb-4">
                 <div className="relative">
                   <input
@@ -193,7 +190,6 @@ export default function Header({ user }: HeaderProps) {
                 </div>
               </form>
 
-              {/* Mobile Navigation Links */}
               <nav className="space-y-1">
                 <Link 
                   href="/" 
@@ -210,7 +206,6 @@ export default function Header({ user }: HeaderProps) {
                   Library
                 </Link>
                 
-                {/* Mobile Categories */}
                 <div className="px-4 py-2 text-gray-500 text-sm font-semibold">
                   Categories
                 </div>
@@ -258,10 +253,8 @@ export default function Header({ user }: HeaderProps) {
                   Become a Writer
                 </Link>
 
-                {/* Mobile Auth Buttons / User Menu */}
                 <div className="pt-4 mt-4 border-t border-gray-200 space-y-2">
                   {user ? (
-                    // 已登录 - 移动端用户菜单
                     <>
                       <div className="px-4 py-2 flex items-center gap-3">
                         {user.image ? (
@@ -295,7 +288,6 @@ export default function Header({ user }: HeaderProps) {
                       </button>
                     </>
                   ) : (
-                    // 未登录 - 移动端登录/注册按钮
                     <>
                       <button 
                         onClick={() => openAuthModal('login')}
@@ -318,7 +310,6 @@ export default function Header({ user }: HeaderProps) {
         </div>
       </header>
 
-      {/* Auth Modal */}
       <AuthModal 
         isOpen={authModal.isOpen}
         onClose={() => setAuthModal({ ...authModal, isOpen: false })}
