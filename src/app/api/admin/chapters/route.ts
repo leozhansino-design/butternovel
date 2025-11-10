@@ -27,6 +27,11 @@ export async function POST(request: Request) {
 
     const slug = `chapter-${chapterNumber}`
 
+    // ⭐ FIX: 改为计算单词数，而不是字符数
+    const calculatedWordCount = wordCount !== undefined 
+      ? wordCount 
+      : content.trim().split(/\s+/).filter((w: string) => w).length
+
     const chapter = await prisma.chapter.create({
       data: {
         novelId,
@@ -34,7 +39,7 @@ export async function POST(request: Request) {
         slug,
         content,
         chapterNumber,
-        wordCount: wordCount || content.length,
+        wordCount: calculatedWordCount,
         isPublished: isPublished !== undefined ? isPublished : true,
       }
     })

@@ -10,7 +10,7 @@ type Props = {
   novelTitle: string
 }
 
-const MAX_WORDS = 5000 // ⭐ 新增: 最大字数限制
+const MAX_WORDS = 5000
 
 export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: Props) {
   const router = useRouter()
@@ -34,7 +34,6 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
       return
     }
 
-    // ⭐ 新增: 检查字数限制
     if (isOverLimit) {
       setMessage({ 
         type: 'error', 
@@ -56,7 +55,8 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
           content,
           chapterNumber,
           isPublished,
-          wordCount: content.trim().length // 保存字符数用于统计
+          // ⭐ FIX: 改为计算单词数，而不是字符数
+          wordCount: content.trim().split(/\s+/).filter(w => w).length
         })
       })
 
@@ -92,7 +92,6 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
         </div>
         <div>
           <p className="text-sm text-gray-500">Word Count</p>
-          {/* ⭐ 显示字数和限制,超过限制时变红 */}
           <p className={`text-lg font-semibold ${isOverLimit ? 'text-red-600' : 'text-gray-900'}`}>
             {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()}
           </p>
@@ -116,7 +115,6 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
         <div>
           <label className="block text-sm font-medium mb-2">
             Content * 
-            {/* ⭐ 显示字数限制提示 */}
             <span className={`ml-2 text-xs ${isOverLimit ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
               ({wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} words)
             </span>
@@ -130,7 +128,6 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
             }`}
             required 
           />
-          {/* ⭐ 超过限制时显示警告 */}
           {isOverLimit && (
             <p className="text-sm text-red-600 mt-2 font-medium">
               ⚠️ Warning: Chapter exceeds maximum word limit by {(wordCount - MAX_WORDS).toLocaleString()} words

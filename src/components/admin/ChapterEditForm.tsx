@@ -69,7 +69,7 @@ export default function ChapterEditForm({ chapter, novelId }: Props) {
       if (title !== chapter.title) updates.title = title
       if (content !== chapter.content) {
         updates.content = content
-        updates.wordCount = content.trim().length
+        updates.wordCount = content.trim().split(/\s+/).filter(w => w).length
       }
       if (isPublished !== chapter.isPublished) updates.isPublished = isPublished
 

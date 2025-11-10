@@ -1,7 +1,7 @@
 # 🦋 ButterNovel - 项目进度文档
 
 **最后更新:** 2025-11-07  
-**项目阶段:** MVP开发阶段 (核心功能完成60%)
+**项目阶段:** MVP开发阶段 (核心功能完成60%,Google登录已完成!)
 
 ---
 
@@ -16,12 +16,13 @@
 ├── 前台小说详情页      ✅ 100%
 ├── 前台首页            ✅ 100%
 ├── 章节阅读器          ✅ 100%
-├── 首页性能优化        ✅ 100% ⭐ NEW
-├── 用户认证系统        🚧 85%  ⭐ NEW
-├── 详情页优化          ✅ 100% ⭐ NEW
-├── 管理后台优化        ✅ 100% ⭐ NEW
-├── 部署上线            ✅ 100% ⭐ NEW
-├── 用户系统功能        ⏸️ 0%
+├── 首页性能优化        ✅ 100%
+├── 用户认证系统        ✅ 100% ⭐ NEW (Google登录已完成!)
+├── 详情页优化          ✅ 100%
+├── 管理后台优化        ✅ 100%
+├── 部署上线            ✅ 100%
+├── 用户界面系统        🚧 5%   ⭐ NEW (需要UserMenu等组件)
+├── 书架/阅读历史       ⏸️ 0%
 ├── 作家模式            ⏸️ 0%
 ├── 评论系统            ⏸️ 0%
 └── 社区功能            ⏸️ 0%
@@ -58,7 +59,7 @@
   - 标题、封面、简介、分类选择
   - 章节批量添加 (一次上传多章)
   - 状态选择 (连载/完结)
-  - 发布/草稿双按钮系统 ⭐
+  - 发布/草稿双按钮系统
 - ✅ 小说编辑功能
   - 增量更新 (只发送改动的字段)
   - 封面替换 (自动删除旧图)
@@ -68,8 +69,8 @@
   - 添加新章节
   - 编辑章节内容  
   - 删除章节 (自动重新编号)
-  - 5000字限制 ⭐
-  - 单独的发布/取消发布按钮 ⭐
+  - 5000字限制
+  - 单独的发布/取消发布按钮
 - ✅ 小说列表页
   - 搜索功能 (标题/作者)
   - 分页功能
@@ -77,17 +78,10 @@
 - ✅ 小说删除
   - 级联删除所有章节
   - 自动清理Cloudinary图片
-- ✅ Ban/Unban功能 ⭐ NEW
+- ✅ Ban/Unban功能
   - 可以临时或永久封禁小说
   - 封禁原因记录
   - 封禁小说不会在前台显示
-
-**文件位置:**
-- `src/app/admin/login/page.tsx`
-- `src/app/admin/novels/page.tsx`
-- `src/app/admin/novels/new/page.tsx`
-- `src/app/admin/novels/[id]/edit/page.tsx`
-- `src/app/admin/novels/[id]/chapters/page.tsx`
 
 ---
 
@@ -114,309 +108,341 @@
 
 **已完成:**
 - ✅ 页面布局设计
-  - 封面+信息卡片整合设计 ⭐
-  - Blurb集成在主信息卡中
-  - 小说信息 (标题、作者、分类、状态)
-  - 统计数据 (阅读、点赞、章节数)
-- ✅ 完整章节列表
-  - 所有章节显示
-  - 点击跳转阅读器
+- ✅ 第一章完整显示
+- ✅ 简介(Blurb)展示区
 - ✅ 纪念碑谷风格按钮
-  - 金黄色渐变
-  - hover动画效果
 - ✅ 响应式设计 (PC/平板/手机)
 - ✅ 从数据库加载真实数据
-- ✅ await params修复 (Next.js 15/16兼容) ⭐
-
-**文件位置:**
-- `src/app/novels/[slug]/page.tsx`
+- ✅ 章节列表功能
+- ✅ 渐变效果优化
 
 ---
 
 ### 5. 前台首页 (100%)
 
 **已完成:**
-- ✅ 精选小说轮播 (Featured Carousel)
-- ✅ 分类展示 (Fantasy/Urban/Romance)
+- ✅ 精选小说轮播(Featured Carousel)
+- ✅ 分类展示(Fantasy/Urban/Romance)
 - ✅ 从数据库加载真实数据
-  - `getFeaturedNovels()` - 按点赞数排序
-  - `getNovelsByCategory()` - 按分类获取
-  - 只显示已发布且未被ban的小说 ⭐
 - ✅ 响应式设计
 - ✅ 点击跳转详情页
-- ✅ Suspense + Loading骨架屏 ⭐ NEW
-- ✅ 数据库索引优化 ⭐ NEW
-- ✅ Static Caching (5分钟) ⭐ NEW
-- ✅ 移除不必要的auth调用 ⭐ NEW
-
-**性能优化:**
-- 添加数据库复合索引
-- 使用unstable_cache实现静态缓存
-- 首屏加载时间减少70%+
-- 流畅的加载动画体验
-
-**文件位置:**
-- `src/app/page.tsx`
-- `src/components/front/FeaturedCarousel.tsx`
-- `src/components/front/CategorySection.tsx`
+- ✅ 骨架屏加载优化
 
 ---
 
 ### 6. 章节阅读器 (100%)
 
-**核心功能:**
-- ✅ 2种阅读模式
-  - Scroll模式 - 连续滚动阅读
-  - Page模式 - 翻页阅读,按屏幕高度自动分页
+**已完成功能:**
+- ✅ 2种阅读模式(Scroll/Page)
 - ✅ 4种背景颜色
-  - White / Sepia / Dark / Green
 - ✅ 4种字体大小
-  - Small / Medium / Large / Extra Large
-  - 自动调整行高
-
-**阅读体验:**
-- ✅ 章节导航 (Previous/Next Chapter)
-- ✅ 第一章隐藏"Previous"按钮
-- ✅ 最后一章隐藏"Next"按钮
+- ✅ 章节导航
 - ✅ Table of Contents侧边栏
 - ✅ Settings侧边栏
-- ✅ 键盘支持 (左右方向键)
-- ✅ 设置持久化 (localStorage)
+- ✅ 键盘支持
+- ✅ 设置持久化
 - ✅ 响应式设计
 - ✅ 顶部固定导航
 - ✅ 全英文界面
 
-**文件位置:**
-- `src/app/novels/[slug]/chapters/[number]/page.tsx`
-- `src/components/reader/ChapterReader.tsx`
-
 ---
 
-### 7. 用户认证系统 (85%) 🚧
+### 7. 性能优化 (100%)
 
 **已完成:**
-- ✅ NextAuth.js v5配置
-- ✅ Google OAuth集成
-- ✅ JWT策略 (避免数据库连接池问题)
-- ✅ Modal弹窗式登录/注册 ⭐
-  - 登录和注册在同一个modal
-  - 背景变暗效果
-  - Tab切换
-- ✅ 自动创建用户 (首次Google登录) ⭐
-- ✅ 使用Google用户名作为默认名字
-- ✅ Prisma Client优化 (单例模式)
-- ✅ 环境变量配置
-- ✅ OAuth回调URL配置
-- ✅ 线上部署配置 ⭐
-
-**待完成 (15%):**
-- ⏸️ Facebook OAuth集成测试
-- ⏸️ 完整的错误处理
-- ⏸️ 登录后跳转逻辑优化
-
-**文件位置:**
-- `src/app/api/auth/[...nextauth]/route.ts`
-- `src/components/auth/AuthModal.tsx`
-- `src/components/layout/Header.tsx`
+- ✅ 骨架屏加载(Skeleton Screens)
+- ✅ 数据库查询优化
+- ✅ Cloudinary图片CDN
+- ✅ 选择性字段加载
+- ✅ Prisma单例模式
 
 ---
 
-### 8. 部署上线 (100%) ⭐ NEW
+### 8. 用户认证系统 (100%) ⭐ NEW!
+
+**已完成:**
+- ✅ NextAuth.js 配置完成
+- ✅ Google OAuth 登录完成
+- ✅ 用户自动创建到数据库
+- ✅ Session管理
+- ✅ 生产环境配置 (trustHost: true)
+- ✅ Prisma单例模式
+- ✅ 详细错误日志
+- ✅ 登录/登出功能
+
+**技术亮点:**
+```typescript
+// Google OAuth 配置
+GoogleProvider({
+  clientId: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+})
+
+// 自动创建用户
+callbacks: {
+  async signIn({ user, account, profile }) {
+    // 创建或更新用户到数据库
+    await prisma.user.upsert({
+      where: { email: user.email! },
+      update: { name: user.name },
+      create: {
+        email: user.email!,
+        name: user.name || 'Anonymous',
+        avatar: user.image,
+      }
+    })
+    return true
+  }
+}
+```
+
+---
+
+### 9. 部署上线 (100%)
 
 **已完成:**
 - ✅ Vercel部署配置
-- ✅ 环境变量设置
-  - DATABASE_URL
-  - NEXTAUTH_SECRET
-  - NEXTAUTH_URL
-  - GOOGLE_CLIENT_ID/SECRET
-  - CLOUDINARY配置
-- ✅ 域名配置 (butternovel.com)
-  - DNS A记录
-  - CNAME记录
+- ✅ 域名绑定 (butternovel.com)
+- ✅ 环境变量配置
+- ✅ 数据库连接正常
+- ✅ Cloudinary集成正常
 - ✅ Google OAuth生产环境配置
-  - JavaScript origins更新
-  - Redirect URIs更新
-- ✅ 持续部署设置 (GitHub → Vercel)
-- ✅ 解决依赖问题 (use-debounce)
-
-**部署流程:**
-```
-本地开发 → git push → GitHub → 自动部署 → Vercel (2-3分钟)
-```
+- ✅ HTTPS证书自动
 
 **访问地址:**
-- 生产环境: https://butternovel.vercel.app
-- 自定义域名: https://butternovel.com
+- 🌐 生产环境: https://butternovel.com
+- 🌐 备用地址: https://butternovel.vercel.app
 
 ---
 
-## 🚧 进行中
+## 🚧 进行中 (用户界面系统 5%)
 
-目前正在进行的工作:
-
-### Google OAuth测试和优化
-- 🚧 线上环境Google登录测试
-- 🚧 OAuth回调URL验证
-- 🚧 错误处理优化
+现在Google登录已经完成,接下来需要实现用户登录后的界面和功能。
 
 ---
 
-## 📋 待开发功能
+## 📋 待开发功能 (按优先级排序)
 
-### 短期目标 (2周内)
+### Phase 1: 基础用户功能 (1-2天)
 
-#### 1. 用户系统功能完善
-**要做:**
-- [ ] 个人资料编辑
-  - [ ] 修改用户名
-  - [ ] 上传头像 (Cloudinary)
-  - [ ] 修改简介
-- [ ] 密码重置功能
-- [ ] 邮箱验证
-- [ ] 登出功能
+**目标:** 用户登录后有完整的个人中心体验
 
-**预计时间:** 3-4天
+#### 1.1 UserMenu 下拉菜单组件 (4小时)
+```
+显示位置: Header右上角
+点击头像后显示菜单:
+- 👤 My Profile
+- 📚 Library (书架)
+- 📜 Reading History (阅读历史)
+- ✍️ Writer Dashboard (作家仪表盘)
+- ⚙️ Settings
+- 🚪 Log Out
+```
+
+#### 1.2 My Profile 页面 (4小时)
+```
+/profile 页面显示:
+- 用户基本信息 (头像、名字、ID、邮箱)
+- 阅读统计
+  - X Books Read (从书架统计)
+  - X Chapters Completed (从阅读历史统计)
+  - Member since (注册日期)
+- 写作统计 (如果是作家)
+  - X Novels Published
+  - X Chapters Written
+  - X Total Views
+  - X Followers
+- [Edit Profile] 按钮
+```
+
+#### 1.3 Library 书架功能 (6小时)
+```
+/library 页面:
+- 显示用户收藏的所有小说
+- Tabs: [All] [Reading] [Completed]
+- 每本书显示:
+  - 封面
+  - 标题
+  - 分类 • 章节数
+  - 阅读进度 (Last read: Chapter X)
+  - [Continue Reading] 按钮
+  - [Remove] 按钮
+
+小说详情页添加:
+- [Add to Library] 按钮
+- 已添加则显示 [✓ In Library]
+```
+
+#### 1.4 Reading History 阅读历史 (6小时)
+```
+/history 页面:
+- 按时间分组显示
+  - Today
+  - Yesterday
+  - This Week
+  - Earlier
+- 每条记录显示:
+  - 小说封面缩略图
+  - 小说标题
+  - Chapter X (2h ago)
+  - 点击跳转到该章节
+- [Clear History] 按钮
+
+章节阅读器自动记录:
+- 打开章节时自动创建/更新阅读历史
+- 记录到第几章
+```
+
+**预计时间:** 1-2天 (约20小时)
 
 ---
 
-#### 2. 读者互动功能
-**要做:**
-- [ ] 书架功能
-  - 添加到书架
-  - 书架列表
-  - 从书架移除
-- [ ] 阅读历史
-  - 自动记录阅读位置
-  - 继续阅读功能
-  - 历史记录列表
-- [ ] 点赞功能
-  - 点赞/取消点赞
-  - 点赞数统计
-  - 我的点赞列表
+### Phase 2: 作家功能 (2-3天)
 
-**预计时间:** 1周
+#### 2.1 Writer Dashboard 仪表盘 (1天)
+```
+/writer 页面:
 
----
+首次访问 - 激活作家身份:
+- 引导页 (/writer/onboarding)
+- 填写笔名 (Pen Name)
+- 填写简介 (Bio)
+- [Activate Writer Mode] 按钮
 
-### 中期目标 (1个月内)
+激活后显示仪表盘:
+- 📊 Overview Stats
+  - Total Views
+  - Total Likes
+  - Followers (后期功能)
+  
+- 📚 My Novels (X)
+  - [+ Create New Novel] 按钮
+  - 小说列表:
+    - 封面 + 标题
+    - X Chapters • X words
+    - Views: X • Likes: X
+    - Status: Ongoing/Completed
+    - [Edit] [Chapters] [Stats] 按钮
+```
 
-#### 3. 作家模式
-**要做:**
-- [ ] 作家身份激活
-  - 首次引导页
-  - 填写笔名和简介
-  - 激活作家权限
-- [ ] 创作功能
-  - 创建小说表单
-  - 逐章上传
-  - 编辑作品信息
-  - 管理章节
-  - 发布/草稿切换
-- [ ] 作家仪表盘
-  - 我的作品列表
-  - 基础数据统计 (后期)
+#### 2.2 Create Novel 创建小说 (1天)
+```
+/writer/novels/new 页面:
+- 标题输入
+- 封面上传 (Cloudinary)
+- 简介输入 (Blurb)
+- 分类选择
+- 状态选择 (Ongoing/Completed)
+- 章节批量添加
+- [Save as Draft] [Publish] 按钮
 
-**预计时间:** 2周
+复用管理员的小说上传表单组件
+```
 
----
+#### 2.3 Manage Chapters 章节管理 (1天)
+```
+/writer/novels/[id]/chapters 页面:
+- 章节列表
+- [+ Add New Chapter] 按钮
+- 每章显示:
+  - Chapter X: 标题
+  - X words
+  - Published / Draft
+  - [Edit] [Delete] 按钮
 
-#### 4. 评论系统
-**要做:**
-- [ ] 发布评论
-- [ ] 显示评论列表
-- [ ] 隐藏评论 (不是删除)
-- [ ] 管理员审核
-- [ ] @提及功能 (后期)
+/writer/novels/[id]/chapters/new 添加章节:
+- 标题输入
+- 内容输入 (5000字限制)
+- [Save as Draft] [Publish] 按钮
 
-**预计时间:** 1周
-
----
-
-## 🎯 MVP后优化计划
-
-### 1. 催更功能 (Request Update) 📝 高优先级
-
-**显示位置:**
-- 每一章的结尾都显示催更按钮 (Ongoing小说)
-- Completed小说不显示催更按钮
-
-**功能设计:**
-- 每个读者对每本小说只能催更一次
-- 显示总催更人数
-- 需要登录才能催更
+复用管理员的章节管理组件
+```
 
 **预计时间:** 2-3天
 
 ---
 
-### 2. 推荐功能 (Recommended Novels) 📝 高优先级
+### Phase 3: 社交功能 (1-2天)
 
-**显示位置:**
-1. Completed小说 - 最后一章结尾显示推荐
-2. Ongoing小说 - 最新章节结尾显示推荐
+#### 3.1 Following 关注系统 (1天)
+```
+/following 页面:
+- 显示关注的所有作家
+- 每个作家显示:
+  - 头像
+  - 名字
+  - X novels • X words
+  - Latest: Chapter X (2d ago)
+  - [Unfollow] [View Profile] 按钮
 
-**推荐逻辑:**
-- 同分类 + 热度排序
-- 长方形卡片布局
-- 6个推荐小说
+作家个人页面:
+- [Follow] / [Following] 按钮
+- 关注后添加到following列表
+```
+
+#### 3.2 Notifications 通知 (后期)
+```
+Header右上角:
+- 🔔 图标
+- 显示未读数量
+
+/notifications 页面:
+- 新章节通知
+- 点赞通知
+- 评论通知
+- 系统通知
+```
+
+#### 3.3 Inbox 私信 (后期)
+```
+/inbox 页面:
+- 私信列表
+- 发送私信
+- 通知提醒
+```
 
 **预计时间:** 1-2天
 
 ---
 
-### 3. 阅读进度追踪
+### Phase 4: 评论系统 (1-2天)
 
-**要做:**
-- [ ] 自动记录阅读到第几章
-- [ ] 记录章节内滚动位置
-- [ ] "继续阅读"功能
-- [ ] 阅读历史页面
+#### 4.1 评论功能 (1-2天)
+```
+小说详情页添加:
+- 评论区域
+- 评论输入框
+- [Post Comment] 按钮
+- 评论列表
+  - 用户头像
+  - 用户名
+  - 评论内容
+  - 时间
+  - [Delete] (自己的评论)
+```
 
-**预计时间:** 2-3天
-
----
-
-### 4. 性能优化
-
-**要做:**
-- [ ] 数据库查询优化
-- [ ] 图片懒加载
-- [ ] 页面缓存策略优化
-- [ ] CDN配置优化
-
-**预计时间:** 1周
+**预计时间:** 1-2天
 
 ---
 
-## 🔧 技术债务 & 优化
+## 🎯 MVP后优化计划
 
-### 必须解决 (上线前)
+完成上述核心功能后,按以下顺序添加增强功能:
 
-#### 1. 恢复外键约束
-**当前状态:** 外键已注释便于快速迭代  
-**上线前必须:** 恢复所有外键约束,保证数据完整性
+### 1. 催更功能 (2-3天)
+- 每章结尾显示催更按钮
+- 显示催更人数
+- 作家仪表盘显示催更统计
 
-#### 2. TypeScript类型加强
-**当前问题:**
-- 过多`any`类型
-- 缺少输入验证
+### 2. 推荐功能 (2天)
+- 完结小说最后一章推荐其他小说
+- 基于同分类推荐
+- 推荐卡片组件
 
-**解决方案:**
-- 安装Zod
-- 定义所有API的输入/输出类型
-- 表单验证统一用Zod
-
-#### 3. 错误处理统一
-**当前问题:**
-- 太多`alert()`
-- 错误提示不友好
-
-**解决方案:**
-- 安装react-hot-toast
-- 统一所有错误提示
-- 添加全局错误边界
-- 统一Loading状态
+### 3. 管理后台优化 (3-4天)
+- 用户管理功能
+- 统一错误处理
+- 批量操作功能
 
 ---
 
@@ -429,10 +455,8 @@
 4. 单例模式 - 解决Prisma连接池问题
 5. 详细日志 - 便于调试和问题追踪
 6. 翻页动态分页 - 按屏幕高度分页,像真实的书
-7. Modal式认证 - 更好的用户体验
-8. JWT策略 - 避免数据库连接池问题
-9. 持续部署 - 快速迭代,边开发边部署
-10. Ban系统 - 灵活的内容管理
+7. NextAuth.js集成 - 标准OAuth实现
+8. trustHost配置 - Vercel生产环境必需
 
 ### 需要改进 ⚠️
 1. 统一错误处理 (太多alert)
@@ -459,84 +483,47 @@
 │   ├── 登录认证          ✅ 100%
 │   ├── 小说CRUD          ✅ 100%
 │   ├── 章节管理          ✅ 100%
-│   ├── 列表页            ✅ 100%
-│   └── Ban功能           ✅ 100%
+│   └── 列表页            ✅ 100%
 │
 ├── 前台阅读功能          ✅ 100%
 │   ├── 首页              ✅ 100%
 │   ├── 小说详情页        ✅ 100%
-│   ├── 章节阅读器        ✅ 100%
-│   └── 性能优化          ✅ 100%
+│   └── 章节阅读器        ✅ 100%
 │
-├── 用户认证系统          🚧 85%
-│   ├── NextAuth配置      ✅ 100%
+├── 用户认证              ✅ 100% ⭐ NEW!
 │   ├── Google OAuth      ✅ 100%
-│   ├── Modal登录界面     ✅ 100%
-│   └── 线上部署          🚧 90%
+│   ├── Session管理       ✅ 100%
+│   └── 数据库集成        ✅ 100%
 │
-├── 部署上线              ✅ 100%
-│   ├── Vercel部署        ✅ 100%
-│   ├── 环境变量配置      ✅ 100%
-│   ├── 域名配置          ✅ 100%
-│   └── 持续部署          ✅ 100%
-│
-├── 用户系统功能          ⏸️ 0%
-├── 互动功能              ⏸️ 0%
+├── 用户界面系统          🚧 5%   ⭐ NEW!
+├── 书架/阅读历史         ⏸️ 0%
 ├── 作家模式              ⏸️ 0%
+├── 互动功能              ⏸️ 0%
 └── 评论系统              ⏸️ 0%
 ```
-
-### 代码质量评分: 9.0/10
-
-| 维度 | 评分 | 说明 |
-|---|---|---|
-| 架构设计 | 9/10 | 清晰分层,易于扩展 |
-| 代码质量 | 9/10 | 专业规范,结构清晰 |
-| 功能完成度 | 8/10 | 核心阅读体验和管理后台完成 |
-| 性能优化 | 9/10 | Cloudinary + 缓存 + 索引 |
-| 文档完善度 | 9.5/10 | 详细的进度文档 |
-| 用户体验 | 9/10 | 参考业界最佳实践 |
-| 部署能力 | 9.5/10 | 持续部署,生产就绪 |
-
-### 当前数据
-- 管理员: 1个
-- 分类: 8个
-- 测试小说: 3本+
-- 测试章节: 多章
-- 数据库大小: <10MB
-- 代码文件: ~60个
-- 部署状态: ✅ 生产环境运行中
 
 ---
 
 ## 🎯 开发路线图
 
-### Week 1-2 (已完成 ✅)
-- ✅ 管理后台 (100%)
-- ✅ 章节阅读器 (100%)
-- ✅ 首页优化 (100%)
-- ✅ 详情页完善 (100%)
-- ✅ 用户认证系统 (85%)
-- ✅ 部署上线 (100%)
+### 本周目标 (11月8-14日)
+- [x] Google登录完成
+- [ ] UserMenu下拉菜单
+- [ ] My Profile页面
+- [ ] Library书架功能
+- [ ] Reading History阅读历史
 
-### Week 3-4 (当前 - 11月中旬)
-- 🚧 用户认证系统完善 (剩余15%)
-- [ ] 用户个人资料功能
-- [ ] 书架功能
-- [ ] 阅读历史
-- [ ] 点赞功能
+### 下周目标 (11月15-21日)
+- [ ] Writer Dashboard
+- [ ] Create Novel
+- [ ] Manage Chapters
+- [ ] Following关注系统
 
-### Week 5-6 (11月底-12月初)
-- [ ] 作家模式
+### 11月底目标 (11月22-30日)
 - [ ] 评论系统
 - [ ] 催更功能
 - [ ] 推荐功能
-
-### Week 7-8 (12月中)
-- [ ] 性能优化
-- [ ] Bug修复
-- [ ] TikTok营销准备
-- [ ] 内容扩展 (目标500+小说)
+- [ ] 管理后台优化
 
 ---
 
@@ -546,94 +533,31 @@
 - ✅ **2025-01-03** - 管理员系统完成
 - ✅ **2025-01-05** - 小说上传功能完成
 - ✅ **2025-11-05** - Cloudinary集成 + 前台详情页
-- ✅ **2025-11-07** - 完整阅读器完成
-- ✅ **2025-11-07** - 首页性能优化完成
-- ✅ **2025-11-07** - 详情页布局优化完成
-- ✅ **2025-11-07** - 管理后台发布系统优化完成
-- ✅ **2025-11-07** - 部署上线,持续部署配置完成 🎉
-- 🎯 **2025-11-12** - 用户系统完成 (目标)
-- 🎯 **2025-11-18** - 互动功能完成 (目标)
-- 🎯 **2025-11-25** - 作家模式完成 (目标)
-- 🎯 **2025-12-02** - 评论系统完成 (目标)
-- 🎯 **2025-12-09** - 催更+推荐功能完成 (目标)
-- 🎯 **2025-12-20** - MVP正式上线 + TikTok营销启动 (目标)
+- ✅ **2025-11-07** - 完整阅读器完成 + Google登录完成 ✨
+- 🎯 **2025-11-14** - 基础用户功能完成 (目标)
+- 🎯 **2025-11-21** - 作家模式完成 (目标)
+- 🎯 **2025-11-30** - 互动功能完成 (目标)
+- 🎯 **2025-12-15** - MVP完整版上线 (目标)
 
 ---
 
-## 🔗 相关链接
-
-- **GitHub仓库:** https://github.com/leozhansino-design/butternovel
-- **生产环境:** https://butternovel.vercel.app
-- **自定义域名:** https://butternovel.com
-- **技术栈文档:**
-  - Next.js 15/16: https://nextjs.org/docs
-  - Prisma: https://www.prisma.io/docs
-  - Cloudinary: https://cloudinary.com/documentation
-  - NextAuth: https://next-auth.js.org
-  - Vercel: https://vercel.com/docs
-
----
-
-## 📝 最近更新日志
-
-### 2025-11-07 重要更新
-
-**部署上线 🎉**
-- ✅ 完成Vercel生产环境部署
-- ✅ 配置自定义域名 butternovel.com
-- ✅ 设置持续部署 (GitHub → Vercel)
-- ✅ 解决use-debounce依赖问题
-- ✅ Google OAuth生产环境配置
-
-**用户认证系统优化**
-- ✅ Modal式登录/注册界面
-- ✅ Google登录自动创建用户
-- ✅ 使用Google用户名作为默认名字
-- ✅ JWT策略避免连接池问题
-
-**管理后台优化**
-- ✅ 双按钮发布系统 (Save Draft / Publish)
-- ✅ 清晰的状态横幅
-- ✅ 章节5000字限制
-- ✅ 章节单独发布/取消发布按钮
-- ✅ Ban/Unban功能
-
-**详情页优化**
-- ✅ 封面+信息整合布局
-- ✅ Blurb集成在主信息卡
-- ✅ 更专业的视觉设计
-
-**首页性能优化**
-- ✅ Suspense + Loading骨架屏
-- ✅ 数据库复合索引
-- ✅ Static Caching (5分钟)
-- ✅ 移除不必要的auth调用
-- ✅ 70%+性能提升
-
-**Bug修复**
-- ✅ Next.js 15/16 params Promise问题
-- ✅ 新上传小说不显示问题
-- ✅ Prisma连接池超时问题
-- ✅ Google OAuth配置问题
-
----
-
-**最后更新:** 2025-11-07 17:50 (GMT+8)  
+**最后更新:** 2025-11-07  
 **文档版本:** v5.0  
-**维护者:** Leo / Mackenzie
+**维护者:** Leo
 
 ---
 
 ## 🦋 ButterNovel
 **让阅读更轻松,让创作更简单**
 EOF
-cat PROGRESS.md
+
+cat /home/claude/PROGRESS_UPDATED.md
 Output
 
 # 🦋 ButterNovel - 项目进度文档
 
 **最后更新:** 2025-11-07  
-**项目阶段:** MVP开发阶段 (核心功能完成60%)
+**项目阶段:** MVP开发阶段 (核心功能完成60%,Google登录已完成!)
 
 ---
 
@@ -648,12 +572,13 @@ Output
 ├── 前台小说详情页      ✅ 100%
 ├── 前台首页            ✅ 100%
 ├── 章节阅读器          ✅ 100%
-├── 首页性能优化        ✅ 100% ⭐ NEW
-├── 用户认证系统        🚧 85%  ⭐ NEW
-├── 详情页优化          ✅ 100% ⭐ NEW
-├── 管理后台优化        ✅ 100% ⭐ NEW
-├── 部署上线            ✅ 100% ⭐ NEW
-├── 用户系统功能        ⏸️ 0%
+├── 首页性能优化        ✅ 100%
+├── 用户认证系统        ✅ 100% ⭐ NEW (Google登录已完成!)
+├── 详情页优化          ✅ 100%
+├── 管理后台优化        ✅ 100%
+├── 部署上线            ✅ 100%
+├── 用户界面系统        🚧 5%   ⭐ NEW (需要UserMenu等组件)
+├── 书架/阅读历史       ⏸️ 0%
 ├── 作家模式            ⏸️ 0%
 ├── 评论系统            ⏸️ 0%
 └── 社区功能            ⏸️ 0%
@@ -690,7 +615,7 @@ Output
   - 标题、封面、简介、分类选择
   - 章节批量添加 (一次上传多章)
   - 状态选择 (连载/完结)
-  - 发布/草稿双按钮系统 ⭐
+  - 发布/草稿双按钮系统
 - ✅ 小说编辑功能
   - 增量更新 (只发送改动的字段)
   - 封面替换 (自动删除旧图)
@@ -700,8 +625,8 @@ Output
   - 添加新章节
   - 编辑章节内容  
   - 删除章节 (自动重新编号)
-  - 5000字限制 ⭐
-  - 单独的发布/取消发布按钮 ⭐
+  - 5000字限制
+  - 单独的发布/取消发布按钮
 - ✅ 小说列表页
   - 搜索功能 (标题/作者)
   - 分页功能
@@ -709,17 +634,10 @@ Output
 - ✅ 小说删除
   - 级联删除所有章节
   - 自动清理Cloudinary图片
-- ✅ Ban/Unban功能 ⭐ NEW
+- ✅ Ban/Unban功能
   - 可以临时或永久封禁小说
   - 封禁原因记录
   - 封禁小说不会在前台显示
-
-**文件位置:**
-- `src/app/admin/login/page.tsx`
-- `src/app/admin/novels/page.tsx`
-- `src/app/admin/novels/new/page.tsx`
-- `src/app/admin/novels/[id]/edit/page.tsx`
-- `src/app/admin/novels/[id]/chapters/page.tsx`
 
 ---
 
@@ -746,309 +664,341 @@ Output
 
 **已完成:**
 - ✅ 页面布局设计
-  - 封面+信息卡片整合设计 ⭐
-  - Blurb集成在主信息卡中
-  - 小说信息 (标题、作者、分类、状态)
-  - 统计数据 (阅读、点赞、章节数)
-- ✅ 完整章节列表
-  - 所有章节显示
-  - 点击跳转阅读器
+- ✅ 第一章完整显示
+- ✅ 简介(Blurb)展示区
 - ✅ 纪念碑谷风格按钮
-  - 金黄色渐变
-  - hover动画效果
 - ✅ 响应式设计 (PC/平板/手机)
 - ✅ 从数据库加载真实数据
-- ✅ await params修复 (Next.js 15/16兼容) ⭐
-
-**文件位置:**
-- `src/app/novels/[slug]/page.tsx`
+- ✅ 章节列表功能
+- ✅ 渐变效果优化
 
 ---
 
 ### 5. 前台首页 (100%)
 
 **已完成:**
-- ✅ 精选小说轮播 (Featured Carousel)
-- ✅ 分类展示 (Fantasy/Urban/Romance)
+- ✅ 精选小说轮播(Featured Carousel)
+- ✅ 分类展示(Fantasy/Urban/Romance)
 - ✅ 从数据库加载真实数据
-  - `getFeaturedNovels()` - 按点赞数排序
-  - `getNovelsByCategory()` - 按分类获取
-  - 只显示已发布且未被ban的小说 ⭐
 - ✅ 响应式设计
 - ✅ 点击跳转详情页
-- ✅ Suspense + Loading骨架屏 ⭐ NEW
-- ✅ 数据库索引优化 ⭐ NEW
-- ✅ Static Caching (5分钟) ⭐ NEW
-- ✅ 移除不必要的auth调用 ⭐ NEW
-
-**性能优化:**
-- 添加数据库复合索引
-- 使用unstable_cache实现静态缓存
-- 首屏加载时间减少70%+
-- 流畅的加载动画体验
-
-**文件位置:**
-- `src/app/page.tsx`
-- `src/components/front/FeaturedCarousel.tsx`
-- `src/components/front/CategorySection.tsx`
+- ✅ 骨架屏加载优化
 
 ---
 
 ### 6. 章节阅读器 (100%)
 
-**核心功能:**
-- ✅ 2种阅读模式
-  - Scroll模式 - 连续滚动阅读
-  - Page模式 - 翻页阅读,按屏幕高度自动分页
+**已完成功能:**
+- ✅ 2种阅读模式(Scroll/Page)
 - ✅ 4种背景颜色
-  - White / Sepia / Dark / Green
 - ✅ 4种字体大小
-  - Small / Medium / Large / Extra Large
-  - 自动调整行高
-
-**阅读体验:**
-- ✅ 章节导航 (Previous/Next Chapter)
-- ✅ 第一章隐藏"Previous"按钮
-- ✅ 最后一章隐藏"Next"按钮
+- ✅ 章节导航
 - ✅ Table of Contents侧边栏
 - ✅ Settings侧边栏
-- ✅ 键盘支持 (左右方向键)
-- ✅ 设置持久化 (localStorage)
+- ✅ 键盘支持
+- ✅ 设置持久化
 - ✅ 响应式设计
 - ✅ 顶部固定导航
 - ✅ 全英文界面
 
-**文件位置:**
-- `src/app/novels/[slug]/chapters/[number]/page.tsx`
-- `src/components/reader/ChapterReader.tsx`
-
 ---
 
-### 7. 用户认证系统 (85%) 🚧
+### 7. 性能优化 (100%)
 
 **已完成:**
-- ✅ NextAuth.js v5配置
-- ✅ Google OAuth集成
-- ✅ JWT策略 (避免数据库连接池问题)
-- ✅ Modal弹窗式登录/注册 ⭐
-  - 登录和注册在同一个modal
-  - 背景变暗效果
-  - Tab切换
-- ✅ 自动创建用户 (首次Google登录) ⭐
-- ✅ 使用Google用户名作为默认名字
-- ✅ Prisma Client优化 (单例模式)
-- ✅ 环境变量配置
-- ✅ OAuth回调URL配置
-- ✅ 线上部署配置 ⭐
-
-**待完成 (15%):**
-- ⏸️ Facebook OAuth集成测试
-- ⏸️ 完整的错误处理
-- ⏸️ 登录后跳转逻辑优化
-
-**文件位置:**
-- `src/app/api/auth/[...nextauth]/route.ts`
-- `src/components/auth/AuthModal.tsx`
-- `src/components/layout/Header.tsx`
+- ✅ 骨架屏加载(Skeleton Screens)
+- ✅ 数据库查询优化
+- ✅ Cloudinary图片CDN
+- ✅ 选择性字段加载
+- ✅ Prisma单例模式
 
 ---
 
-### 8. 部署上线 (100%) ⭐ NEW
+### 8. 用户认证系统 (100%) ⭐ NEW!
+
+**已完成:**
+- ✅ NextAuth.js 配置完成
+- ✅ Google OAuth 登录完成
+- ✅ 用户自动创建到数据库
+- ✅ Session管理
+- ✅ 生产环境配置 (trustHost: true)
+- ✅ Prisma单例模式
+- ✅ 详细错误日志
+- ✅ 登录/登出功能
+
+**技术亮点:**
+```typescript
+// Google OAuth 配置
+GoogleProvider({
+  clientId: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+})
+
+// 自动创建用户
+callbacks: {
+  async signIn({ user, account, profile }) {
+    // 创建或更新用户到数据库
+    await prisma.user.upsert({
+      where: { email: user.email! },
+      update: { name: user.name },
+      create: {
+        email: user.email!,
+        name: user.name || 'Anonymous',
+        avatar: user.image,
+      }
+    })
+    return true
+  }
+}
+```
+
+---
+
+### 9. 部署上线 (100%)
 
 **已完成:**
 - ✅ Vercel部署配置
-- ✅ 环境变量设置
-  - DATABASE_URL
-  - NEXTAUTH_SECRET
-  - NEXTAUTH_URL
-  - GOOGLE_CLIENT_ID/SECRET
-  - CLOUDINARY配置
-- ✅ 域名配置 (butternovel.com)
-  - DNS A记录
-  - CNAME记录
+- ✅ 域名绑定 (butternovel.com)
+- ✅ 环境变量配置
+- ✅ 数据库连接正常
+- ✅ Cloudinary集成正常
 - ✅ Google OAuth生产环境配置
-  - JavaScript origins更新
-  - Redirect URIs更新
-- ✅ 持续部署设置 (GitHub → Vercel)
-- ✅ 解决依赖问题 (use-debounce)
-
-**部署流程:**
-```
-本地开发 → git push → GitHub → 自动部署 → Vercel (2-3分钟)
-```
+- ✅ HTTPS证书自动
 
 **访问地址:**
-- 生产环境: https://butternovel.vercel.app
-- 自定义域名: https://butternovel.com
+- 🌐 生产环境: https://butternovel.com
+- 🌐 备用地址: https://butternovel.vercel.app
 
 ---
 
-## 🚧 进行中
+## 🚧 进行中 (用户界面系统 5%)
 
-目前正在进行的工作:
-
-### Google OAuth测试和优化
-- 🚧 线上环境Google登录测试
-- 🚧 OAuth回调URL验证
-- 🚧 错误处理优化
+现在Google登录已经完成,接下来需要实现用户登录后的界面和功能。
 
 ---
 
-## 📋 待开发功能
+## 📋 待开发功能 (按优先级排序)
 
-### 短期目标 (2周内)
+### Phase 1: 基础用户功能 (1-2天)
 
-#### 1. 用户系统功能完善
-**要做:**
-- [ ] 个人资料编辑
-  - [ ] 修改用户名
-  - [ ] 上传头像 (Cloudinary)
-  - [ ] 修改简介
-- [ ] 密码重置功能
-- [ ] 邮箱验证
-- [ ] 登出功能
+**目标:** 用户登录后有完整的个人中心体验
 
-**预计时间:** 3-4天
+#### 1.1 UserMenu 下拉菜单组件 (4小时)
+```
+显示位置: Header右上角
+点击头像后显示菜单:
+- 👤 My Profile
+- 📚 Library (书架)
+- 📜 Reading History (阅读历史)
+- ✍️ Writer Dashboard (作家仪表盘)
+- ⚙️ Settings
+- 🚪 Log Out
+```
+
+#### 1.2 My Profile 页面 (4小时)
+```
+/profile 页面显示:
+- 用户基本信息 (头像、名字、ID、邮箱)
+- 阅读统计
+  - X Books Read (从书架统计)
+  - X Chapters Completed (从阅读历史统计)
+  - Member since (注册日期)
+- 写作统计 (如果是作家)
+  - X Novels Published
+  - X Chapters Written
+  - X Total Views
+  - X Followers
+- [Edit Profile] 按钮
+```
+
+#### 1.3 Library 书架功能 (6小时)
+```
+/library 页面:
+- 显示用户收藏的所有小说
+- Tabs: [All] [Reading] [Completed]
+- 每本书显示:
+  - 封面
+  - 标题
+  - 分类 • 章节数
+  - 阅读进度 (Last read: Chapter X)
+  - [Continue Reading] 按钮
+  - [Remove] 按钮
+
+小说详情页添加:
+- [Add to Library] 按钮
+- 已添加则显示 [✓ In Library]
+```
+
+#### 1.4 Reading History 阅读历史 (6小时)
+```
+/history 页面:
+- 按时间分组显示
+  - Today
+  - Yesterday
+  - This Week
+  - Earlier
+- 每条记录显示:
+  - 小说封面缩略图
+  - 小说标题
+  - Chapter X (2h ago)
+  - 点击跳转到该章节
+- [Clear History] 按钮
+
+章节阅读器自动记录:
+- 打开章节时自动创建/更新阅读历史
+- 记录到第几章
+```
+
+**预计时间:** 1-2天 (约20小时)
 
 ---
 
-#### 2. 读者互动功能
-**要做:**
-- [ ] 书架功能
-  - 添加到书架
-  - 书架列表
-  - 从书架移除
-- [ ] 阅读历史
-  - 自动记录阅读位置
-  - 继续阅读功能
-  - 历史记录列表
-- [ ] 点赞功能
-  - 点赞/取消点赞
-  - 点赞数统计
-  - 我的点赞列表
+### Phase 2: 作家功能 (2-3天)
 
-**预计时间:** 1周
+#### 2.1 Writer Dashboard 仪表盘 (1天)
+```
+/writer 页面:
 
----
+首次访问 - 激活作家身份:
+- 引导页 (/writer/onboarding)
+- 填写笔名 (Pen Name)
+- 填写简介 (Bio)
+- [Activate Writer Mode] 按钮
 
-### 中期目标 (1个月内)
+激活后显示仪表盘:
+- 📊 Overview Stats
+  - Total Views
+  - Total Likes
+  - Followers (后期功能)
+  
+- 📚 My Novels (X)
+  - [+ Create New Novel] 按钮
+  - 小说列表:
+    - 封面 + 标题
+    - X Chapters • X words
+    - Views: X • Likes: X
+    - Status: Ongoing/Completed
+    - [Edit] [Chapters] [Stats] 按钮
+```
 
-#### 3. 作家模式
-**要做:**
-- [ ] 作家身份激活
-  - 首次引导页
-  - 填写笔名和简介
-  - 激活作家权限
-- [ ] 创作功能
-  - 创建小说表单
-  - 逐章上传
-  - 编辑作品信息
-  - 管理章节
-  - 发布/草稿切换
-- [ ] 作家仪表盘
-  - 我的作品列表
-  - 基础数据统计 (后期)
+#### 2.2 Create Novel 创建小说 (1天)
+```
+/writer/novels/new 页面:
+- 标题输入
+- 封面上传 (Cloudinary)
+- 简介输入 (Blurb)
+- 分类选择
+- 状态选择 (Ongoing/Completed)
+- 章节批量添加
+- [Save as Draft] [Publish] 按钮
 
-**预计时间:** 2周
+复用管理员的小说上传表单组件
+```
 
----
+#### 2.3 Manage Chapters 章节管理 (1天)
+```
+/writer/novels/[id]/chapters 页面:
+- 章节列表
+- [+ Add New Chapter] 按钮
+- 每章显示:
+  - Chapter X: 标题
+  - X words
+  - Published / Draft
+  - [Edit] [Delete] 按钮
 
-#### 4. 评论系统
-**要做:**
-- [ ] 发布评论
-- [ ] 显示评论列表
-- [ ] 隐藏评论 (不是删除)
-- [ ] 管理员审核
-- [ ] @提及功能 (后期)
+/writer/novels/[id]/chapters/new 添加章节:
+- 标题输入
+- 内容输入 (5000字限制)
+- [Save as Draft] [Publish] 按钮
 
-**预计时间:** 1周
-
----
-
-## 🎯 MVP后优化计划
-
-### 1. 催更功能 (Request Update) 📝 高优先级
-
-**显示位置:**
-- 每一章的结尾都显示催更按钮 (Ongoing小说)
-- Completed小说不显示催更按钮
-
-**功能设计:**
-- 每个读者对每本小说只能催更一次
-- 显示总催更人数
-- 需要登录才能催更
+复用管理员的章节管理组件
+```
 
 **预计时间:** 2-3天
 
 ---
 
-### 2. 推荐功能 (Recommended Novels) 📝 高优先级
+### Phase 3: 社交功能 (1-2天)
 
-**显示位置:**
-1. Completed小说 - 最后一章结尾显示推荐
-2. Ongoing小说 - 最新章节结尾显示推荐
+#### 3.1 Following 关注系统 (1天)
+```
+/following 页面:
+- 显示关注的所有作家
+- 每个作家显示:
+  - 头像
+  - 名字
+  - X novels • X words
+  - Latest: Chapter X (2d ago)
+  - [Unfollow] [View Profile] 按钮
 
-**推荐逻辑:**
-- 同分类 + 热度排序
-- 长方形卡片布局
-- 6个推荐小说
+作家个人页面:
+- [Follow] / [Following] 按钮
+- 关注后添加到following列表
+```
+
+#### 3.2 Notifications 通知 (后期)
+```
+Header右上角:
+- 🔔 图标
+- 显示未读数量
+
+/notifications 页面:
+- 新章节通知
+- 点赞通知
+- 评论通知
+- 系统通知
+```
+
+#### 3.3 Inbox 私信 (后期)
+```
+/inbox 页面:
+- 私信列表
+- 发送私信
+- 通知提醒
+```
 
 **预计时间:** 1-2天
 
 ---
 
-### 3. 阅读进度追踪
+### Phase 4: 评论系统 (1-2天)
 
-**要做:**
-- [ ] 自动记录阅读到第几章
-- [ ] 记录章节内滚动位置
-- [ ] "继续阅读"功能
-- [ ] 阅读历史页面
+#### 4.1 评论功能 (1-2天)
+```
+小说详情页添加:
+- 评论区域
+- 评论输入框
+- [Post Comment] 按钮
+- 评论列表
+  - 用户头像
+  - 用户名
+  - 评论内容
+  - 时间
+  - [Delete] (自己的评论)
+```
 
-**预计时间:** 2-3天
-
----
-
-### 4. 性能优化
-
-**要做:**
-- [ ] 数据库查询优化
-- [ ] 图片懒加载
-- [ ] 页面缓存策略优化
-- [ ] CDN配置优化
-
-**预计时间:** 1周
+**预计时间:** 1-2天
 
 ---
 
-## 🔧 技术债务 & 优化
+## 🎯 MVP后优化计划
 
-### 必须解决 (上线前)
+完成上述核心功能后,按以下顺序添加增强功能:
 
-#### 1. 恢复外键约束
-**当前状态:** 外键已注释便于快速迭代  
-**上线前必须:** 恢复所有外键约束,保证数据完整性
+### 1. 催更功能 (2-3天)
+- 每章结尾显示催更按钮
+- 显示催更人数
+- 作家仪表盘显示催更统计
 
-#### 2. TypeScript类型加强
-**当前问题:**
-- 过多`any`类型
-- 缺少输入验证
+### 2. 推荐功能 (2天)
+- 完结小说最后一章推荐其他小说
+- 基于同分类推荐
+- 推荐卡片组件
 
-**解决方案:**
-- 安装Zod
-- 定义所有API的输入/输出类型
-- 表单验证统一用Zod
-
-#### 3. 错误处理统一
-**当前问题:**
-- 太多`alert()`
-- 错误提示不友好
-
-**解决方案:**
-- 安装react-hot-toast
-- 统一所有错误提示
-- 添加全局错误边界
-- 统一Loading状态
+### 3. 管理后台优化 (3-4天)
+- 用户管理功能
+- 统一错误处理
+- 批量操作功能
 
 ---
 
@@ -1061,10 +1011,8 @@ Output
 4. 单例模式 - 解决Prisma连接池问题
 5. 详细日志 - 便于调试和问题追踪
 6. 翻页动态分页 - 按屏幕高度分页,像真实的书
-7. Modal式认证 - 更好的用户体验
-8. JWT策略 - 避免数据库连接池问题
-9. 持续部署 - 快速迭代,边开发边部署
-10. Ban系统 - 灵活的内容管理
+7. NextAuth.js集成 - 标准OAuth实现
+8. trustHost配置 - Vercel生产环境必需
 
 ### 需要改进 ⚠️
 1. 统一错误处理 (太多alert)
@@ -1091,84 +1039,47 @@ Output
 │   ├── 登录认证          ✅ 100%
 │   ├── 小说CRUD          ✅ 100%
 │   ├── 章节管理          ✅ 100%
-│   ├── 列表页            ✅ 100%
-│   └── Ban功能           ✅ 100%
+│   └── 列表页            ✅ 100%
 │
 ├── 前台阅读功能          ✅ 100%
 │   ├── 首页              ✅ 100%
 │   ├── 小说详情页        ✅ 100%
-│   ├── 章节阅读器        ✅ 100%
-│   └── 性能优化          ✅ 100%
+│   └── 章节阅读器        ✅ 100%
 │
-├── 用户认证系统          🚧 85%
-│   ├── NextAuth配置      ✅ 100%
+├── 用户认证              ✅ 100% ⭐ NEW!
 │   ├── Google OAuth      ✅ 100%
-│   ├── Modal登录界面     ✅ 100%
-│   └── 线上部署          🚧 90%
+│   ├── Session管理       ✅ 100%
+│   └── 数据库集成        ✅ 100%
 │
-├── 部署上线              ✅ 100%
-│   ├── Vercel部署        ✅ 100%
-│   ├── 环境变量配置      ✅ 100%
-│   ├── 域名配置          ✅ 100%
-│   └── 持续部署          ✅ 100%
-│
-├── 用户系统功能          ⏸️ 0%
-├── 互动功能              ⏸️ 0%
+├── 用户界面系统          🚧 5%   ⭐ NEW!
+├── 书架/阅读历史         ⏸️ 0%
 ├── 作家模式              ⏸️ 0%
+├── 互动功能              ⏸️ 0%
 └── 评论系统              ⏸️ 0%
 ```
-
-### 代码质量评分: 9.0/10
-
-| 维度 | 评分 | 说明 |
-|---|---|---|
-| 架构设计 | 9/10 | 清晰分层,易于扩展 |
-| 代码质量 | 9/10 | 专业规范,结构清晰 |
-| 功能完成度 | 8/10 | 核心阅读体验和管理后台完成 |
-| 性能优化 | 9/10 | Cloudinary + 缓存 + 索引 |
-| 文档完善度 | 9.5/10 | 详细的进度文档 |
-| 用户体验 | 9/10 | 参考业界最佳实践 |
-| 部署能力 | 9.5/10 | 持续部署,生产就绪 |
-
-### 当前数据
-- 管理员: 1个
-- 分类: 8个
-- 测试小说: 3本+
-- 测试章节: 多章
-- 数据库大小: <10MB
-- 代码文件: ~60个
-- 部署状态: ✅ 生产环境运行中
 
 ---
 
 ## 🎯 开发路线图
 
-### Week 1-2 (已完成 ✅)
-- ✅ 管理后台 (100%)
-- ✅ 章节阅读器 (100%)
-- ✅ 首页优化 (100%)
-- ✅ 详情页完善 (100%)
-- ✅ 用户认证系统 (85%)
-- ✅ 部署上线 (100%)
+### 本周目标 (11月8-14日)
+- [x] Google登录完成
+- [ ] UserMenu下拉菜单
+- [ ] My Profile页面
+- [ ] Library书架功能
+- [ ] Reading History阅读历史
 
-### Week 3-4 (当前 - 11月中旬)
-- 🚧 用户认证系统完善 (剩余15%)
-- [ ] 用户个人资料功能
-- [ ] 书架功能
-- [ ] 阅读历史
-- [ ] 点赞功能
+### 下周目标 (11月15-21日)
+- [ ] Writer Dashboard
+- [ ] Create Novel
+- [ ] Manage Chapters
+- [ ] Following关注系统
 
-### Week 5-6 (11月底-12月初)
-- [ ] 作家模式
+### 11月底目标 (11月22-30日)
 - [ ] 评论系统
 - [ ] 催更功能
 - [ ] 推荐功能
-
-### Week 7-8 (12月中)
-- [ ] 性能优化
-- [ ] Bug修复
-- [ ] TikTok营销准备
-- [ ] 内容扩展 (目标500+小说)
+- [ ] 管理后台优化
 
 ---
 
@@ -1178,81 +1089,17 @@ Output
 - ✅ **2025-01-03** - 管理员系统完成
 - ✅ **2025-01-05** - 小说上传功能完成
 - ✅ **2025-11-05** - Cloudinary集成 + 前台详情页
-- ✅ **2025-11-07** - 完整阅读器完成
-- ✅ **2025-11-07** - 首页性能优化完成
-- ✅ **2025-11-07** - 详情页布局优化完成
-- ✅ **2025-11-07** - 管理后台发布系统优化完成
-- ✅ **2025-11-07** - 部署上线,持续部署配置完成 🎉
-- 🎯 **2025-11-12** - 用户系统完成 (目标)
-- 🎯 **2025-11-18** - 互动功能完成 (目标)
-- 🎯 **2025-11-25** - 作家模式完成 (目标)
-- 🎯 **2025-12-02** - 评论系统完成 (目标)
-- 🎯 **2025-12-09** - 催更+推荐功能完成 (目标)
-- 🎯 **2025-12-20** - MVP正式上线 + TikTok营销启动 (目标)
+- ✅ **2025-11-07** - 完整阅读器完成 + Google登录完成 ✨
+- 🎯 **2025-11-14** - 基础用户功能完成 (目标)
+- 🎯 **2025-11-21** - 作家模式完成 (目标)
+- 🎯 **2025-11-30** - 互动功能完成 (目标)
+- 🎯 **2025-12-15** - MVP完整版上线 (目标)
 
 ---
 
-## 🔗 相关链接
-
-- **GitHub仓库:** https://github.com/leozhansino-design/butternovel
-- **生产环境:** https://butternovel.vercel.app
-- **自定义域名:** https://butternovel.com
-- **技术栈文档:**
-  - Next.js 15/16: https://nextjs.org/docs
-  - Prisma: https://www.prisma.io/docs
-  - Cloudinary: https://cloudinary.com/documentation
-  - NextAuth: https://next-auth.js.org
-  - Vercel: https://vercel.com/docs
-
----
-
-## 📝 最近更新日志
-
-### 2025-11-07 重要更新
-
-**部署上线 🎉**
-- ✅ 完成Vercel生产环境部署
-- ✅ 配置自定义域名 butternovel.com
-- ✅ 设置持续部署 (GitHub → Vercel)
-- ✅ 解决use-debounce依赖问题
-- ✅ Google OAuth生产环境配置
-
-**用户认证系统优化**
-- ✅ Modal式登录/注册界面
-- ✅ Google登录自动创建用户
-- ✅ 使用Google用户名作为默认名字
-- ✅ JWT策略避免连接池问题
-
-**管理后台优化**
-- ✅ 双按钮发布系统 (Save Draft / Publish)
-- ✅ 清晰的状态横幅
-- ✅ 章节5000字限制
-- ✅ 章节单独发布/取消发布按钮
-- ✅ Ban/Unban功能
-
-**详情页优化**
-- ✅ 封面+信息整合布局
-- ✅ Blurb集成在主信息卡
-- ✅ 更专业的视觉设计
-
-**首页性能优化**
-- ✅ Suspense + Loading骨架屏
-- ✅ 数据库复合索引
-- ✅ Static Caching (5分钟)
-- ✅ 移除不必要的auth调用
-- ✅ 70%+性能提升
-
-**Bug修复**
-- ✅ Next.js 15/16 params Promise问题
-- ✅ 新上传小说不显示问题
-- ✅ Prisma连接池超时问题
-- ✅ Google OAuth配置问题
-
----
-
-**最后更新:** 2025-11-07 17:50 (GMT+8)  
+**最后更新:** 2025-11-07  
 **文档版本:** v5.0  
-**维护者:** Leo / Mackenzie
+**维护者:** Leo
 
 ---
 
