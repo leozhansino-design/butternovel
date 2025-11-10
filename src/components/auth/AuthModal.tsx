@@ -34,7 +34,9 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
 
   const handleGoogleSignIn = async () => {
     setLoading(true)
-    await signIn('google', { callbackUrl: '/' })
+    // ⭐ 使用当前域名作为 callbackUrl
+    const callbackUrl = window.location.origin
+    await signIn('google', { callbackUrl })
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -97,7 +99,6 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
         return
       }
 
-      // Auto login after successful registration
       const result = await signIn('credentials', {
         email: registerData.email,
         password: registerData.password,
@@ -105,7 +106,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
       })
 
       if (result?.error) {
-        setError('Registration successful but login failed')
+        setError('Login failed after registration')
       } else {
         onClose()
         router.refresh()
@@ -118,35 +119,16 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Background Overlay */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Close Button */}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors z-10"
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
         >
-          <X size={24} />
+          <X className="w-5 h-5 text-gray-500" />
         </button>
 
-        {/* Logo */}
-        <div className="text-center pt-8 pb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            🦋 ButterNovel
-          </h1>
-          <p className="text-gray-600">
-            {activeTab === 'login' ? 'Welcome back!' : 'Create your account'}
-          </p>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="flex border-b border-gray-200 px-8">
+        <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab('login')}
             className={`flex-1 py-3 font-semibold transition-colors ${
@@ -176,10 +158,8 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
             </div>
           )}
 
-          {/* LOGIN TAB */}
           {activeTab === 'login' && (
             <>
-              {/* Social Login - Only on Login Tab */}
               <div className="space-y-3 mb-6">
                 <button
                   onClick={handleGoogleSignIn}
@@ -200,7 +180,6 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
                 </p>
               </div>
 
-              {/* Divider */}
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300"></div>
@@ -210,7 +189,6 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
                 </div>
               </div>
 
-              {/* Login Form */}
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -251,10 +229,8 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
             </>
           )}
 
-          {/* REGISTER TAB - Email Only */}
           {activeTab === 'register' && (
             <>
-              {/* Info Box */}
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
                   💡 <strong>Tip:</strong> Use{' '}
@@ -306,7 +282,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
                     value={registerData.password}
                     onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="At least 6 characters"
+                    placeholder="••••••••"
                     required
                   />
                 </div>
@@ -320,7 +296,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
                     value={registerData.confirmPassword}
                     onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="Confirm your password"
+                    placeholder="••••••••"
                     required
                   />
                 </div>
