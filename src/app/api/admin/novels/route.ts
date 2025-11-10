@@ -41,7 +41,17 @@ export async function POST(request: Request) {
                 { status: 400 }
             )
         }
-        // 4. ⭐ 上传封面到 Cloudinary
+
+        // ⭐ 新增：获取 AdminProfile 的 displayName
+        console.log('👤 [API] Fetching admin profile...')
+        const adminProfile = await prisma.adminProfile.findUnique({
+            where: { email: session.email },
+        })
+
+        const authorName = adminProfile?.displayName || 'Admin'
+        console.log('✅ [API] Author name:', authorName)
+
+        // 4. 上传封面到 Cloudinary
         console.log('📤 [API] Uploading cover to Cloudinary...')
         let coverResult
         try {
@@ -54,37 +64,39 @@ export async function POST(request: Request) {
                 { status: 500 }
             )
         }
-        // 4. 生成 slug（URL友好的标题）
+
+        // 5. 生成 slug（URL友好的标题）
         const slug = title
             .toLowerCase()
-            .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-') // 支持中文
+            .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
             .replace(/(^-|-$)/g, '') + '-' + Date.now()
 
         console.log('🔗 [API] Generated slug:', slug)
 
-        // 5. 计算总字数
+        // 6. 计算总字数
         const wordCount = chapters?.reduce((total: number, ch: any) => {
             return total + (ch.content?.length || 0)
         }, 0) || 0
 
         console.log('📊 [API] Total word count:', wordCount)
 
-        // 6. 创建小说（包含章节）
+        // 7. 创建小说（包含章节）
         console.log('💾 [API] Creating novel in database...')
 
         const novel = await prisma.novel.create({
             data: {
                 title,
                 slug,
-                coverImage: coverResult.url,              // ⭐ 改这一行
-                coverImagePublicId: coverResult.publicId, // ⭐ 新增这一行
+                coverImage: coverResult.url,
+                coverImagePublicId: coverResult.publicId,
                 categoryId: parseInt(categoryId),
                 blurb,
                 status: status || 'ONGOING',
                 isPublished: isPublished || false,
                 isDraft: !isPublished,
-                authorId: 'cabbas3241000p4604q7h7ft8',  // ⭐ 改这里
-                authorName: session.name || 'Admin',
+                // ⭐ 改这里：使用 AdminProfile 的 displayName
+                authorName: authorName,
+                authorId: session.email, // 用 email 作为 authorId
                 totalChapters: chapters?.length || 0,
                 wordCount,
 
@@ -107,28 +119,23 @@ export async function POST(request: Request) {
 
         console.log('✅ [API] Novel created successfully!')
         console.log('📚 [API] Novel ID:', novel.id)
-        console.log('📚 [API] Novel Title:', novel.title)
-        console.log('📚 [API] Chapters:', novel.chapters.length)
-        console.log('🖼️ [API] Cover Image URL:', novel.coverImage)        // ⭐ 新增
-        console.log('🆔 [API] Cover Public ID:', novel.coverImagePublicId) // ⭐ 新增
-        
+
         return NextResponse.json({
             success: true,
+            message: 'Novel uploaded successfully',
             novel: {
                 id: novel.id,
                 title: novel.title,
-                slug: novel.slug,
+                authorName: novel.authorName,
                 totalChapters: novel.totalChapters,
-                wordCount: novel.wordCount,
+                wordCount: novel.wordCount
             }
         })
 
     } catch (error: any) {
-        console.error('❌ [API] Error creating novel:', error)
-        console.error('❌ [API] Error stack:', error.stack)
-
+        console.error('❌ [API] Error:', error)
         return NextResponse.json(
-            { error: error.message || 'Failed to create novel' },
+            { error: error.message || 'Internal server error' },
             { status: 500 }
         )
     }
@@ -139,34 +146,54 @@ export async function GET(request: Request) {
     try {
         const session = await getAdminSession()
         if (!session) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            )
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        const url = new URL(request.url)
+        const search = url.searchParams.get('search') || ''
+        const categoryId = url.searchParams.get('categoryId') || ''
+        const status = url.searchParams.get('status') || ''
+        const page = parseInt(url.searchParams.get('page') || '1')
+        const limit = 10
+
+        const where: any = {}
+
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { authorName: { contains: search, mode: 'insensitive' } }
+            ]
+        }
+
+        if (categoryId) {
+            where.categoryId = parseInt(categoryId)
+        }
+
+        if (status) {
+            where.status = status
+        }
+
+        const total = await prisma.novel.count({ where })
         const novels = await prisma.novel.findMany({
-            include: {
-                category: true,
-                _count: {
-                    select: {
-                        chapters: true,
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
+            where,
+            include: { category: true },
+            orderBy: { createdAt: 'desc' },
+            skip: (page - 1) * limit,
+            take: limit
         })
 
         return NextResponse.json({
-            success: true,
             novels,
-            total: novels.length
+            pagination: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
         })
 
     } catch (error: any) {
-        console.error('Error fetching novels:', error)
+        console.error('❌ [API] GET error:', error)
         return NextResponse.json(
             { error: 'Failed to fetch novels' },
             { status: 500 }
