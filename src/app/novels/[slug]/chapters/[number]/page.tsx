@@ -1,4 +1,5 @@
 // src/app/novels/[slug]/chapters/[number]/page.tsx
+// ✅ 性能优化版本 - 合并查询，减少数据库往返次数
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import ChapterReader from '@/components/reader/ChapterReader'
@@ -12,44 +13,56 @@ interface PageProps {
 }
 
 async function getChapterData(slug: string, chapterNumber: number) {
-  const novel = await prisma.novel.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      _count: {
-        select: { chapters: true }
+  // ✅ 一次查询获取所有需要的数据
+  const [novel, chapter, chapters] = await Promise.all([
+    // 查询小说基本信息
+    prisma.novel.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        _count: {
+          select: { chapters: true }
+        }
       }
-    }
-  })
+    }),
+    
+    // 查询当前章节（包含content）
+    prisma.chapter.findFirst({
+      where: {
+        novel: { slug },
+        chapterNumber: chapterNumber,
+        isPublished: true
+      },
+      select: {
+        id: true,
+        title: true,
+        chapterNumber: true,
+        content: true,
+        wordCount: true,
+        novelId: true,
+      }
+    }),
+    
+    // 查询章节列表（不包含content）
+    prisma.chapter.findMany({
+      where: {
+        novel: { slug },
+        isPublished: true
+      },
+      select: {
+        id: true,
+        chapterNumber: true,
+        title: true
+      },
+      orderBy: {
+        chapterNumber: 'asc'
+      }
+    })
+  ])
 
-  if (!novel) return null
-
-  const chapter = await prisma.chapter.findFirst({
-    where: {
-      novelId: novel.id,
-      chapterNumber: chapterNumber,
-      isPublished: true
-    }
-  })
-
-  if (!chapter) return null
-
-  const chapters = await prisma.chapter.findMany({
-    where: {
-      novelId: novel.id,
-      isPublished: true
-    },
-    select: {
-      id: true,
-      chapterNumber: true,
-      title: true
-    },
-    orderBy: {
-      chapterNumber: 'asc'
-    }
-  })
+  if (!novel || !chapter) return null
 
   return {
     novel,
@@ -58,6 +71,8 @@ async function getChapterData(slug: string, chapterNumber: number) {
     totalChapters: novel._count.chapters
   }
 }
+
+export const revalidate = 3600
 
 export default async function ChapterPage({ params }: PageProps) {
   const resolvedParams = await params
