@@ -1,3 +1,4 @@
+// src/components/front/FeaturedCarousel.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,11 +20,9 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   
-  // 每次滚动显示8本书
   const booksPerView = 8;
   const maxScroll = Math.max(0, books.length - booksPerView);
 
-  // 自动滚动
   useEffect(() => {
     if (isPaused || maxScroll === 0) return;
 
@@ -32,7 +31,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
         const next = prev + 1;
         return next > maxScroll ? 0 : next;
       });
-    }, 4000); // 每4秒滚动一次
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [isPaused, maxScroll]);
@@ -51,17 +50,13 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* 标题栏 */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl md:text-2xl font-bold text-gray-900">
           ✨ Featured Novels
         </h2>
-        
       </div>
 
-      {/* 轮播容器 */}
       <div className="relative -mx-2">
-        {/* 左箭头 */}
         {scrollPosition > 0 && (
           <button
             onClick={scrollLeft}
@@ -74,7 +69,6 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           </button>
         )}
 
-        {/* 书籍网格 - 横向8本 */}
         <div className="overflow-hidden px-2">
           <div 
             className="flex transition-transform duration-500 ease-out"
@@ -82,45 +76,47 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
               transform: `translateX(-${scrollPosition * (100 / booksPerView)}%)`
             }}
           >
-            {books.map((book, index) => (
-              <div
+            {books.map((book) => (
+              <div 
                 key={book.id}
                 className="flex-shrink-0 px-2"
-                style={{ 
-                  width: `${100 / booksPerView}%`,
-                  minWidth: '120px' // 最小宽度保证不会太小
-                }}
+                style={{ width: `${100 / booksPerView}%` }}
               >
                 <Link
                   href={`/novels/${book.slug}`}
                   className="group block"
                 >
-                  {/* 封面 */}
-                  <div className="relative aspect-[2/3] mb-2 overflow-hidden rounded-lg bg-gray-100 shadow-md hover:shadow-xl transition-all duration-300">
+                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-md hover:shadow-xl transition-shadow duration-300">
                     <Image
                       src={book.coverImage}
                       alt={book.title}
                       fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="12.5vw"
                     />
-                    
-                    {/* Hover遮罩 */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 text-white text-xs font-bold bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full transition-opacity duration-300">
-                        Read
-                      </span>
-                    </div>
+                    <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-black/10 pointer-events-none" />
+                  </div>
 
-                    {/* 分类角标 */}
-                    <div className="absolute top-1.5 left-1.5">
-                      <span className="text-[9px] font-bold text-white bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded">
-                        {book.category.name.replace(/[🗡️🏙️💕✨]/g, '').trim()}
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded-full">
+                        {book.category.name}
                       </span>
                     </div>
                   </div>
 
-                  {/* 书名 */}
-                  <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight group-hover:text-purple-600 transition-colors min-h-[2.5rem]">
+                  {/* ⭐ 关键修改：固定高度容器 + 精确行高 + 省略号 */}
+                  <h3 
+                    className="text-xs font-semibold text-gray-900 mt-1 group-hover:text-purple-600 transition-colors"
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      lineHeight: '1.2rem',
+                      height: '2.4rem',
+                    }}
+                  >
                     {book.title}
                   </h3>
                 </Link>
@@ -129,7 +125,6 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           </div>
         </div>
 
-        {/* 右箭头 */}
         {scrollPosition < maxScroll && (
           <button
             onClick={scrollRight}
@@ -143,7 +138,6 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
         )}
       </div>
 
-      {/* 进度指示器 */}
       {maxScroll > 0 && (
         <div className="flex justify-center items-center gap-1.5 mt-3">
           {Array.from({ length: Math.ceil(books.length / booksPerView) }).map((_, index) => {
