@@ -1,7 +1,6 @@
-// src/app/page.tsx - 完整替换
+// src/app/page.tsx
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
-import Header from '@/components/shared/Header'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategorySection from '@/components/front/CategorySection'
@@ -121,60 +120,48 @@ async function HomeContent() {
   return (
     <main className="flex-1">
       {featuredBooks.length > 0 ? (
-        <section className="bg-gradient-to-b from-amber-50/50 to-white py-12 md:py-16">
-          <div className="container mx-auto px-4 max-w-7xl">
-            <FeaturedCarousel books={featuredBooks} />
-          </div>
-        </section>
+        <FeaturedCarousel books={featuredBooks} />
       ) : (
-        <section className="bg-gradient-to-b from-amber-50/50 to-white py-16 md:py-24">
-          <div className="container mx-auto px-4 max-w-4xl text-center">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12">
-              <div className="text-6xl mb-4">📚</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                Welcome to ButterNovel
-              </h2>
-              <p className="text-gray-600">
-                Amazing stories are coming soon. Stay tuned!
-              </p>
-            </div>
+        <section className="bg-gradient-to-b from-amber-50/50 to-white py-12 md:py-16">
+          <div className="container mx-auto px-4 max-w-7xl text-center">
+            <p className="text-gray-500">No featured novels yet</p>
           </div>
         </section>
       )}
 
       <div className="bg-white">
         <div className="container mx-auto px-4 max-w-7xl py-16 space-y-20">
-          
           {fantasyBooks.length > 0 && (
             <CategorySection 
-              title="Fantasy Novels" 
+              title="✨ Fantasy Adventures" 
               books={fantasyBooks}
               categorySlug="fantasy"
             />
           )}
-          
+
           {urbanBooks.length > 0 && (
             <CategorySection 
-              title="Urban Stories" 
+              title="🏙️ Urban Stories" 
               books={urbanBooks}
               categorySlug="urban"
             />
           )}
-          
+
           {romanceBooks.length > 0 && (
             <CategorySection 
-              title="Romance Collection" 
+              title="💕 Romance" 
               books={romanceBooks}
               categorySlug="romance"
             />
           )}
-          
-          {fantasyBooks.length === 0 && urbanBooks.length === 0 && romanceBooks.length === 0 && (
+
+          {featuredBooks.length === 0 && fantasyBooks.length === 0 && urbanBooks.length === 0 && romanceBooks.length === 0 && (
             <div className="text-center py-20">
-              <p className="text-xl text-gray-400">More stories coming soon...</p>
+              <div className="text-6xl mb-4">📚</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">No novels yet</h2>
+              <p className="text-gray-600">Check back soon for new stories!</p>
             </div>
           )}
-          
         </div>
       </div>
     </main>
@@ -183,8 +170,7 @@ async function HomeContent() {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Header />
+    <div className="min-h-screen flex flex-col">
       <Suspense fallback={<HomePageSkeleton />}>
         <HomeContent />
       </Suspense>
@@ -192,5 +178,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-export const revalidate = 0
