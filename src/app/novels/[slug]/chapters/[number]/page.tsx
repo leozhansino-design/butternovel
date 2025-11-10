@@ -2,6 +2,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import ChapterReader from '@/components/reader/ChapterReader'
+import ViewTracker from '@/components/ViewTracker'
 
 interface PageProps {
   params: Promise<{
@@ -35,7 +36,6 @@ async function getChapterData(slug: string, chapterNumber: number) {
 
   if (!chapter) return null
 
-  // 获取章节列表
   const chapters = await prisma.chapter.findMany({
     where: {
       novelId: novel.id,
@@ -74,12 +74,16 @@ export default async function ChapterPage({ params }: PageProps) {
   }
 
   return (
-    <ChapterReader
-      novel={data.novel}
-      chapter={data.chapter}
-      chapters={data.chapters}
-      totalChapters={data.totalChapters}
-    />
+    <>
+      <ViewTracker novelId={data.novel.id} />
+      
+      <ChapterReader
+        novel={data.novel}
+        chapter={data.chapter}
+        chapters={data.chapters}
+        totalChapters={data.totalChapters}
+      />
+    </>
   )
 }
 

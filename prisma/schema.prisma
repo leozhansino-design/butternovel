@@ -120,7 +120,7 @@ model Novel {
   viewCount     Int @default(0)
   likeCount     Int @default(0)
   commentCount  Int @default(0)
-
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
@@ -131,7 +131,8 @@ model Novel {
   readingHistory ReadingHistory[]
   likes          NovelLike[]
   comments       Comment[]
-
+  views     NovelView[]
+  
   @@index([slug])
   @@index([authorId])
   @@index([categoryId])
@@ -353,6 +354,27 @@ model AdminProfile {
 
   @@index([email])
 }
+
+// 小说浏览记录
+model NovelView {
+  id        Int      @id @default(autoincrement())
+  novelId   Int
+  novel     Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  
+  // 用户标识 (二选一)
+  userId    String?
+  guestId   String?  // 游客标识 (基于IP+UserAgent的hash)
+  
+  // 元数据
+  ipAddress String?
+  userAgent String?  @db.Text
+  viewedAt  DateTime @default(now())
+  
+  @@index([novelId, userId, viewedAt])
+  @@index([novelId, guestId, viewedAt])
+  @@index([viewedAt])  // 用于定期清理旧数据
+}
+
 
 enum AdminRole {
   SUPER_ADMIN // 超级管理员

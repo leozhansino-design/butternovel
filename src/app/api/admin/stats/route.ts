@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/admin-auth'
 
-// 时间范围类型
 type TimeRange = 'all' | '1day' | '3days' | '1week' | '1month' | '3months' | '6months' | '1year'
 
 function getDateRange(range: TimeRange): { startDate: Date; label: string; days: number } {
@@ -62,7 +61,6 @@ export async function GET(request: Request) {
     
     const { startDate, label } = getDateRange(range)
 
-    // 获取统计数据
     const totalNovels = await prisma.novel.count({
       where: {
         createdAt: { gte: startDate },
@@ -78,13 +76,11 @@ export async function GET(request: Request) {
       }
     })
 
-    const totalViews = await prisma.novel.aggregate({
+    // ⭐ 修改这里 - 统计时间范围内的真实浏览量
+    const totalViews = await prisma.novelView.count({
       where: {
-        createdAt: { gte: startDate },
-        isPublished: true,
-        isBanned: false,
-      },
-      _sum: { viewCount: true }
+        viewedAt: { gte: startDate }
+      }
     })
 
     return NextResponse.json({
@@ -93,7 +89,7 @@ export async function GET(request: Request) {
       stats: {
         totalNovels,
         totalUsers,
-        totalViews: totalViews._sum.viewCount || 0,
+        totalViews,
       }
     })
 
@@ -106,7 +102,6 @@ export async function GET(request: Request) {
   }
 }
 
-// 获取时间序列数据（用于图表）
 export async function POST(request: Request) {
   try {
     const session = await getAdminSession()
@@ -117,11 +112,10 @@ export async function POST(request: Request) {
     const { range } = await request.json()
     const { startDate, label, days } = getDateRange(range)
     
-    // 根据时间范围调整分组间隔
     let intervalDays = 1
-    if (days >= 90) intervalDays = 7      // 3个月及以上按周分组
-    if (days >= 180) intervalDays = 14    // 6个月及以上按两周分组
-    if (days >= 365) intervalDays = 30    // 1年按月分组
+    if (days >= 90) intervalDays = 7
+    if (days >= 180) intervalDays = 14
+    if (days >= 365) intervalDays = 30
     
     const chartData = []
     const totalIterations = Math.ceil(days / intervalDays)
@@ -150,28 +144,21 @@ export async function POST(request: Request) {
         }
       })
 
-      const viewsSum = await prisma.novel.aggregate({
+      // ⭐ 修改这里 - 统计时间段内的真实浏览量
+      const viewsCount = await prisma.novelView.count({
         where: {
-          createdAt: { gte: dayStart, lt: dayEnd },
-          isPublished: true,
-          isBanned: false,
-        },
-        _sum: { viewCount: true }
+          viewedAt: { gte: dayStart, lt: dayEnd }
+        }
       })
 
-      // 根据时间范围选择日期格式
       let dateLabel = ''
       if (intervalDays === 1) {
-        // 天级别
         dateLabel = dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       } else if (intervalDays === 7) {
-        // 周级别
         dateLabel = `W${Math.ceil(dayStart.getDate() / 7)}`
       } else if (intervalDays === 14) {
-        // 两周级别
         dateLabel = dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       } else {
-        // 月级别
         dateLabel = dayStart.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
       }
 
@@ -179,7 +166,7 @@ export async function POST(request: Request) {
         date: dateLabel,
         novels: novelsCount,
         users: usersCount,
-        views: viewsSum._sum.viewCount || 0,
+        views: viewsCount,
       })
     }
 
