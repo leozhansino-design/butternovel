@@ -193,4 +193,4 @@ export default function HomePage() {
   )
 }
 
-export const revalidate = 3600
+export const revalidate = 0
