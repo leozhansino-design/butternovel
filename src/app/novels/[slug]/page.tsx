@@ -3,9 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
 import Link from 'next/link'
-import Header from '@/components/shared/Header'
 import Footer from '@/components/shared/Footer'
-import { auth } from '@/lib/auth'
 import ViewTracker from '@/components/ViewTracker'
 import { formatNumber } from '@/lib/format'
 
@@ -45,7 +43,6 @@ export default async function NovelDetailPage({
 }: { 
   params: Promise<{ slug: string }> 
 }) {
-  const session = await auth()
   const { slug } = await params
   const novel = await getNovel(slug)
 
@@ -54,15 +51,12 @@ export default async function NovelDetailPage({
   }
 
   const firstChapter = novel.chapters[0]
-  const secondChapter = novel.chapters[1]
 
   return (
     <>
       <ViewTracker novelId={novel.id} />
       
       <div className="min-h-screen flex flex-col">
-        <Header user={session?.user} />
-
         <main className="flex-1">
           {/* Hero Section */}
           <section className="py-12 md:py-16 bg-gradient-to-b from-amber-50 via-orange-50 to-[#fff7ed]">
@@ -118,50 +112,34 @@ export default async function NovelDetailPage({
                       </div>
 
                       {/* Stats */}
-                      <div className="flex flex-wrap items-center gap-6 text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <span className="font-medium">{formatNumber(novel.viewCount)}</span>
-                          <span className="text-sm">Reads</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900">{formatNumber(novel.viewCount)}</div>
+                          <div className="text-sm text-gray-600 mt-1">👁️ Reads</div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                          </svg>
-                          <span className="font-medium">{novel._count.likes}</span>
-                          <span className="text-sm">Votes</span>
+                        <div className="text-center p-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900">{novel._count.likes}</div>
+                          <div className="text-sm text-gray-600 mt-1">❤️ Votes</div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                          <span className="font-medium">{novel._count.chapters}</span>
-                          <span className="text-sm">Chapters</span>
+                        <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900">{novel._count.chapters}</div>
+                          <div className="text-sm text-gray-600 mt-1">📖 Chapters</div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="font-medium">{Math.ceil(novel.wordCount / 200)}m</span>
-                          <span className="text-sm">Read</span>
+                        <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900">
+                            {Math.round((novel.chapters.reduce((sum, ch) => sum + ch.wordCount, 0) / 200))}m
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">⏱️ Read</div>
                         </div>
                       </div>
 
                       {/* Blurb */}
-                      <div className="flex-1 min-h-0">
-                        <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          Blurb
-                        </h2>
-                        <div className="prose prose-gray max-w-none">
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl">📖</span>
+                          <h2 className="text-lg font-bold text-gray-900">Blurb</h2>
+                        </div>
+                        <div className="bg-white/80 rounded-xl p-4">
                           <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-amber-300 scrollbar-track-amber-50">
                             {novel.blurb}
                           </p>
@@ -185,6 +163,15 @@ export default async function NovelDetailPage({
                           aria-label="Add to Library"
                         >
                           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        </button>
+
+                        <button 
+                          className="p-4 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 transition-all shadow-lg hover:shadow-xl hover:scale-110"
+                          aria-label="Like"
+                        >
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
                         </button>
@@ -197,50 +184,89 @@ export default async function NovelDetailPage({
             </div>
           </section>
 
-          {/* Gradient Transition */}
-          <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
-
-          {/* Chapter 1 Preview */}
+          {/* First Chapter Preview */}
           {firstChapter && (
-            <section className="pt-6 pb-12 md:pb-16 bg-white">
+            <section className="py-16 bg-white">
               <div className="container mx-auto px-4">
-                <div className="max-w-4xl mx-auto space-y-8">
-                  <div className="text-center border-b border-gray-200 pb-8">
-                    <div className="text-sm text-gray-500 mb-4 font-medium tracking-wider uppercase">
-                      Chapter {firstChapter.chapterNumber}
-                    </div>
-                    <h3 className="text-4xl md:text-5xl font-bold text-gray-900">
-                      {firstChapter.title}
-                    </h3>
+                <div className="max-w-4xl mx-auto">
+                  <div className="mb-8">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                      Chapter 1: {firstChapter.title}
+                    </h2>
+                    <div className="h-1 w-20 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"></div>
                   </div>
 
                   <div className="prose prose-lg max-w-none">
-                    <div className="text-gray-800 text-lg leading-loose whitespace-pre-wrap">
-                      {firstChapter.content}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-10 text-center">
-                    {secondChapter ? (
-                      <Link
-                        href={`/novels/${novel.slug}/chapters/${secondChapter.chapterNumber}`}
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] text-lg"
-                      >
-                        Continue Reading
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </Link>
-                    ) : (
-                      <div className="text-gray-500 text-lg">
-                        {novel.status === 'COMPLETED' ? 'This is the final chapter' : 'More chapters coming soon...'}
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 md:p-12">
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {firstChapter.content.substring(0, 1000)}...
+                      </p>
+                      
+                      <div className="mt-8 pt-8 border-t border-amber-200">
+                        <Link
+                          href={`/novels/${novel.slug}/chapters/1`}
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                        >
+                          Continue Reading
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        </Link>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               </div>
             </section>
           )}
+
+          {/* Chapter List */}
+          <section className="py-16 bg-gradient-to-b from-white to-amber-50">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    All Chapters ({novel._count.chapters})
+                  </h2>
+                  <div className="h-1 w-20 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"></div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                  <div className="divide-y divide-gray-100">
+                    {novel.chapters.map((chapter) => (
+                      <Link
+                        key={chapter.id}
+                        href={`/novels/${novel.slug}/chapters/${chapter.chapterNumber}`}
+                        className="flex items-center justify-between p-6 hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 transition-all group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl flex items-center justify-center text-amber-700 font-bold group-hover:scale-110 transition-transform">
+                            {chapter.chapterNumber}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900 group-hover:text-amber-600 transition-colors">
+                              {chapter.title}
+                            </h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {chapter.wordCount.toLocaleString()} words
+                            </p>
+                          </div>
+                        </div>
+                        <svg 
+                          className="w-5 h-5 text-gray-400 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </main>
 
         <Footer />
