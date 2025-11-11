@@ -85,6 +85,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
 
           {/* Menu Items */}
           <div className="py-2">
+            {/* Profile */}
             <button
               onClick={() => {
                 setIsOpen(false);
@@ -100,6 +101,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
               <span>Profile</span>
             </button>
 
+            {/* My Library */}
             <button
               onClick={() => {
                 setIsOpen(false);
@@ -115,18 +117,40 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
               <span>My Library</span>
             </button>
 
-            <Link 
-              href="/writer" 
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            {/* Divider */}
+            <div className="h-px bg-gray-100 my-2 mx-4"></div>
+
+            {/* Upload My Novel */}
+            <button
               onClick={() => setIsOpen(false)}
+              disabled
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed"
+              title="Coming soon"
             >
               <div className="w-5 h-5 flex items-center justify-center">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               </div>
-              <span>Writer Dashboard</span>
-            </Link>
+              <span>Upload My Novel</span>
+              <span className="ml-auto text-xs bg-gray-100 px-2 py-0.5 rounded">Soon</span>
+            </button>
+
+            {/* Manage My Novels */}
+            <button
+              onClick={() => setIsOpen(false)}
+              disabled
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed"
+              title="Coming soon"
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </div>
+              <span>Manage My Novels</span>
+              <span className="ml-auto text-xs bg-gray-100 px-2 py-0.5 rounded">Soon</span>
+            </button>
           </div>
 
           {/* Sign Out */}
