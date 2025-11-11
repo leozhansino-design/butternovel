@@ -18,6 +18,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // 验证章节是否存在
+    const chapter = await prisma.chapter.findUnique({
+      where: { id: parseInt(chapterId) },
+      select: { id: true, novelId: true, chapterNumber: true, title: true }
+    })
+
+    if (!chapter) {
+      console.error(`Chapter not found: chapterId=${chapterId}`)
+      return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
+    }
+
+    if (chapter.novelId !== parseInt(novelId)) {
+      console.error(`Chapter ${chapterId} does not belong to novel ${novelId}`)
+      return NextResponse.json({ error: 'Chapter does not belong to novel' }, { status: 400 })
+    }
+
     // 更新或创建阅读历史
     await prisma.readingHistory.upsert({
       where: {
@@ -37,6 +53,7 @@ export async function POST(request: Request) {
       }
     })
 
+    console.log(`✅ Reading progress saved: user=${session.user.id}, novel=${novelId}, chapter=${chapter.chapterNumber} (${chapter.title})`)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('POST /api/reading-progress error:', error)

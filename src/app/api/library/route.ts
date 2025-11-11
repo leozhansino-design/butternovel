@@ -79,6 +79,7 @@ export const GET = withErrorHandling(async () => {
         addedAt: item.addedAt.toISOString(),
         // 阅读进度
         lastReadChapter: history?.chapter.chapterNumber || null,
+        lastReadChapterTitle: history?.chapter.title || null,
         readChapters: readCount
       }
     })

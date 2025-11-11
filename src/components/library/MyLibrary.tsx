@@ -16,6 +16,7 @@ type NovelInLibrary = {
   addedAt: string
   // 阅读进度
   lastReadChapter?: number | null
+  lastReadChapterTitle?: string | null
   readChapters?: number
 }
 
@@ -329,6 +330,12 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
               <p className="text-[10px] text-gray-500 mt-0.5">
                 {novel.category}
               </p>
+              {/* 阅读进度文本 */}
+              {novel.lastReadChapter && novel.lastReadChapterTitle && (
+                <p className="text-[10px] text-amber-600 font-medium mt-1 truncate" title={`Chapter ${novel.lastReadChapter}: ${novel.lastReadChapterTitle}`}>
+                  Ch {novel.lastReadChapter}: {novel.lastReadChapterTitle}...
+                </p>
+              )}
             </div>
           ))}
         </div>
