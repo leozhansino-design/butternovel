@@ -26,12 +26,13 @@ const requiredEnvVars = {
  * 验证 DATABASE_URL 格式是否正确
  */
 function validateDatabaseUrl(url: string): { valid: boolean; error?: string } {
-  // 检查是否是示例/占位符
+  // 检查是否是示例/占位符（但允许 db.prisma.io，因为它是有效的 Vercel Prisma Postgres）
   const invalidPatterns = [
-    'db.prisma.io',           // ❌ Prisma 示例地址
     'your-database-url',      // ❌ 占位符
     'postgresql://...',       // ❌ 未填写
     'postgres://...',         // ❌ 未填写
+    'localhost:5432',         // ❌ 示例
+    'example.com',            // ❌ 示例
   ]
 
   for (const pattern of invalidPatterns) {
@@ -90,13 +91,13 @@ export function validateEnv() {
     console.error('\n❌ DATABASE_URL 配置错误:')
     console.error(`   ${dbValidation.error}`)
     console.error('\n💡 解决方案:')
-    console.error('   1. 访问 Vercel Dashboard -> Storage -> Postgres')
+    console.error('   1. 访问 Vercel Dashboard -> Storage -> Database')
     console.error('   2. 点击 ".env.local" 标签')
     console.error('   3. 复制正确的 DATABASE_URL')
     console.error('   4. 更新 .env 文件')
     console.error('   5. 重启开发服务器')
     console.error('\n📖 详细指南: 查看 DATABASE_FIX.md')
-    console.error('\n⚠️  当前 DATABASE_URL 包含: ' + (dbUrl.includes('db.prisma.io') ? 'db.prisma.io (这是错误的示例地址!)' : dbUrl.substring(0, 30) + '...'))
+    console.error('\n⚠️  当前 DATABASE_URL: ' + dbUrl.substring(0, 40) + '...')
     console.error('')
     throw new Error('Invalid DATABASE_URL configuration')
   }
@@ -140,22 +141,15 @@ export async function testDatabaseConnection(): Promise<{ success: boolean; erro
 
 // 自动验证（只在服务端）
 if (typeof window === 'undefined') {
-  // 在 build 时跳过严格验证（允许使用占位符）
-  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' ||
-                       process.env.NODE_ENV === 'production' && !process.env.VERCEL
+  // 验证环境变量
+  validateEnv()
 
-  if (isBuildTime) {
-    console.log('⚠️  Build 阶段 - 跳过数据库验证')
-  } else {
-    validateEnv()
-
-    // 在开发环境下测试数据库连接
-    if (process.env.NODE_ENV === 'development') {
-      testDatabaseConnection().catch(() => {
-        // 不阻塞应用启动，但输出警告
-        console.warn('\n⚠️  警告: 数据库连接测试失败，但应用将继续启动')
-        console.warn('⚠️  大部分功能将不可用，请修复数据库配置\n')
-      })
-    }
+  // 在开发环境下测试数据库连接
+  if (process.env.NODE_ENV === 'development') {
+    testDatabaseConnection().catch(() => {
+      // 不阻塞应用启动，但输出警告
+      console.warn('\n⚠️  警告: 数据库连接测试失败，但应用将继续启动')
+      console.warn('⚠️  大部分功能将不可用，请修复数据库配置\n')
+    })
   }
 }

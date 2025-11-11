@@ -62,9 +62,10 @@ export default function Error({
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
               <p className="text-red-800 font-semibold">可能的原因：</p>
               <ul className="list-disc list-inside text-red-700 space-y-1 text-sm">
-                <li>DATABASE_URL 配置错误或未设置</li>
-                <li>数据库服务器不可达</li>
+                <li>DATABASE_URL 未设置或格式错误</li>
+                <li>数据库服务器不可达或未启动</li>
                 <li>网络连接问题</li>
+                <li>数据库凭证已过期</li>
               </ul>
             </div>
 

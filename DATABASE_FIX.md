@@ -5,13 +5,19 @@
 如果你看到以下任何错误，说明数据库配置有问题：
 
 ```
-❌ Can't reach database server at `db.prisma.io:5432`
-❌ DATABASE_URL contains invalid placeholder: "db.prisma.io"
+❌ Can't reach database server
 ❌ Application error: a server-side exception has occurred
 ❌ Invalid `prisma.xxx.findXxx()` invocation (P1001)
+❌ DATABASE_URL contains invalid placeholder
 ```
 
-**根本原因:** `DATABASE_URL` 环境变量配置错误或未正确设置。
+**根本原因:** `DATABASE_URL` 环境变量配置错误或数据库连接失败。
+
+**⚠️ 注意:** Vercel 提供两种 Postgres 数据库：
+- **Vercel Postgres** - 使用 `vercel-storage.com` 域名
+- **Prisma Postgres** - 使用 `db.prisma.io` 域名（通过 Prisma Accelerate）
+
+两种都是有效的！不要因为看到 `db.prisma.io` 就认为是错误的。
 
 ---
 
@@ -255,10 +261,14 @@ npm run dev
 
 **1. 增强的环境变量验证** (`src/lib/validate-env.ts`)
 ```typescript
-// ✅ 现在会检测并拒绝无效的 DATABASE_URL
-❌ db.prisma.io (Prisma 示例地址)
+// ✅ 检测并拒绝无效的 DATABASE_URL
 ❌ your-database-url (占位符)
 ❌ postgresql://... (未填写)
+❌ localhost:5432 (本地示例)
+
+// ✅ 允许的有效地址
+✅ db.prisma.io (Vercel Prisma Postgres)
+✅ *.vercel-storage.com (Vercel Postgres)
 
 // ✅ 验证 URL 格式
 postgresql://user:password@host:port/database
@@ -268,16 +278,14 @@ postgresql://user:password@host:port/database
 ```bash
 # 如果配置错误，应用将拒绝启动
 ❌ DATABASE_URL 配置错误:
-   DATABASE_URL contains invalid placeholder: "db.prisma.io"
+   DATABASE_URL contains invalid placeholder
 
 💡 解决方案:
-   1. 访问 Vercel Dashboard -> Storage -> Postgres
+   1. 访问 Vercel Dashboard -> Storage -> Database
    2. 点击 ".env.local" 标签
    3. 复制正确的 DATABASE_URL
    4. 更新 .env 文件
    5. 重启开发服务器
-
-⚠️  当前 DATABASE_URL 包含: db.prisma.io (这是错误的示例地址!)
 ```
 
 **2. 数据库连接测试** (开发环境自动运行)
