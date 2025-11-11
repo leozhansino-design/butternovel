@@ -1,4 +1,4 @@
-// src/lib/auth.ts - 简化版,排除所有可能的错误源
+// src/lib/auth.ts
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import { PrismaClient } from "@prisma/client"
@@ -51,23 +51,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   
   callbacks: {
     async signIn({ user, account }) {
-      // ⭐ 简化版 - 先确保基本登录能用
       if (!user.email) {
         console.error('❌ No email in user object')
         return false
       }
       
-      // ⭐ 用 try-catch 包裹所有数据库操作
       try {
         console.log('✅ Attempting Google sign in for:', user.email)
         
-        // 检查用户是否存在
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
         })
 
         if (!existingUser) {
-          // 创建新用户
           console.log('📝 Creating new user...')
           await prisma.user.create({
             data: {
@@ -79,9 +75,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           })
           console.log('✅ User created successfully')
         } else {
-          console.log('✅ Existing user found')
+          console.log('✅ Existing user found:', existingUser.id)
           
-          // 如果用户存在但没有 googleId,添加它
           if (!existingUser.googleId && account?.providerAccountId) {
             console.log('📝 Linking Google account...')
             await prisma.user.update({
@@ -94,24 +89,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         
         return true
       } catch (error) {
-        // ⭐ 详细的错误日志
         console.error('❌ SignIn callback error:', error)
         console.error('Error details:', {
           name: error instanceof Error ? error.name : 'Unknown',
           message: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
         })
-        
-        // ⭐ 即使数据库失败,也返回 true 让用户能登录
-        // 这样可以先验证 OAuth 流程是否正常
         return true
       }
     },
     
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.email = user.email!
+    async jwt({ token, user, trigger }) {
+      // ⭐ 关键修改:从数据库获取真实的 user id
+      if (user?.email || trigger === "signIn" || trigger === "update") {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: (user?.email || token.email) as string },
+            select: { id: true, email: true, name: true, avatar: true }
+          })
+          
+          if (dbUser) {
+            token.id = dbUser.id
+            token.email = dbUser.email
+            token.name = dbUser.name
+            token.picture = dbUser.avatar
+            console.log('✅ JWT token updated with DB user id:', dbUser.id)
+          } else {
+            console.error('❌ User not found in database for email:', user?.email || token.email)
+          }
+        } catch (error) {
+          console.error('❌ Error fetching user in jwt callback:', error)
+        }
       }
       return token
     },
@@ -119,11 +127,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
+        session.user.email = token.email as string
+        session.user.name = token.name as string
+        session.user.image = token.picture as string
+        console.log('✅ Session created with user id:', session.user.id)
       }
       return session
     },
   },
   
-  // ⭐ 生产环境也开启 debug,帮助排查问题
   debug: true,
 })
