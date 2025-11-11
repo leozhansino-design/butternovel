@@ -1,5 +1,6 @@
 // src/lib/prisma.ts
 // ✅ 修复: 添加连接池限制 + 超时设置 + 环境变量验证
+import './validate-env'  // ⭐ 重要：导入环境变量验证
 import { PrismaClient } from '@prisma/client'
 
 // ✅ 1. 验证必需的环境变量
