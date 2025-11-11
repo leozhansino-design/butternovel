@@ -29,15 +29,52 @@ export async function GET() {
       }
     })
 
-    const novels = library.map(item => ({
-      id: item.novel.id,
-      title: item.novel.title,
-      slug: item.novel.slug,
-      coverImage: item.novel.coverImage,
-      category: item.novel.category.name,
-      totalChapters: item.novel._count.chapters,
-      addedAt: item.addedAt.toISOString()
-    }))
+    // 获取所有小说的阅读历史
+    const novelIds = library.map(item => item.novel.id)
+    const readingHistories = await prisma.readingHistory.findMany({
+      where: {
+        userId: session.user.id,
+        novelId: { in: novelIds }
+      },
+      include: {
+        chapter: true
+      }
+    })
+
+    // 获取每本小说已读的章节数
+    const chapterProgressCounts = await Promise.all(
+      novelIds.map(async (novelId) => {
+        const count = await prisma.chapterProgress.count({
+          where: {
+            userId: session.user.id,
+            chapter: { novelId }
+          }
+        })
+        return { novelId, count }
+      })
+    )
+
+    const progressMap = new Map(chapterProgressCounts.map(item => [item.novelId, item.count]))
+    const historyMap = new Map(readingHistories.map(item => [item.novelId, item]))
+
+    const novels = library.map(item => {
+      const history = historyMap.get(item.novel.id)
+      const readCount = progressMap.get(item.novel.id) || 0
+
+      return {
+        id: item.novel.id,
+        title: item.novel.title,
+        slug: item.novel.slug,
+        coverImage: item.novel.coverImage,
+        category: item.novel.category.name,
+        status: item.novel.status,
+        totalChapters: item.novel._count.chapters,
+        addedAt: item.addedAt.toISOString(),
+        // 阅读进度
+        lastReadChapter: history?.chapter.chapterNumber || null,
+        readChapters: readCount
+      }
+    })
 
     return NextResponse.json({ novels })
   } catch (error) {
