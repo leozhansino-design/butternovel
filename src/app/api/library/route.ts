@@ -51,6 +51,8 @@ export async function POST(request: Request) {
   try {
     const session = await auth()
     
+    console.log('Session:', JSON.stringify(session, null, 2))
+    
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -59,6 +61,18 @@ export async function POST(request: Request) {
 
     if (!novelId) {
       return NextResponse.json({ error: 'Novel ID required' }, { status: 400 })
+    }
+
+    // 检查用户是否存在
+    const userExists = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    })
+    
+    console.log('User exists:', userExists)
+    
+    if (!userExists) {
+      console.error('User not found in database:', session.user.id)
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // 检查是否已存在
