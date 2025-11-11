@@ -1,7 +1,7 @@
 // src/components/shared/LibraryModal.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import LibrarySidebar from '@/components/library/LibrarySidebar'
 import MyLibrary from '@/components/library/MyLibrary'
 import ProfileView from '@/components/library/ProfileView'
@@ -19,6 +19,13 @@ interface LibraryModalProps {
 
 export default function LibraryModal({ isOpen, onClose, user, defaultView = 'library' }: LibraryModalProps) {
   const [activeView, setActiveView] = useState<'profile' | 'library'>(defaultView)
+
+  // 当 defaultView 改变时更新 activeView
+  useEffect(() => {
+    if (isOpen) {
+      setActiveView(defaultView)
+    }
+  }, [isOpen, defaultView])
 
   if (!isOpen) return null
 

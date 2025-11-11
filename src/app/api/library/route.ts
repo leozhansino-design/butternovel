@@ -41,20 +41,28 @@ export async function GET() {
       }
     })
 
-    // 获取每本小说已读的章节数
-    const chapterProgressCounts = await Promise.all(
-      novelIds.map(async (novelId) => {
-        const count = await prisma.chapterProgress.count({
-          where: {
-            userId: session.user.id,
-            chapter: { novelId }
-          }
-        })
-        return { novelId, count }
-      })
-    )
+    // 优化：一次性获取所有章节进度，然后按 novelId 分组
+    const allChapterProgress = await prisma.chapterProgress.findMany({
+      where: {
+        userId: session.user.id,
+        chapter: {
+          novelId: { in: novelIds }
+        }
+      },
+      include: {
+        chapter: {
+          select: { novelId: true }
+        }
+      }
+    })
 
-    const progressMap = new Map(chapterProgressCounts.map(item => [item.novelId, item.count]))
+    // 按 novelId 分组计数
+    const progressMap = new Map<number, number>()
+    allChapterProgress.forEach(progress => {
+      const novelId = progress.chapter.novelId
+      progressMap.set(novelId, (progressMap.get(novelId) || 0) + 1)
+    })
+
     const historyMap = new Map(readingHistories.map(item => [item.novelId, item]))
 
     const novels = library.map(item => {
