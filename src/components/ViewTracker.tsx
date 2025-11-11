@@ -15,11 +15,20 @@ export default function ViewTracker({ novelId }: ViewTrackerProps) {
 
     const trackView = async () => {
       try {
+        // Track view count
         await fetch('/api/views/track', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ novelId })
         })
+
+        // Track reading history (for logged-in users)
+        await fetch('/api/novel-views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ novelId })
+        })
+
         tracked.current = true
       } catch (error) {
         console.error('❌ Failed to track view:', error)
