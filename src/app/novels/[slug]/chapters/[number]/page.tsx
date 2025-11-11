@@ -1,5 +1,5 @@
 // src/app/novels/[slug]/chapters/[number]/page.tsx
-// ✅ 增加下一章预加载功能
+// ✅ 修复：统一缓存策略
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import ChapterReader from '@/components/reader/ChapterReader'
@@ -57,7 +57,6 @@ async function getChapterData(slug: string, chapterNumber: number) {
       }
     }),
 
-    // ✅ 新增：预加载下一章content
     prisma.chapter.findFirst({
       where: {
         novel: { slug },
@@ -81,6 +80,7 @@ async function getChapterData(slug: string, chapterNumber: number) {
   }
 }
 
+// ✅ 修复：只保留这一个缓存配置（1小时）
 export const revalidate = 3600
 
 export default async function ChapterPage({ params }: PageProps) {
@@ -101,7 +101,6 @@ export default async function ChapterPage({ params }: PageProps) {
     <>
       <ViewTracker novelId={data.novel.id} />
       
-      {/* ✅ 新增：预加载下一章的link */}
       {data.nextChapterContent && (
         <link
           rel="prefetch"

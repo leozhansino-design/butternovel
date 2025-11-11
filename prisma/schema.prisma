@@ -170,6 +170,7 @@ model Chapter {
   @@index([novelId])
   @@index([novelId, chapterNumber])
   @@index([novelId, isPublished])
+  @@index([novelId, isPublished, chapterNumber]) 
 }
 
 // ============================================
