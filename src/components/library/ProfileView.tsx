@@ -1,7 +1,7 @@
 // src/components/library/ProfileView.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 type ProfileViewProps = {
   user: {
@@ -9,6 +9,7 @@ type ProfileViewProps = {
     email?: string | null
     image?: string | null
   }
+  onNavigate?: (tab: 'library' | 'history' | 'upload' | 'manage') => void
 }
 
 type ProfileData = {
@@ -17,22 +18,20 @@ type ProfileData = {
   email: string | null
   avatar: string | null
   bio: string | null
-  stats: {
-    booksInLibrary: number
-    chaptersRead: number
-    readingTime: number
-  }
 }
 
-export default function ProfileView({ user }: ProfileViewProps) {
+export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const [editName, setEditName] = useState('')
   const [editBio, setEditBio] = useState('')
   const [error, setError] = useState('')
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchProfile()
@@ -107,6 +106,89 @@ export default function ProfileView({ user }: ProfileViewProps) {
     setIsEditing(false)
   }
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file')
+      return
+    }
+
+    // 验证文件大小 (最大 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image must be smaller than 2MB')
+      return
+    }
+
+    try {
+      setUploadingAvatar(true)
+      setError('')
+
+      // 读取并调整图片大小为 256x256
+      const resizedImage = await resizeImage(file, 256, 256)
+
+      const formData = new FormData()
+      formData.append('avatar', resizedImage)
+
+      const res = await fetch('/api/profile/avatar', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setProfileData(prev => prev ? {
+          ...prev,
+          avatar: data.avatar
+        } : null)
+      } else {
+        setError(data.error || 'Failed to upload avatar')
+      }
+    } catch (error) {
+      console.error('Failed to upload avatar:', error)
+      setError('Failed to upload avatar')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      img.onload = () => {
+        canvas.width = maxWidth
+        canvas.height = maxHeight
+
+        ctx?.drawImage(img, 0, 0, maxWidth, maxHeight)
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const resizedFile = new File([blob], file.name, {
+              type: 'image/png',
+              lastModified: Date.now()
+            })
+            resolve(resizedFile)
+          } else {
+            reject(new Error('Failed to resize image'))
+          }
+        }, 'image/png')
+      }
+
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -123,32 +205,46 @@ export default function ProfileView({ user }: ProfileViewProps) {
     )
   }
 
-  const { stats } = profileData
+  const avatarUrl = profileData.avatar || user.image
 
   return (
-    <div className="h-full overflow-y-auto">
-      {/* Header with gradient background */}
-      <div className="relative h-48 bg-gradient-to-br from-amber-400 via-orange-400 to-pink-500 overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute inset-0 backdrop-blur-3xl bg-gradient-to-br from-amber-500/30 to-pink-500/30"></div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-8 -mt-20 pb-8">
-        {/* Profile Card with glassmorphism */}
-        <div className="relative backdrop-blur-xl bg-white/90 rounded-3xl shadow-2xl border border-white/20 p-8">
+    <div className="p-8">
+      {/* Profile Card - 稍微小一点 */}
+      <div className="max-w-3xl mx-auto">
+        <div className="relative backdrop-blur-xl bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-200 p-6">
           {/* Avatar and basic info */}
-          <div className="flex items-start gap-6 mb-8">
-            {user.image ? (
-              <img
-                src={user.image}
-                alt={profileData.name || 'User'}
-                className="w-28 h-28 rounded-3xl object-cover ring-4 ring-white shadow-xl"
+          <div className="flex items-start gap-6">
+            {/* Avatar with upload */}
+            <div className="relative group">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={profileData.name || 'User'}
+                  className="w-24 h-24 rounded-3xl object-cover ring-4 ring-white shadow-lg"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-3xl ring-4 ring-white shadow-lg">
+                  {profileData.name?.[0]?.toUpperCase() || 'U'}
+                </div>
+              )}
+
+              {/* Upload overlay */}
+              <button
+                onClick={handleAvatarClick}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 bg-black/60 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium disabled:cursor-not-allowed"
+              >
+                {uploadingAvatar ? 'Uploading...' : 'Change'}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
               />
-            ) : (
-              <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-4xl ring-4 ring-white shadow-xl">
-                {profileData.name?.[0]?.toUpperCase() || 'U'}
-              </div>
-            )}
+            </div>
 
             <div className="flex-1 min-w-0">
               {isEditing ? (
@@ -201,7 +297,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
               ) : (
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-3xl font-bold text-gray-900">
+                    <h2 className="text-2xl font-bold text-gray-900">
                       {profileData.name || 'Anonymous Reader'}
                     </h2>
                     <button
@@ -209,93 +305,61 @@ export default function ProfileView({ user }: ProfileViewProps) {
                       className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
                       title="Edit profile"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
                   </div>
-                  <p className="text-gray-600 mb-3">{profileData.email}</p>
+                  <p className="text-gray-600 text-sm mb-2">{profileData.email}</p>
                   {profileData.bio ? (
-                    <p className="text-gray-700 leading-relaxed">{profileData.bio}</p>
+                    <p className="text-gray-700 leading-relaxed text-sm">{profileData.bio}</p>
                   ) : (
-                    <p className="text-gray-400 italic">No bio yet. Click the edit button to add one!</p>
+                    <p className="text-gray-400 italic text-sm">No bio yet. Click the edit button to add one!</p>
                   )}
                 </div>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Reading Statistics */}
-          {!isEditing && (
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Reading Journey
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Books in Library */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-md hover:shadow-lg transition-shadow">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/30 rounded-full -mr-16 -mt-16"></div>
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-blue-600 mb-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                      <span className="text-sm font-medium">Library</span>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">
-                      {stats.booksInLibrary}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {stats.booksInLibrary === 1 ? 'book' : 'books'} collected
-                    </div>
-                  </div>
+        {/* Navigation Buttons */}
+        {onNavigate && (
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <button
+              onClick={() => onNavigate('library')}
+              className="p-4 bg-white rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-md transition-all text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
                 </div>
-
-                {/* Chapters Read */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 p-6 shadow-md hover:shadow-lg transition-shadow">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/30 rounded-full -mr-16 -mt-16"></div>
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-amber-600 mb-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="text-sm font-medium">Progress</span>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">
-                      {stats.chaptersRead}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {stats.chaptersRead === 1 ? 'chapter' : 'chapters'} completed
-                    </div>
-                  </div>
-                </div>
-
-                {/* Reading Time */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 p-6 shadow-md hover:shadow-lg transition-shadow">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-200/30 rounded-full -mr-16 -mt-16"></div>
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-purple-600 mb-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm font-medium">Time Spent</span>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">
-                      {stats.readingTime}h
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      hours reading
-                    </div>
-                  </div>
+                <div>
+                  <div className="font-semibold text-gray-900">My Library</div>
+                  <div className="text-sm text-gray-500">View your collection</div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            </button>
+
+            <button
+              onClick={() => onNavigate('history')}
+              className="p-4 bg-white rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-md transition-all text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-900">Reading History</div>
+                  <div className="text-sm text-gray-500">Browse your activity</div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
