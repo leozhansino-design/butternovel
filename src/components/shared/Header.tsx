@@ -94,19 +94,49 @@ export default function Header({ user }: HeaderProps) {
                 <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="py-2">
                     <Link href="/category/fantasy" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      🗡️ Fantasy
+                      Fantasy
                     </Link>
                     <Link href="/category/urban" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      🏙️ Urban
+                      Urban
                     </Link>
                     <Link href="/category/romance" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      💕 Romance
+                      Romance
                     </Link>
-                    <Link href="/category/scifi" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      🚀 Sci-Fi
+                    <Link href="/category/sci-fi" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Sci-Fi
                     </Link>
                     <Link href="/category/mystery" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      🔍 Mystery
+                      Mystery
+                    </Link>
+                    <Link href="/category/action" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Action
+                    </Link>
+                    <Link href="/category/adventure" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Adventure
+                    </Link>
+                    <Link href="/category/horror" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Horror
+                    </Link>
+                    <Link href="/category/crime" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Crime
+                    </Link>
+                    <Link href="/category/lgbtq" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      LGBTQ+
+                    </Link>
+                    <Link href="/category/paranormal" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Paranormal
+                    </Link>
+                    <Link href="/category/system" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      System
+                    </Link>
+                    <Link href="/category/reborn" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Reborn
+                    </Link>
+                    <Link href="/category/revenge" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Revenge
+                    </Link>
+                    <Link href="/category/fanfiction" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Fanfiction
                     </Link>
                   </div>
                 </div>
@@ -222,40 +252,110 @@ export default function Header({ user }: HeaderProps) {
                 <div className="px-4 py-2 text-gray-500 text-sm font-semibold">
                   Categories
                 </div>
-                <Link 
-                  href="/category/fantasy" 
+                <Link
+                  href="/category/fantasy"
                   className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  🗡️ Fantasy
+                  Fantasy
                 </Link>
-                <Link 
-                  href="/category/urban" 
+                <Link
+                  href="/category/urban"
                   className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  🏙️ Urban
+                  Urban
                 </Link>
-                <Link 
-                  href="/category/romance" 
+                <Link
+                  href="/category/romance"
                   className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  💕 Romance
+                  Romance
                 </Link>
-                <Link 
-                  href="/category/scifi" 
+                <Link
+                  href="/category/sci-fi"
                   className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  🚀 Sci-Fi
+                  Sci-Fi
                 </Link>
-                <Link 
-                  href="/category/mystery" 
+                <Link
+                  href="/category/mystery"
                   className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  🔍 Mystery
+                  Mystery
+                </Link>
+                <Link
+                  href="/category/action"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Action
+                </Link>
+                <Link
+                  href="/category/adventure"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Adventure
+                </Link>
+                <Link
+                  href="/category/horror"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Horror
+                </Link>
+                <Link
+                  href="/category/crime"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Crime
+                </Link>
+                <Link
+                  href="/category/lgbtq"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  LGBTQ+
+                </Link>
+                <Link
+                  href="/category/paranormal"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Paranormal
+                </Link>
+                <Link
+                  href="/category/system"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  System
+                </Link>
+                <Link
+                  href="/category/reborn"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Reborn
+                </Link>
+                <Link
+                  href="/category/revenge"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Revenge
+                </Link>
+                <Link
+                  href="/category/fanfiction"
+                  className="block px-4 py-2 pl-8 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Fanfiction
                 </Link>
 
                 <Link 

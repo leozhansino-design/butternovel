@@ -1,5 +1,4 @@
 // src/app/page.tsx
-// ✅ 只做性能优化，UI和功能100%保持不变
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { withRetry, withConcurrency } from '@/lib/db-utils'
@@ -9,8 +8,8 @@ import CategorySection from '@/components/front/CategorySection'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 
 async function getFeaturedNovels() {
-  // ✅ 添加自动重试机制处理间歇性连接问题
-  return await withRetry(() =>
+  // 随机抽取 featured 小说
+  const allNovels = await withRetry(() =>
     prisma.novel.findMany({
       where: {
         isPublished: true,
@@ -28,18 +27,25 @@ async function getFeaturedNovels() {
           }
         }
       },
-      orderBy: [
-        { likeCount: 'desc' },
-        { createdAt: 'desc' },
-      ],
-      take: 24,
+    })
+  )
+
+  // 随机打乱并取前24个
+  const shuffled = allNovels.sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, 24)
+}
+
+async function getAllCategories() {
+  return await withRetry(() =>
+    prisma.category.findMany({
+      orderBy: { order: 'asc' }
     })
   )
 }
 
 async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
-  // ✅ 添加自动重试机制处理间歇性连接问题
-  return await withRetry(() =>
+  // 随机抽取该类别的小说
+  const allNovels = await withRetry(() =>
     prisma.novel.findMany({
       where: {
         isPublished: true,
@@ -65,69 +71,45 @@ async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
           }
         }
       },
-      orderBy: [
-        { likeCount: 'desc' },
-        { createdAt: 'desc' },
-      ],
-      take: limit,
     })
   )
+
+  // 随机打乱并取指定数量
+  const shuffled = allNovels.sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, limit)
 }
 
 async function HomeContent() {
-  // ✅ 修复：使用并发控制避免同时发起太多查询导致连接池耗尽
-  // Prisma Postgres 连接池限制为 5，4 个并发查询可能导致超时
-  const [featuredNovels, [fantasyNovels, urbanNovels, romanceNovels]] = await Promise.all([
-    getFeaturedNovels(),
-    // 分类查询串行执行，避免连接池耗尽
-    withConcurrency([
-      () => getNovelsByCategory('fantasy', 10),
-      () => getNovelsByCategory('urban', 10),
-      () => getNovelsByCategory('romance', 10),
-    ], { concurrency: 2 }) // 最多同时 2 个分类查询
-  ])
+  // 获取所有类别
+  const categories = await getAllCategories()
+
+  // 获取 featured 小说
+  const featuredNovels = await getFeaturedNovels()
+
+  // 为每个类别获取小说（使用并发控制）
+  const categoryNovelsArray = await withConcurrency(
+    categories.map(category => () => getNovelsByCategory(category.slug, 10)),
+    { concurrency: 3 } // 最多同时 3 个查询
+  )
+
+  // 构造类别数据映射
+  const categoryData = categories.map((category, index) => ({
+    name: category.name,
+    slug: category.slug,
+    novels: categoryNovelsArray[index]
+  })).filter(cat => cat.novels.length > 0) // 只保留有小说的类别
 
   const featuredBooks = featuredNovels.map(novel => ({
     id: novel.id,
     title: novel.title,
     slug: novel.slug,
     coverImage: novel.coverImage,
-    description: novel.blurb.length > 100 
+    description: novel.blurb.length > 100
       ? novel.blurb.substring(0, 100) + '...'
       : novel.blurb,
     category: {
       name: novel.category.name
     }
-  }))
-
-  const fantasyBooks = fantasyNovels.map(novel => ({
-    id: novel.id,
-    title: novel.title,
-    category: novel.category.name,
-    chapters: novel._count.chapters,
-    likes: novel._count.likes,
-    slug: novel.slug,
-    coverImage: novel.coverImage,
-  }))
-
-  const urbanBooks = urbanNovels.map(novel => ({
-    id: novel.id,
-    title: novel.title,
-    category: novel.category.name,
-    chapters: novel._count.chapters,
-    likes: novel._count.likes,
-    slug: novel.slug,
-    coverImage: novel.coverImage,
-  }))
-
-  const romanceBooks = romanceNovels.map(novel => ({
-    id: novel.id,
-    title: novel.title,
-    category: novel.category.name,
-    chapters: novel._count.chapters,
-    likes: novel._count.likes,
-    slug: novel.slug,
-    coverImage: novel.coverImage,
   }))
 
   return (
@@ -148,31 +130,28 @@ async function HomeContent() {
 
       <div className="bg-white">
         <div className="container mx-auto px-4 max-w-7xl py-16 space-y-20">
-          {fantasyBooks.length > 0 && (
-            <CategorySection 
-              title="✨ Fantasy Adventures" 
-              books={fantasyBooks}
-              categorySlug="fantasy"
-            />
-          )}
+          {categoryData.map(cat => {
+            const books = cat.novels.map(novel => ({
+              id: novel.id,
+              title: novel.title,
+              category: novel.category.name,
+              chapters: novel._count.chapters,
+              likes: novel._count.likes,
+              slug: novel.slug,
+              coverImage: novel.coverImage,
+            }))
 
-          {urbanBooks.length > 0 && (
-            <CategorySection 
-              title="🏙️ Urban Stories" 
-              books={urbanBooks}
-              categorySlug="urban"
-            />
-          )}
+            return (
+              <CategorySection
+                key={cat.slug}
+                title={cat.name}
+                books={books}
+                categorySlug={cat.slug}
+              />
+            )
+          })}
 
-          {romanceBooks.length > 0 && (
-            <CategorySection 
-              title="💕 Romance" 
-              books={romanceBooks}
-              categorySlug="romance"
-            />
-          )}
-
-          {featuredBooks.length === 0 && fantasyBooks.length === 0 && urbanBooks.length === 0 && romanceBooks.length === 0 && (
+          {featuredBooks.length === 0 && categoryData.length === 0 && (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📚</div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">No novels yet</h2>
