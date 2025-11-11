@@ -173,12 +173,13 @@ async function HomeContent() {
   )
 }
 
-// ✅ 保持原有的1小时缓存
+// ✅ 添加1小时缓存
 export const revalidate = 3600
 
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
+      {/* ✅ 性能优化：使用Suspense流式渲染，立刻显示骨架屏 */}
       <Suspense fallback={<HomePageSkeleton />}>
         <HomeContent />
       </Suspense>

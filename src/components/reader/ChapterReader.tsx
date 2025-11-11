@@ -70,31 +70,11 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     if (savedSize) setFontSize(savedSize)
   }, [])
 
-  // ✅ 新增：章节切换时自动滚动到顶部
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [chapter.id])
-
-  // ✅ 预加载下一章和前一章
+  // ✅ 新增：预加载下一章功能
   useEffect(() => {
     const nextChapterNumber = chapter.chapterNumber + 1
     if (nextChapterNumber <= totalChapters) {
       router.prefetch(`/novels/${novel.slug}/chapters/${nextChapterNumber}`)
-      
-      setTimeout(() => {
-        const link = document.createElement('link')
-        link.rel = 'prefetch'
-        link.href = `/novels/${novel.slug}/chapters/${nextChapterNumber}`
-        link.as = 'document'
-        document.head.appendChild(link)
-      }, 100)
-    }
-    
-    const prevChapterNumber = chapter.chapterNumber - 1
-    if (prevChapterNumber >= 1) {
-      setTimeout(() => {
-        router.prefetch(`/novels/${novel.slug}/chapters/${prevChapterNumber}`)
-      }, 500)
     }
   }, [chapter.chapterNumber, totalChapters, novel.slug, router])
 
@@ -164,23 +144,22 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
 
   const goToPrevChapter = () => {
     if (hasPrev) {
-      window.scrollTo({ top: 0, behavior: 'instant' })
       router.push(`/novels/${novel.slug}/chapters/${chapter.chapterNumber - 1}`)
     }
   }
 
   const goToNextChapter = () => {
     if (hasNext) {
-      window.scrollTo({ top: 0, behavior: 'instant' })
       router.push(`/novels/${novel.slug}/chapters/${chapter.chapterNumber + 1}`)
     }
   }
 
+  // ✅ 修改：目录跳转时预加载下一章
   const goToChapter = (chapterNumber: number) => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
     router.push(`/novels/${novel.slug}/chapters/${chapterNumber}`)
     setShowToc(false)
     
+    // ✅ 预加载跳转章节的下一章
     if (chapterNumber < totalChapters) {
       router.prefetch(`/novels/${novel.slug}/chapters/${chapterNumber + 1}`)
     }
@@ -209,6 +188,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
 
   return (
     <div className={`min-h-screen ${bgColors[bgColor].bg} ${bgColors[bgColor].text} transition-colors`}>
+      {/* ✅ 保持原有的顶部导航栏 */}
       <div className={`sticky top-0 z-40 ${bgColors[bgColor].bg} border-b border-gray-200 shadow-sm`}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
@@ -255,6 +235,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </div>
       </div>
 
+      {/* ✅ 去掉大标题区域，直接显示内容 */}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div 
           ref={contentRef}
@@ -323,6 +304,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </div>
       </div>
 
+      {/* Table of Contents */}
       {showToc && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowToc(false)} />
@@ -355,6 +337,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </>
       )}
 
+      {/* Settings */}
       {showSettings && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSettings(false)} />

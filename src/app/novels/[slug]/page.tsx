@@ -1,5 +1,5 @@
 // src/app/novels/[slug]/page.tsx
-// ✅ 只做性能优化，UI和功能100%保持不变
+// ✅ 保持原UI设计，只增加第二章预加载功能
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
@@ -41,6 +41,7 @@ async function getNovel(slug: string) {
         content: true,
       }
     }),
+    // ✅ 新增：预加载第二章content
     prisma.chapter.findFirst({
       where: {
         novel: { slug },
@@ -61,6 +62,7 @@ async function getNovel(slug: string) {
     (novel.chapters[0] as any).content = firstChapterContent.content
   }
 
+  // ✅ 新增：将第二章content添加到第二章对象
   if (novel.chapters[1] && secondChapterContent) {
     (novel.chapters[1] as any).content = secondChapterContent.content
   }
@@ -68,9 +70,7 @@ async function getNovel(slug: string) {
   return novel
 }
 
-// ✅ 性能优化：强制动态渲染，不缓存
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 3600
 
 export default async function NovelDetailPage({ 
   params 
@@ -91,6 +91,7 @@ export default async function NovelDetailPage({
     <>
       <ViewTracker novelId={novel.id} />
       
+      {/* ✅ 新增：使用隐藏的link预加载第二章 */}
       {secondChapter && (
         <link
           rel="prefetch"
