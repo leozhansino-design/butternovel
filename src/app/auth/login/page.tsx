@@ -1,13 +1,13 @@
-// src/app/auth/login/page.tsx
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
@@ -15,6 +15,9 @@ export default function LoginPage() {
     email: '',
     password: '',
   })
+
+  // 获取回调 URL
+  const callbackUrl = searchParams.get('callbackUrl') || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,12 +29,13 @@ export default function LoginPage() {
         email: formData.email,
         password: formData.password,
         redirect: false,
+        callbackUrl,
       })
 
       if (result?.error) {
         setError('Invalid email or password')
       } else {
-        router.push('/')
+        router.push(callbackUrl)
         router.refresh()
       }
     } catch (error) {
@@ -43,19 +47,17 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setLoading(true)
-    await signIn('google', { callbackUrl: '/' })
+    await signIn('google', { callbackUrl })
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-12">
       <div className="max-w-md w-full">
-        {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">🦋 ButterNovel</h1>
           <p className="text-gray-600">Welcome back!</p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -63,7 +65,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Social Login Buttons */}
           <div className="space-y-3 mb-6">
             <button
               onClick={handleGoogleSignIn}
@@ -84,7 +85,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
@@ -94,7 +94,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Email Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -133,7 +132,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Sign Up Link */}
           <p className="text-center mt-6 text-gray-600">
             Don't have an account?{' '}
             <Link href="/auth/register" className="text-amber-600 hover:text-amber-700 font-semibold">
