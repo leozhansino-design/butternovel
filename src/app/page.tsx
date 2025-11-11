@@ -2,77 +2,89 @@
 // ✅ 只做性能优化，UI和功能100%保持不变
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
+import { withRetry, withConcurrency } from '@/lib/db-utils'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategorySection from '@/components/front/CategorySection'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 
 async function getFeaturedNovels() {
-  return await prisma.novel.findMany({
-    where: {
-      isPublished: true,
-      isBanned: false,
-    },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      coverImage: true,
-      blurb: true,
-      category: {
-        select: {
-          name: true,
+  // ✅ 添加自动重试机制处理间歇性连接问题
+  return await withRetry(() =>
+    prisma.novel.findMany({
+      where: {
+        isPublished: true,
+        isBanned: false,
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        coverImage: true,
+        blurb: true,
+        category: {
+          select: {
+            name: true,
+          }
         }
-      }
-    },
-    orderBy: [
-      { likeCount: 'desc' },
-      { createdAt: 'desc' },
-    ],
-    take: 24,
-  })
+      },
+      orderBy: [
+        { likeCount: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      take: 24,
+    })
+  )
 }
 
 async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
-  return await prisma.novel.findMany({
-    where: {
-      isPublished: true,
-      isBanned: false,
-      category: {
-        slug: categorySlug
-      }
-    },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      coverImage: true,
-      category: {
-        select: {
-          name: true,
+  // ✅ 添加自动重试机制处理间歇性连接问题
+  return await withRetry(() =>
+    prisma.novel.findMany({
+      where: {
+        isPublished: true,
+        isBanned: false,
+        category: {
+          slug: categorySlug
         }
       },
-      _count: {
-        select: {
-          chapters: true,
-          likes: true,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        coverImage: true,
+        category: {
+          select: {
+            name: true,
+          }
+        },
+        _count: {
+          select: {
+            chapters: true,
+            likes: true,
+          }
         }
-      }
-    },
-    orderBy: [
-      { likeCount: 'desc' },
-      { createdAt: 'desc' },
-    ],
-    take: limit,
-  })
+      },
+      orderBy: [
+        { likeCount: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      take: limit,
+    })
+  )
 }
 
 async function HomeContent() {
-  const [featuredNovels, fantasyNovels, urbanNovels, romanceNovels] = await Promise.all([
+  // ✅ 修复：使用并发控制避免同时发起太多查询导致连接池耗尽
+  // Prisma Postgres 连接池限制为 5，4 个并发查询可能导致超时
+  const [featuredNovels, [fantasyNovels, urbanNovels, romanceNovels]] = await Promise.all([
     getFeaturedNovels(),
-    getNovelsByCategory('fantasy', 10),
-    getNovelsByCategory('urban', 10),
-    getNovelsByCategory('romance', 10),
+    // 分类查询串行执行，避免连接池耗尽
+    withConcurrency([
+      () => getNovelsByCategory('fantasy', 10),
+      () => getNovelsByCategory('urban', 10),
+      () => getNovelsByCategory('romance', 10),
+    ], { concurrency: 2 }) // 最多同时 2 个分类查询
   ])
 
   const featuredBooks = featuredNovels.map(novel => ({
