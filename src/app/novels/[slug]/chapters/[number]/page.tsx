@@ -1,5 +1,5 @@
 // src/app/novels/[slug]/chapters/[number]/page.tsx
-// ✅ 性能优化版本 - 合并查询，减少数据库往返次数
+// ✅ 增加下一章预加载功能
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import ChapterReader from '@/components/reader/ChapterReader'
@@ -13,9 +13,7 @@ interface PageProps {
 }
 
 async function getChapterData(slug: string, chapterNumber: number) {
-  // ✅ 一次查询获取所有需要的数据
-  const [novel, chapter, chapters] = await Promise.all([
-    // 查询小说基本信息
+  const [novel, chapter, chapters, nextChapterContent] = await Promise.all([
     prisma.novel.findUnique({
       where: { slug },
       select: {
@@ -28,7 +26,6 @@ async function getChapterData(slug: string, chapterNumber: number) {
       }
     }),
     
-    // 查询当前章节（包含content）
     prisma.chapter.findFirst({
       where: {
         novel: { slug },
@@ -45,7 +42,6 @@ async function getChapterData(slug: string, chapterNumber: number) {
       }
     }),
     
-    // 查询章节列表（不包含content）
     prisma.chapter.findMany({
       where: {
         novel: { slug },
@@ -59,6 +55,18 @@ async function getChapterData(slug: string, chapterNumber: number) {
       orderBy: {
         chapterNumber: 'asc'
       }
+    }),
+
+    // ✅ 新增：预加载下一章content
+    prisma.chapter.findFirst({
+      where: {
+        novel: { slug },
+        chapterNumber: chapterNumber + 1,
+        isPublished: true
+      },
+      select: {
+        content: true,
+      }
     })
   ])
 
@@ -68,6 +76,7 @@ async function getChapterData(slug: string, chapterNumber: number) {
     novel,
     chapter,
     chapters,
+    nextChapterContent,
     totalChapters: novel._count.chapters
   }
 }
@@ -91,6 +100,15 @@ export default async function ChapterPage({ params }: PageProps) {
   return (
     <>
       <ViewTracker novelId={data.novel.id} />
+      
+      {/* ✅ 新增：预加载下一章的link */}
+      {data.nextChapterContent && (
+        <link
+          rel="prefetch"
+          href={`/novels/${data.novel.slug}/chapters/${chapterNumber + 1}`}
+          as="document"
+        />
+      )}
       
       <ChapterReader
         novel={data.novel}

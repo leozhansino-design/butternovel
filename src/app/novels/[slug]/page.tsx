@@ -1,5 +1,5 @@
 // src/app/novels/[slug]/page.tsx
-// ✅ 只做性能优化，UI和功能100%保持不变
+// ✅ 保持原UI设计，只增加第二章预加载功能
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
@@ -9,8 +9,7 @@ import ViewTracker from '@/components/ViewTracker'
 import { formatNumber } from '@/lib/format'
 
 async function getNovel(slug: string) {
-  // ✅ 性能优化：分离查询，只加载第一章content
-  const [novel, firstChapterContent] = await Promise.all([
+  const [novel, firstChapterContent, secondChapterContent] = await Promise.all([
     prisma.novel.findUnique({
       where: { slug },
       include: {
@@ -22,7 +21,6 @@ async function getNovel(slug: string) {
             title: true,
             chapterNumber: true,
             wordCount: true,
-            // ✅ 移除content，减少99%数据传输
           },
         },
         _count: {
@@ -33,11 +31,21 @@ async function getNovel(slug: string) {
         },
       },
     }),
-    // ✅ 单独查询第一章content
     prisma.chapter.findFirst({
       where: {
         novel: { slug },
         chapterNumber: 1,
+        isPublished: true,
+      },
+      select: {
+        content: true,
+      }
+    }),
+    // ✅ 新增：预加载第二章content
+    prisma.chapter.findFirst({
+      where: {
+        novel: { slug },
+        chapterNumber: 2,
         isPublished: true,
       },
       select: {
@@ -50,15 +58,18 @@ async function getNovel(slug: string) {
     return null
   }
 
-  // ✅ 将第一章content添加回第一章对象
   if (novel.chapters[0] && firstChapterContent) {
     (novel.chapters[0] as any).content = firstChapterContent.content
+  }
+
+  // ✅ 新增：将第二章content添加到第二章对象
+  if (novel.chapters[1] && secondChapterContent) {
+    (novel.chapters[1] as any).content = secondChapterContent.content
   }
 
   return novel
 }
 
-// ✅ 添加1小时缓存
 export const revalidate = 3600
 
 export default async function NovelDetailPage({ 
@@ -80,16 +91,23 @@ export default async function NovelDetailPage({
     <>
       <ViewTracker novelId={novel.id} />
       
+      {/* ✅ 新增：使用隐藏的link预加载第二章 */}
+      {secondChapter && (
+        <link
+          rel="prefetch"
+          href={`/novels/${novel.slug}/chapters/${secondChapter.chapterNumber}`}
+          as="document"
+        />
+      )}
+      
       <div className="min-h-screen flex flex-col">
         <main className="flex-1">
-          {/* Hero Section */}
           <section className="py-12 md:py-16 bg-gradient-to-b from-amber-50 via-orange-50 to-[#fff7ed]">
             <div className="container mx-auto px-4">
               <div className="max-w-7xl mx-auto">
                 <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
                   <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
                     
-                    {/* Cover Image */}
                     <div className="flex justify-center lg:justify-start">
                       <div className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
@@ -105,10 +123,8 @@ export default async function NovelDetailPage({
                       </div>
                     </div>
 
-                    {/* Info */}
                     <div className="flex flex-col gap-6">
                       
-                      {/* Title & Author */}
                       <div>
                         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
                           {novel.title}
@@ -121,7 +137,6 @@ export default async function NovelDetailPage({
                         </div>
                       </div>
 
-                      {/* Tags */}
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="px-4 py-1.5 bg-amber-100 text-amber-800 rounded-full font-medium text-sm">
                           {novel.category.name}
@@ -135,7 +150,6 @@ export default async function NovelDetailPage({
                         </span>
                       </div>
 
-                      {/* Stats */}
                       <div className="flex flex-wrap items-center gap-6 text-gray-600">
                         <div className="flex items-center gap-2">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +185,6 @@ export default async function NovelDetailPage({
                         </div>
                       </div>
 
-                      {/* Blurb */}
                       <div className="flex-1 min-h-0">
                         <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +199,6 @@ export default async function NovelDetailPage({
                         </div>
                       </div>
 
-                      {/* CTA Buttons */}
                       <div className="flex flex-wrap items-center gap-4 pt-2">
                         <Link
                           href={`/novels/${novel.slug}/chapters/1`}
@@ -215,10 +227,8 @@ export default async function NovelDetailPage({
             </div>
           </section>
 
-          {/* Gradient Transition */}
           <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
 
-          {/* Chapter 1 Preview */}
           {firstChapter && (
             <section className="pt-6 pb-12 md:pb-16 bg-white">
               <div className="container mx-auto px-4">

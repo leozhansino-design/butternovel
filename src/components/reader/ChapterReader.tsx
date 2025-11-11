@@ -51,18 +51,15 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const router = useRouter()
   const contentRef = useRef<HTMLDivElement>(null)
   
-  // Reading settings
   const [readMode, setReadMode] = useState<ReadMode>('scroll')
   const [bgColor, setBgColor] = useState<BgColor>('beige')
   const [fontSize, setFontSize] = useState<keyof typeof fontSizes>('medium')
   
-  // UI state
   const [showToc, setShowToc] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [pages, setPages] = useState<string[]>([])
 
-  // Load saved settings
   useEffect(() => {
     const savedMode = localStorage.getItem('readMode') as ReadMode
     const savedBg = localStorage.getItem('bgColor') as BgColor
@@ -73,14 +70,20 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     if (savedSize) setFontSize(savedSize)
   }, [])
 
-  // Calculate pages based on viewport height for page mode
+  // ✅ 新增：预加载下一章功能
+  useEffect(() => {
+    const nextChapterNumber = chapter.chapterNumber + 1
+    if (nextChapterNumber <= totalChapters) {
+      router.prefetch(`/novels/${novel.slug}/chapters/${nextChapterNumber}`)
+    }
+  }, [chapter.chapterNumber, totalChapters, novel.slug, router])
+
   useEffect(() => {
     if (readMode === 'page' && contentRef.current) {
       const calculatePages = () => {
         const container = contentRef.current
         if (!container) return
 
-        // Create temporary element to measure
         const tempDiv = document.createElement('div')
         tempDiv.style.position = 'absolute'
         tempDiv.style.visibility = 'hidden'
@@ -88,7 +91,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         tempDiv.className = `${fontSizes[fontSize].class} leading-loose whitespace-pre-wrap`
         document.body.appendChild(tempDiv)
 
-        const viewportHeight = window.innerHeight - 300 // Account for header and padding
+        const viewportHeight = window.innerHeight - 300
         const words = chapter.content.split(' ')
         const pageArray: string[] = []
         let currentPageText = ''
@@ -120,7 +123,6 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     }
   }, [readMode, chapter.content, fontSize])
 
-  // Save settings
   const updateReadMode = (mode: ReadMode) => {
     setReadMode(mode)
     localStorage.setItem('readMode', mode)
@@ -152,12 +154,17 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     }
   }
 
+  // ✅ 修改：目录跳转时预加载下一章
   const goToChapter = (chapterNumber: number) => {
     router.push(`/novels/${novel.slug}/chapters/${chapterNumber}`)
     setShowToc(false)
+    
+    // ✅ 预加载跳转章节的下一章
+    if (chapterNumber < totalChapters) {
+      router.prefetch(`/novels/${novel.slug}/chapters/${chapterNumber + 1}`)
+    }
   }
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (readMode === 'page') {
@@ -181,11 +188,10 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
 
   return (
     <div className={`min-h-screen ${bgColors[bgColor].bg} ${bgColors[bgColor].text} transition-colors`}>
-      {/* Top Navigation Bar */}
+      {/* ✅ 保持原有的顶部导航栏 */}
       <div className={`sticky top-0 z-40 ${bgColors[bgColor].bg} border-b border-gray-200 shadow-sm`}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            {/* Back Button */}
             <Link
               href={`/novels/${novel.slug}`}
               className="flex items-center gap-2 hover:text-[#e8b923] transition-colors"
@@ -196,7 +202,6 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
               <span className="font-medium hidden md:inline">Back to Novel</span>
             </Link>
 
-            {/* Novel Title */}
             <div className="flex-1 text-center px-4">
               <h1 className="font-bold text-sm md:text-base truncate">{novel.title}</h1>
               <p className="text-xs text-gray-500 truncate">
@@ -204,9 +209,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
               </p>
             </div>
 
-            {/* Right Buttons */}
             <div className="flex items-center gap-2">
-              {/* Table of Contents Button */}
               <button
                 onClick={() => setShowToc(!showToc)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -217,7 +220,6 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                 </svg>
               </button>
 
-              {/* Settings Button */}
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -233,15 +235,8 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* ✅ 去掉大标题区域，直接显示内容 */}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Chapter Title */}
-        <div className="text-center mb-8">
-          <div className="text-sm text-gray-500 mb-2">Chapter {chapter.chapterNumber}</div>
-          <h2 className="text-2xl md:text-3xl font-bold">{chapter.title}</h2>
-        </div>
-
-        {/* Chapter Content */}
         <div 
           ref={contentRef}
           className={`prose prose-lg max-w-none ${fontSizes[fontSize].class}`}
@@ -252,14 +247,12 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
           </div>
         </div>
 
-        {/* Page Navigation for Page Mode */}
         {readMode === 'page' && pages.length > 1 && (
           <div className="flex items-center justify-center gap-4 mt-8 py-4 border-t border-gray-200">
             <button
               onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
               disabled={currentPage === 0}
               className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              aria-label="Previous Page"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -274,7 +267,6 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
               onClick={() => setCurrentPage(Math.min(pages.length - 1, currentPage + 1))}
               disabled={currentPage === pages.length - 1}
               className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              aria-label="Next Page"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -283,7 +275,6 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
           </div>
         )}
 
-        {/* Chapter Navigation */}
         <div className="flex items-center justify-between mt-12 pt-8 border-t border-gray-200">
           {hasPrev ? (
             <button
@@ -313,21 +304,14 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </div>
       </div>
 
-      {/* Table of Contents Sidebar */}
+      {/* Table of Contents */}
       {showToc && (
         <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setShowToc(false)}
-          />
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowToc(false)} />
           <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
             <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
               <h3 className="font-bold text-lg">Table of Contents</h3>
-              <button
-                onClick={() => setShowToc(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Close"
-              >
+              <button onClick={() => setShowToc(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -353,21 +337,14 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </>
       )}
 
-      {/* Settings Sidebar */}
+      {/* Settings */}
       {showSettings && (
         <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setShowSettings(false)}
-          />
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSettings(false)} />
           <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
             <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
               <h3 className="font-bold text-lg">Reader Settings</h3>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Close"
-              >
+              <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -375,16 +352,13 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
             </div>
             
             <div className="p-4 space-y-6">
-              {/* Reading Mode */}
               <div>
                 <h4 className="font-semibold mb-3">Reading Mode</h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => updateReadMode('scroll')}
                     className={`p-3 rounded-lg border-2 transition-all ${
-                      readMode === 'scroll'
-                        ? 'border-[#e8b923] bg-[#e8b923]/10'
-                        : 'border-gray-200 hover:border-gray-300'
+                      readMode === 'scroll' ? 'border-[#e8b923] bg-[#e8b923]/10' : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className="text-center">
@@ -397,9 +371,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                   <button
                     onClick={() => updateReadMode('page')}
                     className={`p-3 rounded-lg border-2 transition-all ${
-                      readMode === 'page'
-                        ? 'border-[#e8b923] bg-[#e8b923]/10'
-                        : 'border-gray-200 hover:border-gray-300'
+                      readMode === 'page' ? 'border-[#e8b923] bg-[#e8b923]/10' : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className="text-center">
@@ -412,58 +384,28 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                 </div>
               </div>
 
-              {/* Background Color */}
               <div>
                 <h4 className="font-semibold mb-3">Background</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => updateBgColor('white')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      bgColor === 'white'
-                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
+                  <button onClick={() => updateBgColor('white')} className={`p-3 rounded-lg border-2 transition-all ${bgColor === 'white' ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20' : 'border-gray-200 hover:border-gray-300'}`}>
                     <div className="w-full h-12 bg-white rounded mb-2 border border-gray-200"></div>
                     <div className="text-xs text-center">White</div>
                   </button>
-                  <button
-                    onClick={() => updateBgColor('beige')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      bgColor === 'beige'
-                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
+                  <button onClick={() => updateBgColor('beige')} className={`p-3 rounded-lg border-2 transition-all ${bgColor === 'beige' ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20' : 'border-gray-200 hover:border-gray-300'}`}>
                     <div className="w-full h-12 bg-[#f5f1e8] rounded mb-2 border border-gray-200"></div>
                     <div className="text-xs text-center">Sepia</div>
                   </button>
-                  <button
-                    onClick={() => updateBgColor('dark')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      bgColor === 'dark'
-                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
+                  <button onClick={() => updateBgColor('dark')} className={`p-3 rounded-lg border-2 transition-all ${bgColor === 'dark' ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20' : 'border-gray-200 hover:border-gray-300'}`}>
                     <div className="w-full h-12 bg-[#1a1a1a] rounded mb-2 border border-gray-200"></div>
                     <div className="text-xs text-center">Dark</div>
                   </button>
-                  <button
-                    onClick={() => updateBgColor('green')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      bgColor === 'green'
-                        ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
+                  <button onClick={() => updateBgColor('green')} className={`p-3 rounded-lg border-2 transition-all ${bgColor === 'green' ? 'border-[#e8b923] ring-2 ring-[#e8b923]/20' : 'border-gray-200 hover:border-gray-300'}`}>
                     <div className="w-full h-12 bg-[#e8f4e8] rounded mb-2 border border-gray-200"></div>
                     <div className="text-xs text-center">Green</div>
                   </button>
                 </div>
               </div>
 
-              {/* Font Size */}
               <div>
                 <h4 className="font-semibold mb-3">Font Size</h4>
                 <div className="space-y-2">
@@ -472,9 +414,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                       key={size}
                       onClick={() => updateFontSize(size)}
                       className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                        fontSize === size
-                          ? 'border-[#e8b923] bg-[#e8b923]/10'
-                          : 'border-gray-200 hover:border-gray-300'
+                        fontSize === size ? 'border-[#e8b923] bg-[#e8b923]/10' : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <span className={fontSizes[size].class}>
