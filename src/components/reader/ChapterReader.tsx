@@ -203,10 +203,9 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
             </Link>
 
             <div className="flex-1 text-center px-4">
-              <h1 className="font-bold text-sm md:text-base truncate">{novel.title}</h1>
-              <p className="text-xs text-gray-500 truncate">
+              <h1 className="font-bold text-lg md:text-xl truncate">
                 Chapter {chapter.chapterNumber}: {chapter.title}
-              </p>
+              </h1>
             </div>
 
             <div className="flex items-center gap-2">
