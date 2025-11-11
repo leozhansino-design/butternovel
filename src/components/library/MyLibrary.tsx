@@ -57,7 +57,7 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
 
     // 如果有阅读历史,跳转到阅读器
     if (novel.lastReadChapter) {
-      router.push(`/read/${novel.slug}/${novel.lastReadChapter}`)
+      router.push(`/novels/${novel.slug}/chapters/${novel.lastReadChapter}`)
     } else {
       // 没有阅读历史,跳转到详情页
       router.push(`/novels/${novel.slug}`)

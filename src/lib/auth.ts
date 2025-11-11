@@ -1,15 +1,8 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { PrismaClient } from "@prisma/client"
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+// ✅ 使用统一的 Prisma 实例（包含连接池配置）
+import { prisma } from "./prisma"
 
 const requiredEnvVars = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
@@ -42,6 +35,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      },
+      // 修复 PKCE 错误：使用 state 检查而不是 PKCE
+      checks: ["state"],
     }),
   ],
   
