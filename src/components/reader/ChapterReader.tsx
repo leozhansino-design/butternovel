@@ -60,6 +60,26 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const [currentPage, setCurrentPage] = useState(0)
   const [pages, setPages] = useState<string[]>([])
 
+  // ⭐ 新增：进入章节时立即记录阅读进度
+  useEffect(() => {
+    const saveProgress = async () => {
+      try {
+        await fetch('/api/reading-progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            novelId: novel.id,
+            chapterId: chapter.id
+          })
+        })
+      } catch (error) {
+        console.error('Failed to save reading progress:', error)
+      }
+    }
+
+    saveProgress()
+  }, [novel.id, chapter.id])
+
   useEffect(() => {
     const savedMode = localStorage.getItem('readMode') as ReadMode
     const savedBg = localStorage.getItem('bgColor') as BgColor
