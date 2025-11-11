@@ -1,16 +1,15 @@
 // src/app/api/library/route.ts
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { withErrorHandling, errorResponse, successResponse } from '@/lib/api-error-handler'
 
 // GET - 获取用户书架
-export async function GET() {
-  try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const GET = withErrorHandling(async () => {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    return errorResponse('Unauthorized', 401, 'UNAUTHORIZED')
+  }
 
     const library = await prisma.library.findMany({
       where: { userId: session.user.id },
@@ -84,97 +83,78 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ novels })
-  } catch (error) {
-    console.error('GET /api/library error:', error)
-    return NextResponse.json({ error: 'Failed to fetch library' }, { status: 500 })
-  }
-}
+  return successResponse({ novels })
+})
 
 // POST - 添加到书架
-export async function POST(request: Request) {
-  try {
-    const session = await auth()
-    
-    console.log('Session:', JSON.stringify(session, null, 2))
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const POST = withErrorHandling(async (request: Request) => {
+  const session = await auth()
 
-    const { novelId } = await request.json()
+  if (!session?.user?.id) {
+    return errorResponse('Unauthorized', 401, 'UNAUTHORIZED')
+  }
 
-    if (!novelId) {
-      return NextResponse.json({ error: 'Novel ID required' }, { status: 400 })
-    }
+  const { novelId } = await request.json()
 
-    // 检查用户是否存在
-    const userExists = await prisma.user.findUnique({
-      where: { id: session.user.id }
-    })
-    
-    console.log('User exists:', userExists)
-    
-    if (!userExists) {
-      console.error('User not found in database:', session.user.id)
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
+  if (!novelId) {
+    return errorResponse('Novel ID required', 400, 'MISSING_NOVEL_ID')
+  }
 
-    // 检查是否已存在
-    const existing = await prisma.library.findUnique({
-      where: {
-        userId_novelId: {
-          userId: session.user.id,
-          novelId: parseInt(novelId)
-        }
-      }
-    })
+  // 检查用户是否存在
+  const userExists = await prisma.user.findUnique({
+    where: { id: session.user.id }
+  })
 
-    if (existing) {
-      return NextResponse.json({ message: 'Already in library' })
-    }
+  if (!userExists) {
+    return errorResponse('User not found', 404, 'USER_NOT_FOUND')
+  }
 
-    await prisma.library.create({
-      data: {
+  // 检查是否已存在
+  const existing = await prisma.library.findUnique({
+    where: {
+      userId_novelId: {
         userId: session.user.id,
         novelId: parseInt(novelId)
       }
-    })
+    }
+  })
 
-    return NextResponse.json({ message: 'Added to library' })
-  } catch (error) {
-    console.error('POST /api/library error:', error)
-    return NextResponse.json({ error: 'Failed to add to library' }, { status: 500 })
+  if (existing) {
+    return successResponse({ message: 'Already in library' })
   }
-}
+
+  await prisma.library.create({
+    data: {
+      userId: session.user.id,
+      novelId: parseInt(novelId)
+    }
+  })
+
+  return successResponse({ message: 'Added to library' })
+})
 
 // DELETE - 从书架移除
-export async function DELETE(request: Request) {
-  try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const DELETE = withErrorHandling(async (request: Request) => {
+  const session = await auth()
 
-    const { novelId } = await request.json()
-
-    if (!novelId) {
-      return NextResponse.json({ error: 'Novel ID required' }, { status: 400 })
-    }
-
-    await prisma.library.delete({
-      where: {
-        userId_novelId: {
-          userId: session.user.id,
-          novelId: parseInt(novelId)
-        }
-      }
-    })
-
-    return NextResponse.json({ message: 'Removed from library' })
-  } catch (error) {
-    console.error('DELETE /api/library error:', error)
-    return NextResponse.json({ error: 'Failed to remove from library' }, { status: 500 })
+  if (!session?.user?.id) {
+    return errorResponse('Unauthorized', 401, 'UNAUTHORIZED')
   }
-}
+
+  const { novelId } = await request.json()
+
+  if (!novelId) {
+    return errorResponse('Novel ID required', 400, 'MISSING_NOVEL_ID')
+  }
+
+  await prisma.library.delete({
+    where: {
+      userId_novelId: {
+        userId: session.user.id,
+        novelId: parseInt(novelId)
+      }
+    }
+  })
+
+  return successResponse({ message: 'Removed from library' })
+})

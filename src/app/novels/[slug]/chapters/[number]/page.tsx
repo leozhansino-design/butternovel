@@ -83,6 +83,9 @@ async function getChapterData(slug: string, chapterNumber: number) {
 // ✅ 修复：只保留这一个缓存配置（1小时）
 export const revalidate = 3600
 
+// 🔧 修复 build 连接池超时：允许动态参数，不强制预渲染所有章节
+export const dynamicParams = true
+
 export default async function ChapterPage({ params }: PageProps) {
   const resolvedParams = await params
   const chapterNumber = parseInt(resolvedParams.number)
@@ -120,6 +123,10 @@ export default async function ChapterPage({ params }: PageProps) {
 }
 
 export async function generateStaticParams() {
+  // 🔧 修复：只预渲染最热门的前 5 个小说的前 3 章
+  // 其他章节通过 dynamicParams = true 按需生成
+  // 这样可以避免 build 时数据库连接池耗尽
+
   const novels = await prisma.novel.findMany({
     where: {
       isPublished: true,
@@ -130,14 +137,18 @@ export async function generateStaticParams() {
       chapters: {
         where: { isPublished: true },
         select: { chapterNumber: true },
-        take: 50
+        orderBy: { chapterNumber: 'asc' },
+        take: 3  // 只预渲染前 3 章
       }
     },
-    take: 100
+    orderBy: {
+      viewCount: 'desc'  // 按热度排序
+    },
+    take: 5  // 只预渲染最热门的 5 个小说
   })
 
   const params: { slug: string; number: string }[] = []
-  
+
   for (const novel of novels) {
     for (const chapter of novel.chapters) {
       params.push({
@@ -147,5 +158,6 @@ export async function generateStaticParams() {
     }
   }
 
+  // 总共最多预渲染 5 × 3 = 15 个页面
   return params
 }

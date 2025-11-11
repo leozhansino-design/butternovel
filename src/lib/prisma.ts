@@ -14,11 +14,15 @@ if (missingVars.length > 0) {
 // ✅ 2. 配置数据库连接字符串（添加连接池限制和超时）
 const databaseUrl = new URL(process.env.DATABASE_URL!)
 
+// 🔧 根据环境调整连接池参数
+// Build 时使用更保守的设置，避免连接池耗尽
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+
 // 添加连接池参数
-databaseUrl.searchParams.set('connection_limit', '5')        // 每个实例最多5个连接
-databaseUrl.searchParams.set('pool_timeout', '10')           // 连接池超时10秒
-databaseUrl.searchParams.set('connect_timeout', '10')        // 连接超时10秒
-databaseUrl.searchParams.set('socket_timeout', '30')         // 查询超时30秒
+databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '5')        // Build 时减少连接数
+databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '10')          // Build 时增加超时
+databaseUrl.searchParams.set('connect_timeout', '15')                            // 连接超时15秒
+databaseUrl.searchParams.set('socket_timeout', '30')                             // 查询超时30秒
 
 // ✅ 3. 创建Prisma单例
 const globalForPrisma = globalThis as unknown as {
@@ -31,9 +35,12 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
       url: databaseUrl.toString(),
     },
   },
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'error', 'warn'] 
-    : ['error'],
+  // 🔧 Build 时只记录错误，减少开销
+  log: isBuildTime
+    ? ['error']
+    : process.env.NODE_ENV === 'development'
+      ? ['query', 'error', 'warn']
+      : ['error'],
 })
 
 // ✅ 4. 开发环境保持单例
