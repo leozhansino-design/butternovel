@@ -3,7 +3,6 @@ import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import { PrismaClient } from "@prisma/client"
 
-// ⭐ 全局单例 Prisma Client
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
@@ -12,14 +11,12 @@ const prisma = globalForPrisma.prisma ?? new PrismaClient()
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
-// ⭐ 验证必需的环境变量
 const requiredEnvVars = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
 }
 
-// 检查缺失的环境变量
 const missingVars = Object.entries(requiredEnvVars)
   .filter(([_, value]) => !value)
   .map(([key]) => key)
@@ -29,7 +26,6 @@ if (missingVars.length > 0) {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  // ⭐ Vercel 部署必需
   trustHost: true,
   
   session: { 
@@ -38,7 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   
   pages: {
-    signIn: "/",
+    signIn: "/auth/login",  // ✅ 改成登录页
     error: "/",
   },
   
@@ -50,6 +46,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   
   callbacks: {
+    // ✅ 添加 redirect callback
+    async redirect({ url, baseUrl }) {
+      // 如果 url 是相对路径,返回完整 URL
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // 如果 url 在同一域名下,返回
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
+    
     async signIn({ user, account }) {
       if (!user.email) {
         console.error('❌ No email in user object')
@@ -100,7 +105,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     
     async jwt({ token, user, trigger }) {
-      // ⭐ 关键修改:从数据库获取真实的 user id
       if (user?.email || trigger === "signIn" || trigger === "update") {
         try {
           const dbUser = await prisma.user.findUnique({
