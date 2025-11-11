@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import LoginModal from '@/components/shared/LoginModal'
+import { usePathname } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import Toast from '@/components/shared/Toast'
 
 interface AddToLibraryButtonProps {
@@ -10,9 +11,9 @@ interface AddToLibraryButtonProps {
 }
 
 export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButtonProps) {
+  const pathname = usePathname()
   const [isInLibrary, setIsInLibrary] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [showLoginModal, setShowLoginModal] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' })
 
   useEffect(() => {
@@ -33,7 +34,8 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
 
   const handleClick = async () => {
     if (!userId) {
-      setShowLoginModal(true)
+      // 直接跳转登录,带上当前页面URL
+      signIn('google', { callbackUrl: pathname })
       return
     }
 
@@ -77,11 +79,6 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
 
   return (
     <>
-      <LoginModal 
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-      />
-
       <Toast 
         message={toast.message}
         type={toast.type}
@@ -89,7 +86,6 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
         onClose={() => setToast({ ...toast, show: false })}
       />
 
-      {/* ⭐ 毛玻璃效果风格 */}
       <button
         onClick={handleClick}
         disabled={loading}
@@ -126,7 +122,6 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
           />
         </svg>
         
-        {/* 发光效果层 */}
         <div className="absolute inset-0 bg-amber-500/0 group-hover:bg-amber-500/10 transition-all duration-300" />
       </button>
     </>
