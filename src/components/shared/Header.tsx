@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import AuthModal from '@/components/auth/AuthModal';
 import UserMenu from '@/components/shared/UserMenu';
+import LibraryModal from '@/components/shared/LibraryModal';
 
 type HeaderProps = {
   user?: {
@@ -22,6 +23,10 @@ export default function Header({ user }: HeaderProps) {
     isOpen: false,
     tab: 'login',
   });
+  const [libraryModal, setLibraryModal] = useState<{ isOpen: boolean; defaultView: 'profile' | 'library' }>({
+    isOpen: false,
+    defaultView: 'library'
+  });
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -37,6 +42,15 @@ export default function Header({ user }: HeaderProps) {
 
   const openAuthModal = (tab: 'login' | 'register') => {
     setAuthModal({ isOpen: true, tab });
+    setIsMenuOpen(false);
+  };
+
+  const openLibraryModal = (view: 'profile' | 'library' = 'library') => {
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
+    setLibraryModal({ isOpen: true, defaultView: view });
     setIsMenuOpen(false);
   };
 
@@ -60,12 +74,12 @@ export default function Header({ user }: HeaderProps) {
               >
                 Home
               </Link>
-              <Link 
-                href="/library" 
+              <button
+                onClick={() => openLibraryModal('library')}
                 className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
               >
                 Library
-              </Link>
+              </button>
               
               {/* Categories Dropdown */}
               <div className="relative group">
@@ -130,7 +144,7 @@ export default function Header({ user }: HeaderProps) {
             {/* User Menu - Desktop */}
             <div className="hidden md:flex items-center gap-4">
               {user ? (
-                <UserMenu user={user} />
+                <UserMenu user={user} onOpenLibrary={openLibraryModal} />
               ) : (
                 <>
                   <button 
@@ -198,13 +212,12 @@ export default function Header({ user }: HeaderProps) {
                 >
                   Home
                 </Link>
-                <Link 
-                  href="/library" 
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
+                <button
+                  onClick={() => openLibraryModal('library')}
+                  className="w-full text-left block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Library
-                </Link>
+                </button>
                 
                 <div className="px-4 py-2 text-gray-500 text-sm font-semibold">
                   Categories
@@ -273,13 +286,12 @@ export default function Header({ user }: HeaderProps) {
                           <div className="text-sm text-gray-500">{user.email}</div>
                         </div>
                       </div>
-                      <Link 
-                        href="/profile" 
-                        className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
+                      <button
+                        onClick={() => openLibraryModal('profile')}
+                        className="w-full text-left block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         👤 Profile
-                      </Link>
+                      </button>
                       <button
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -310,11 +322,20 @@ export default function Header({ user }: HeaderProps) {
         </div>
       </header>
 
-      <AuthModal 
+      <AuthModal
         isOpen={authModal.isOpen}
         onClose={() => setAuthModal({ ...authModal, isOpen: false })}
         defaultTab={authModal.tab}
       />
+
+      {user && (
+        <LibraryModal
+          isOpen={libraryModal.isOpen}
+          onClose={() => setLibraryModal({ ...libraryModal, isOpen: false })}
+          user={user}
+          defaultView={libraryModal.defaultView}
+        />
+      )}
     </>
   );
 }

@@ -10,9 +10,10 @@ type UserMenuProps = {
     email?: string | null;
     image?: string | null;
   };
+  onOpenLibrary?: (view: 'profile' | 'library') => void;
 };
 
-export default function UserMenu({ user }: UserMenuProps) {
+export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -84,10 +85,12 @@ export default function UserMenu({ user }: UserMenuProps) {
 
           {/* Menu Items */}
           <div className="py-2">
-            <Link 
-              href="/profile" 
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              onClick={() => setIsOpen(false)}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                onOpenLibrary?.('profile');
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <div className="w-5 h-5 flex items-center justify-center">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,12 +98,14 @@ export default function UserMenu({ user }: UserMenuProps) {
                 </svg>
               </div>
               <span>Profile</span>
-            </Link>
+            </button>
 
-            <Link 
-              href="/library" 
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              onClick={() => setIsOpen(false)}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                onOpenLibrary?.('library');
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <div className="w-5 h-5 flex items-center justify-center">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +113,7 @@ export default function UserMenu({ user }: UserMenuProps) {
                 </svg>
               </div>
               <span>My Library</span>
-            </Link>
+            </button>
 
             <Link 
               href="/writer" 
