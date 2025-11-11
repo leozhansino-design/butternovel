@@ -90,7 +90,7 @@ export async function withRetry<T>(
       if (attempt === maxRetries) {
         console.error(`❌ Database query failed after ${maxRetries} retries`, {
           error: error instanceof Error ? error.message : String(error),
-          errorCode: error?.code,
+          errorCode: (error as any)?.code,
         })
         throw error
       }
@@ -100,7 +100,7 @@ export async function withRetry<T>(
 
       console.warn(`⚠️  Database query failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${Math.round(delay)}ms...`, {
         error: error instanceof Error ? error.message : String(error),
-        errorCode: error?.code,
+        errorCode: (error as any)?.code,
       })
 
       await new Promise(resolve => setTimeout(resolve, delay))
@@ -129,7 +129,7 @@ export async function withFallback<T>(
   } catch (error) {
     console.error('❌ Database query failed, using fallback value', {
       error: error instanceof Error ? error.message : String(error),
-      errorCode: error?.code,
+      errorCode: (error as any)?.code,
       fallbackValue: typeof fallbackValue === 'object'
         ? Array.isArray(fallbackValue)
           ? `Array(${fallbackValue.length})`
