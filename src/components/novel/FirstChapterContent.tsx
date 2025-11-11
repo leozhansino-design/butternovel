@@ -1,6 +1,7 @@
 // src/components/novel/FirstChapterContent.tsx
 // ⚡ 延迟加载组件 - 异步获取章节内容，不阻塞首屏渲染
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-utils'
 import Link from 'next/link'
 
 type FirstChapterContentProps = {
@@ -14,12 +15,14 @@ type FirstChapterContentProps = {
 }
 
 async function getChapterContent(chapterId: number) {
-  const chapter = await prisma.chapter.findUnique({
-    where: { id: chapterId },
-    select: {
-      content: true,
-    },
-  })
+  const chapter = await withRetry(() =>
+    prisma.chapter.findUnique({
+      where: { id: chapterId },
+      select: {
+        content: true,
+      },
+    })
+  )
   return chapter?.content || null
 }
 

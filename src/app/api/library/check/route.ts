@@ -1,12 +1,13 @@
 // src/app/api/library/check/route.ts
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-utils'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
     const session = await auth()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ isInLibrary: false })
     }
@@ -18,14 +19,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Novel ID required' }, { status: 400 })
     }
 
-    const library = await prisma.library.findUnique({
-      where: {
-        userId_novelId: {
-          userId: session.user.id,
-          novelId: parseInt(novelId)
+    const library = await withRetry(() =>
+      prisma.library.findUnique({
+        where: {
+          userId_novelId: {
+            userId: session.user.id,
+            novelId: parseInt(novelId)
+          }
         }
-      }
-    })
+      })
+    )
 
     return NextResponse.json({ isInLibrary: !!library })
   } catch (error) {

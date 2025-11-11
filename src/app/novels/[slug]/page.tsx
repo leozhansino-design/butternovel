@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-utils'
 import { auth } from '@/lib/auth'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -15,30 +16,32 @@ import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：移除content，避免阻塞首屏渲染
-  const novel = await prisma.novel.findUnique({
-    where: { slug },
-    include: {
-      category: true,
-      chapters: {
-        where: { isPublished: true },
-        orderBy: { chapterNumber: 'asc' },
-        take: 2, // 只取前2章元数据
-        select: {
-          id: true,
-          title: true,
-          chapterNumber: true,
-          wordCount: true,
-          // ⚡ content 移除，由 FirstChapterContent 组件单独加载
+  const novel = await withRetry(() =>
+    prisma.novel.findUnique({
+      where: { slug },
+      include: {
+        category: true,
+        chapters: {
+          where: { isPublished: true },
+          orderBy: { chapterNumber: 'asc' },
+          take: 2, // 只取前2章元数据
+          select: {
+            id: true,
+            title: true,
+            chapterNumber: true,
+            wordCount: true,
+            // ⚡ content 移除，由 FirstChapterContent 组件单独加载
+          },
+        },
+        _count: {
+          select: {
+            chapters: true,
+            likes: true,
+          },
         },
       },
-      _count: {
-        select: {
-          chapters: true,
-          likes: true,
-        },
-      },
-    },
-  })
+    })
+  )
 
   if (!novel || !novel.isPublished || novel.isBanned) {
     return null

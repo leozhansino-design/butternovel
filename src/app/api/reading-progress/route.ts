@@ -1,6 +1,7 @@
 // src/app/api/reading-progress/route.ts
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-utils'
 import { NextResponse } from 'next/server'
 
 // POST - 记录阅读进度
@@ -19,23 +20,25 @@ export async function POST(request: Request) {
     }
 
     // 更新或创建阅读历史
-    await prisma.readingHistory.upsert({
-      where: {
-        userId_novelId: {
+    await withRetry(() =>
+      prisma.readingHistory.upsert({
+        where: {
+          userId_novelId: {
+            userId: session.user.id,
+            novelId: parseInt(novelId)
+          }
+        },
+        update: {
+          chapterId: parseInt(chapterId),
+          lastReadAt: new Date()
+        },
+        create: {
           userId: session.user.id,
-          novelId: parseInt(novelId)
+          novelId: parseInt(novelId),
+          chapterId: parseInt(chapterId)
         }
-      },
-      update: {
-        chapterId: parseInt(chapterId),
-        lastReadAt: new Date()
-      },
-      create: {
-        userId: session.user.id,
-        novelId: parseInt(novelId),
-        chapterId: parseInt(chapterId)
-      }
-    })
+      })
+    )
 
     return NextResponse.json({ success: true })
   } catch (error) {
