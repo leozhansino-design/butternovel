@@ -1,70 +1,44 @@
 // src/app/novels/[slug]/page.tsx
-// ✅ 保持原UI设计，只增加第二章预加载功能
+// ✅ 优化：减少数据库查询从3次到1次
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import Image from 'next/image'
 import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
 import ViewTracker from '@/components/ViewTracker'
 import { formatNumber } from '@/lib/format'
+import AddToLibraryButton from '@/components/novel/AddToLibraryButton'
 
 async function getNovel(slug: string) {
-  const [novel, firstChapterContent, secondChapterContent] = await Promise.all([
-    prisma.novel.findUnique({
-      where: { slug },
-      include: {
-        category: true,
-        chapters: {
-          orderBy: { chapterNumber: 'asc' },
-          select: {
-            id: true,
-            title: true,
-            chapterNumber: true,
-            wordCount: true,
-          },
-        },
-        _count: {
-          select: {
-            chapters: true,
-            likes: true,
-          },
+  // ✅ 优化：只查1次，直接包含前2章的content
+  const novel = await prisma.novel.findUnique({
+    where: { slug },
+    include: {
+      category: true,
+      chapters: {
+        where: { isPublished: true },
+        orderBy: { chapterNumber: 'asc' },
+        take: 2, // 只取前2章
+        select: {
+          id: true,
+          title: true,
+          chapterNumber: true,
+          wordCount: true,
+          content: true, // ✅ 直接包含content
         },
       },
-    }),
-    prisma.chapter.findFirst({
-      where: {
-        novel: { slug },
-        chapterNumber: 1,
-        isPublished: true,
+      _count: {
+        select: {
+          chapters: true,
+          likes: true,
+        },
       },
-      select: {
-        content: true,
-      }
-    }),
-    // ✅ 新增：预加载第二章content
-    prisma.chapter.findFirst({
-      where: {
-        novel: { slug },
-        chapterNumber: 2,
-        isPublished: true,
-      },
-      select: {
-        content: true,
-      }
-    })
-  ])
+    },
+  })
 
   if (!novel || !novel.isPublished || novel.isBanned) {
     return null
-  }
-
-  if (novel.chapters[0] && firstChapterContent) {
-    (novel.chapters[0] as any).content = firstChapterContent.content
-  }
-
-  // ✅ 新增：将第二章content添加到第二章对象
-  if (novel.chapters[1] && secondChapterContent) {
-    (novel.chapters[1] as any).content = secondChapterContent.content
   }
 
   return novel
@@ -78,6 +52,7 @@ export default async function NovelDetailPage({
   params: Promise<{ slug: string }> 
 }) {
   const { slug } = await params
+  const session = await auth()
   const novel = await getNovel(slug)
 
   if (!novel) {
@@ -91,7 +66,7 @@ export default async function NovelDetailPage({
     <>
       <ViewTracker novelId={novel.id} />
       
-      {/* ✅ 新增：使用隐藏的link预加载第二章 */}
+      {/* 预加载第二章 */}
       {secondChapter && (
         <link
           rel="prefetch"
@@ -210,14 +185,11 @@ export default async function NovelDetailPage({
                           Start Reading
                         </Link>
 
-                        <button 
-                          className="p-4 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 transition-all shadow-lg hover:shadow-xl hover:scale-110"
-                          aria-label="Add to Library"
-                        >
-                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                        </button>
+                        {/* ⭐ 替换这里的button为AddToLibraryButton组件 */}
+                        <AddToLibraryButton 
+                          novelId={novel.id}
+                          userId={session?.user?.id}
+                        />
                       </div>
 
                     </div>
@@ -229,7 +201,8 @@ export default async function NovelDetailPage({
 
           <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
 
-          {firstChapter && (
+          {/* ✅ 这里直接用firstChapter.content，不需要再用(firstChapter as any) */}
+          {firstChapter && firstChapter.content && (
             <section className="pt-6 pb-12 md:pb-16 bg-white">
               <div className="container mx-auto px-4">
                 <div className="max-w-4xl mx-auto space-y-8">
@@ -244,7 +217,7 @@ export default async function NovelDetailPage({
 
                   <div className="prose prose-lg max-w-none">
                     <div className="text-gray-800 text-lg leading-loose whitespace-pre-wrap">
-                      {(firstChapter as any).content}
+                      {firstChapter.content}
                     </div>
                   </div>
 
