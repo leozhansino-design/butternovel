@@ -126,10 +126,47 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
       }
     })
 
+  // Skeleton Loading - 结构立即显示
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+      <div className="h-full flex flex-col">
+        {/* Header - 立即显示 */}
+        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="h-8 w-40 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-4 w-32 bg-gray-100 rounded mt-2 animate-pulse"></div>
+            </div>
+            <div className="h-10 w-20 bg-gray-100 rounded-lg animate-pulse"></div>
+          </div>
+
+          {/* Filters - 立即显示 */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700 font-medium">Sort:</span>
+              <div className="h-9 w-36 bg-gray-100 rounded-lg animate-pulse"></div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700 font-medium">Filter:</span>
+              <div className="h-9 w-32 bg-gray-100 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Books Grid Skeleton - 立即显示边框 */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-4">
+            {[...Array(14)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                {/* Cover placeholder */}
+                <div className="aspect-[3/4] bg-gray-200 rounded-lg"></div>
+                {/* Title placeholder */}
+                <div className="mt-2 h-4 bg-gray-200 rounded w-full"></div>
+                <div className="mt-1 h-3 bg-gray-100 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -236,9 +273,9 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
         </div>
       </div>
 
-      {/* Books Grid */}
+      {/* Books Grid - 缩小书籍尺寸 */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-4">
           {filteredAndSortedNovels.map((novel) => (
             <div
               key={novel.id}
@@ -247,33 +284,35 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
             >
               {/* Selection checkbox */}
               {isSelectionMode && (
-                <div className="absolute top-2 left-2 z-10">
+                <div className="absolute top-1.5 left-1.5 z-10">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(novel.id)}
                     onChange={() => toggleSelection(novel.id)}
-                    className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                    className="w-4 h-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
               )}
 
-              {/* Cover Image */}
-              <div className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-shadow">
+              {/* Cover Image - 添加懒加载 */}
+              <div className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-shadow bg-gray-100">
                 <Image
                   src={novel.coverImage}
                   alt={novel.title}
                   fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 14vw"
+                  loading="lazy"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
 
                 {/* Reading Progress Badge */}
                 {novel.readChapters !== undefined && novel.readChapters > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <div className="text-xs text-white font-medium">
-                      {novel.readChapters}/{novel.totalChapters} chapters
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
+                    <div className="text-[10px] text-white font-medium">
+                      {novel.readChapters}/{novel.totalChapters}
                     </div>
-                    <div className="mt-1 h-1.5 bg-gray-600 rounded-full overflow-hidden">
+                    <div className="mt-0.5 h-1 bg-gray-600 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-amber-400 rounded-full transition-all"
                         style={{ width: `${(novel.readChapters / novel.totalChapters) * 100}%` }}
@@ -283,12 +322,12 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
                 )}
               </div>
 
-              {/* Book Info */}
-              <h3 className="mt-2 font-medium text-sm text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors">
+              {/* Book Info - 缩小字体 */}
+              <h3 className="mt-1.5 font-medium text-xs text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-tight">
                 {novel.title}
               </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                {novel.category} • {novel.status === 'ONGOING' ? 'Ongoing' : 'Completed'}
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                {novel.category}
               </p>
             </div>
           ))}
