@@ -116,13 +116,13 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
     // 验证文件类型
     if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file')
+      setError('Please upload an image file (PNG, JPG, etc.)')
       return
     }
 
-    // 验证文件大小 (最大 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Image must be smaller than 2MB')
+    // 验证文件大小 (最大 512KB)
+    if (file.size > 512 * 1024) {
+      setError('Image must be smaller than 512KB')
       return
     }
 
@@ -130,11 +130,17 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
       setUploadingAvatar(true)
       setError('')
 
-      // 读取并调整图片大小为 256x256
-      const resizedImage = await resizeImage(file, 256, 256)
+      // 验证图片尺寸必须是 256x256
+      const validImage = await validateImageSize(file, 256, 256)
+
+      if (!validImage) {
+        setError('Image must be exactly 256x256 pixels')
+        setUploadingAvatar(false)
+        return
+      }
 
       const formData = new FormData()
-      formData.append('avatar', resizedImage)
+      formData.append('avatar', file)
 
       const res = await fetch('/api/profile/avatar', {
         method: 'POST',
@@ -156,35 +162,27 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
       setError('Failed to upload avatar')
     } finally {
       setUploadingAvatar(false)
+      // 清空 input，允许重新选择同一文件
+      if (e.target) e.target.value = ''
     }
   }
 
-  const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<File> => {
-    return new Promise((resolve, reject) => {
+  // 验证图片尺寸（必须是精确尺寸）
+  const validateImageSize = (file: File, requiredWidth: number, requiredHeight: number): Promise<boolean> => {
+    return new Promise((resolve) => {
       const img = new Image()
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
 
       img.onload = () => {
-        canvas.width = maxWidth
-        canvas.height = maxHeight
-
-        ctx?.drawImage(img, 0, 0, maxWidth, maxHeight)
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const resizedFile = new File([blob], file.name, {
-              type: 'image/png',
-              lastModified: Date.now()
-            })
-            resolve(resizedFile)
-          } else {
-            reject(new Error('Failed to resize image'))
-          }
-        }, 'image/png')
+        URL.revokeObjectURL(img.src)
+        const isValid = img.width === requiredWidth && img.height === requiredHeight
+        resolve(isValid)
       }
 
-      img.onerror = () => reject(new Error('Failed to load image'))
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src)
+        resolve(false)
+      }
+
       img.src = URL.createObjectURL(file)
     })
   }
@@ -208,158 +206,125 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
   const avatarUrl = profileData.avatar || user.image
 
   return (
-    <div className="p-8">
-      {/* Profile Card - 稍微小一点 */}
-      <div className="max-w-3xl mx-auto">
-        <div className="relative backdrop-blur-xl bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-xl border border-gray-200 p-6">
-          {/* Avatar and basic info */}
-          <div className="flex items-start gap-6">
-            {/* Avatar with upload */}
-            <div className="relative group">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={profileData.name || 'User'}
-                  className="w-24 h-24 rounded-3xl object-cover ring-4 ring-white shadow-lg"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-3xl ring-4 ring-white shadow-lg">
-                  {profileData.name?.[0]?.toUpperCase() || 'U'}
-                </div>
-              )}
+    <div>
+      {/* 紧凑的毛玻璃 Profile 卡片 */}
+      <div className="relative backdrop-blur-2xl bg-white/70 rounded-2xl shadow-xl border border-white/30 p-5">
+        {/* 渐变背景装饰 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-2xl pointer-events-none" />
 
-              {/* Upload overlay */}
-              <button
-                onClick={handleAvatarClick}
-                disabled={uploadingAvatar}
-                className="absolute inset-0 bg-black/60 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium disabled:cursor-not-allowed"
-              >
-                {uploadingAvatar ? 'Uploading...' : 'Change'}
-              </button>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
+        <div className="relative flex items-center gap-5">
+          {/* Avatar with upload */}
+          <div className="relative group flex-shrink-0">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={profileData.name || 'User'}
+                className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white/50 shadow-lg"
               />
-            </div>
+            ) : (
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-2xl ring-4 ring-white/50 shadow-lg">
+                {profileData.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )}
 
-            <div className="flex-1 min-w-0">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                      placeholder="Your name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bio <span className="text-gray-400">({editBio.length}/500)</span>
-                    </label>
-                    <textarea
-                      value={editBio}
-                      onChange={(e) => setEditBio(e.target.value)}
-                      maxLength={500}
-                      rows={3}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
-                      placeholder="Tell us about yourself..."
-                    />
-                  </div>
-                  {error && (
-                    <p className="text-sm text-red-600">{error}</p>
-                  )}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-medium hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50 shadow-lg"
-                    >
-                      {saving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                    <button
-                      onClick={handleCancel}
-                      disabled={saving}
-                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
+            {/* Upload overlay */}
+            <button
+              onClick={handleAvatarClick}
+              disabled={uploadingAvatar}
+              className="absolute inset-0 bg-black/70 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-xs font-semibold disabled:cursor-not-allowed"
+            >
+              {uploadingAvatar ? 'Uploading...' : 'Change'}
+            </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
+          </div>
+
+          {/* User info */}
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <div className="space-y-3">
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      {profileData.name || 'Anonymous Reader'}
-                    </h2>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
-                      title="Edit profile"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <p className="text-gray-600 text-sm mb-2">{profileData.email}</p>
-                  {profileData.bio ? (
-                    <p className="text-gray-700 leading-relaxed text-sm">{profileData.bio}</p>
-                  ) : (
-                    <p className="text-gray-400 italic text-sm">No bio yet. Click the edit button to add one!</p>
-                  )}
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white/80"
+                    placeholder="Your name"
+                  />
                 </div>
-              )}
+                <div>
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    maxLength={500}
+                    rows={2}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-white/80"
+                    placeholder="Tell us about yourself..."
+                  />
+                  <span className="text-xs text-gray-400">{editBio.length}/500</span>
+                </div>
+                {error && <p className="text-xs text-red-600">{error}</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-4 py-1.5 text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50 shadow-md"
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={saving}
+                    className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-white/80 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-bold text-gray-900 truncate">
+                    {profileData.name || 'Anonymous Reader'}
+                  </h2>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-white/60 rounded-lg transition-colors flex-shrink-0"
+                    title="Edit profile"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-gray-600 text-xs mb-1.5 truncate">{profileData.email}</p>
+                {profileData.bio ? (
+                  <p className="text-gray-700 text-sm leading-snug line-clamp-2">{profileData.bio}</p>
+                ) : (
+                  <p className="text-gray-400 italic text-xs">No bio yet.</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Stats - 统计数据 */}
+          <div className="hidden md:flex items-center gap-6 flex-shrink-0 pl-6 border-l border-gray-200/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-amber-600">0</div>
+              <div className="text-xs text-gray-500 font-medium">Favorites</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">0</div>
+              <div className="text-xs text-gray-500 font-medium">Finished</div>
             </div>
           </div>
         </div>
-
-        {/* Navigation Buttons */}
-        {onNavigate && (
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <button
-              onClick={() => onNavigate('library')}
-              className="p-4 bg-white rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-md transition-all text-left group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900">My Library</div>
-                  <div className="text-sm text-gray-500">View your collection</div>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => onNavigate('history')}
-              className="p-4 bg-white rounded-2xl border border-gray-200 hover:border-amber-500 hover:shadow-md transition-all text-left group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900">Reading History</div>
-                  <div className="text-sm text-gray-500">Browse your activity</div>
-                </div>
-              </div>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
