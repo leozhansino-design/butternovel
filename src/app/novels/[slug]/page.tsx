@@ -1,6 +1,7 @@
 // src/app/novels/[slug]/page.tsx
-// ✅ 优化：减少数据库查询从3次到1次
+// ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import Image from 'next/image'
@@ -9,9 +10,11 @@ import Footer from '@/components/shared/Footer'
 import ViewTracker from '@/components/ViewTracker'
 import { formatNumber } from '@/lib/format'
 import AddToLibraryButton from '@/components/novel/AddToLibraryButton'
+import FirstChapterContent from '@/components/novel/FirstChapterContent'
+import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 
 async function getNovel(slug: string) {
-  // ✅ 优化：只查1次，直接包含前2章的content
+  // ⚡ 性能优化：移除content，避免阻塞首屏渲染
   const novel = await prisma.novel.findUnique({
     where: { slug },
     include: {
@@ -19,13 +22,13 @@ async function getNovel(slug: string) {
       chapters: {
         where: { isPublished: true },
         orderBy: { chapterNumber: 'asc' },
-        take: 2, // 只取前2章
+        take: 2, // 只取前2章元数据
         select: {
           id: true,
           title: true,
           chapterNumber: true,
           wordCount: true,
-          content: true, // ✅ 直接包含content
+          // ⚡ content 移除，由 FirstChapterContent 组件单独加载
         },
       },
       _count: {
@@ -46,14 +49,18 @@ async function getNovel(slug: string) {
 
 export const revalidate = 3600
 
-export default async function NovelDetailPage({ 
-  params 
-}: { 
-  params: Promise<{ slug: string }> 
+export default async function NovelDetailPage({
+  params
+}: {
+  params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const session = await auth()
-  const novel = await getNovel(slug)
+
+  // ⚡ 并行化数据获取 - 减少总等待时间
+  const [session, novel] = await Promise.all([
+    auth(),
+    getNovel(slug)
+  ])
 
   if (!novel) {
     notFound()
@@ -93,6 +100,8 @@ export default async function NovelDetailPage({
                             fill
                             className="object-cover"
                             priority
+                            placeholder="blur"
+                            blurDataURL={getCloudinaryBlurUrl(novel.coverImage)}
                           />
                         </div>
                       </div>
@@ -201,46 +210,44 @@ export default async function NovelDetailPage({
 
           <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
 
-          {/* ✅ 这里直接用firstChapter.content，不需要再用(firstChapter as any) */}
-          {firstChapter && firstChapter.content && (
-            <section className="pt-6 pb-12 md:pb-16 bg-white">
-              <div className="container mx-auto px-4">
-                <div className="max-w-4xl mx-auto space-y-8">
-                  <div className="text-center border-b border-gray-200 pb-8">
-                    <div className="text-sm text-gray-500 mb-4 font-medium tracking-wider uppercase">
-                      Chapter {firstChapter.chapterNumber}
-                    </div>
-                    <h3 className="text-4xl md:text-5xl font-bold text-gray-900">
-                      {firstChapter.title}
-                    </h3>
-                  </div>
-
-                  <div className="prose prose-lg max-w-none">
-                    <div className="text-gray-800 text-lg leading-loose whitespace-pre-wrap">
-                      {firstChapter.content}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-10 text-center">
-                    {secondChapter ? (
-                      <Link
-                        href={`/novels/${novel.slug}/chapters/${secondChapter.chapterNumber}`}
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-[0_4px_12px_rgba(228,185,35,0.4)] hover:shadow-[0_6px_20px_rgba(228,185,35,0.5)] text-lg"
-                      >
-                        Continue Reading
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </Link>
-                    ) : (
-                      <div className="text-gray-500 text-lg">
-                        {novel.status === 'COMPLETED' ? 'This is the final chapter' : 'More chapters coming soon...'}
+          {/* ⚡ 延迟加载第一章内容 - 不阻塞首屏渲染 */}
+          {firstChapter && (
+            <Suspense
+              fallback={
+                <section className="pt-6 pb-12 md:pb-16 bg-white">
+                  <div className="container mx-auto px-4">
+                    <div className="max-w-4xl mx-auto space-y-8">
+                      <div className="text-center border-b border-gray-200 pb-8">
+                        <div className="h-4 w-32 bg-gray-200 rounded mx-auto mb-4 animate-pulse"></div>
+                        <div className="h-10 bg-gray-200 rounded w-2/3 mx-auto animate-pulse"></div>
                       </div>
-                    )}
+                      <div className="space-y-3">
+                        {[...Array(12)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="h-5 bg-gray-100 rounded animate-pulse"
+                            style={{
+                              width: i % 4 === 3 ? '85%' : '100%',
+                              animationDelay: `${i * 50}ms`
+                            }}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </section>
+                </section>
+              }
+            >
+              <FirstChapterContent
+                chapterId={firstChapter.id}
+                chapterNumber={firstChapter.chapterNumber}
+                chapterTitle={firstChapter.title}
+                novelSlug={novel.slug}
+                hasSecondChapter={!!secondChapter}
+                secondChapterNumber={secondChapter?.chapterNumber}
+                novelStatus={novel.status}
+              />
+            </Suspense>
           )}
         </main>
 

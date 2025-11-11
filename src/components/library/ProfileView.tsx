@@ -207,22 +207,22 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
   return (
     <div>
-      {/* 紧凑的毛玻璃 Profile 卡片 */}
-      <div className="relative backdrop-blur-2xl bg-white/70 rounded-2xl shadow-xl border border-white/30 p-5">
+      {/* 毛玻璃 Profile 卡片 - 增加高度 */}
+      <div className="relative backdrop-blur-2xl bg-white/70 rounded-2xl shadow-xl border border-white/30 p-6">
         {/* 渐变背景装饰 */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-2xl pointer-events-none" />
 
-        <div className="relative flex items-center gap-5">
-          {/* Avatar with upload */}
+        <div className="relative flex items-start gap-6">
+          {/* Avatar with upload - 增加尺寸 */}
           <div className="relative group flex-shrink-0">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={profileData.name || 'User'}
-                className="w-20 h-20 rounded-2xl object-cover ring-4 ring-white/50 shadow-lg"
+                className="w-24 h-24 rounded-2xl object-cover ring-4 ring-white/50 shadow-lg"
               />
             ) : (
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-2xl ring-4 ring-white/50 shadow-lg">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-3xl ring-4 ring-white/50 shadow-lg">
                 {profileData.name?.[0]?.toUpperCase() || 'U'}
               </div>
             )}
@@ -245,16 +245,16 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
             />
           </div>
 
-          {/* User info */}
+          {/* User info - 增加空间 */}
           <div className="flex-1 min-w-0">
             {isEditing ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
                   <input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white/80"
+                    className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white/80"
                     placeholder="Your name"
                   />
                 </div>
@@ -263,25 +263,25 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                     value={editBio}
                     onChange={(e) => setEditBio(e.target.value)}
                     maxLength={500}
-                    rows={2}
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-white/80"
+                    rows={3}
+                    className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none bg-white/80"
                     placeholder="Tell us about yourself..."
                   />
-                  <span className="text-xs text-gray-400">{editBio.length}/500</span>
+                  <span className="text-xs text-gray-400 mt-1">{editBio.length}/500</span>
                 </div>
-                {error && <p className="text-xs text-red-600">{error}</p>}
-                <div className="flex gap-2">
+                {error && <p className="text-sm text-red-600">{error}</p>}
+                <div className="flex gap-3">
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-4 py-1.5 text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50 shadow-md"
+                    className="px-5 py-2 text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50 shadow-md"
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={handleCancel}
                     disabled={saving}
-                    className="px-4 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-white/80 transition-colors"
+                    className="px-5 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-white/80 transition-colors"
                   >
                     Cancel
                   </button>
@@ -289,25 +289,25 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
               </div>
             ) : (
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-bold text-gray-900 truncate">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900 truncate">
                     {profileData.name || 'Anonymous Reader'}
                   </h2>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-white/60 rounded-lg transition-colors flex-shrink-0"
+                    className="p-2 text-gray-400 hover:text-amber-500 hover:bg-white/60 rounded-lg transition-colors flex-shrink-0"
                     title="Edit profile"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </button>
                 </div>
-                <p className="text-gray-600 text-xs mb-1.5 truncate">{profileData.email}</p>
+                <p className="text-gray-600 text-sm mb-2 truncate">{profileData.email}</p>
                 {profileData.bio ? (
-                  <p className="text-gray-700 text-sm leading-snug line-clamp-2">{profileData.bio}</p>
+                  <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">{profileData.bio}</p>
                 ) : (
-                  <p className="text-gray-400 italic text-xs">No bio yet.</p>
+                  <p className="text-gray-400 italic text-sm">No bio yet. Click the edit button to add one!</p>
                 )}
               </div>
             )}
