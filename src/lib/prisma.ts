@@ -12,7 +12,9 @@ if (missingVars.length > 0) {
 }
 
 // ✅ 2. 配置数据库连接字符串（添加连接池限制和超时）
-const databaseUrl = new URL(process.env.DATABASE_URL!)
+// 🔧 去除可能的引号包裹（某些环境变量设置可能错误地添加了引号）
+const rawDatabaseUrl = process.env.DATABASE_URL!.replace(/^["']|["']$/g, '')
+const databaseUrl = new URL(rawDatabaseUrl)
 
 // 🔧 根据环境调整连接池参数
 // Build 时使用更保守的设置，避免连接池耗尽
