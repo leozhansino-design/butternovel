@@ -12,6 +12,7 @@ import { formatNumber } from '@/lib/format'
 import AddToLibraryButton from '@/components/novel/AddToLibraryButton'
 import FirstChapterContent from '@/components/novel/FirstChapterContent'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
+import RatingDisplay from '@/components/novel/RatingDisplay'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：移除content，避免阻塞首屏渲染
@@ -90,7 +91,7 @@ export default async function NovelDetailPage({
                 <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
                   <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
                     
-                    <div className="flex justify-center lg:justify-start">
+                    <div className="flex flex-col items-center lg:items-start">
                       <div className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
                         <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
@@ -104,6 +105,16 @@ export default async function NovelDetailPage({
                             blurDataURL={getCloudinaryBlurUrl(novel.coverImage)}
                           />
                         </div>
+                      </div>
+
+                      {/* Rating Display */}
+                      <div className="w-[280px] mt-4">
+                        <RatingDisplay
+                          novelId={novel.id}
+                          averageRating={novel.averageRating ? parseFloat(novel.averageRating.toString()) : 0}
+                          totalRatings={novel.totalRatings}
+                          userId={session?.user?.id}
+                        />
                       </div>
                     </div>
 
