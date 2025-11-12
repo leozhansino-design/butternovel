@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 
 type UserMenuProps = {
@@ -14,6 +15,7 @@ type UserMenuProps = {
 };
 
 export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +36,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
   }, [isOpen]);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: pathname });
   };
 
   return (

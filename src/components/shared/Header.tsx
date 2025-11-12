@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import AuthModal from '@/components/auth/AuthModal';
 import UserMenu from '@/components/shared/UserMenu';
@@ -17,6 +17,7 @@ type HeaderProps = {
 };
 
 export default function Header({ user }: HeaderProps) {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [authModal, setAuthModal] = useState<{ isOpen: boolean; tab: 'login' | 'register' }>({
@@ -37,7 +38,7 @@ export default function Header({ user }: HeaderProps) {
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: pathname });
   };
 
   const openAuthModal = (tab: 'login' | 'register') => {
