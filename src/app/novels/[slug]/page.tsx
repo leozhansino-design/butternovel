@@ -111,7 +111,7 @@ export default async function NovelDetailPage({
                       <div className="w-[280px] mt-4">
                         <RatingDisplay
                           novelId={novel.id}
-                          averageRating={novel.averageRating ? parseFloat(novel.averageRating.toString()) : 0}
+                          averageRating={novel.averageRating ?? 0}
                           totalRatings={novel.totalRatings}
                           userId={session?.user?.id}
                         />
