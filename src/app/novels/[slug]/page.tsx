@@ -55,6 +55,9 @@ async function getNovel(slug: string) {
 
 export const revalidate = 3600
 
+// 🔧 构建时强制跳过预渲染，运行时动态生成
+export const dynamic = 'force-dynamic'
+
 export default async function NovelDetailPage({
   params
 }: {

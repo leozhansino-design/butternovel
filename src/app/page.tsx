@@ -165,6 +165,9 @@ async function HomeContent() {
 // ✅ 添加1小时缓存
 export const revalidate = 3600
 
+// 🔧 构建时强制跳过预渲染，运行时动态生成
+export const dynamic = 'force-dynamic'
+
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
