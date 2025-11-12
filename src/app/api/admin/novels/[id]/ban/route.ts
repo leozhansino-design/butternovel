@@ -1,6 +1,7 @@
 // src/app/api/admin/novels/[id]/ban/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 
 export async function POST(
@@ -10,7 +11,7 @@ export async function POST(
   try {
     const params = await props.params
     const session = await getAdminSession()
-    
+
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -18,11 +19,15 @@ export async function POST(
     const novelId = parseInt(params.id)
     const { isBanned } = await request.json()
 
-    const novel = await prisma.novel.update({
-      where: { id: novelId },
-      data: { isBanned },
-      select: { id: true, title: true, isBanned: true }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const novel = await withRetry(
+      () => prisma.novel.update({
+        where: { id: novelId },
+        data: { isBanned },
+        select: { id: true, title: true, isBanned: true }
+      }),
+      { operationName: 'Update novel ban status' }
+    )
 
     return NextResponse.json({
       success: true,

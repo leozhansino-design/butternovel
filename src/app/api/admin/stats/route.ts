@@ -1,6 +1,7 @@
 // src/app/api/admin/stats/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 
 type TimeRange = 'all' | '1day' | '3days' | '1week' | '1month' | '3months' | '6months' | '1year'
@@ -62,27 +63,38 @@ export async function GET(request: Request) {
     
     const { startDate, label } = getDateRange(range)
 
-    const totalNovels = await prisma.novel.count({
-      where: {
-        createdAt: { gte: startDate },
-        isPublished: true,
-        isBanned: false,
-      }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const totalNovels = await withRetry(
+      () => prisma.novel.count({
+        where: {
+          createdAt: { gte: startDate },
+          isPublished: true,
+          isBanned: false,
+        }
+      }),
+      { operationName: 'Count total novels' }
+    )
 
-    const totalUsers = await prisma.user.count({
-      where: {
-        createdAt: { gte: startDate },
-        isActive: true,
-      }
-    })
+    const totalUsers = await withRetry(
+      () => prisma.user.count({
+        where: {
+          createdAt: { gte: startDate },
+          isActive: true,
+        }
+      }),
+      { operationName: 'Count total users' }
+    )
 
     // ⭐ 修改这里 - 统计时间范围内的真实浏览量
-    const totalViews = await prisma.novelView.count({
-      where: {
-        viewedAt: { gte: startDate }
-      }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const totalViews = await withRetry(
+      () => prisma.novelView.count({
+        where: {
+          viewedAt: { gte: startDate }
+        }
+      }),
+      { operationName: 'Count total views' }
+    )
 
     return NextResponse.json({
       range,
@@ -130,27 +142,38 @@ export async function POST(request: Request) {
       dayEnd.setDate(dayEnd.getDate() + intervalDays)
       dayEnd.setHours(0, 0, 0, 0)
 
-      const novelsCount = await prisma.novel.count({
-        where: {
-          createdAt: { gte: dayStart, lt: dayEnd },
-          isPublished: true,
-          isBanned: false,
-        }
-      })
+      // 🔄 添加数据库重试机制，解决连接超时问题
+      const novelsCount = await withRetry(
+        () => prisma.novel.count({
+          where: {
+            createdAt: { gte: dayStart, lt: dayEnd },
+            isPublished: true,
+            isBanned: false,
+          }
+        }),
+        { operationName: 'Count novels for chart' }
+      )
 
-      const usersCount = await prisma.user.count({
-        where: {
-          createdAt: { gte: dayStart, lt: dayEnd },
-          isActive: true,
-        }
-      })
+      const usersCount = await withRetry(
+        () => prisma.user.count({
+          where: {
+            createdAt: { gte: dayStart, lt: dayEnd },
+            isActive: true,
+          }
+        }),
+        { operationName: 'Count users for chart' }
+      )
 
       // ⭐ 修改这里 - 统计时间段内的真实浏览量
-      const viewsCount = await prisma.novelView.count({
-        where: {
-          viewedAt: { gte: dayStart, lt: dayEnd }
-        }
-      })
+      // 🔄 添加数据库重试机制，解决连接超时问题
+      const viewsCount = await withRetry(
+        () => prisma.novelView.count({
+          where: {
+            viewedAt: { gte: dayStart, lt: dayEnd }
+          }
+        }),
+        { operationName: 'Count views for chart' }
+      )
 
       let dateLabel = ''
       if (intervalDays === 1) {
