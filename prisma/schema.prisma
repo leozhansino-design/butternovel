@@ -122,10 +122,13 @@ model Novel {
   likeCount     Int @default(0)
   commentCount  Int @default(0)
 
-  // 评分系统
-  averageRating Decimal? @default(0) @db.Decimal(3, 1)
-  totalRatings  Int      @default(0)
+  // 评分统计
+  averageRating Float? // 平均评分 (2.0-10.0)
+  totalRatings  Int    @default(0) // 总评分数
 
+  // 标签
+  tags String[] @default([]) // 小说标签（最多10个）
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
@@ -275,19 +278,19 @@ model Comment {
 // 评分
 model Rating {
   id     String @id @default(cuid())
-  score  Int                        // 评分：2, 4, 6, 8, 10
-  review String? @db.Text           // 评论内容（可选）
-
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  novelId Int
-  novel   Novel  @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  score  Int // 评分：2, 4, 6, 8, 10
+  review String? @db.Text // 评论内容（可选）
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, novelId])      // 每个用户只能评分一次
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  novelId Int
+  novel   Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, novelId]) // 每个用户只能评分一次
   @@index([novelId])
   @@index([createdAt])
 }
