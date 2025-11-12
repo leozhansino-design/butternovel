@@ -513,7 +513,7 @@ export default function NovelUploadForm() {
               <textarea
                 value={currentChapter.content}
                 onChange={(e) => setCurrentChapter({ ...currentChapter, content: e.target.value })}
-                rows={10}
+                rows={50}
                 placeholder="Write your chapter content here..."
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 resize-none font-mono text-sm ${
                   isOverLimit ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
