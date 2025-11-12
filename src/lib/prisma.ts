@@ -29,6 +29,10 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
+// 🔧 查询计数器 - 用于调试
+let queryCount = 0
+let lastResetTime = Date.now()
+
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   datasources: {
     db: {
@@ -42,6 +46,31 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
       ? ['query', 'error', 'warn']
       : ['error'],
 })
+
+// 🔧 添加中间件监控查询数量
+if (!isBuildTime) {
+  prisma.$use(async (params, next) => {
+    queryCount++
+
+    // 每分钟重置一次计数
+    const now = Date.now()
+    if (now - lastResetTime > 60000) {
+      if (queryCount > 100) {
+        console.warn(`⚠️  [Prisma] High query count in last minute: ${queryCount}`)
+      }
+      queryCount = 0
+      lastResetTime = now
+    }
+
+    // 如果1分钟内超过1000次查询，记录警告
+    if (queryCount > 1000) {
+      console.error(`🚨 [Prisma] CRITICAL: ${queryCount} queries in 1 minute!`)
+      console.error(`🚨 [Prisma] Query: ${params.model}.${params.action}`)
+    }
+
+    return next(params)
+  })
+}
 
 // ✅ 4. 开发环境保持单例
 if (process.env.NODE_ENV !== 'production') {

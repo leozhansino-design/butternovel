@@ -137,49 +137,12 @@ export default async function ChapterPage({ params }: PageProps) {
 }
 
 export async function generateStaticParams() {
-  // 🔧 修复：只预渲染最热门的前 5 个小说的前 3 章
-  // 其他章节通过 dynamicParams = true 按需生成
-  // 这样可以避免 build 时数据库连接池耗尽
+  // 🔧 修复构建时数据库连接问题：完全跳过预渲染
+  // 所有章节页面都通过 dynamicParams = true 在访问时动态生成
+  // 这样可以避免构建时的数据库连接超时问题
 
-  // 🔄 添加数据库重试机制，解决构建时连接超时问题
-  const novels = await withRetry(
-    () => prisma.novel.findMany({
-      where: {
-        isPublished: true,
-        isBanned: false,
-      },
-      select: {
-        slug: true,
-        chapters: {
-          where: { isPublished: true },
-          select: { chapterNumber: true },
-          orderBy: { chapterNumber: 'asc' },
-          take: 3  // 只预渲染前 3 章
-        }
-      },
-      orderBy: {
-        viewCount: 'desc'  // 按热度排序
-      },
-      take: 5  // 只预渲染最热门的 5 个小说
-    }),
-    {
-      operationName: 'Generate static params for chapter pages',
-      maxRetries: 5,  // 构建时增加重试次数
-      initialDelay: 2000  // 构建时增加初始延迟
-    }
-  )
+  console.log('📝 [Build] Skipping chapter pages pre-rendering to avoid DB connection issues')
 
-  const params: { slug: string; number: string }[] = []
-
-  for (const novel of novels) {
-    for (const chapter of novel.chapters) {
-      params.push({
-        slug: novel.slug,
-        number: chapter.chapterNumber.toString()
-      })
-    }
-  }
-
-  // 总共最多预渲染 5 × 3 = 15 个页面
-  return params
+  // 返回空数组，不预渲染任何章节页面
+  return []
 }

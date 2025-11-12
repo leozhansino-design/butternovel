@@ -24,22 +24,15 @@ function LoginForm() {
     setError('')
 
     try {
-      const result = await signIn('credentials', {
+      // ✅ 让 NextAuth 处理重定向，确保 session 正确更新
+      await signIn('credentials', {
         email: formData.email,
         password: formData.password,
-        redirect: false,
-        callbackUrl,
+        callbackUrl,  // 登录后跳转到指定页面
       })
-
-      if (result?.error) {
-        setError('Invalid email or password')
-      } else {
-        router.push(callbackUrl)
-        router.refresh()
-      }
+      // 如果成功，会自动重定向，不会执行到这里
     } catch (error) {
-      setError('Something went wrong')
-    } finally {
+      setError('Invalid email or password')
       setLoading(false)
     }
   }
