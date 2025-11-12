@@ -16,6 +16,7 @@ type NovelInLibrary = {
   addedAt: string
   // 阅读进度
   lastReadChapter?: number | null
+  lastReadChapterTitle?: string | null
   readChapters?: number
 }
 
@@ -326,6 +327,14 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
               <h3 className="mt-1.5 font-medium text-xs text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-tight">
                 {novel.title}
               </h3>
+
+              {/* 阅读进度 - 显示章节号和标题 */}
+              {novel.lastReadChapter && novel.lastReadChapterTitle && (
+                <p className="text-[10px] text-amber-600 font-medium mt-0.5 line-clamp-1">
+                  Ch.{novel.lastReadChapter}: {novel.lastReadChapterTitle}
+                </p>
+              )}
+
               <p className="text-[10px] text-gray-500 mt-0.5">
                 {novel.category}
               </p>

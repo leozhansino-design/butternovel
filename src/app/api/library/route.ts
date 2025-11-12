@@ -1,6 +1,7 @@
 // src/app/api/library/route.ts
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-utils'
 import { withErrorHandling, errorResponse, successResponse } from '@/lib/api-error-handler'
 
 // GET - 获取用户书架
@@ -11,49 +12,55 @@ export const GET = withErrorHandling(async () => {
     return errorResponse('Unauthorized', 401, 'UNAUTHORIZED')
   }
 
-    const library = await prisma.library.findMany({
-      where: { userId: session.user.id },
-      include: {
-        novel: {
-          include: {
-            category: true,
-            _count: {
-              select: { chapters: true }
+    const library = await withRetry(() =>
+      prisma.library.findMany({
+        where: { userId: session.user.id },
+        include: {
+          novel: {
+            include: {
+              category: true,
+              _count: {
+                select: { chapters: true }
+              }
             }
           }
+        },
+        orderBy: {
+          addedAt: 'desc'
         }
-      },
-      orderBy: {
-        addedAt: 'desc'
-      }
-    })
+      })
+    )
 
     // 获取所有小说的阅读历史
     const novelIds = library.map(item => item.novel.id)
-    const readingHistories = await prisma.readingHistory.findMany({
-      where: {
-        userId: session.user.id,
-        novelId: { in: novelIds }
-      },
-      include: {
-        chapter: true
-      }
-    })
+    const readingHistories = await withRetry(() =>
+      prisma.readingHistory.findMany({
+        where: {
+          userId: session.user.id,
+          novelId: { in: novelIds }
+        },
+        include: {
+          chapter: true
+        }
+      })
+    )
 
     // 优化：一次性获取所有章节进度，然后按 novelId 分组
-    const allChapterProgress = await prisma.chapterProgress.findMany({
-      where: {
-        userId: session.user.id,
-        chapter: {
-          novelId: { in: novelIds }
+    const allChapterProgress = await withRetry(() =>
+      prisma.chapterProgress.findMany({
+        where: {
+          userId: session.user.id,
+          chapter: {
+            novelId: { in: novelIds }
+          }
+        },
+        include: {
+          chapter: {
+            select: { novelId: true }
+          }
         }
-      },
-      include: {
-        chapter: {
-          select: { novelId: true }
-        }
-      }
-    })
+      })
+    )
 
     // 按 novelId 分组计数
     const progressMap = new Map<number, number>()
@@ -79,6 +86,7 @@ export const GET = withErrorHandling(async () => {
         addedAt: item.addedAt.toISOString(),
         // 阅读进度
         lastReadChapter: history?.chapter.chapterNumber || null,
+        lastReadChapterTitle: history?.chapter.title || null,
         readChapters: readCount
       }
     })
@@ -101,34 +109,40 @@ export const POST = withErrorHandling(async (request: Request) => {
   }
 
   // 检查用户是否存在
-  const userExists = await prisma.user.findUnique({
-    where: { id: session.user.id }
-  })
+  const userExists = await withRetry(() =>
+    prisma.user.findUnique({
+      where: { id: session.user.id }
+    })
+  )
 
   if (!userExists) {
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
   }
 
   // 检查是否已存在
-  const existing = await prisma.library.findUnique({
-    where: {
-      userId_novelId: {
-        userId: session.user.id,
-        novelId: parseInt(novelId)
+  const existing = await withRetry(() =>
+    prisma.library.findUnique({
+      where: {
+        userId_novelId: {
+          userId: session.user.id,
+          novelId: parseInt(novelId)
+        }
       }
-    }
-  })
+    })
+  )
 
   if (existing) {
     return successResponse({ message: 'Already in library' })
   }
 
-  await prisma.library.create({
-    data: {
-      userId: session.user.id,
-      novelId: parseInt(novelId)
-    }
-  })
+  await withRetry(() =>
+    prisma.library.create({
+      data: {
+        userId: session.user.id,
+        novelId: parseInt(novelId)
+      }
+    })
+  )
 
   return successResponse({ message: 'Added to library' })
 })
@@ -147,14 +161,16 @@ export const DELETE = withErrorHandling(async (request: Request) => {
     return errorResponse('Novel ID required', 400, 'MISSING_NOVEL_ID')
   }
 
-  await prisma.library.delete({
-    where: {
-      userId_novelId: {
-        userId: session.user.id,
-        novelId: parseInt(novelId)
+  await withRetry(() =>
+    prisma.library.delete({
+      where: {
+        userId_novelId: {
+          userId: session.user.id,
+          novelId: parseInt(novelId)
+        }
       }
-    }
-  })
+    })
+  )
 
   return successResponse({ message: 'Removed from library' })
 })
