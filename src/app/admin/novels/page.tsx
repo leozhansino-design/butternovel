@@ -1,5 +1,6 @@
 // src/app/admin/novels/page.tsx
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -46,44 +47,55 @@ export default async function ManageNovelsPage(props: Props) {
     where.status = searchParams.status
   }
 
+  // 🔄 添加数据库重试机制，解决连接超时问题
   const [novels, total] = await Promise.all([
-    prisma.novel.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        coverImage: true,
-        authorName: true,
-        status: true,
-        createdAt: true,
-        isBanned: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
+    withRetry(
+      () => prisma.novel.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          coverImage: true,
+          authorName: true,
+          status: true,
+          createdAt: true,
+          isBanned: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            }
+          },
+          _count: {
+            select: {
+              chapters: true,
+              likes: true,
+              comments: true,
+            }
           }
         },
-        _count: {
-          select: {
-            chapters: true,
-            likes: true,
-            comments: true,
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.novel.count({ where }),
+        orderBy: { createdAt: 'desc' },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize,
+      }),
+      { operationName: 'Get novels list for admin' }
+    ),
+    withRetry(
+      () => prisma.novel.count({ where }),
+      { operationName: 'Count novels for admin' }
+    ),
   ])
 
   const totalPages = Math.ceil(total / pageSize)
 
-  const categories = await prisma.category.findMany({
-    orderBy: { order: 'asc' }
-  })
+  // 🔄 添加数据库重试机制，解决连接超时问题
+  const categories = await withRetry(
+    () => prisma.category.findMany({
+      orderBy: { order: 'asc' }
+    }),
+    { operationName: 'Get categories for admin novels page' }
+  )
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

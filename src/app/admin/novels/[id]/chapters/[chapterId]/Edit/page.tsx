@@ -1,5 +1,6 @@
 // src/app/admin/novels/[id]/chapters/[chapterId]/edit/page.tsx
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 import { redirect, notFound } from 'next/navigation'
 import ChapterEditForm from '@/components/admin/ChapterEditForm'
@@ -23,14 +24,18 @@ export default async function EditChapterPage(props: Props) {
     notFound()
   }
 
-  const chapter = await prisma.chapter.findUnique({
-    where: { id: chapterId },
-    include: {
-      novel: {
-        select: { id: true, title: true }
+  // 🔄 添加数据库重试机制，解决连接超时问题
+  const chapter = await withRetry(
+    () => prisma.chapter.findUnique({
+      where: { id: chapterId },
+      include: {
+        novel: {
+          select: { id: true, title: true }
+        }
       }
-    }
-  })
+    }),
+    { operationName: 'Get chapter for edit page' }
+  )
 
   if (!chapter || chapter.novelId !== novelId) {
     notFound()
