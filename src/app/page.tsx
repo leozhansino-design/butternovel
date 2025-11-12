@@ -8,31 +8,31 @@ import CategorySection from '@/components/front/CategorySection'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 
 async function getFeaturedNovels() {
-  // 随机抽取 featured 小说
-  const allNovels = await withRetry(() =>
-    prisma.novel.findMany({
-      where: {
-        isPublished: true,
-        isBanned: false,
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        coverImage: true,
-        blurb: true,
-        category: {
-          select: {
-            name: true,
-          }
-        }
-      },
-    })
+  // ⚡ 优化：使用数据库层面随机排序，只取需要的数量
+  // 避免加载所有数据到内存再排序
+  return await withRetry(() =>
+    prisma.$queryRaw<Array<{
+      id: number
+      title: string
+      slug: string
+      coverImage: string
+      blurb: string
+      categoryName: string
+    }>>`
+      SELECT
+        n.id,
+        n.title,
+        n.slug,
+        n."coverImage",
+        n.blurb,
+        c.name as "categoryName"
+      FROM "Novel" n
+      INNER JOIN "Category" c ON n."categoryId" = c.id
+      WHERE n."isPublished" = true AND n."isBanned" = false
+      ORDER BY RANDOM()
+      LIMIT 24
+    `
   )
-
-  // 随机打乱并取前24个
-  const shuffled = allNovels.sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, 24)
 }
 
 async function getAllCategories() {
@@ -44,39 +44,34 @@ async function getAllCategories() {
 }
 
 async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
-  // 随机抽取该类别的小说
-  const allNovels = await withRetry(() =>
-    prisma.novel.findMany({
-      where: {
-        isPublished: true,
-        isBanned: false,
-        category: {
-          slug: categorySlug
-        }
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        coverImage: true,
-        category: {
-          select: {
-            name: true,
-          }
-        },
-        _count: {
-          select: {
-            chapters: true,
-            likes: true,
-          }
-        }
-      },
-    })
+  // ⚡ 优化：使用数据库层面随机排序
+  return await withRetry(() =>
+    prisma.$queryRaw<Array<{
+      id: number
+      title: string
+      slug: string
+      coverImage: string
+      categoryName: string
+      chaptersCount: number
+      likesCount: number
+    }>>`
+      SELECT
+        n.id,
+        n.title,
+        n.slug,
+        n."coverImage",
+        c.name as "categoryName",
+        (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+        (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
+      FROM "Novel" n
+      INNER JOIN "Category" c ON n."categoryId" = c.id
+      WHERE n."isPublished" = true
+        AND n."isBanned" = false
+        AND c.slug = ${categorySlug}
+      ORDER BY RANDOM()
+      LIMIT ${limit}
+    `
   )
-
-  // 随机打乱并取指定数量
-  const shuffled = allNovels.sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, limit)
 }
 
 async function HomeContent() {
@@ -108,7 +103,7 @@ async function HomeContent() {
       ? novel.blurb.substring(0, 100) + '...'
       : novel.blurb,
     category: {
-      name: novel.category.name
+      name: novel.categoryName
     }
   }))
 
@@ -134,9 +129,9 @@ async function HomeContent() {
             const books = cat.novels.map(novel => ({
               id: novel.id,
               title: novel.title,
-              category: novel.category.name,
-              chapters: novel._count.chapters,
-              likes: novel._count.likes,
+              category: novel.categoryName,
+              chapters: Number(novel.chaptersCount),
+              likes: Number(novel.likesCount),
               slug: novel.slug,
               coverImage: novel.coverImage,
             }))
