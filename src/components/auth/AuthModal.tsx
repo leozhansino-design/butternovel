@@ -46,20 +46,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
 
     try {
       // ✅ 使用 callbackUrl 让 NextAuth 处理重定向，确保 session 正确更新
-      const result = await signIn('credentials', {
+      await signIn('credentials', {
         email: loginData.email,
         password: loginData.password,
         callbackUrl: window.location.href,  // 登录后回到当前页面
       })
-
-      // signIn with callbackUrl will redirect automatically on success
-      // 如果有错误，才会走到这里
-      if (result?.error) {
-        setError('Invalid email or password')
-        setLoading(false)
-      }
+      // 如果成功，会自动重定向，不会执行到这里
     } catch (error) {
-      setError('Something went wrong')
+      setError('Invalid email or password')
       setLoading(false)
     }
   }
