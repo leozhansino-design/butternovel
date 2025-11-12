@@ -12,7 +12,7 @@ import { formatNumber } from '@/lib/format'
 import AddToLibraryButton from '@/components/novel/AddToLibraryButton'
 import FirstChapterContent from '@/components/novel/FirstChapterContent'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
-import RatingDisplay from '@/components/novel/RatingDisplay'
+import RatingSection from '@/components/novel/RatingSection'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：移除content，避免阻塞首屏渲染
@@ -70,6 +70,22 @@ export default async function NovelDetailPage({
   const firstChapter = novel.chapters[0]
   const secondChapter = novel.chapters[1]
 
+  // 获取用户评分状态
+  let userRating = null
+  if (session?.user?.id) {
+    userRating = await prisma.rating.findUnique({
+      where: {
+        userId_novelId: {
+          userId: session.user.id,
+          novelId: novel.id,
+        },
+      },
+      select: {
+        score: true,
+      },
+    })
+  }
+
   return (
     <>
       <ViewTracker novelId={novel.id} />
@@ -108,14 +124,14 @@ export default async function NovelDetailPage({
                       </div>
 
                       {/* Rating Display */}
-                      <div className="w-[280px] mt-4">
-                        <RatingDisplay
-                          novelId={novel.id}
-                          averageRating={novel.averageRating ?? 0}
-                          totalRatings={novel.totalRatings}
-                          userId={session?.user?.id}
-                        />
-                      </div>
+                      <RatingSection
+                        novelId={novel.id}
+                        averageRating={novel.averageRating ?? 0}
+                        totalRatings={novel.totalRatings}
+                        userId={session?.user?.id}
+                        hasUserRated={!!userRating}
+                        userRatingScore={userRating?.score}
+                      />
                     </div>
 
                     <div className="flex flex-col gap-6">

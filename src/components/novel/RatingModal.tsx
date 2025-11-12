@@ -24,6 +24,7 @@ interface RatingModalProps {
   isOpen: boolean
   onClose: () => void
   userId?: string
+  onAuthRequired?: () => void
 }
 
 export default function RatingModal({
@@ -33,6 +34,7 @@ export default function RatingModal({
   isOpen,
   onClose,
   userId,
+  onAuthRequired,
 }: RatingModalProps) {
   const router = useRouter()
   const [userRating, setUserRating] = useState<number | null>(null)
@@ -94,20 +96,18 @@ export default function RatingModal({
     }
   }
 
-  const handleStarClick = async (score: number) => {
+  const handleStarClick = (score: number) => {
     if (hasRated) return
 
     if (!userId) {
-      // 未登录，跳转到登录页
-      router.push(`/auth/login?redirect=/novels/${novelId}`)
+      // 未登录，关闭 modal 并触发认证
+      onClose()
+      onAuthRequired?.()
       return
     }
 
     setUserRating(score)
     setShowReviewInput(true)
-
-    // 立即提交评分（无评论）
-    await submitRating(score, '')
   }
 
   const submitRating = async (score: number, reviewText: string) => {
@@ -143,9 +143,9 @@ export default function RatingModal({
     }
   }
 
-  const handleReviewSubmit = async () => {
-    if (!userRating || !review.trim()) return
-    await submitRating(userRating, review)
+  const handleSubmitRating = async () => {
+    if (!userRating) return
+    await submitRating(userRating, review.trim())
     setReview('')
     setShowReviewInput(false)
   }
@@ -275,6 +275,9 @@ export default function RatingModal({
         {/* Review Input */}
         {showReviewInput && !hasRated && (
           <div className="p-6 border-b border-gray-200 animate-slideDown">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Add a review (optional)
+            </label>
             <textarea
               value={review}
               onChange={(e) => setReview(e.target.value)}
@@ -286,11 +289,11 @@ export default function RatingModal({
             <div className="flex items-center justify-between mt-3">
               <span className="text-xs text-gray-500">{review.length}/1000</span>
               <button
-                onClick={handleReviewSubmit}
-                disabled={submitting || !review.trim()}
+                onClick={handleSubmitRating}
+                disabled={submitting}
                 className="px-6 py-2 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Submitting...' : 'Submit Review'}
+                {submitting ? 'Submitting...' : 'Submit Rating'}
               </button>
             </div>
           </div>

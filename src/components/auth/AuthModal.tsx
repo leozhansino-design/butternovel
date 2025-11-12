@@ -34,8 +34,8 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
 
   const handleGoogleSignIn = async () => {
     setLoading(true)
-    // ⭐ 使用当前域名作为 callbackUrl
-    const callbackUrl = window.location.origin
+    // ⭐ 使用当前页面 URL 作为 callbackUrl
+    const callbackUrl = window.location.href
     await signIn('google', { callbackUrl })
   }
 

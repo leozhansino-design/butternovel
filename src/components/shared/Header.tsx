@@ -37,7 +37,7 @@ export default function Header({ user }: HeaderProps) {
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: window.location.href });
   };
 
   const openAuthModal = (tab: 'login' | 'register') => {

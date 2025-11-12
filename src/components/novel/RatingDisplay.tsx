@@ -13,6 +13,7 @@ interface RatingDisplayProps {
   userId?: string
   hasUserRated?: boolean
   userRatingScore?: number
+  onAuthRequired?: () => void
 }
 
 export default function RatingDisplay({
@@ -22,9 +23,18 @@ export default function RatingDisplay({
   userId,
   hasUserRated = false,
   userRatingScore,
+  onAuthRequired,
 }: RatingDisplayProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [hoverRating, setHoverRating] = useState<number | null>(null)
+
+  const handleOpenModal = () => {
+    if (!userId && onAuthRequired) {
+      onAuthRequired()
+      return
+    }
+    setIsModalOpen(true)
+  }
 
   const renderStars = (score: number, interactive: boolean = false) => {
     const starCount = score / 2 // Convert 2-10 to 1-5 stars
@@ -84,7 +94,7 @@ export default function RatingDisplay({
               }`}
               onMouseEnter={() => !hasUserRated && setHoverRating(score)}
               onMouseLeave={() => !hasUserRated && setHoverRating(null)}
-              onClick={() => !hasUserRated && setIsModalOpen(true)}
+              onClick={() => !hasUserRated && handleOpenModal()}
             >
               <svg
                 className="w-6 h-6"
@@ -109,7 +119,7 @@ export default function RatingDisplay({
               className={`flex items-center justify-center gap-1 mb-2 ${
                 !hasUserRated ? 'cursor-pointer' : 'cursor-default'
               }`}
-              onClick={() => !hasUserRated && setIsModalOpen(true)}
+              onClick={() => !hasUserRated && handleOpenModal()}
             >
               {renderInteractiveStars()}
             </div>
@@ -121,25 +131,43 @@ export default function RatingDisplay({
               className={`flex items-center justify-center gap-2 mb-2 ${
                 !hasUserRated ? 'cursor-pointer' : 'cursor-default'
               }`}
-              onClick={() => !hasUserRated && setIsModalOpen(true)}
+              onClick={() => !hasUserRated && handleOpenModal()}
             >
-              {hasUserRated ? (
-                renderStars(averageRating)
+              {hasUserRated && userRatingScore ? (
+                renderStars(userRatingScore)
               ) : (
                 renderInteractiveStars()
               )}
             </div>
             <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl font-bold text-gray-900">
-                {averageRating.toFixed(1)}
-              </span>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="text-sm text-gray-500 hover:text-amber-700 hover:underline transition-colors"
-              >
-                {formatNumber(totalRatings)} {totalRatings === 1 ? 'rating' : 'ratings'}
-              </button>
+              {hasUserRated && userRatingScore ? (
+                <>
+                  <span className="text-lg font-bold text-gray-900">
+                    Your rating: {userRatingScore.toFixed(1)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {averageRating.toFixed(1)}
+                  </span>
+                  <button
+                    onClick={handleOpenModal}
+                    className="text-sm text-gray-500 hover:text-amber-700 hover:underline transition-colors"
+                  >
+                    {formatNumber(totalRatings)} {totalRatings === 1 ? 'rating' : 'ratings'}
+                  </button>
+                </>
+              )}
             </div>
+            {hasUserRated && (
+              <button
+                onClick={handleOpenModal}
+                className="text-xs text-gray-500 hover:text-amber-700 hover:underline transition-colors text-center mt-1"
+              >
+                View all {formatNumber(totalRatings)} {totalRatings === 1 ? 'rating' : 'ratings'}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -151,6 +179,7 @@ export default function RatingDisplay({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         userId={userId}
+        onAuthRequired={onAuthRequired}
       />
     </>
   )

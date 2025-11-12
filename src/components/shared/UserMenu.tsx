@@ -34,7 +34,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
   }, [isOpen]);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: window.location.href });
   };
 
   return (
