@@ -45,21 +45,21 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
     setError('')
 
     try {
+      // ✅ 使用 callbackUrl 让 NextAuth 处理重定向，确保 session 正确更新
       const result = await signIn('credentials', {
         email: loginData.email,
         password: loginData.password,
-        redirect: false,
+        callbackUrl: window.location.href,  // 登录后回到当前页面
       })
 
+      // signIn with callbackUrl will redirect automatically on success
+      // 如果有错误，才会走到这里
       if (result?.error) {
         setError('Invalid email or password')
-      } else {
-        onClose()
-        router.refresh()
+        setLoading(false)
       }
     } catch (error) {
       setError('Something went wrong')
-    } finally {
       setLoading(false)
     }
   }
@@ -96,24 +96,20 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
 
       if (!response.ok) {
         setError(data.error || 'Registration failed')
+        setLoading(false)
         return
       }
 
-      const result = await signIn('credentials', {
+      // ✅ 注册成功后自动登录，跳转到首页
+      await signIn('credentials', {
         email: registerData.email,
         password: registerData.password,
-        redirect: false,
+        callbackUrl: '/',  // 注册后跳转到首页
       })
 
-      if (result?.error) {
-        setError('Login failed after registration')
-      } else {
-        onClose()
-        router.refresh()
-      }
+      // signIn with callbackUrl will redirect automatically
     } catch (error) {
       setError('Something went wrong')
-    } finally {
       setLoading(false)
     }
   }
