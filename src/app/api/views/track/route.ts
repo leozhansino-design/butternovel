@@ -4,6 +4,10 @@ import { trackView } from '@/lib/view-tracker'  // ✅ 改成 trackView
 import { auth } from '@/lib/auth'
 
 export async function POST(request: Request) {
+  // 🚨 临时禁用 View 追踪 - 减少数据库查询
+  return NextResponse.json({ success: true, counted: false, viewCount: 0 })
+
+  /* 原代码临时注释
   try {
     const { novelId } = await request.json()
 
@@ -16,8 +20,8 @@ export async function POST(request: Request) {
     const userId = session?.user?.id || null
 
     // 获取IP和UA
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                      request.headers.get('x-real-ip') || 
+    const ipAddress = request.headers.get('x-forwarded-for') ||
+                      request.headers.get('x-real-ip') ||
                       'unknown'
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
@@ -41,4 +45,5 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+  */
 }

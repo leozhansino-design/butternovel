@@ -43,6 +43,33 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
       : ['error'],
 })
 
+// 🚨 添加查询计数监控 - 检测异常查询
+let queryCount = 0
+let resetTimer: NodeJS.Timeout | null = null
+
+prisma.$use(async (params, next) => {
+  queryCount++
+
+  // 每秒重置计数器
+  if (!resetTimer) {
+    resetTimer = setTimeout(() => {
+      if (queryCount > 100) {
+        console.error(`⚠️ WARNING: ${queryCount} database queries in 1 second!`)
+      }
+      queryCount = 0
+      resetTimer = null
+    }, 1000)
+  }
+
+  // 如果查询数超过阈值，立即警告
+  if (queryCount > 100 && queryCount % 50 === 0) {
+    console.error(`🚨 CRITICAL: ${queryCount} queries detected! Possible query loop.`)
+    console.error(`Query: ${params.model}.${params.action}`)
+  }
+
+  return next(params)
+})
+
 // ✅ 4. 开发环境保持单例
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
