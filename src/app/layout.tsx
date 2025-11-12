@@ -1,13 +1,13 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+// import { Inter } from 'next/font/google'  // ⚠️ 暂时禁用 Google Fonts（网络限制）
 import './globals.css'
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import HeaderWrapper from '@/components/shared/HeaderWrapper'
 import ConditionalHeader from '@/components/shared/ConditionalHeader'
 
-const inter = Inter({ subsets: ['latin'] })
+// const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'ButterNovel - Free Novels',
@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="font-sans">{/* 使用系统字体 */}
         {/* ✅ 用 ConditionalHeader 包裹 HeaderWrapper */}
         <ConditionalHeader>
           <HeaderWrapper />

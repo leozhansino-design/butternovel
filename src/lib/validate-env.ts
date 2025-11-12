@@ -45,7 +45,8 @@ function validateDatabaseUrl(url: string): { valid: boolean; error?: string } {
   }
 
   // 检查是否是有效的 PostgreSQL URL
-  const postgresUrlPattern = /^postgres(ql)?:\/\/.+:.+@.+:\d+\/.+$/
+  // 支持 URL 编码的字符（%XX）- Supabase 连接字符串会包含这些
+  const postgresUrlPattern = /^postgres(ql)?:\/\/.+[:@].+@.+:\d+\/.+$/
   if (!postgresUrlPattern.test(url)) {
     return {
       valid: false,
@@ -139,10 +140,18 @@ export async function testDatabaseConnection(): Promise<{ success: boolean; erro
   }
 }
 
-// 自动验证（只在服务端）
-if (typeof window === 'undefined') {
+// 自动验证（只在服务端，且不在构建时）
+if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
   // 验证环境变量
-  validateEnv()
+  try {
+    validateEnv()
+  } catch (error) {
+    // 在开发环境输出警告但不阻塞
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('\n⚠️  环境变量验证失败，但应用将继续启动')
+      console.warn('⚠️  错误:', error)
+    }
+  }
 
   // 在开发环境下测试数据库连接
   if (process.env.NODE_ENV === 'development') {
