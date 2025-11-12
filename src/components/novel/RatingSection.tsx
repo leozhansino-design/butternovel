@@ -20,7 +20,7 @@ export default function RatingSection({
   averageRating,
   totalRatings,
   userId,
-  hasUserRated,
+  hasUserRated = false,
   userRatingScore,
 }: RatingSectionProps) {
   const [authModal, setAuthModal] = useState<{ isOpen: boolean; tab: 'login' | 'register' }>({
@@ -28,8 +28,21 @@ export default function RatingSection({
     tab: 'login',
   })
 
+  // 本地状态跟踪用户评分
+  const [localHasRated, setLocalHasRated] = useState(hasUserRated)
+  const [localUserScore, setLocalUserScore] = useState(userRatingScore)
+  const [localAvgRating, setLocalAvgRating] = useState(averageRating)
+  const [localTotalRatings, setLocalTotalRatings] = useState(totalRatings)
+
   const handleAuthRequired = () => {
     setAuthModal({ isOpen: true, tab: 'login' })
+  }
+
+  const handleRatingSubmitted = (score: number, newAverage: number, newTotal: number) => {
+    setLocalHasRated(true)
+    setLocalUserScore(score)
+    setLocalAvgRating(newAverage)
+    setLocalTotalRatings(newTotal)
   }
 
   return (
@@ -37,12 +50,13 @@ export default function RatingSection({
       <div className="w-[280px] mt-4">
         <RatingDisplay
           novelId={novelId}
-          averageRating={averageRating}
-          totalRatings={totalRatings}
+          averageRating={localAvgRating}
+          totalRatings={localTotalRatings}
           userId={userId}
-          hasUserRated={hasUserRated}
-          userRatingScore={userRatingScore}
+          hasUserRated={localHasRated}
+          userRatingScore={localUserScore}
           onAuthRequired={handleAuthRequired}
+          onRatingSubmitted={handleRatingSubmitted}
         />
       </div>
 

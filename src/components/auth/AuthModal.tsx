@@ -119,7 +119,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative">
         <button
           onClick={onClose}

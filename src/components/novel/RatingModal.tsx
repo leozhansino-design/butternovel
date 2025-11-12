@@ -25,6 +25,7 @@ interface RatingModalProps {
   onClose: () => void
   userId?: string
   onAuthRequired?: () => void
+  onRatingSubmitted?: (score: number, newAverage: number, newTotal: number) => void
 }
 
 export default function RatingModal({
@@ -35,6 +36,7 @@ export default function RatingModal({
   onClose,
   userId,
   onAuthRequired,
+  onRatingSubmitted,
 }: RatingModalProps) {
   const router = useRouter()
   const [userRating, setUserRating] = useState<number | null>(null)
@@ -130,8 +132,15 @@ export default function RatingModal({
       const data = await res.json()
       setHasRated(true)
 
-      // 刷新评分列表
-      fetchRatings(1)
+      // 通知父组件评分已提交
+      if (onRatingSubmitted && data.averageRating !== undefined && data.totalRatings !== undefined) {
+        onRatingSubmitted(score, data.averageRating, data.totalRatings)
+      }
+
+      // 关闭 modal
+      setTimeout(() => {
+        onClose()
+      }, 500)
 
       // 刷新页面以更新统计
       router.refresh()
@@ -148,6 +157,7 @@ export default function RatingModal({
     await submitRating(userRating, review.trim())
     setReview('')
     setShowReviewInput(false)
+    setUserRating(null)
   }
 
   const renderStars = (score: number, size: 'large' | 'small' = 'large') => {

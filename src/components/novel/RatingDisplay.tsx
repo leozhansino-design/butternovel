@@ -14,6 +14,7 @@ interface RatingDisplayProps {
   hasUserRated?: boolean
   userRatingScore?: number
   onAuthRequired?: () => void
+  onRatingSubmitted?: (score: number, newAverage: number, newTotal: number) => void
 }
 
 export default function RatingDisplay({
@@ -24,6 +25,7 @@ export default function RatingDisplay({
   hasUserRated = false,
   userRatingScore,
   onAuthRequired,
+  onRatingSubmitted,
 }: RatingDisplayProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [hoverRating, setHoverRating] = useState<number | null>(null)
@@ -180,6 +182,7 @@ export default function RatingDisplay({
         onClose={() => setIsModalOpen(false)}
         userId={userId}
         onAuthRequired={onAuthRequired}
+        onRatingSubmitted={onRatingSubmitted}
       />
     </>
   )
