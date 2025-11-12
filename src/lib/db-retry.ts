@@ -15,8 +15,8 @@ export async function withRetry<T>(
   } = {}
 ): Promise<T> {
   const {
-    maxRetries = 3,
-    initialDelay = 1000, // 1秒
+    maxRetries = 2,      // 🔧 降低到2次，避免数据库请求过多
+    initialDelay = 2000, // 2秒 - 增加延迟避免瞬间大量请求
     maxDelay = 10000,    // 10秒
     operationName = 'Database operation'
   } = options
