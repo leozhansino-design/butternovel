@@ -18,11 +18,11 @@ const databaseUrl = new URL(process.env.DATABASE_URL!)
 // Build 时使用更保守的设置，避免连接池耗尽
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
-// 添加连接池参数
-databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '5')        // Build 时减少连接数
-databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '10')          // Build 时增加超时
+// 添加连接池参数 - ⚡ 优化：增加连接池大小和超时时间
+databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '15')       // 运行时增加到15个连接
+databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '20')          // 连接池超时增加到20秒
 databaseUrl.searchParams.set('connect_timeout', '15')                            // 连接超时15秒
-databaseUrl.searchParams.set('socket_timeout', '30')                             // 查询超时30秒
+databaseUrl.searchParams.set('socket_timeout', '45')                             // 查询超时增加到45秒
 
 // ✅ 3. 创建Prisma单例
 const globalForPrisma = globalThis as unknown as {

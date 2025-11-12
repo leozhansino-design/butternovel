@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-utils'
 
 export async function POST(
   request: NextRequest,
@@ -48,10 +49,12 @@ export async function POST(
       )
     }
 
-    // 检查小说是否存在
-    const novel = await prisma.novel.findUnique({
-      where: { id: novelId },
-    })
+    // ⚡ 使用重试机制检查小说是否存在
+    const novel = await withRetry(() =>
+      prisma.novel.findUnique({
+        where: { id: novelId },
+      })
+    )
 
     if (!novel) {
       return NextResponse.json(
@@ -60,15 +63,17 @@ export async function POST(
       )
     }
 
-    // 检查用户是否已经评分
-    const existingRating = await prisma.rating.findUnique({
-      where: {
-        userId_novelId: {
-          userId: session.user.id,
-          novelId: novelId,
+    // ⚡ 使用重试机制检查用户是否已经评分
+    const existingRating = await withRetry(() =>
+      prisma.rating.findUnique({
+        where: {
+          userId_novelId: {
+            userId: session.user.id,
+            novelId: novelId,
+          },
         },
-      },
-    })
+      })
+    )
 
     if (existingRating) {
       return NextResponse.json(
@@ -77,8 +82,9 @@ export async function POST(
       )
     }
 
-    // 创建评分记录并更新小说统计 - 使用事务确保数据一致性
-    const result = await prisma.$transaction(async (tx) => {
+    // ⚡ 优化：创建评分记录并更新小说统计 - 使用聚合查询提升性能
+    const result = await withRetry(() =>
+      prisma.$transaction(async (tx) => {
       // 创建评分记录
       const rating = await tx.rating.create({
         data: {
@@ -98,15 +104,15 @@ export async function POST(
         },
       })
 
-      // 计算新的平均分和总评分数
-      const ratings = await tx.rating.findMany({
+      // ⚡ 使用聚合查询一次性计算平均分和总数，避免加载所有评分数据
+      const stats = await tx.rating.aggregate({
         where: { novelId },
-        select: { score: true },
+        _avg: { score: true },
+        _count: true,
       })
 
-      const totalRatings = ratings.length
-      const sumScores = ratings.reduce((sum, r) => sum + r.score, 0)
-      const averageRating = totalRatings > 0 ? sumScores / totalRatings : 0
+      const totalRatings = stats._count
+      const averageRating = stats._avg.score || 0
 
       // 更新小说的评分统计
       await tx.novel.update({
@@ -122,7 +128,10 @@ export async function POST(
         averageRating: parseFloat(averageRating.toFixed(1)),
         totalRatings,
       }
+    }, {
+      timeout: 15000, // ⚡ 设置事务超时为15秒
     })
+    )
 
     return NextResponse.json(result, { status: 201 })
   } catch (error) {
