@@ -1,6 +1,7 @@
 // src/app/api/admin/novels/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 
@@ -25,15 +26,19 @@ export async function PUT(
     console.log('📦 [API] Updates to apply:', Object.keys(updates))
 
     // 获取当前小说数据
-    const currentNovel = await prisma.novel.findUnique({
-      where: { id: novelId },
-      select: { 
-        id: true, 
-        title: true,
-        coverImage: true, 
-        coverImagePublicId: true 
-      }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const currentNovel = await withRetry(
+      () => prisma.novel.findUnique({
+        where: { id: novelId },
+        select: {
+          id: true,
+          title: true,
+          coverImage: true,
+          coverImagePublicId: true
+        }
+      }),
+      { operationName: 'Get current novel for update' }
+    )
 
     if (!currentNovel) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
@@ -118,14 +123,18 @@ export async function PUT(
 
     console.log('💾 [API] Updating novel in database...')
 
-    const updatedNovel = await prisma.novel.update({
-      where: { id: novelId },
-      data,
-      include: {
-        category: true,
-        chapters: true,
-      }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const updatedNovel = await withRetry(
+      () => prisma.novel.update({
+        where: { id: novelId },
+        data,
+        include: {
+          category: true,
+          chapters: true,
+        }
+      }),
+      { operationName: 'Update novel in database' }
+    )
 
     console.log('✅ [API] Novel updated successfully!')
 
@@ -162,14 +171,18 @@ export async function DELETE(
     const novelId = parseInt(params.id)
 
     // 获取小说信息
-    const novel = await prisma.novel.findUnique({
-      where: { id: novelId },
-      select: { 
-        id: true, 
-        title: true, 
-        coverImagePublicId: true 
-      }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const novel = await withRetry(
+      () => prisma.novel.findUnique({
+        where: { id: novelId },
+        select: {
+          id: true,
+          title: true,
+          coverImagePublicId: true
+        }
+      }),
+      { operationName: 'Get novel for deletion' }
+    )
 
     if (!novel) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
@@ -184,9 +197,13 @@ export async function DELETE(
     }
 
     // 2. 删除数据库记录（章节会级联删除）
-    await prisma.novel.delete({
-      where: { id: novelId }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    await withRetry(
+      () => prisma.novel.delete({
+        where: { id: novelId }
+      }),
+      { operationName: 'Delete novel from database' }
+    )
 
     console.log(`✅ [API] Novel deleted: ${novel.title}`)
 

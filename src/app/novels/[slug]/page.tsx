@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { auth } from '@/lib/auth'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -16,30 +17,34 @@ import RatingDisplay from '@/components/novel/RatingDisplay'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：移除content，避免阻塞首屏渲染
-  const novel = await prisma.novel.findUnique({
-    where: { slug },
-    include: {
-      category: true,
-      chapters: {
-        where: { isPublished: true },
-        orderBy: { chapterNumber: 'asc' },
-        take: 2, // 只取前2章元数据
-        select: {
-          id: true,
-          title: true,
-          chapterNumber: true,
-          wordCount: true,
-          // ⚡ content 移除，由 FirstChapterContent 组件单独加载
+  // 🔄 添加数据库重试机制，解决连接超时问题
+  const novel = await withRetry(
+    () => prisma.novel.findUnique({
+      where: { slug },
+      include: {
+        category: true,
+        chapters: {
+          where: { isPublished: true },
+          orderBy: { chapterNumber: 'asc' },
+          take: 2, // 只取前2章元数据
+          select: {
+            id: true,
+            title: true,
+            chapterNumber: true,
+            wordCount: true,
+            // ⚡ content 移除，由 FirstChapterContent 组件单独加载
+          },
+        },
+        _count: {
+          select: {
+            chapters: true,
+            likes: true,
+          },
         },
       },
-      _count: {
-        select: {
-          chapters: true,
-          likes: true,
-        },
-      },
-    },
-  })
+    }),
+    { operationName: 'Get novel details' }
+  )
 
   if (!novel || !novel.isPublished || novel.isBanned) {
     return null
@@ -68,19 +73,23 @@ export default async function NovelDetailPage({
   }
 
   // 查询用户评分状态
+  // 🔄 添加数据库重试机制，解决连接超时问题
   let userRating = null
   if (session?.user?.id) {
-    userRating = await prisma.rating.findUnique({
-      where: {
-        userId_novelId: {
-          userId: session.user.id,
-          novelId: novel.id
+    userRating = await withRetry(
+      () => prisma.rating.findUnique({
+        where: {
+          userId_novelId: {
+            userId: session.user.id,
+            novelId: novel.id
+          }
+        },
+        select: {
+          score: true
         }
-      },
-      select: {
-        score: true
-      }
-    })
+      }),
+      { operationName: 'Get user rating' }
+    )
   }
 
   const firstChapter = novel.chapters[0]

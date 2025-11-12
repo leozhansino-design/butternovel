@@ -1,6 +1,7 @@
 // src/app/api/admin/chapters/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -14,10 +15,14 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const chapterId = parseInt(params.id)
     const updates = await request.json()
 
-    const currentChapter = await prisma.chapter.findUnique({
-      where: { id: chapterId },
-      select: { id: true, novelId: true, wordCount: true }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const currentChapter = await withRetry(
+      () => prisma.chapter.findUnique({
+        where: { id: chapterId },
+        select: { id: true, novelId: true, wordCount: true }
+      }),
+      { operationName: 'Get current chapter' }
+    )
 
     if (!currentChapter) {
       return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
@@ -33,17 +38,25 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'No changes to update' }, { status: 400 })
     }
 
-    const updatedChapter = await prisma.chapter.update({
-      where: { id: chapterId },
-      data,
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const updatedChapter = await withRetry(
+      () => prisma.chapter.update({
+        where: { id: chapterId },
+        data,
+      }),
+      { operationName: 'Update chapter' }
+    )
 
     if (updates.wordCount !== undefined && updates.wordCount !== currentChapter.wordCount) {
       const wordCountDiff = updates.wordCount - currentChapter.wordCount
-      await prisma.novel.update({
-        where: { id: currentChapter.novelId },
-        data: { wordCount: { increment: wordCountDiff } }
-      })
+      // 🔄 添加数据库重试机制，解决连接超时问题
+      await withRetry(
+        () => prisma.novel.update({
+          where: { id: currentChapter.novelId },
+          data: { wordCount: { increment: wordCountDiff } }
+        }),
+        { operationName: 'Update novel word count' }
+      )
     }
 
     return NextResponse.json({
@@ -67,45 +80,69 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
 
     const chapterId = parseInt(params.id)
 
-    const chapter = await prisma.chapter.findUnique({
-      where: { id: chapterId },
-      select: { id: true, novelId: true, wordCount: true, chapterNumber: true }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const chapter = await withRetry(
+      () => prisma.chapter.findUnique({
+        where: { id: chapterId },
+        select: { id: true, novelId: true, wordCount: true, chapterNumber: true }
+      }),
+      { operationName: 'Get chapter for deletion' }
+    )
 
     if (!chapter) {
       return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
     }
 
-    await prisma.chapter.delete({ where: { id: chapterId } })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    await withRetry(
+      () => prisma.chapter.delete({ where: { id: chapterId } }),
+      { operationName: 'Delete chapter' }
+    )
 
-    const novel = await prisma.novel.findUnique({
-      where: { id: chapter.novelId },
-      select: { totalChapters: true, wordCount: true }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const novel = await withRetry(
+      () => prisma.novel.findUnique({
+        where: { id: chapter.novelId },
+        select: { totalChapters: true, wordCount: true }
+      }),
+      { operationName: 'Get novel after chapter deletion' }
+    )
 
     if (novel) {
-      await prisma.novel.update({
-        where: { id: chapter.novelId },
-        data: {
-          totalChapters: Math.max(0, novel.totalChapters - 1),
-          wordCount: Math.max(0, novel.wordCount - chapter.wordCount),
-        }
-      })
+      // 🔄 添加数据库重试机制，解决连接超时问题
+      await withRetry(
+        () => prisma.novel.update({
+          where: { id: chapter.novelId },
+          data: {
+            totalChapters: Math.max(0, novel.totalChapters - 1),
+            wordCount: Math.max(0, novel.wordCount - chapter.wordCount),
+          }
+        }),
+        { operationName: 'Update novel after chapter deletion' }
+      )
     }
 
-    const remainingChapters = await prisma.chapter.findMany({
-      where: {
-        novelId: chapter.novelId,
-        chapterNumber: { gt: chapter.chapterNumber }
-      },
-      orderBy: { chapterNumber: 'asc' }
-    })
+    // 🔄 添加数据库重试机制，解决连接超时问题
+    const remainingChapters = await withRetry(
+      () => prisma.chapter.findMany({
+        where: {
+          novelId: chapter.novelId,
+          chapterNumber: { gt: chapter.chapterNumber }
+        },
+        orderBy: { chapterNumber: 'asc' }
+      }),
+      { operationName: 'Get remaining chapters' }
+    )
 
     for (const ch of remainingChapters) {
-      await prisma.chapter.update({
-        where: { id: ch.id },
-        data: { chapterNumber: ch.chapterNumber - 1 }
-      })
+      // 🔄 添加数据库重试机制，解决连接超时问题
+      await withRetry(
+        () => prisma.chapter.update({
+          where: { id: ch.id },
+          data: { chapterNumber: ch.chapterNumber - 1 }
+        }),
+        { operationName: 'Reorder chapter' }
+      )
     }
 
     return NextResponse.json({ success: true, message: 'Chapter deleted' })
