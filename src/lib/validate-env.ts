@@ -139,25 +139,17 @@ export async function testDatabaseConnection(): Promise<{ success: boolean; erro
   }
 }
 
-// 自动验证（只在服务端，且非构建时）
+// 自动验证（只在服务端）
 if (typeof window === 'undefined') {
-  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+  // 验证环境变量
+  validateEnv()
 
-  // 🔧 构建时跳过环境变量验证，避免构建失败
-  // 部署平台会在运行时注入正确的环境变量
-  if (!isBuildTime) {
-    // 验证环境变量
-    validateEnv()
-
-    // 在开发环境下测试数据库连接
-    if (process.env.NODE_ENV === 'development') {
-      testDatabaseConnection().catch(() => {
-        // 不阻塞应用启动，但输出警告
-        console.warn('\n⚠️  警告: 数据库连接测试失败，但应用将继续启动')
-        console.warn('⚠️  大部分功能将不可用，请修复数据库配置\n')
-      })
-    }
-  } else {
-    console.log('📦 [Build] Skipping environment validation during build')
+  // 在开发环境下测试数据库连接
+  if (process.env.NODE_ENV === 'development') {
+    testDatabaseConnection().catch(() => {
+      // 不阻塞应用启动，但输出警告
+      console.warn('\n⚠️  警告: 数据库连接测试失败，但应用将继续启动')
+      console.warn('⚠️  大部分功能将不可用，请修复数据库配置\n')
+    })
   }
 }

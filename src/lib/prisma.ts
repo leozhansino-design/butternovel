@@ -3,25 +3,16 @@
 import './validate-env'  // ⭐ 重要：导入环境变量验证
 import { PrismaClient } from '@prisma/client'
 
-// ✅ 1. 检查是否有 DATABASE_URL
-const databaseUrlEnv = process.env.DATABASE_URL
+// ✅ 1. 验证必需的环境变量
+const requiredEnvVars = ['DATABASE_URL']
+const missingVars = requiredEnvVars.filter(key => !process.env[key])
 
-if (!databaseUrlEnv || databaseUrlEnv.trim() === '') {
-  throw new Error(`❌ Missing DATABASE_URL environment variable`)
+if (missingVars.length > 0) {
+  throw new Error(`❌ Missing environment variables: ${missingVars.join(', ')}`)
 }
 
 // ✅ 2. 配置数据库连接字符串（添加连接池限制和超时）
-// 🔧 去除可能的引号包裹（某些环境变量设置可能错误地添加了引号）
-const rawDatabaseUrl = databaseUrlEnv.replace(/^["']|["']$/g, '')
-
-// 🔧 验证 URL 格式，如果无效则抛出友好错误
-let databaseUrl: URL
-try {
-  databaseUrl = new URL(rawDatabaseUrl)
-} catch (error) {
-  console.error('❌ Invalid DATABASE_URL format:', rawDatabaseUrl.substring(0, 50) + '...')
-  throw new Error('DATABASE_URL must be a valid URL')
-}
+const databaseUrl = new URL(process.env.DATABASE_URL!)
 
 // 🔧 根据环境调整连接池参数
 // Build 时使用更保守的设置，避免连接池耗尽
