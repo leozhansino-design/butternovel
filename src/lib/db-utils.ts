@@ -13,7 +13,7 @@ interface RetryConfig {
 }
 
 const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 3,
+  maxRetries: 1,  // 🚨 紧急修复: 减少重试次数避免查询爆炸
   baseDelay: 100,
   maxDelay: 2000,
 }

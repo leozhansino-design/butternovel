@@ -1,7 +1,6 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-// ✅ 使用统一的 Prisma 实例（包含连接池配置）
 import { prisma } from "./prisma"
 
 const requiredEnvVars = {
@@ -20,17 +19,17 @@ if (missingVars.length > 0) {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
-  
-  session: { 
+
+  session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
-  
+
   pages: {
-    signIn: "/auth/login",  // ✅ 改成登录页
-    error: "/",
+    signIn: "/auth/login",
+    error: "/auth/login?error=Configuration",
   },
-  
+
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -42,37 +41,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           response_type: "code"
         }
       },
-      // 修复 PKCE 错误：使用 state 检查而不是 PKCE
       checks: ["state"],
     }),
   ],
-  
+
   callbacks: {
-    // ✅ 添加 redirect callback
     async redirect({ url, baseUrl }) {
-      // 如果 url 是相对路径,返回完整 URL
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      // 如果 url 在同一域名下,返回
       else if (new URL(url).origin === baseUrl) return url
       // 返回原始 url 而不是 baseUrl，这样登录后会跳回原来的页面
       return url
     },
-    
+
     async signIn({ user, account }) {
       if (!user.email) {
-        console.error('❌ No email in user object')
+        console.error('[Auth] No email provided')
         return false
       }
-      
+
       try {
-        console.log('✅ Attempting Google sign in for:', user.email)
-        
+        console.log('[Auth] Processing sign-in for:', user.email)
+
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
         })
 
         if (!existingUser) {
-          console.log('📝 Creating new user...')
+          console.log('[Auth] Creating new user account')
           await prisma.user.create({
             data: {
               email: user.email,
@@ -81,32 +76,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               googleId: account?.providerAccountId || null,
             },
           })
-          console.log('✅ User created successfully')
+          console.log('[Auth] User account created successfully')
         } else {
-          console.log('✅ Existing user found:', existingUser.id)
-          
+          console.log('[Auth] User found:', existingUser.id)
+
           if (!existingUser.googleId && account?.providerAccountId) {
-            console.log('📝 Linking Google account...')
+            console.log('[Auth] Linking Google OAuth account')
             await prisma.user.update({
               where: { email: user.email },
               data: { googleId: account.providerAccountId },
             })
-            console.log('✅ Google account linked')
+            console.log('[Auth] Google account linked')
           }
         }
-        
+
         return true
       } catch (error) {
-        console.error('❌ SignIn callback error:', error)
-        console.error('Error details:', {
+        console.error('[Auth] Sign-in error:', error)
+        console.error('[Auth] Error details:', {
           name: error instanceof Error ? error.name : 'Unknown',
           message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
+          code: (error as any)?.code,
         })
-        return true
+        // Return false to prevent sign-in and show error page
+        return false
       }
     },
-    
+
     async jwt({ token, user, trigger }) {
       if (user?.email || trigger === "signIn" || trigger === "update") {
         try {
@@ -114,34 +110,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { email: (user?.email || token.email) as string },
             select: { id: true, email: true, name: true, avatar: true }
           })
-          
+
           if (dbUser) {
             token.id = dbUser.id
             token.email = dbUser.email
             token.name = dbUser.name
             token.picture = dbUser.avatar
-            console.log('✅ JWT token updated with DB user id:', dbUser.id)
+            console.log('[Auth] JWT token updated for user:', dbUser.id)
           } else {
-            console.error('❌ User not found in database for email:', user?.email || token.email)
+            console.error('[Auth] User not found:', user?.email || token.email)
           }
         } catch (error) {
-          console.error('❌ Error fetching user in jwt callback:', error)
+          console.error('[Auth] JWT callback error:', error)
         }
       }
       return token
     },
-    
+
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
         session.user.email = token.email as string
         session.user.name = token.name as string
         session.user.image = token.picture as string
-        console.log('✅ Session created with user id:', session.user.id)
+        console.log('[Auth] Session created for:', session.user.id)
       }
       return session
     },
   },
-  
-  debug: true,
+
+  debug: process.env.NODE_ENV === 'development',
 })

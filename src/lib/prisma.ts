@@ -1,45 +1,45 @@
 // src/lib/prisma.ts
-// ✅ 修复: 添加连接池限制 + 超时设置 + 环境变量验证
-import './validate-env'  // ⭐ 重要：导入环境变量验证
+// Database connection with connection pooling and monitoring
+import './validate-env'
 import { PrismaClient } from '@prisma/client'
 
-// ✅ 1. 验证必需的环境变量
+// 1. Validate required environment variables
 const requiredEnvVars = ['DATABASE_URL']
 const missingVars = requiredEnvVars.filter(key => !process.env[key])
 
 if (missingVars.length > 0) {
-  throw new Error(`❌ Missing environment variables: ${missingVars.join(', ')}`)
+  throw new Error(`Missing environment variables: ${missingVars.join(', ')}`)
 }
 
-// ✅ 2. 配置数据库连接字符串（添加连接池限制和超时）
-const databaseUrl = new URL(process.env.DATABASE_URL!)
+// 2. Configure database connection string with connection pooling
+// Remove potential quotes from environment variable
+const rawDatabaseUrl = (process.env.DATABASE_URL || '').replace(/^["']|["']$/g, '')
+const databaseUrl = new URL(rawDatabaseUrl)
 
-// 🔧 根据环境调整连接池参数
-// Build 时使用更保守的设置，避免连接池耗尽
+// Adjust connection pool parameters based on environment
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
-// 添加连接池参数 - ⚡ 优化：增加连接池大小和超时时间
-databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '15')       // 运行时增加到15个连接
-databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '20')          // 连接池超时增加到20秒
-databaseUrl.searchParams.set('connect_timeout', '15')                            // 连接超时15秒
-databaseUrl.searchParams.set('socket_timeout', '45')                             // 查询超时增加到45秒
+// Add connection pool parameters
+databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '15')
+databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '20')
+databaseUrl.searchParams.set('connect_timeout', '15')
+databaseUrl.searchParams.set('socket_timeout', '45')
 
-// ✅ 3. 创建Prisma单例
+// 3. Create Prisma singleton
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// 🔧 查询计数器 - 用于调试
+// Query counter for monitoring excessive database queries
 let queryCount = 0
-let lastResetTime = Date.now()
+let resetTimer: NodeJS.Timeout | null = null
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+const basePrisma = new PrismaClient({
   datasources: {
     db: {
       url: databaseUrl.toString(),
     },
   },
-  // 🔧 Build 时只记录错误，减少开销
   log: isBuildTime
     ? ['error']
     : process.env.NODE_ENV === 'development'
@@ -47,37 +47,43 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
       : ['error'],
 })
 
-// 🔧 添加中间件监控查询数量
-if (!isBuildTime) {
-  prisma.$use(async (params, next) => {
-    queryCount++
+// Use $extends instead of deprecated $use (Prisma 5.x+)
+export const prisma = basePrisma.$extends({
+  query: {
+    $allModels: {
+      async $allOperations({ operation, model, args, query }) {
+        queryCount++
 
-    // 每分钟重置一次计数
-    const now = Date.now()
-    if (now - lastResetTime > 60000) {
-      if (queryCount > 100) {
-        console.warn(`⚠️  [Prisma] High query count in last minute: ${queryCount}`)
-      }
-      queryCount = 0
-      lastResetTime = now
-    }
+        // Reset counter every second
+        if (!resetTimer) {
+          resetTimer = setTimeout(() => {
+            if (queryCount > 100) {
+              console.error(`[Database] WARNING: ${queryCount} queries in 1 second!`)
+            }
+            queryCount = 0
+            resetTimer = null
+          }, 1000)
+        }
 
-    // 如果1分钟内超过1000次查询，记录警告
-    if (queryCount > 1000) {
-      console.error(`🚨 [Prisma] CRITICAL: ${queryCount} queries in 1 minute!`)
-      console.error(`🚨 [Prisma] Query: ${params.model}.${params.action}`)
-    }
+        // Alert if query threshold exceeded
+        if (queryCount > 100 && queryCount % 50 === 0) {
+          console.error(`[Database] CRITICAL: ${queryCount} queries detected! Possible query loop.`)
+          console.error(`[Database] Query: ${model}.${operation}`)
+        }
 
-    return next(params)
-  })
-}
+        return query(args)
+      },
+    },
+  },
+})
 
-// ✅ 4. 开发环境保持单例
+// 4. Keep singleton in development
 if (process.env.NODE_ENV !== 'production') {
+  // @ts-ignore
   globalForPrisma.prisma = prisma
 }
 
-// ✅ 5. 优雅关闭（生产环境）
+// 5. Graceful shutdown in production
 if (process.env.NODE_ENV === 'production') {
   process.on('beforeExit', async () => {
     await prisma.$disconnect()

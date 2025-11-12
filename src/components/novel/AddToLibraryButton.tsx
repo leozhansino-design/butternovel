@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Toast from '@/components/shared/Toast'
@@ -16,13 +16,7 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' })
 
-  useEffect(() => {
-    if (userId) {
-      checkLibraryStatus()
-    }
-  }, [novelId, userId])
-
-  const checkLibraryStatus = async () => {
+  const checkLibraryStatus = useCallback(async () => {
     try {
       const res = await fetch(`/api/library/check?novelId=${novelId}`)
       const data = await res.json()
@@ -30,7 +24,13 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
     } catch (error) {
       console.error('Failed to check library status:', error)
     }
-  }
+  }, [novelId])  // ✅ 修复: 使用 useCallback 避免无限循环
+
+  useEffect(() => {
+    if (userId) {
+      checkLibraryStatus()
+    }
+  }, [userId, checkLibraryStatus])  // ✅ 修复: 添加正确的依赖
 
   const handleClick = async () => {
     if (!userId) {
