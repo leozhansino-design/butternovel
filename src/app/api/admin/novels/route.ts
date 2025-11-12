@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 
@@ -44,9 +45,13 @@ export async function POST(request: Request) {
 
         // ⭐ 新增：获取 AdminProfile 的 displayName
         console.log('👤 [API] Fetching admin profile...')
-        const adminProfile = await prisma.adminProfile.findUnique({
-            where: { email: session.email },
-        })
+        // 🔄 添加数据库重试机制，解决连接超时问题
+        const adminProfile = await withRetry(
+            () => prisma.adminProfile.findUnique({
+                where: { email: session.email },
+            }),
+            { operationName: 'Get admin profile' }
+        )
 
         const authorName = adminProfile?.displayName || 'Admin'
         console.log('✅ [API] Author name:', authorName)
@@ -83,39 +88,43 @@ export async function POST(request: Request) {
         // 7. 创建小说（包含章节）
         console.log('💾 [API] Creating novel in database...')
 
-        const novel = await prisma.novel.create({
-            data: {
-                title,
-                slug,
-                coverImage: coverResult.url,
-                coverImagePublicId: coverResult.publicId,
-                categoryId: parseInt(categoryId),
-                blurb,
-                status: status || 'ONGOING',
-                isPublished: isPublished || false,
-                isDraft: !isPublished,
-                // ⭐ 改这里：使用 AdminProfile 的 displayName
-                authorName: authorName,
-                authorId: session.email, // 用 email 作为 authorId
-                totalChapters: chapters?.length || 0,
-                wordCount,
+        // 🔄 添加数据库重试机制，解决连接超时问题
+        const novel = await withRetry(
+            () => prisma.novel.create({
+                data: {
+                    title,
+                    slug,
+                    coverImage: coverResult.url,
+                    coverImagePublicId: coverResult.publicId,
+                    categoryId: parseInt(categoryId),
+                    blurb,
+                    status: status || 'ONGOING',
+                    isPublished: isPublished || false,
+                    isDraft: !isPublished,
+                    // ⭐ 改这里：使用 AdminProfile 的 displayName
+                    authorName: authorName,
+                    authorId: session.email, // 用 email 作为 authorId
+                    totalChapters: chapters?.length || 0,
+                    wordCount,
 
-                chapters: chapters && chapters.length > 0 ? {
-                    create: chapters.map((chapter: any, index: number) => ({
-                        title: chapter.title,
-                        slug: `chapter-${index + 1}`,
-                        content: chapter.content || '',
-                        chapterNumber: index + 1,
-                        wordCount: chapter.content?.length || 0,
-                        isPublished: isPublished || false,
-                    }))
-                } : undefined
-            },
-            include: {
-                category: true,
-                chapters: true,
-            }
-        })
+                    chapters: chapters && chapters.length > 0 ? {
+                        create: chapters.map((chapter: any, index: number) => ({
+                            title: chapter.title,
+                            slug: `chapter-${index + 1}`,
+                            content: chapter.content || '',
+                            chapterNumber: index + 1,
+                            wordCount: chapter.content?.length || 0,
+                            isPublished: isPublished || false,
+                        }))
+                    } : undefined
+                },
+                include: {
+                    category: true,
+                    chapters: true,
+                }
+            }),
+            { operationName: 'Create novel in database' }
+        )
 
         console.log('✅ [API] Novel created successfully!')
         console.log('📚 [API] Novel ID:', novel.id)
@@ -173,14 +182,22 @@ export async function GET(request: Request) {
             where.status = status
         }
 
-        const total = await prisma.novel.count({ where })
-        const novels = await prisma.novel.findMany({
-            where,
-            include: { category: true },
-            orderBy: { createdAt: 'desc' },
-            skip: (page - 1) * limit,
-            take: limit
-        })
+        // 🔄 添加数据库重试机制，解决连接超时问题
+        const total = await withRetry(
+            () => prisma.novel.count({ where }),
+            { operationName: 'Count novels' }
+        )
+
+        const novels = await withRetry(
+            () => prisma.novel.findMany({
+                where,
+                include: { category: true },
+                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+            { operationName: 'Get novels list' }
+        )
 
         return NextResponse.json({
             novels,

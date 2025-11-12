@@ -1,5 +1,6 @@
 // src/app/admin/novels/[id]/edit/page.tsx
 import { prisma } from '@/lib/prisma'
+import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 import { redirect, notFound } from 'next/navigation'
 import EditNovelForm from '@/components/admin/EditNovelForm'
@@ -26,24 +27,32 @@ export default async function EditNovelPage(props: Props) {  // ⭐ 改这里
   }
 
   // 获取小说数据
-  const novel = await prisma.novel.findUnique({
-    where: { id: novelId },
-    include: {
-      category: true,
-      chapters: {
-        orderBy: { chapterNumber: 'asc' }
+  // 🔄 添加数据库重试机制，解决连接超时问题
+  const novel = await withRetry(
+    () => prisma.novel.findUnique({
+      where: { id: novelId },
+      include: {
+        category: true,
+        chapters: {
+          orderBy: { chapterNumber: 'asc' }
+        }
       }
-    }
-  })
+    }),
+    { operationName: 'Get novel for edit page' }
+  )
 
   if (!novel) {
     notFound()
   }
 
   // 获取所有分类
-  const categories = await prisma.category.findMany({
-    orderBy: { order: 'asc' }
-  })
+  // 🔄 添加数据库重试机制，解决连接超时问题
+  const categories = await withRetry(
+    () => prisma.category.findMany({
+      orderBy: { order: 'asc' }
+    }),
+    { operationName: 'Get categories for edit page' }
+  )
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

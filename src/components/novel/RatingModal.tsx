@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import AuthModal from '@/components/auth/AuthModal'
 
 interface Rating {
   id: string
@@ -47,6 +48,7 @@ export default function RatingModal({
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   // 获取用户评分状态
   useEffect(() => {
@@ -100,8 +102,8 @@ export default function RatingModal({
     if (hasRated) return
 
     if (!userId) {
-      // 未登录，使用 signIn 弹出登录modal，登录后返回当前页
-      signIn('google', { callbackUrl: pathname })
+      // 未登录，打开登录modal而不是直接跳转
+      setShowAuthModal(true)
       return
     }
 
@@ -237,11 +239,12 @@ export default function RatingModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+        <div
+          className="bg-white rounded-xl shadow-2xl w-full max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-start justify-between mb-4">
@@ -351,6 +354,14 @@ export default function RatingModal({
           )}
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* 登录Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultTab="login"
+      />
+    </>
   )
 }

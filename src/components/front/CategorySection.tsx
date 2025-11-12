@@ -9,6 +9,7 @@ interface CategorySectionProps {
     id: number
     title: string
     category: string
+    status: string
     chapters: number
     likes: number
     slug?: string
