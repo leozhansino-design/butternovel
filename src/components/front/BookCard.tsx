@@ -7,19 +7,21 @@ interface BookCardProps {
   title: string
   coverImage?: string
   category: string
+  status: string
   chapters: number
   likes: number
   slug?: string
 }
 
-export default function BookCard({ 
-  id, 
-  title, 
+export default function BookCard({
+  id,
+  title,
   coverImage,
-  category, 
-  chapters, 
+  category,
+  status,
+  chapters,
   likes,
-  slug 
+  slug
 }: BookCardProps) {
   const cover = coverImage || `https://images.unsplash.com/photo-${1544947950 + id}?w=300&h=450&fit=crop`
   const bookLink = slug ? `/novels/${slug}` : `/novels/book-${id}`
@@ -63,7 +65,11 @@ export default function BookCard({
             <span className="text-base">👍</span>
             <span className="font-medium">{likes.toLocaleString()}</span>
           </div>
-          <span className="text-emerald-600 text-xs font-medium">✓ Completed</span>
+          {status === 'COMPLETED' ? (
+            <span className="text-emerald-600 text-xs font-medium">✓ Completed</span>
+          ) : (
+            <span className="text-blue-600 text-xs font-medium">📝 Ongoing</span>
+          )}
         </div>
       </div>
     </Link>

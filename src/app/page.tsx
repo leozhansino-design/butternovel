@@ -52,6 +52,7 @@ async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
       slug: string
       coverImage: string
       categoryName: string
+      status: string
       chaptersCount: number
       likesCount: number
     }>>`
@@ -60,6 +61,7 @@ async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
         n.title,
         n.slug,
         n."coverImage",
+        n.status,
         c.name as "categoryName",
         (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
         (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
@@ -130,6 +132,7 @@ async function HomeContent() {
               id: novel.id,
               title: novel.title,
               category: novel.categoryName,
+              status: novel.status,
               chapters: Number(novel.chaptersCount),
               likes: Number(novel.likesCount),
               slug: novel.slug,
