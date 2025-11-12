@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "db:generate": "dotenv -e .env -- npx prisma generate",
     "db:push": "dotenv -e .env -- npx prisma db push",
     "db:seed": "dotenv -e .env -- npx tsx scripts/seed-categories.ts",
