@@ -54,22 +54,16 @@ export default function RegisterPage() {
         return
       }
 
-      // Auto login after successful registration
-      const result = await signIn('credentials', {
+      // ✅ 注册成功后自动登录并跳转到首页
+      await signIn('credentials', {
         email: formData.email,
         password: formData.password,
-        redirect: false,
+        callbackUrl: '/',  // 注册后跳转到首页
       })
 
-      if (result?.error) {
-        setError('Registration successful but login failed. Please sign in.')
-      } else {
-        router.push('/')
-        router.refresh()
-      }
+      // signIn with callbackUrl will redirect automatically
     } catch (error) {
       setError('Something went wrong')
-    } finally {
       setLoading(false)
     }
   }

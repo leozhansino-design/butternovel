@@ -35,7 +35,7 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
   const handleClick = async () => {
     if (!userId) {
       // 直接跳转登录,带上当前页面URL
-      signIn('google', { callbackUrl: pathname })
+      signIn('google', { callbackUrl: window.location.href })
       return
     }
 

@@ -49,7 +49,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async redirect({ url, baseUrl }) {
       if (url.startsWith("/")) return `${baseUrl}${url}`
       else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      // 返回原始 url 而不是 baseUrl，这样登录后会跳回原来的页面
+      return url
     },
 
     async signIn({ user, account }) {
