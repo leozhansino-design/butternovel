@@ -52,6 +52,7 @@ model User {
   likes           NovelLike[]
   chapterProgress ChapterProgress[]
   comments        Comment[]
+  ratings         Rating[]
 
   // 社区功能（后期）
   forumPosts   ForumPost[]
@@ -120,7 +121,11 @@ model Novel {
   viewCount     Int @default(0)
   likeCount     Int @default(0)
   commentCount  Int @default(0)
-  
+
+  // 评分系统
+  averageRating Decimal? @default(0) @db.Decimal(3, 1)
+  totalRatings  Int      @default(0)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
@@ -131,7 +136,8 @@ model Novel {
   readingHistory ReadingHistory[]
   likes          NovelLike[]
   comments       Comment[]
-  views     NovelView[]
+  views          NovelView[]
+  ratings        Rating[]
   
   @@index([slug])
   @@index([authorId])
@@ -263,6 +269,26 @@ model Comment {
 
   @@index([novelId])
   @@index([userId])
+  @@index([createdAt])
+}
+
+// 评分
+model Rating {
+  id     String @id @default(cuid())
+  score  Int                        // 评分：2, 4, 6, 8, 10
+  review String? @db.Text           // 评论内容（可选）
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  novelId Int
+  novel   Novel  @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, novelId])      // 每个用户只能评分一次
+  @@index([novelId])
   @@index([createdAt])
 }
 
