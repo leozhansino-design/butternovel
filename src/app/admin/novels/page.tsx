@@ -58,6 +58,7 @@ export default async function ManageNovelsPage(props: Props) {
         status: true,
         createdAt: true,
         isBanned: true,
+        tags: true,
         category: {
           select: {
             id: true,
@@ -179,6 +180,20 @@ export default async function ManageNovelsPage(props: Props) {
                         <div className="text-sm text-gray-500 truncate">
                           ID: {novel.id}
                         </div>
+                        {novel.tags && novel.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1" title={novel.tags.join(', ')}>
+                            {novel.tags.slice(0, 2).map((tag, i) => (
+                              <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                {tag}
+                              </span>
+                            ))}
+                            {novel.tags.length > 2 && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                +{novel.tags.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>

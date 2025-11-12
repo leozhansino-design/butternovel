@@ -30,6 +30,7 @@ export async function POST(request: Request) {
             blurb,
             status,
             isPublished,
+            tags,
             chapters
         } = body
 
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
                 authorId: session.email, // 用 email 作为 authorId
                 totalChapters: chapters?.length || 0,
                 wordCount,
+                tags: tags || [],
 
                 chapters: chapters && chapters.length > 0 ? {
                     create: chapters.map((chapter: any, index: number) => ({

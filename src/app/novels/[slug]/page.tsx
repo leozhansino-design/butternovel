@@ -12,6 +12,7 @@ import { formatNumber } from '@/lib/format'
 import AddToLibraryButton from '@/components/novel/AddToLibraryButton'
 import FirstChapterContent from '@/components/novel/FirstChapterContent'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
+import RatingDisplay from '@/components/novel/RatingDisplay'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：移除content，避免阻塞首屏渲染
@@ -90,7 +91,7 @@ export default async function NovelDetailPage({
                 <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
                   <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
                     
-                    <div className="flex justify-center lg:justify-start">
+                    <div className="flex flex-col items-center lg:items-start">
                       <div className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-orange-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
                         <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
@@ -105,6 +106,13 @@ export default async function NovelDetailPage({
                           />
                         </div>
                       </div>
+
+                      {/* 评分显示 */}
+                      <RatingDisplay
+                        novelId={novel.id}
+                        averageRating={novel.averageRating}
+                        totalRatings={novel.totalRatings}
+                      />
                     </div>
 
                     <div className="flex flex-col gap-6">
@@ -126,13 +134,30 @@ export default async function NovelDetailPage({
                           {novel.category.name}
                         </span>
                         <span className={`px-4 py-1.5 rounded-full font-medium text-sm ${
-                          novel.status === 'COMPLETED' 
+                          novel.status === 'COMPLETED'
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
                           {novel.status === 'COMPLETED' ? '✓ Completed' : '📝 Ongoing'}
                         </span>
                       </div>
+
+                      {/* 标签显示 */}
+                      {novel.tags && novel.tags.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-600 mb-2">Tags:</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {novel.tags.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="flex flex-wrap items-center gap-6 text-gray-600">
                         <div className="flex items-center gap-2">

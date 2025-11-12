@@ -77,6 +77,12 @@ export async function PUT(
       console.log('📝 [API] Updating publish status')
     }
 
+    // 5.5 更新标签
+    if (updates.tags !== undefined) {
+      data.tags = updates.tags
+      console.log('📝 [API] Updating tags')
+    }
+
     // 6. 更新封面（如果有新图片）
     if (updates.newCoverImage) {
       console.log('📤 [API] Uploading new cover to Cloudinary...')

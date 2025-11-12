@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import TagsInput from './TagsInput'
 
 type Category = {
   id: number
@@ -31,6 +32,7 @@ type Novel = {
   status: string
   isPublished: boolean
   categoryId: number
+  tags: string[]
   category: Category
   chapters: Chapter[]
 }
@@ -51,6 +53,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
   const [categoryId, setCategoryId] = useState(novel.categoryId.toString())
   const [status, setStatus] = useState(novel.status)
   const [isPublished, setIsPublished] = useState(novel.isPublished)
+  const [tags, setTags] = useState<string[]>(novel.tags || [])
 
   // 封面状态
   const [coverPreview, setCoverPreview] = useState(novel.coverImage)
@@ -76,13 +79,15 @@ export default function EditNovelForm({ novel, categories }: Props) {
 
   // 检测表单改动
   function detectChanges() {
-    const changed = 
+    const tagsChanged = JSON.stringify(tags) !== JSON.stringify(novel.tags || [])
+    const changed =
       title !== novel.title ||
       blurb !== novel.blurb ||
       categoryId !== novel.categoryId.toString() ||
       status !== novel.status ||
       isPublished !== novel.isPublished ||
-      newCoverImage !== null
+      newCoverImage !== null ||
+      tagsChanged
 
     setHasChanges(changed)
   }
@@ -116,7 +121,8 @@ export default function EditNovelForm({ novel, categories }: Props) {
       if (categoryId !== novel.categoryId.toString()) updates.categoryId = parseInt(categoryId)
       if (status !== novel.status) updates.status = status
       if (newCoverImage) updates.newCoverImage = newCoverImage
-      
+      if (JSON.stringify(tags) !== JSON.stringify(novel.tags || [])) updates.tags = tags
+
       // ⭐ 根据按钮设置发布状态
       updates.isPublished = publish
 
@@ -305,6 +311,18 @@ export default function EditNovelForm({ novel, categories }: Props) {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
             <p className="text-sm text-gray-500 mt-1">{blurb.length}/3000 characters</p>
+          </div>
+
+          {/* 标签 */}
+          <div>
+            <TagsInput
+              selectedTags={tags}
+              onChange={(newTags) => {
+                setTags(newTags)
+                detectChanges()
+              }}
+              maxTags={10}
+            />
           </div>
 
           {/* 分类和状态 */}

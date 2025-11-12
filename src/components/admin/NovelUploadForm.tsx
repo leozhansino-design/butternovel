@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, BookOpen, Plus, X, Edit2, Trash2 } from 'lucide-react'
 import Image from 'next/image'
+import TagsInput from './TagsInput'
 
 // 分类数据（Genres）
 const genres = [
@@ -55,6 +56,7 @@ export default function NovelUploadForm() {
     blurb: '',
     status: 'ONGOING',
     isPublished: false,
+    tags: [] as string[],
     chapters: [] as any[],
   })
   
@@ -227,6 +229,7 @@ export default function NovelUploadForm() {
           blurb: formData.blurb,
           status: formData.status,
           isPublished: formData.isPublished,
+          tags: formData.tags,
           chapters: chapters.map(ch => ({
             title: ch.title,
             content: ch.content,
@@ -255,6 +258,7 @@ export default function NovelUploadForm() {
         blurb: '',
         status: 'ONGOING',
         isPublished: false,
+        tags: [],
         chapters: [],
       })
       setChapters([])
@@ -408,6 +412,15 @@ export default function NovelUploadForm() {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* 标签 */}
+          <div>
+            <TagsInput
+              selectedTags={formData.tags}
+              onChange={(tags) => setFormData({ ...formData, tags })}
+              maxTags={10}
+            />
           </div>
 
           {/* 状态 */}
