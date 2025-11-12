@@ -4,7 +4,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
 
 export async function POST(
   request: NextRequest,
@@ -113,7 +112,7 @@ export async function POST(
       await tx.novel.update({
         where: { id: novelId },
         data: {
-          averageRating: new Prisma.Decimal(averageRating.toFixed(1)),
+          averageRating: parseFloat(averageRating.toFixed(1)),
           totalRatings,
         },
       })
