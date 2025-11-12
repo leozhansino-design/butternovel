@@ -14,6 +14,13 @@ async function main() {
     { name: 'Action', slug: 'action', order: 6 },
     { name: 'Adventure', slug: 'adventure', order: 7 },
     { name: 'Horror', slug: 'horror', order: 8 },
+    { name: 'Crime', slug: 'crime', order: 9 },
+    { name: 'LGBTQ+', slug: 'lgbtq', order: 10 },
+    { name: 'Paranormal', slug: 'paranormal', order: 11 },
+    { name: 'System', slug: 'system', order: 12 },
+    { name: 'Reborn', slug: 'reborn', order: 13 },
+    { name: 'Revenge', slug: 'revenge', order: 14 },
+    { name: 'Fanfiction', slug: 'fanfiction', order: 15 },
   ]
 
   for (const category of categories) {
