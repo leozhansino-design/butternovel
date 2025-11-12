@@ -3,7 +3,8 @@
 // 评分 Modal 组件
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 
 interface Rating {
   id: string
@@ -35,6 +36,7 @@ export default function RatingModal({
   userId,
 }: RatingModalProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [userRating, setUserRating] = useState<number | null>(null)
   const [hasRated, setHasRated] = useState(false)
   const [hoverRating, setHoverRating] = useState<number | null>(null)
@@ -98,16 +100,14 @@ export default function RatingModal({
     if (hasRated) return
 
     if (!userId) {
-      // 未登录，跳转到登录页
-      router.push(`/auth/login?redirect=/novels/${novelId}`)
+      // 未登录，使用 signIn 弹出登录modal，登录后返回当前页
+      signIn('google', { callbackUrl: pathname })
       return
     }
 
+    // 只设置评分，显示评论输入框，不自动提交
     setUserRating(score)
     setShowReviewInput(true)
-
-    // 立即提交评分（无评论）
-    await submitRating(score, '')
   }
 
   const submitRating = async (score: number, reviewText: string) => {
@@ -144,8 +144,8 @@ export default function RatingModal({
   }
 
   const handleReviewSubmit = async () => {
-    if (!userRating || !review.trim()) return
-    await submitRating(userRating, review)
+    if (!userRating) return
+    await submitRating(userRating, review.trim())
     setReview('')
     setShowReviewInput(false)
   }
@@ -278,20 +278,22 @@ export default function RatingModal({
             <textarea
               value={review}
               onChange={(e) => setReview(e.target.value)}
-              placeholder="Share your thoughts..."
+              placeholder="Share your thoughts... (optional)"
               maxLength={1000}
               rows={3}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
             />
             <div className="flex items-center justify-between mt-3">
               <span className="text-xs text-gray-500">{review.length}/1000</span>
-              <button
-                onClick={handleReviewSubmit}
-                disabled={submitting || !review.trim()}
-                className="px-6 py-2 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Submitting...' : 'Submit Review'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleReviewSubmit}
+                  disabled={submitting}
+                  className="px-6 py-2 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Submitting...' : review.trim() ? 'Submit Review' : 'Submit Rating'}
+                </button>
+              </div>
             </div>
           </div>
         )}

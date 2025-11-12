@@ -67,6 +67,22 @@ export default async function NovelDetailPage({
     notFound()
   }
 
+  // 查询用户评分状态
+  let userRating = null
+  if (session?.user?.id) {
+    userRating = await prisma.rating.findUnique({
+      where: {
+        userId_novelId: {
+          userId: session.user.id,
+          novelId: novel.id
+        }
+      },
+      select: {
+        score: true
+      }
+    })
+  }
+
   const firstChapter = novel.chapters[0]
   const secondChapter = novel.chapters[1]
 
@@ -114,6 +130,8 @@ export default async function NovelDetailPage({
                           averageRating={novel.averageRating ?? 0}
                           totalRatings={novel.totalRatings}
                           userId={session?.user?.id}
+                          hasUserRated={!!userRating}
+                          userRatingScore={userRating?.score}
                         />
                       </div>
                     </div>
