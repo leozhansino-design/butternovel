@@ -122,7 +122,7 @@ export default function ChapterAddForm({ novelId, chapterNumber, novelTitle }: P
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={40}
+            rows={120}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 font-mono text-sm ${
               isOverLimit ? 'border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
             }`}
