@@ -2,77 +2,96 @@
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { withRetry, withConcurrency } from '@/lib/db-utils'
+import { getOrSet, CacheKeys, CacheTTL } from '@/lib/cache'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategorySection from '@/components/front/CategorySection'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 
 async function getFeaturedNovels() {
-  // ⚡ 优化：使用数据库层面随机排序，只取需要的数量
-  // 避免加载所有数据到内存再排序
-  return await withRetry(() =>
-    prisma.$queryRaw<Array<{
-      id: number
-      title: string
-      slug: string
-      coverImage: string
-      blurb: string
-      categoryName: string
-    }>>`
-      SELECT
-        n.id,
-        n.title,
-        n.slug,
-        n."coverImage",
-        n.blurb,
-        c.name as "categoryName"
-      FROM "Novel" n
-      INNER JOIN "Category" c ON n."categoryId" = c.id
-      WHERE n."isPublished" = true AND n."isBanned" = false
-      ORDER BY RANDOM()
-      LIMIT 24
-    `
+  // ⚡ 优化：使用 Redis 缓存 + 数据库层面随机排序
+  return await getOrSet(
+    CacheKeys.HOME_FEATURED,
+    async () => {
+      return await withRetry(() =>
+        prisma.$queryRaw<Array<{
+          id: number
+          title: string
+          slug: string
+          coverImage: string
+          blurb: string
+          categoryName: string
+        }>>`
+          SELECT
+            n.id,
+            n.title,
+            n.slug,
+            n."coverImage",
+            n.blurb,
+            c.name as "categoryName"
+          FROM "Novel" n
+          INNER JOIN "Category" c ON n."categoryId" = c.id
+          WHERE n."isPublished" = true AND n."isBanned" = false
+          ORDER BY RANDOM()
+          LIMIT 24
+        `
+      )
+    },
+    CacheTTL.HOME_FEATURED
   )
 }
 
 async function getAllCategories() {
-  return await withRetry(() =>
-    prisma.category.findMany({
-      orderBy: { order: 'asc' }
-    })
+  // ⚡ 优化：使用 Redis 缓存分类列表
+  return await getOrSet(
+    CacheKeys.HOME_ALL_CATEGORIES,
+    async () => {
+      return await withRetry(() =>
+        prisma.category.findMany({
+          orderBy: { order: 'asc' }
+        })
+      )
+    },
+    CacheTTL.HOME_CATEGORY
   )
 }
 
 async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
-  // ⚡ 优化：使用数据库层面随机排序
-  return await withRetry(() =>
-    prisma.$queryRaw<Array<{
-      id: number
-      title: string
-      slug: string
-      coverImage: string
-      categoryName: string
-      status: string
-      chaptersCount: number
-      likesCount: number
-    }>>`
-      SELECT
-        n.id,
-        n.title,
-        n.slug,
-        n."coverImage",
-        n.status,
-        c.name as "categoryName",
-        (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
-        (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
-      FROM "Novel" n
-      INNER JOIN "Category" c ON n."categoryId" = c.id
-      WHERE n."isPublished" = true
-        AND n."isBanned" = false
-        AND c.slug = ${categorySlug}
-      ORDER BY RANDOM()
-      LIMIT ${limit}
-    `
+  // ⚡ 优化：使用 Redis 缓存分类小说
+  return await getOrSet(
+    CacheKeys.HOME_CATEGORY(categorySlug),
+    async () => {
+      return await withRetry(() =>
+        prisma.$queryRaw<Array<{
+          id: number
+          title: string
+          slug: string
+          coverImage: string
+          categoryName: string
+          status: string
+          chaptersCount: number
+          likesCount: number
+        }>>`
+          SELECT
+            n.id,
+            n.title,
+            n.slug,
+            n."coverImage",
+            n.status,
+            c.name as "categoryName",
+            (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+            (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
+          FROM "Novel" n
+          INNER JOIN "Category" c ON n."categoryId" = c.id
+          WHERE n."isPublished" = true
+            AND n."isBanned" = false
+            AND c.slug = ${categorySlug}
+          ORDER BY RANDOM()
+          LIMIT ${limit}
+        `
+      )
+    },
+    CacheTTL.HOME_CATEGORY
   )
 }
 

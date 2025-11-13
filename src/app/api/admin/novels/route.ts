@@ -6,6 +6,7 @@ import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
 import { parsePaginationParams, createPaginationResponse } from '@/lib/pagination'
 import { successResponse, handleApiError } from '@/lib/api-response'
+import { invalidateNovelRelatedCache } from '@/lib/cache'
 
 // POST /api/admin/novels - 创建小说
 export const POST = withAdminAuth(async (session, request: Request) => {
@@ -122,6 +123,10 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
         console.log('✅ [API] Novel created successfully!')
         console.log('📚 [API] Novel ID:', novel.id)
+
+        // ⚡ 清除缓存：首页、分类页、小说详情
+        await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
+        console.log('✓ Cache cleared for newly created novel')
 
         return NextResponse.json({
             success: true,

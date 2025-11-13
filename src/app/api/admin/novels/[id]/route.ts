@@ -5,6 +5,7 @@ import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
+import { invalidateNovelRelatedCache } from '@/lib/cache'
 
 // PUT /api/admin/novels/[id] - 更新小说（增量更新）
 export const PUT = withAdminAuth(async (
@@ -145,6 +146,10 @@ export const PUT = withAdminAuth(async (
 
     console.log('✅ [API] Novel updated successfully!')
 
+    // ⚡ 清除缓存：首页、分类页、小说详情
+    await invalidateNovelRelatedCache(updatedNovel.slug, updatedNovel.category?.slug)
+    console.log('✓ Cache cleared for updated novel')
+
     return NextResponse.json({
       success: true,
       novel: updatedNovel,
@@ -172,7 +177,7 @@ export const DELETE = withAdminAuth(async (
 
     const novelId = parseInt(params.id)
 
-    // 获取小说信息
+    // 获取小说信息（包括 slug 和 category，用于清除缓存）
     // 🔄 添加数据库重试机制，解决连接超时问题
     const novel = await withRetry(
       () => prisma.novel.findUnique({
@@ -180,7 +185,11 @@ export const DELETE = withAdminAuth(async (
         select: {
           id: true,
           title: true,
-          coverImagePublicId: true
+          slug: true,
+          coverImagePublicId: true,
+          category: {
+            select: { slug: true }
+          }
         }
       }),
       { operationName: 'Get novel for deletion' }
@@ -208,6 +217,10 @@ export const DELETE = withAdminAuth(async (
     )
 
     console.log(`✅ [API] Novel deleted: ${novel.title}`)
+
+    // ⚡ 清除缓存：首页、分类页、小说详情
+    await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
+    console.log('✓ Cache cleared for deleted novel')
 
     return NextResponse.json({
       success: true,
