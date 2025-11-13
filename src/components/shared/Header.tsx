@@ -372,13 +372,13 @@ export default function Header({ user }: HeaderProps) {
                     <>
                       <div className="px-4 py-2 flex items-center gap-3">
                         {user.image ? (
-                          <img 
-                            src={user.image} 
-                            alt={user.name || 'User'} 
+                          <img
+                            src={user.image}
+                            alt={user.name || 'User'}
                             className="w-10 h-10 rounded-full"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-semibold">
+                          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold border border-gray-300">
                             {user.name?.[0]?.toUpperCase() || 'U'}
                           </div>
                         )}

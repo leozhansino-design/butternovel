@@ -1,6 +1,8 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
+import Credentials from "next-auth/providers/credentials"
+import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 
 const requiredEnvVars = {
@@ -43,6 +45,56 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       checks: ["state"],
     }),
+
+    // ✅ Credentials Provider for email/username + password login
+    Credentials({
+      name: "credentials",
+      credentials: {
+        identifier: { label: "Email or Username", type: "text" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.identifier || !credentials?.password) {
+          throw new Error("Please enter your email or username and password")
+        }
+
+        const identifier = credentials.identifier as string
+        const password = credentials.password as string
+
+        // Find user by email OR username
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: identifier },
+              { name: identifier }
+            ]
+          }
+        })
+
+        if (!user) {
+          throw new Error("No account found with this email or username")
+        }
+
+        if (!user.password) {
+          throw new Error("This account uses Google sign-in. Please use 'Continue with Google'")
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, user.password)
+
+        if (!isValidPassword) {
+          throw new Error("Incorrect password. Please try again")
+        }
+
+        // Return user object
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.avatar
+        }
+      }
+    })
   ],
 
   callbacks: {

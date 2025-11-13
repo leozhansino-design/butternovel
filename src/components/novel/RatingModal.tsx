@@ -321,7 +321,7 @@ export default function RatingModal({
                         className="w-8 h-8 rounded-full"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-800 font-semibold text-sm">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold text-sm border border-gray-300">
                         {rating.user.name?.[0]?.toUpperCase() || 'U'}
                       </div>
                     )}
