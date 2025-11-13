@@ -59,7 +59,11 @@ async function getNovel(slug: string) {
   )
 }
 
+// ✅ ISR: 1小时重新验证
 export const revalidate = 3600
+
+// ⚡ CRITICAL: 覆盖 Upstash Redis 的 no-store，允许 ISR 缓存
+export const fetchCache = 'default-cache'
 
 /**
  * ⚡ CRITICAL FIX: Removed server-side auth() call

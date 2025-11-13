@@ -97,8 +97,11 @@ async function WriterContent() {
   )
 }
 
-// ✅ ISR: 1 hour cache
+// ✅ ISR: 1小时重新验证
 export const revalidate = 3600
+
+// ⚡ CRITICAL: 覆盖 Upstash Redis 的 no-store，允许 ISR 缓存（虽然此页面不使用 Redis）
+export const fetchCache = 'default-cache'
 
 export default function WriterPage() {
   return (

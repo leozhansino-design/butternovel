@@ -44,7 +44,9 @@ export function getRedisClient(): Redis | null {
   }
 
   try {
-    // 创建 Upstash Redis 客户端
+    // 🔧 修复: 配置 Upstash Redis
+    // 注意：Upstash 使用 no-store fetch，可能与 ISR 冲突
+    // 解决方案：在页面级别设置 fetchCache = 'default-cache'
     redis = new Redis({
       url: restUrl,
       token: restToken,

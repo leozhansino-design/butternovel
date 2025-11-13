@@ -181,8 +181,12 @@ async function HomeContent() {
   )
 }
 
-// ✅ 添加1小时缓存
+// ✅ ISR: 1小时重新验证
 export const revalidate = 3600
+
+// ⚡ CRITICAL: 覆盖 Upstash Redis 的 no-store，允许 ISR 缓存
+// 这告诉 Next.js 即使有 no-store fetch，也要使用默认缓存策略
+export const fetchCache = 'default-cache'
 
 export default function HomePage() {
   return (
