@@ -280,7 +280,7 @@ export default async function NovelDetailPage({
           )}
 
           {/* 渐变过渡 - 从 gray-50 到白色 */}
-          <div className="h-12 bg-gradient-to-b from-gray-50 via-gray-25 to-white"></div>
+          <div className="h-16 bg-gradient-to-b from-gray-50 via-gray-50/30 to-white"></div>
 
           {/* ⚡ 章节目录 - Table of Contents */}
           {allChapters.length > 0 && (

@@ -1,11 +1,31 @@
 import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
 
-export default function Footer() {
+async function getTopCategories() {
+  try {
+    const categories = await prisma.category.findMany({
+      orderBy: { order: 'asc' },
+      take: 6,
+      select: {
+        slug: true,
+        name: true,
+      },
+    });
+    return categories;
+  } catch (error) {
+    console.error('Error fetching categories for footer:', error);
+    return [];
+  }
+}
+
+export default async function Footer() {
+  const categories = await getTopCategories();
+
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
+
           {/* About */}
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -27,8 +47,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/library" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Library
+                <Link href="/novels" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Browse Novels
                 </Link>
               </li>
               <li>
@@ -48,26 +68,36 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
             <ul className="space-y-2">
-              <li>
-                <Link href="/category/fantasy" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Fantasy
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/urban" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Urban
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/romance" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Romance
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/scifi" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Sci-Fi
-                </Link>
-              </li>
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <li key={category.slug}>
+                    <Link
+                      href={`/category/${category.slug}`}
+                      className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <Link href="/category/fantasy" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                      Fantasy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/category/romance" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                      Romance
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/category/action" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                      Action
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
