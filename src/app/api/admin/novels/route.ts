@@ -147,16 +147,16 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 // GET /api/admin/novels - Get all novels with filters
 export const GET = withAdminAuth(async (session, request: Request) => {
     try {
+        // ✅ Use pagination utility
+        const { page, limit, offset } = parsePaginationParams(request.url, {
+            defaultLimit: 10,
+            maxLimit: 50,
+        })
+
         const url = new URL(request.url)
         const search = url.searchParams.get('search') || ''
         const categoryId = url.searchParams.get('categoryId') || ''
         const status = url.searchParams.get('status') || ''
-
-        // ✅ Use pagination utility
-        const { page, limit, offset } = parsePaginationParams(url, {
-            defaultLimit: 10,
-            maxLimit: 50,
-        })
 
         const where: any = {}
 
