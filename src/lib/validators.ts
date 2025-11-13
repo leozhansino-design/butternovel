@@ -24,7 +24,7 @@ export const novelCreateSchema = z.object({
     .max(3000, '简介最多3000字'),
 
   status: z.enum(['ONGOING', 'COMPLETED'], {
-    errorMap: () => ({ message: '状态必须是 ONGOING 或 COMPLETED' })
+    message: '状态必须是 ONGOING 或 COMPLETED'
   }),
 
   isPublished: z.boolean().optional(),
@@ -266,22 +266,17 @@ export function validateWithSchema<T>(
   schema: z.ZodSchema<T>,
   data: unknown
 ): { success: true; data: T } | { success: false; error: string; details?: any } {
-  try {
-    const parsed = schema.parse(data)
-    return { success: true, data: parsed }
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const firstError = error.errors[0]
-      return {
-        success: false,
-        error: firstError.message,
-        details: error.flatten()
-      }
-    }
-    return {
-      success: false,
-      error: 'Validation failed'
-    }
+  const result = schema.safeParse(data)
+
+  if (result.success) {
+    return { success: true, data: result.data }
+  }
+
+  const firstError = result.error.issues[0]
+  return {
+    success: false,
+    error: firstError?.message || 'Validation failed',
+    details: result.error.flatten()
   }
 }
 
