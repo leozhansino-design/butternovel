@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 
 type Novel = {
   id: number
@@ -102,11 +101,10 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
           >
             {/* Cover Image */}
             <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-              <Image
+              <img
                 src={novel.coverImage}
                 alt={novel.title}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
               {/* Status Badge */}
               <div className="absolute top-2 right-2">
