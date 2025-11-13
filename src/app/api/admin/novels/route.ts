@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 
 // POST /api/admin/novels - 创建小说
-export async function POST(request: Request) {
+export const POST = withAdminAuth(async (session, request: Request) => {
     try {
         console.log('📝 [API] Received upload request')
-
-        // 1. 验证管理员权限
-        const session = await getAdminSession()
-        if (!session) {
-            console.log('❌ [API] Unauthorized - No session')
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            )
-        }
         console.log('✅ [API] Session verified:', session.email)
 
         // 2. 获取表单数据
@@ -148,15 +138,11 @@ export async function POST(request: Request) {
             { status: 500 }
         )
     }
-}
+})
 
 // GET /api/admin/novels - 获取所有小说
-export async function GET(request: Request) {
+export const GET = withAdminAuth(async (session, request: Request) => {
     try {
-        const session = await getAdminSession()
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
 
         const url = new URL(request.url)
         const search = url.searchParams.get('search') || ''
@@ -216,4 +202,4 @@ export async function GET(request: Request) {
             { status: 500 }
         )
     }
-}
+})

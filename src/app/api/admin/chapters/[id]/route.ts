@@ -122,28 +122,17 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       )
     }
 
-    // 🔄 添加数据库重试机制，解决连接超时问题
-    const remainingChapters = await withRetry(
-      () => prisma.chapter.findMany({
-        where: {
-          novelId: chapter.novelId,
-          chapterNumber: { gt: chapter.chapterNumber }
-        },
-        orderBy: { chapterNumber: 'asc' }
-      }),
-      { operationName: 'Get remaining chapters' }
+    // ✅ 优化: 使用单次 SQL 批量更新代替循环 (N次 → 1次)
+    // 将所有后续章节的章节号减 1
+    await withRetry(
+      () => prisma.$executeRaw`
+        UPDATE "Chapter"
+        SET "chapterNumber" = "chapterNumber" - 1
+        WHERE "novelId" = ${chapter.novelId}
+        AND "chapterNumber" > ${chapter.chapterNumber}
+      `,
+      { operationName: 'Reorder remaining chapters' }
     )
-
-    for (const ch of remainingChapters) {
-      // 🔄 添加数据库重试机制，解决连接超时问题
-      await withRetry(
-        () => prisma.chapter.update({
-          where: { id: ch.id },
-          data: { chapterNumber: ch.chapterNumber - 1 }
-        }),
-        { operationName: 'Reorder chapter' }
-      )
-    }
 
     return NextResponse.json({ success: true, message: 'Chapter deleted' })
 
