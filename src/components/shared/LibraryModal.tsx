@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import MyLibrary from '@/components/library/MyLibrary'
 import ProfileView from '@/components/library/ProfileView'
+import ReadingHistory from '@/components/library/ReadingHistory'
 
 interface LibraryModalProps {
   isOpen: boolean
@@ -89,15 +90,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
         <div className="flex-1 overflow-hidden px-6 pt-4 pb-6">
           <div className="h-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
             {activeTab === 'library' && <MyLibrary onClose={onClose} />}
-            {activeTab === 'history' && (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="text-7xl mb-6">📖</div>
-                  <h3 className="text-3xl font-bold text-gray-900 mb-3">Reading History</h3>
-                  <p className="text-gray-600 text-lg">Coming soon...</p>
-                </div>
-              </div>
-            )}
+            {activeTab === 'history' && <ReadingHistory onClose={onClose} />}
           </div>
         </div>
       </div>

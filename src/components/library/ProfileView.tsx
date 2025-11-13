@@ -18,6 +18,7 @@ type ProfileData = {
   email: string | null
   avatar: string | null
   bio: string | null
+  booksRead?: number
 }
 
 export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
@@ -33,18 +34,27 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // ✅ 将 fetchProfile 逻辑移到 useEffect 内部，避免依赖问题
+  // ✅ Fetch profile and stats in parallel
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true)
-        const res = await fetch('/api/profile')
-        const data = await res.json()
+        // Fetch profile and stats in parallel
+        const [profileRes, statsRes] = await Promise.all([
+          fetch('/api/profile'),
+          fetch('/api/profile/stats')
+        ])
 
-        if (res.ok) {
-          setProfileData(data.user)
-          setEditName(data.user.name || '')
-          setEditBio(data.user.bio || '')
+        const profileData = await profileRes.json()
+        const statsData = await statsRes.json()
+
+        if (profileRes.ok) {
+          setProfileData({
+            ...profileData.user,
+            booksRead: statsData.booksRead || 0
+          })
+          setEditName(profileData.user.name || '')
+          setEditBio(profileData.user.bio || '')
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error)
@@ -208,13 +218,13 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
   return (
     <div>
-      {/* 毛玻璃 Profile 卡片 - 增加高度 */}
+      {/* 毛玻璃 Profile 卡片 */}
       <div className="relative backdrop-blur-2xl bg-white/70 rounded-2xl shadow-xl border border-white/30 p-6">
         {/* 渐变背景装饰 */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-2xl pointer-events-none" />
 
         <div className="relative flex items-start gap-6">
-          {/* Avatar with upload - 增加尺寸 */}
+          {/* Avatar with upload */}
           <div className="relative group flex-shrink-0">
             {avatarUrl ? (
               <img
@@ -223,7 +233,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                 className="w-24 h-24 rounded-2xl object-cover ring-4 ring-white/50 shadow-lg"
               />
             ) : (
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-3xl ring-4 ring-white/50 shadow-lg">
+              <div className="w-24 h-24 rounded-2xl bg-white flex items-center justify-center text-gray-900 font-bold text-3xl ring-4 ring-white/50 shadow-lg border border-gray-300">
                 {profileData.name?.[0]?.toUpperCase() || 'U'}
               </div>
             )}
@@ -246,7 +256,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
             />
           </div>
 
-          {/* User info - 增加空间 */}
+          {/* User info */}
           <div className="flex-1 min-w-0">
             {isEditing ? (
               <div className="space-y-4">
@@ -304,7 +314,18 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                     </svg>
                   </button>
                 </div>
-                <p className="text-gray-600 text-sm mb-2 truncate">{profileData.email}</p>
+                <p className="text-gray-600 text-sm mb-3 truncate">{profileData.email}</p>
+
+                {/* Books Read stat */}
+                <div className="mb-3">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-sm font-semibold">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    {profileData.booksRead || 0} {(profileData.booksRead || 0) === 1 ? 'book' : 'books'} read
+                  </span>
+                </div>
+
                 {profileData.bio ? (
                   <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">{profileData.bio}</p>
                 ) : (
@@ -312,18 +333,6 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Stats - 统计数据 */}
-          <div className="hidden md:flex items-center gap-6 flex-shrink-0 pl-6 border-l border-gray-200/50">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-600">0</div>
-              <div className="text-xs text-gray-500 font-medium">Favorites</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">0</div>
-              <div className="text-xs text-gray-500 font-medium">Finished</div>
-            </div>
           </div>
         </div>
       </div>

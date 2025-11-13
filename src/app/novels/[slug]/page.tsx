@@ -9,6 +9,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
 import ViewTracker from '@/components/ViewTracker'
+import ReadingHistoryTracker from '@/components/ReadingHistoryTracker'
 import { formatNumber } from '@/lib/format'
 import AddToLibraryButton from '@/components/novel/AddToLibraryButton'
 import FirstChapterContent from '@/components/novel/FirstChapterContent'
@@ -98,7 +99,8 @@ export default async function NovelDetailPage({
   return (
     <>
       <ViewTracker novelId={novel.id} />
-      
+      <ReadingHistoryTracker novelId={novel.id} />
+
       {/* 预加载第二章 */}
       {secondChapter && (
         <link
