@@ -6,7 +6,7 @@ import cloudinary from '@/lib/cloudinary'
 // GET - Get a single novel
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -18,7 +18,8 @@ export async function GET(
       )
     }
 
-    const novelId = parseInt(params.id)
+    const { id } = await params
+    const novelId = parseInt(id)
 
     const novel = await prisma.novel.findFirst({
       where: {
@@ -55,7 +56,7 @@ export async function GET(
 // PUT - Update a novel
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -67,7 +68,8 @@ export async function PUT(
       )
     }
 
-    const novelId = parseInt(params.id)
+    const { id } = await params
+    const novelId = parseInt(id)
     const body = await request.json()
 
     // Check if novel belongs to this author
@@ -141,7 +143,7 @@ export async function PUT(
 // DELETE - Delete a novel
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -153,7 +155,8 @@ export async function DELETE(
       )
     }
 
-    const novelId = parseInt(params.id)
+    const { id } = await params
+    const novelId = parseInt(id)
 
     // Check if novel belongs to this author
     const existingNovel = await prisma.novel.findFirst({

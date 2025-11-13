@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 // GET - Get a single chapter
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -17,7 +17,8 @@ export async function GET(
       )
     }
 
-    const chapterId = parseInt(params.id)
+    const { id } = await params
+    const chapterId = parseInt(id)
 
     const chapter = await prisma.chapter.findFirst({
       where: {
@@ -57,7 +58,7 @@ export async function GET(
 // PUT - Update a chapter (including auto-save)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -69,7 +70,8 @@ export async function PUT(
       )
     }
 
-    const chapterId = parseInt(params.id)
+    const { id } = await params
+    const chapterId = parseInt(id)
     const body = await request.json()
 
     // Check if chapter belongs to this author
@@ -136,7 +138,7 @@ export async function PUT(
 // DELETE - Delete a chapter
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -148,7 +150,8 @@ export async function DELETE(
       )
     }
 
-    const chapterId = parseInt(params.id)
+    const { id } = await params
+    const chapterId = parseInt(id)
 
     // Check if chapter belongs to this author
     const existingChapter = await prisma.chapter.findFirst({
