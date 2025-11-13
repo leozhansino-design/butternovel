@@ -89,6 +89,9 @@ export async function safeRedisGet(key: string): Promise<string | null> {
 /**
  * 安全的 Redis SET 操作
  * 如果 Redis 不可用，返回 false（自动降级）
+ *
+ * 🔧 修复：使用 Upstash Redis 正确的 API 格式
+ * Upstash 使用 set(key, value, { ex: ttl }) 而不是 setex(key, ttl, value)
  */
 export async function safeRedisSet(
   key: string,
@@ -102,7 +105,8 @@ export async function safeRedisSet(
 
   try {
     if (ttlSeconds) {
-      await client.setex(key, ttlSeconds, value);
+      // Upstash Redis 正确用法：使用选项对象
+      await client.set(key, value, { ex: ttlSeconds });
     } else {
       await client.set(key, value);
     }
