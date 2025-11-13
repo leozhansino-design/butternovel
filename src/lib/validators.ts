@@ -223,10 +223,35 @@ export const WORD_LIMITS = {
 } as const
 
 /**
- * 计算文本字数
+ * 计算真正的单词数（支持中英文混合）
+ * 中文字符算1个词，英文单词算1个词
  */
 export function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(w => w).length
+  const cleaned = text.trim()
+  if (!cleaned) return 0
+
+  let count = 0
+
+  for (let i = 0; i < cleaned.length; i++) {
+    const char = cleaned[i]
+
+    // 中文字符（CJK统一表意文字）
+    if (/[\u4e00-\u9fa5]/.test(char)) {
+      count++
+    }
+    // 英文字符 - 读取整个单词
+    else if (/[a-zA-Z]/.test(char)) {
+      let word = char
+      while (i + 1 < cleaned.length && /[a-zA-Z]/.test(cleaned[i + 1])) {
+        i++
+        word += cleaned[i]
+      }
+      count++
+    }
+    // 其他字符（标点、空格等）不计数
+  }
+
+  return count
 }
 
 /**
