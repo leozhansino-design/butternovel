@@ -15,7 +15,7 @@ export const novelCreateSchema = z.object({
   coverImage: z.string()
     .min(1, '封面不能为空'),
 
-  categoryId: z.number()
+  categoryId: z.coerce.number()
     .int('分类ID必须是整数')
     .positive('分类ID必须是正整数'),
 
@@ -39,7 +39,7 @@ export const novelCreateSchema = z.object({
 export const novelUpdateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   blurb: z.string().min(1).max(3000).optional(),
-  categoryId: z.number().int().positive().optional(),
+  categoryId: z.coerce.number().int().positive().optional(),
   status: z.enum(['ONGOING', 'COMPLETED']).optional(),
   coverImage: z.string().optional(),
   isPublished: z.boolean().optional(),
@@ -51,13 +51,13 @@ export const novelUpdateSchema = z.object({
 // ============================================
 
 export const chapterCreateSchema = z.object({
-  novelId: z.number().int().positive(),
+  novelId: z.coerce.number().int().positive(),
   title: z.string()
     .min(1, '标题不能为空')
     .max(100, '标题最多100字'),
   content: z.string()
     .min(1, '内容不能为空'),
-  chapterNumber: z.number().int().positive(),
+  chapterNumber: z.coerce.number().int().positive(),
   isPublished: z.boolean().optional(),
 })
 
