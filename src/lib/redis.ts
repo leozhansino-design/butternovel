@@ -22,6 +22,16 @@ export function getRedisClient(): Redis | null {
     return redis;
   }
 
+  // 🔧 修复: 在构建时跳过 Redis 初始化，避免静态生成失败
+  // Next.js 在构建时会尝试预渲染页面，此时不应该初始化 Redis
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
+
+  if (isBuildTime) {
+    console.log('⚠ 构建阶段跳过 Redis 初始化');
+    isRedisAvailable = false;
+    return null;
+  }
+
   // 检查环境变量
   const restUrl = process.env.UPSTASH_REDIS_REST_URL;
   const restToken = process.env.UPSTASH_REDIS_REST_TOKEN;
