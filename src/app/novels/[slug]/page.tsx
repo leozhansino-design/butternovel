@@ -1,9 +1,10 @@
 // src/app/novels/[slug]/page.tsx
-// ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容
+// ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容 + Redis 缓存
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
+import { getOrSet, CacheKeys, CacheTTL } from '@/lib/cache'
 import { auth } from '@/lib/auth'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -17,41 +18,46 @@ import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 import RatingDisplay from '@/components/novel/RatingDisplay'
 
 async function getNovel(slug: string) {
-  // ⚡ 性能优化：移除content，避免阻塞首屏渲染
-  // 🔄 添加数据库重试机制，解决连接超时问题
-  const novel = await withRetry(
-    () => prisma.novel.findUnique({
-      where: { slug },
-      include: {
-        category: true,
-        chapters: {
-          where: { isPublished: true },
-          orderBy: { chapterNumber: 'asc' },
-          take: 2, // 只取前2章元数据
-          select: {
-            id: true,
-            title: true,
-            chapterNumber: true,
-            wordCount: true,
-            // ⚡ content 移除，由 FirstChapterContent 组件单独加载
+  // ⚡ 性能优化：Redis 缓存 + 移除content + 数据库重试
+  return await getOrSet(
+    CacheKeys.NOVEL(slug),
+    async () => {
+      const novel = await withRetry(
+        () => prisma.novel.findUnique({
+          where: { slug },
+          include: {
+            category: true,
+            chapters: {
+              where: { isPublished: true },
+              orderBy: { chapterNumber: 'asc' },
+              take: 2, // 只取前2章元数据
+              select: {
+                id: true,
+                title: true,
+                chapterNumber: true,
+                wordCount: true,
+                // ⚡ content 移除，由 FirstChapterContent 组件单独加载
+              },
+            },
+            _count: {
+              select: {
+                chapters: true,
+                likes: true,
+              },
+            },
           },
-        },
-        _count: {
-          select: {
-            chapters: true,
-            likes: true,
-          },
-        },
-      },
-    }),
-    { operationName: 'Get novel details' }
+        }),
+        { operationName: 'Get novel details' }
+      )
+
+      if (!novel || !novel.isPublished || novel.isBanned) {
+        return null
+      }
+
+      return novel
+    },
+    CacheTTL.NOVEL_DETAIL
   )
-
-  if (!novel || !novel.isPublished || novel.isBanned) {
-    return null
-  }
-
-  return novel
 }
 
 export const revalidate = 3600

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { validateWithSchema, chapterUpdateSchema } from '@/lib/validators'
+import { invalidateNovelCache } from '@/lib/cache'
 
 export const PUT = withAdminAuth(async (session, request: Request, props: { params: Promise<{ id: string }> }) => {
   try {
@@ -22,11 +23,18 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
 
     const updates = validation.data
 
-    // 🔄 添加数据库重试机制，解决连接超时问题
+    // 🔄 添加数据库重试机制，解决连接超时问题（包含 novel.slug 用于清除缓存）
     const currentChapter = await withRetry(
       () => prisma.chapter.findUnique({
         where: { id: chapterId },
-        select: { id: true, novelId: true, wordCount: true }
+        select: {
+          id: true,
+          novelId: true,
+          wordCount: true,
+          novel: {
+            select: { slug: true }
+          }
+        }
       }),
       { operationName: 'Get current chapter' }
     )
@@ -66,6 +74,10 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
       )
     }
 
+    // ⚡ 清除该小说的缓存（章节更新）
+    await invalidateNovelCache(currentChapter.novel.slug)
+    console.log('✓ Cache cleared for novel after chapter update')
+
     return NextResponse.json({
       success: true,
       chapter: { id: updatedChapter.id, title: updatedChapter.title }
@@ -83,11 +95,19 @@ export const DELETE = withAdminAuth(async (session, request: Request, props: { p
 
     const chapterId = parseInt(params.id)
 
-    // 🔄 添加数据库重试机制，解决连接超时问题
+    // 🔄 添加数据库重试机制，解决连接超时问题（包含 novel.slug 用于清除缓存）
     const chapter = await withRetry(
       () => prisma.chapter.findUnique({
         where: { id: chapterId },
-        select: { id: true, novelId: true, wordCount: true, chapterNumber: true }
+        select: {
+          id: true,
+          novelId: true,
+          wordCount: true,
+          chapterNumber: true,
+          novel: {
+            select: { slug: true }
+          }
+        }
       }),
       { operationName: 'Get chapter for deletion' }
     )
@@ -136,6 +156,10 @@ export const DELETE = withAdminAuth(async (session, request: Request, props: { p
       `,
       { operationName: 'Reorder remaining chapters' }
     )
+
+    // ⚡ 清除该小说的缓存（章节删除）
+    await invalidateNovelCache(chapter.novel.slug)
+    console.log('✓ Cache cleared for novel after chapter deletion')
 
     return NextResponse.json({ success: true, message: 'Chapter deleted' })
 
