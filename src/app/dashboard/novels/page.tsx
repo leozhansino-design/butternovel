@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { BookOpen, Plus, Edit, Trash2, Eye, Star, FileText, PenTool } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, FileText, MoreHorizontal, BookOpen } from 'lucide-react'
 
 type Novel = {
   id: number
@@ -24,6 +24,7 @@ export default function NovelsPage() {
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<number | null>(null)
+  const [filter, setFilter] = useState<'all' | 'published' | 'drafts'>('all')
 
   useEffect(() => {
     fetchNovels()
@@ -69,142 +70,214 @@ export default function NovelsPage() {
     }
   }
 
+  const filteredNovels = novels.filter((novel) => {
+    if (filter === 'published') return novel.isPublished
+    if (filter === 'drafts') return !novel.isPublished
+    return true
+  })
+
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading...</div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Novels</h1>
-          <p className="text-gray-600">Manage your novels and chapters</p>
-        </div>
-        <Link
-          href="/dashboard/upload"
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          <Plus size={20} />
-          Upload Novel
-        </Link>
-      </div>
-
-      {/* Novels Grid */}
-      {novels.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {novels.map((novel) => (
-            <div
-              key={novel.id}
-              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              {/* Cover Image */}
-              <div className="relative h-64 bg-gray-200">
-                <Image
-                  src={novel.coverImage}
-                  alt={novel.title}
-                  fill
-                  className="object-cover"
-                />
-                {/* Status Badge */}
-                <div className="absolute top-3 right-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      novel.isPublished
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-500 text-white'
-                    }`}
-                  >
-                    {novel.isPublished ? 'Published' : 'Draft'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-5">
-                {/* Title */}
-                <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-2">
-                  {novel.title}
-                </h3>
-
-                {/* Category */}
-                <p className="text-sm text-gray-600 mb-3">{novel.categoryName}</p>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <FileText size={14} />
-                    <span>{novel.totalChapters}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <Eye size={14} />
-                    <span>{novel.viewCount}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <Star size={14} className={novel.averageRating ? 'fill-yellow-400 text-yellow-400' : ''} />
-                    <span>{novel.averageRating?.toFixed(1) || '—'}</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-2">
-                  <Link
-                    href={`/dashboard/novels/${novel.id}/chapters`}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                  >
-                    <BookOpen size={16} />
-                    Manage Chapters
-                  </Link>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link
-                      href={`/dashboard/novels/${novel.id}/edit`}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                    >
-                      <Edit size={16} />
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(novel.id, novel.title)}
-                      disabled={deleting === novel.id}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium disabled:opacity-50"
-                    >
-                      <Trash2 size={16} />
-                      {deleting === novel.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Last Updated */}
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  Updated {new Date(novel.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <BookOpen className="mx-auto mb-4 text-gray-400" size={64} />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No novels yet</h3>
-          <p className="text-gray-600 mb-6">
-            Start your writing journey by uploading your first novel
-          </p>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">My Stories</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {filteredNovels.length} {filteredNovels.length === 1 ? 'story' : 'stories'}
+            </p>
+          </div>
           <Link
             href="/dashboard/upload"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
           >
-            <Plus size={20} />
-            Upload Your First Novel
+            <Plus size={18} />
+            New Story
           </Link>
         </div>
-      )}
+      </div>
+
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Filters */}
+        <div className="flex items-center gap-2 mb-6">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filter === 'all'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilter('published')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filter === 'published'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            Published
+          </button>
+          <button
+            onClick={() => setFilter('drafts')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              filter === 'drafts'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            Drafts
+          </button>
+        </div>
+
+        {/* Table */}
+        {filteredNovels.length > 0 ? (
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Story
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Chapters
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Views
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Last Updated
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredNovels.map((novel) => (
+                  <tr key={novel.id} className="hover:bg-gray-50 transition-colors">
+                    {/* Story */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-200">
+                          <Image
+                            src={novel.coverImage}
+                            alt={novel.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <Link
+                            href={`/dashboard/novels/${novel.id}/chapters`}
+                            className="font-medium text-gray-900 hover:text-indigo-600"
+                          >
+                            {novel.title}
+                          </Link>
+                          <p className="text-sm text-gray-500">{novel.categoryName}</p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          novel.isPublished
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {novel.isPublished ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
+
+                    {/* Chapters */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-gray-700">
+                        <FileText size={16} className="text-gray-400" />
+                        <span className="text-sm font-medium">{novel.totalChapters}</span>
+                      </div>
+                    </td>
+
+                    {/* Views */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-gray-700">
+                        <Eye size={16} className="text-gray-400" />
+                        <span className="text-sm font-medium">{novel.viewCount.toLocaleString()}</span>
+                      </div>
+                    </td>
+
+                    {/* Last Updated */}
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-500">
+                        {new Date(novel.updatedAt).toLocaleDateString()}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/dashboard/novels/${novel.id}/chapters`}
+                          className="text-sm text-gray-700 hover:text-indigo-600 font-medium"
+                        >
+                          Manage
+                        </Link>
+                        <Link
+                          href={`/dashboard/novels/${novel.id}/edit`}
+                          className="p-1 text-gray-400 hover:text-gray-600"
+                        >
+                          <Edit size={16} />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(novel.id, novel.title)}
+                          disabled={deleting === novel.id}
+                          className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 px-6 py-12 text-center">
+            <BookOpen className="mx-auto mb-3 text-gray-300" size={48} />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No stories found</h3>
+            <p className="text-gray-500 mb-6">
+              {filter === 'all'
+                ? 'Get started by creating your first story'
+                : filter === 'published'
+                ? 'You have no published stories yet'
+                : 'You have no draft stories'}
+            </p>
+            <Link
+              href="/dashboard/upload"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+            >
+              <Plus size={18} />
+              New Story
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

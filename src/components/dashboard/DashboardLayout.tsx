@@ -2,95 +2,122 @@
 
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { BookOpen, Home, Upload, PenTool, LogOut, User } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { signOut } from 'next-auth/react'
+import { LayoutDashboard, BookOpen, PenLine, LogOut } from 'lucide-react'
 
 interface DashboardLayoutProps {
   children: ReactNode
   userName: string
   userEmail: string
+  userImage?: string | null
 }
 
-export default function DashboardLayout({ children, userName, userEmail }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, userName, userEmail, userImage }: DashboardLayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
-  const isActive = (path: string) => {
+  const isActive = (path: string, exact: boolean = false) => {
+    if (exact) return pathname === path
     return pathname === path || pathname.startsWith(path + '/')
   }
 
   const navItems = [
-    { path: '/dashboard', label: 'Overview', icon: Home, exact: true },
-    { path: '/dashboard/novels', label: 'My Novels', icon: BookOpen, exact: false },
-    { path: '/dashboard/upload', label: 'Upload', icon: Upload, exact: false },
+    {
+      path: '/dashboard',
+      label: 'Overview',
+      icon: LayoutDashboard,
+      exact: true
+    },
+    {
+      path: '/dashboard/novels',
+      label: 'My Stories',
+      icon: BookOpen,
+      exact: false
+    },
+    {
+      path: '/dashboard/upload',
+      label: 'Write',
+      icon: PenLine,
+      exact: false
+    },
   ]
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <PenTool className="text-blue-600" size={24} />
-            <span className="text-xl font-bold text-gray-900">ButterNovel</span>
-            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full font-medium">
-              Author
-            </span>
-          </Link>
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/' })
+  }
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-6">
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 h-screen w-60 bg-white border-r border-gray-200 flex flex-col">
+        {/* Logo */}
+        <div className="h-16 flex items-center px-6 border-b border-gray-200">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <span className="text-xl">🧈</span>
+            <span className="text-lg font-semibold text-gray-900">ButterNovel</span>
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4">
+          <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon
-              const active = item.exact
-                ? pathname === item.path
-                : isActive(item.path)
+              const active = isActive(item.path, item.exact)
 
               return (
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative ${
                     active
-                      ? 'bg-blue-50 text-blue-600 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'text-indigo-600 bg-indigo-50'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <Icon size={18} />
-                  <span className="text-sm">{item.label}</span>
+                  {active && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600 rounded-r" />
+                  )}
+                  <Icon size={20} className="flex-shrink-0" />
+                  <span>{item.label}</span>
                 </Link>
               )
             })}
           </div>
+        </nav>
 
-          {/* User Menu */}
-          <div className="flex items-center gap-4">
-            <Link
-              href="/profile"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{userName || 'Author'}</p>
-                <p className="text-xs text-gray-500">{userEmail}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+        {/* User Section */}
+        <div className="border-t border-gray-200 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            {userImage ? (
+              <img
+                src={userImage}
+                alt={userName}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
                 {userName?.charAt(0).toUpperCase() || 'A'}
               </div>
-            </Link>
-
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <LogOut size={16} />
-              Exit
-            </Link>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{userName || 'Author'}</p>
+              <p className="text-xs text-gray-500 truncate">{userEmail}</p>
+            </div>
           </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            <LogOut size={16} />
+            <span>Sign Out</span>
+          </button>
         </div>
-      </nav>
+      </aside>
 
       {/* Main Content */}
-      <main className="pt-16 min-h-screen">
+      <main className="flex-1 ml-60">
         {children}
       </main>
     </div>
