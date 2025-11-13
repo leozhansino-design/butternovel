@@ -70,6 +70,9 @@ export function isRedisConnected(): boolean {
 /**
  * 安全的 Redis GET 操作
  * 如果 Redis 不可用，返回 null（自动降级）
+ *
+ * 🔧 修复：Upstash Redis 会自动反序列化 JSON，导致返回对象而不是字符串
+ * 解决方案：如果返回的不是字符串，手动转回 JSON 字符串
  */
 export async function safeRedisGet(key: string): Promise<string | null> {
   const client = getRedisClient();
@@ -78,8 +81,26 @@ export async function safeRedisGet(key: string): Promise<string | null> {
   }
 
   try {
-    const value = await client.get<string>(key);
-    return value;
+    // 不指定类型参数，让 Upstash 返回原始数据
+    const value = await client.get(key);
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    // 🔍 调试：检查返回值类型
+    console.log(`🔍 Redis GET: ${key} (类型: ${typeof value})`);
+
+    // 如果 Upstash 返回的是对象而不是字符串，重新序列化
+    if (typeof value === 'string') {
+      console.log(`   → 已是字符串，长度: ${value.length}`);
+      return value;
+    } else {
+      console.log(`   → 是对象，重新序列化为 JSON`);
+      const serialized = JSON.stringify(value);
+      console.log(`   → 序列化后长度: ${serialized.length}`);
+      return serialized;
+    }
   } catch (error) {
     console.error(`Redis GET 失败 (${key}):`, error);
     return null;
@@ -89,6 +110,9 @@ export async function safeRedisGet(key: string): Promise<string | null> {
 /**
  * 安全的 Redis SET 操作
  * 如果 Redis 不可用，返回 false（自动降级）
+ *
+ * 🔧 修复：使用 Upstash Redis 正确的 API 格式
+ * Upstash 使用 set(key, value, { ex: ttl }) 而不是 setex(key, ttl, value)
  */
 export async function safeRedisSet(
   key: string,
@@ -101,11 +125,26 @@ export async function safeRedisSet(
   }
 
   try {
+    // 🔍 调试：验证 value 是字符串
+    if (typeof value !== 'string') {
+      console.error(`❌ Redis SET 错误：value 不是字符串！类型: ${typeof value}, 值:`, value);
+      // 强制转换为字符串
+      value = String(value);
+      console.log(`   → 已转换为字符串: ${value.substring(0, 100)}...`);
+    }
+
+    // 🔍 调试：显示写入的数据
+    console.log(`📝 Redis SET: ${key} (长度: ${value.length}, TTL: ${ttlSeconds || '无限'}s)`);
+    console.log(`   → 前100字符: ${value.substring(0, 100)}`);
+
     if (ttlSeconds) {
-      await client.setex(key, ttlSeconds, value);
+      // Upstash Redis 正确用法：使用选项对象
+      await client.set(key, value, { ex: ttlSeconds });
     } else {
       await client.set(key, value);
     }
+
+    console.log(`✅ Redis SET 成功: ${key}`);
     return true;
   } catch (error) {
     console.error(`Redis SET 失败 (${key}):`, error);
