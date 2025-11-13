@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
+import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
 
 // POST /api/admin/novels - 创建小说
 export const POST = withAdminAuth(async (session, request: Request) => {
@@ -10,9 +11,19 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         console.log('📝 [API] Received upload request')
         console.log('✅ [API] Session verified:', session.email)
 
-        // 2. 获取表单数据
+        // 2. 获取并验证表单数据
         const body = await request.json()
         console.log('📦 [API] Request body:', JSON.stringify(body, null, 2))
+
+        // ✅ 使用 Zod 验证
+        const validation = validateWithSchema(novelCreateSchema, body)
+        if (!validation.success) {
+            console.log('❌ [API] Validation failed:', validation.error)
+            return NextResponse.json(
+                { error: validation.error, details: validation.details },
+                { status: 400 }
+            )
+        }
 
         const {
             title,
@@ -22,16 +33,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             status,
             isPublished,
             chapters
-        } = body
-
-        // 3. 验证必填字段
-        if (!title || !coverImage || !categoryId || !blurb) {
-            console.log('❌ [API] Missing required fields')
-            return NextResponse.json(
-                { error: 'Missing required fields: title, coverImage, categoryId, blurb' },
-                { status: 400 }
-            )
-        }
+        } = validation.data
 
         // ⭐ 新增：获取 AdminProfile 的 displayName
         console.log('👤 [API] Fetching admin profile...')

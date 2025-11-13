@@ -3,15 +3,23 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
+import { validateWithSchema, chapterCreateSchema } from '@/lib/validators'
 
 export const POST = withAdminAuth(async (session, request: Request) => {
   try {
+    const body = await request.json()
 
-    const { novelId, title, content, chapterNumber, isPublished, wordCount } = await request.json()
-
-    if (!novelId || !title || !content) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    // ✅ 使用 Zod 验证
+    const validation = validateWithSchema(chapterCreateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, details: validation.details },
+        { status: 400 }
+      )
     }
+
+    const { novelId, title, content, chapterNumber, isPublished } = validation.data
+    const wordCount = body.wordCount
 
     // 🔄 添加数据库重试机制，解决连接超时问题
     const novel = await withRetry(
