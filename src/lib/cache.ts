@@ -27,6 +27,7 @@ export const CacheKeys = {
   // 分类相关
   CATEGORY: (slug: string) => `category:${slug}`, // 分类信息
   CATEGORY_NOVELS: (slug: string) => `category:${slug}:novels`, // 分类下的小说
+  CATEGORY_PAGE: (slug: string) => `category:${slug}:page`, // 分类页面完整数据（包含分类信息+小说列表）
 
   // 用户书架（需要包含用户 ID）
   USER_LIBRARY: (userId: string) => `user:${userId}:library`, // 用户书架
@@ -47,6 +48,7 @@ export const CacheTTL = {
   HOME_FEATURED: 60 * 60, // 1 小时
   HOME_CATEGORY: 60 * 30, // 30 分钟
   CATEGORY_NOVELS: 60 * 30, // 30 分钟
+  CATEGORY_PAGE: 60 * 30, // 30 分钟
   NOVEL_DETAIL: 60 * 10, // 10 分钟
   NOVEL_STATS: 60 * 5, // 5 分钟
   USER_LIBRARY: 0, // 实时（不过期，手动清除）
