@@ -239,6 +239,9 @@ export default async function NovelDetailPage({
             </div>
           </section>
 
+          {/* 渐变过渡 - 从 amber 到白色 */}
+          <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
+
           {/* ⚡ 第一章预览 - 只显示 200-300 字 + 渐变效果 */}
           {firstChapter && (
             <Suspense
