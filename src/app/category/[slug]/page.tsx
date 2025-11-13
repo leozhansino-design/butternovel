@@ -130,8 +130,11 @@ async function CategoryContent({ slug }: { slug: string }) {
   )
 }
 
-// ✅ ISR: 30 minutes cache
+// ✅ ISR: 30分钟重新验证
 export const revalidate = 1800
+
+// ⚡ CRITICAL: 覆盖 Upstash Redis 的 no-store，允许 ISR 缓存
+export const fetchCache = 'default-cache'
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params
