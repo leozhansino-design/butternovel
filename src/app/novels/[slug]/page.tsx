@@ -12,7 +12,8 @@ import ViewTracker from '@/components/ViewTracker'
 import ReadingHistoryTracker from '@/components/ReadingHistoryTracker'
 import { formatNumber } from '@/lib/format'
 import ClientAddToLibraryButton from '@/components/novel/ClientAddToLibraryButton'
-import FirstChapterContent from '@/components/novel/FirstChapterContent'
+import ChapterPreview from '@/components/novel/ChapterPreview'
+import TableOfContents from '@/components/novel/TableOfContents'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 
@@ -29,13 +30,14 @@ async function getNovel(slug: string) {
             chapters: {
               where: { isPublished: true },
               orderBy: { chapterNumber: 'asc' },
-              take: 2, // 只取前2章元数据
+              // ⚡ 获取所有章节元数据（用于目录显示）
               select: {
                 id: true,
                 title: true,
                 chapterNumber: true,
                 wordCount: true,
-                // ⚡ content 移除，由 FirstChapterContent 组件单独加载
+                createdAt: true,
+                // ⚡ content 移除，由 ChapterPreview 组件单独加载
               },
             },
             _count: {
@@ -87,18 +89,18 @@ export default async function NovelDetailPage({
   }
 
   const firstChapter = novel.chapters[0]
-  const secondChapter = novel.chapters[1]
+  const allChapters = novel.chapters
 
   return (
     <>
       <ViewTracker novelId={novel.id} />
       <ReadingHistoryTracker novelId={novel.id} />
 
-      {/* 预加载第二章 */}
-      {secondChapter && (
+      {/* 预加载第一章完整内容 */}
+      {firstChapter && (
         <link
           rel="prefetch"
-          href={`/novels/${novel.slug}/chapters/${secondChapter.chapterNumber}`}
+          href={`/novels/${novel.slug}/chapters/${firstChapter.chapterNumber}`}
           as="document"
         />
       )}
@@ -237,21 +239,19 @@ export default async function NovelDetailPage({
             </div>
           </section>
 
-          <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
-
-          {/* ⚡ 延迟加载第一章内容 - 不阻塞首屏渲染 */}
+          {/* ⚡ 第一章预览 - 只显示 200-300 字 + 渐变效果 */}
           {firstChapter && (
             <Suspense
               fallback={
-                <section className="pt-6 pb-12 md:pb-16 bg-white">
+                <section className="py-12 bg-gradient-to-b from-white to-gray-50">
                   <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto space-y-8">
-                      <div className="text-center border-b border-gray-200 pb-8">
-                        <div className="h-4 w-32 bg-gray-200 rounded mx-auto mb-4 animate-pulse"></div>
-                        <div className="h-10 bg-gray-200 rounded w-2/3 mx-auto animate-pulse"></div>
+                      <div className="mb-8">
+                        <div className="h-4 w-24 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                        <div className="h-8 bg-gray-200 rounded w-2/3 animate-pulse"></div>
                       </div>
                       <div className="space-y-3">
-                        {[...Array(12)].map((_, i) => (
+                        {[...Array(8)].map((_, i) => (
                           <div
                             key={i}
                             className="h-5 bg-gray-100 rounded animate-pulse"
@@ -267,16 +267,21 @@ export default async function NovelDetailPage({
                 </section>
               }
             >
-              <FirstChapterContent
+              <ChapterPreview
                 chapterId={firstChapter.id}
                 chapterNumber={firstChapter.chapterNumber}
                 chapterTitle={firstChapter.title}
                 novelSlug={novel.slug}
-                hasSecondChapter={!!secondChapter}
-                secondChapterNumber={secondChapter?.chapterNumber}
-                novelStatus={novel.status}
               />
             </Suspense>
+          )}
+
+          {/* ⚡ 章节目录 - Table of Contents */}
+          {allChapters.length > 0 && (
+            <TableOfContents
+              chapters={allChapters}
+              novelSlug={novel.slug}
+            />
           )}
         </main>
 
