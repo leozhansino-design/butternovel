@@ -16,6 +16,8 @@ export async function GET() {
       return unauthorizedResponse()
     }
 
+    console.log('[Reading History] Fetching for user:', session.user.id)
+
     // Get reading history with novel details, ordered by last read time
     const history = await prisma.readingHistory.findMany({
       where: {
@@ -45,21 +47,28 @@ export async function GET() {
       take: 50 // Limit to most recent 50
     })
 
-    // Transform data for frontend
-    const novels = history.map(item => ({
-      id: item.novel.id,
-      title: item.novel.title,
-      slug: item.novel.slug,
-      coverImage: item.novel.coverImage,
-      authorName: item.novel.authorName,
-      status: item.novel.status,
-      totalChapters: item.novel.totalChapters,
-      categoryName: item.novel.category.name,
-      lastReadAt: item.lastReadAt.toISOString()
-    }))
+    console.log('[Reading History] Found', history.length, 'records')
+
+    // Transform data for frontend, filtering out any invalid entries
+    const novels = history
+      .filter(item => item.novel && item.novel.category) // Filter out null novels/categories
+      .map(item => ({
+        id: item.novel.id,
+        title: item.novel.title,
+        slug: item.novel.slug,
+        coverImage: item.novel.coverImage,
+        authorName: item.novel.authorName,
+        status: item.novel.status,
+        totalChapters: item.novel.totalChapters,
+        categoryName: item.novel.category.name,
+        lastReadAt: item.lastReadAt.toISOString()
+      }))
+
+    console.log('[Reading History] Returning', novels.length, 'valid novels')
 
     return successResponse({ novels })
   } catch (error) {
+    console.error('[Reading History] Error:', error)
     return handleApiError(error, 'Failed to fetch reading history')
   }
 }

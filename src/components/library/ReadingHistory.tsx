@@ -29,26 +29,35 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
     const fetchHistory = async () => {
       try {
         setLoading(true)
+        console.log('[ReadingHistory] Fetching history...')
         const res = await fetch('/api/reading-history')
+
+        console.log('[ReadingHistory] Response status:', res.status)
 
         // Handle unauthorized (not logged in)
         if (res.status === 401) {
+          console.log('[ReadingHistory] User not logged in')
           setNovels([])
           setLoading(false)
           return
         }
 
         const data = await res.json()
+        console.log('[ReadingHistory] Response data:', data)
 
         if (res.ok && data.novels) {
-          setNovels(Array.isArray(data.novels) ? data.novels : [])
+          const novelsArray = Array.isArray(data.novels) ? data.novels : []
+          console.log('[ReadingHistory] Setting', novelsArray.length, 'novels')
+          setNovels(novelsArray)
         } else {
-          setError(data.error || 'Failed to load reading history')
+          const errorMsg = data.error || data.message || `Failed to load (${res.status})`
+          console.error('[ReadingHistory] Error:', errorMsg)
+          setError(errorMsg)
           setNovels([])
         }
       } catch (error) {
-        console.error('Failed to fetch reading history:', error)
-        setError('Failed to load reading history')
+        console.error('[ReadingHistory] Exception:', error)
+        setError(error instanceof Error ? error.message : 'Network error')
         setNovels([])
       } finally {
         setLoading(false)
