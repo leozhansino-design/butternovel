@@ -73,9 +73,9 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
         console.log('🔗 [API] Generated slug:', slug)
 
-        // 6. 计算总字数（使用真正的单词计数）
+        // 6. 计算总字数（字符数）
         const wordCount = chapters?.reduce((total: number, ch: any) => {
-            return total + (ch.content ? countWords(ch.content) : 0)
+            return total + (ch.content?.length || 0)
         }, 0) || 0
 
         console.log('📊 [API] Total word count:', wordCount)
