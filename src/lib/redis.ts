@@ -154,7 +154,11 @@ export async function safeRedisDel(key: string | string[]): Promise<boolean> {
   }
 
   try {
-    await client.del(key);
+    // 统一转换为数组形式，然后展开传递给 del
+    const keys = Array.isArray(key) ? key : [key];
+    if (keys.length > 0) {
+      await client.del(...keys);
+    }
     return true;
   } catch (error) {
     console.error(`Redis DEL 失败:`, error);
