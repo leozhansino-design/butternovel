@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
 import { validateWithSchema, ratingSchema } from '@/lib/validators'
+import { invalidateNovelCache } from '@/lib/cache'
 
 export async function POST(
   request: NextRequest,
@@ -44,10 +45,14 @@ export async function POST(
 
     const { score, review } = validation.data
 
-    // ⚡ 使用重试机制检查小说是否存在
+    // ⚡ 使用重试机制检查小说是否存在（获取 slug 用于清除缓存）
     const novel = await withRetry(() =>
       prisma.novel.findUnique({
         where: { id: novelId },
+        select: {
+          id: true,
+          slug: true
+        }
       })
     )
 
@@ -127,6 +132,10 @@ export async function POST(
       timeout: 15000, // ⚡ 设置事务超时为15秒
     })
     )
+
+    // ⚡ 清除小说详情缓存（评分数据已更新）
+    await invalidateNovelCache(novel.slug)
+    console.log(`✓ Cache cleared after rating submission for novel: ${novel.slug}`)
 
     return NextResponse.json(result, { status: 201 })
   } catch (error) {

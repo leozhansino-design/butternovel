@@ -4,7 +4,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import HeaderWrapper from '@/components/shared/HeaderWrapper'
+import { SessionProvider } from 'next-auth/react'
+import ClientHeaderWrapper from '@/components/shared/ClientHeaderWrapper'
 import ConditionalHeader from '@/components/shared/ConditionalHeader'
 
 // const inter = Inter({ subsets: ['latin'] })
@@ -14,6 +15,21 @@ export const metadata: Metadata = {
   description: 'Discover millions of novels for free. Read anytime, anywhere.',
 }
 
+/**
+ * Root Layout
+ *
+ * ⚡ CRITICAL FIX: Removed server-side `await auth()` call
+ *
+ * Previously: Used HeaderWrapper which called `await auth()`
+ * - This forced ALL pages to be dynamically rendered
+ * - Cache-Control: no-cache, no-store
+ * - ISR completely disabled
+ *
+ * Now: Uses ClientHeaderWrapper with useSession() hook
+ * - Session fetched client-side
+ * - Pages can be statically generated
+ * - ISR works properly with revalidate settings
+ */
 export default function RootLayout({
   children,
 }: {
@@ -22,15 +38,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans">{/* 使用系统字体 */}
-        {/* ✅ 用 ConditionalHeader 包裹 HeaderWrapper */}
-        <ConditionalHeader>
-          <HeaderWrapper />
-        </ConditionalHeader>
-        
-        {children}
-        
-        <Analytics />
-        <SpeedInsights />
+        <SessionProvider>
+          {/* ✅ Client-side header - doesn't force dynamic rendering */}
+          <ConditionalHeader>
+            <ClientHeaderWrapper />
+          </ConditionalHeader>
+
+          {children}
+
+          <Analytics />
+          <SpeedInsights />
+        </SessionProvider>
       </body>
     </html>
   )
