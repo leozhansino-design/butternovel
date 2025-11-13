@@ -30,16 +30,26 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
       try {
         setLoading(true)
         const res = await fetch('/api/reading-history')
+
+        // Handle unauthorized (not logged in)
+        if (res.status === 401) {
+          setNovels([])
+          setLoading(false)
+          return
+        }
+
         const data = await res.json()
 
-        if (res.ok) {
-          setNovels(data.novels)
+        if (res.ok && data.novels) {
+          setNovels(Array.isArray(data.novels) ? data.novels : [])
         } else {
           setError(data.error || 'Failed to load reading history')
+          setNovels([])
         }
       } catch (error) {
         console.error('Failed to fetch reading history:', error)
         setError('Failed to load reading history')
+        setNovels([])
       } finally {
         setLoading(false)
       }
@@ -67,7 +77,7 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
     )
   }
 
-  if (novels.length === 0) {
+  if (!novels || novels.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
@@ -92,7 +102,7 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
   return (
     <div className="h-full overflow-y-auto p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {novels.map((novel) => (
+        {novels && novels.map((novel) => (
           <Link
             key={novel.id}
             href={`/novels/${novel.slug}`}
