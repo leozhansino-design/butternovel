@@ -1,10 +1,10 @@
 // src/app/api/novels/[id]/ratings/route.ts
 // Get novel ratings list with pagination
 
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parsePaginationParams, createPaginationResponse } from '@/lib/pagination'
-import { successResponse, errorResponse, handleApiError, ErrorCode } from '@/lib/api-response'
+import { errorResponse, ErrorCode } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -61,11 +61,13 @@ export async function GET(
     // ✅ Create standardized pagination response
     const pagination = createPaginationResponse({ page, limit, offset }, total)
 
-    return successResponse({
+    // Return data directly for backward compatibility with frontend
+    return NextResponse.json({
       ratings,
       pagination,
     })
   } catch (error) {
-    return handleApiError(error, 'Failed to fetch ratings')
+    console.error('Failed to fetch ratings:', error)
+    return errorResponse('Failed to fetch ratings', ErrorCode.INTERNAL_ERROR)
   }
 }
