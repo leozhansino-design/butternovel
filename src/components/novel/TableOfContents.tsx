@@ -21,6 +21,25 @@ type TableOfContentsProps = {
 
 const CHAPTERS_PER_PAGE = 30 // 每页显示30章
 
+/**
+ * 将字符数转换为单词数
+ * 数据库存储的是字符数，但我们需要显示单词数
+ *
+ * 估算规则：
+ * - 中文：1个字 = 1个词
+ * - 英文：1个词 ≈ 5个字符（包括空格）
+ * - 标点符号不计
+ *
+ * 混合文本估算：平均约 2-3 个字符 = 1 个词
+ */
+function estimateWordCount(charCount: number): number {
+  // 使用 2.5 作为平均值（考虑中英文混合）
+  // 对于纯中文：接近 1:1
+  // 对于纯英文：接近 5:1
+  // 混合文本：约 2.5:1
+  return Math.round(charCount / 2.5)
+}
+
 export default function TableOfContents({ chapters, novelSlug }: TableOfContentsProps) {
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -69,7 +88,7 @@ export default function TableOfContents({ chapters, novelSlug }: TableOfContents
 
                     {/* 元信息 */}
                     <div className="flex items-center gap-3 text-xs text-gray-500">
-                      <span>{(chapter.wordCount || 0).toLocaleString()} characters</span>
+                      <span>{estimateWordCount(chapter.wordCount || 0).toLocaleString()} words</span>
                       <span>•</span>
                       <span>{formatDistanceToNow(new Date(chapter.createdAt), { addSuffix: true })}</span>
                     </div>
