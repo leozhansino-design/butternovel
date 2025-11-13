@@ -230,7 +230,7 @@ export default function NovelUploadForm() {
         body: JSON.stringify({
           title: formData.title,
           coverImage: formData.coverImage,
-          categoryId: formData.categoryId,
+          categoryId: parseInt(formData.categoryId), // ✅ 转换为number
           blurb: formData.blurb,
           status: formData.status,
           isPublished: formData.isPublished,
