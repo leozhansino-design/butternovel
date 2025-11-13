@@ -25,7 +25,6 @@ async function getCategoryWithNovels(slug: string) {
             id: true,
             name: true,
             slug: true,
-            description: true,
           }
         })
       )
@@ -93,12 +92,7 @@ async function CategoryContent({ slug }: { slug: string }) {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             {category.name}
           </h1>
-          {category.description && (
-            <p className="text-lg text-gray-600">
-              {category.description}
-            </p>
-          )}
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-gray-500">
             {novels.length} {novels.length === 1 ? 'novel' : 'novels'}
           </p>
         </div>
