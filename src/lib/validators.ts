@@ -72,7 +72,7 @@ export const chapterUpdateSchema = z.object({
 // ============================================
 
 export const ratingSchema = z.object({
-  score: z.number()
+  score: z.coerce.number()
     .int('评分必须是整数')
     .refine(
       (val) => [2, 4, 6, 8, 10].includes(val),
