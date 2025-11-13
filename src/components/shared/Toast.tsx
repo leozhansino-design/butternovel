@@ -29,7 +29,7 @@ export default function Toast({ message, type = 'success', isVisible, onClose }:
   if (!isVisible) return null
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+    <div className="fixed top-4 left-1/2 z-50 animate-slide-down">
       <div className={`
         px-6 py-3 rounded-lg shadow-lg flex items-center gap-3
         ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}
