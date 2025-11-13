@@ -44,14 +44,31 @@ export function getRedisClient(): Redis | null {
   }
 
   try {
-    // 创建 Upstash Redis 客户端
+    // 🔧 修复: 配置 Upstash Redis 与 Next.js ISR 兼容
+    // 问题：默认 Upstash 使用 no-store fetch，这会破坏 ISR
+    // 解决方案：提供自定义 fetch 函数，使用 'no-cache' 而不是 'no-store'
+    //
+    // 区别：
+    // - no-store: 完全禁用缓存 → 破坏 ISR
+    // - no-cache: 允许缓存但需重新验证 → 兼容 ISR
+    // - force-cache: 强制使用缓存 → 可能导致数据过期
+
     redis = new Redis({
       url: restUrl,
       token: restToken,
+      // ⚡ CRITICAL: 使用自定义 fetch 避免 no-store
+      fetch: (url: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(url, {
+          ...init,
+          // 使用 'no-cache' 而不是 'no-store'
+          // 这允许 ISR 工作，同时确保数据新鲜度
+          cache: 'no-cache',
+        })
+      },
     });
 
     isRedisAvailable = true;
-    console.log('✓ Redis 客户端已初始化 (Upstash REST API)');
+    console.log('✓ Redis 客户端已初始化 (Upstash REST API, ISR-compatible with no-cache)');
     return redis;
   } catch (error) {
     console.error('✗ Redis 初始化失败:', error);
