@@ -70,6 +70,9 @@ export function isRedisConnected(): boolean {
 /**
  * 安全的 Redis GET 操作
  * 如果 Redis 不可用，返回 null（自动降级）
+ *
+ * 🔧 修复：Upstash Redis 会自动反序列化 JSON，导致返回对象而不是字符串
+ * 解决方案：如果返回的不是字符串，手动转回 JSON 字符串
  */
 export async function safeRedisGet(key: string): Promise<string | null> {
   const client = getRedisClient();
@@ -78,8 +81,26 @@ export async function safeRedisGet(key: string): Promise<string | null> {
   }
 
   try {
-    const value = await client.get<string>(key);
-    return value;
+    // 不指定类型参数，让 Upstash 返回原始数据
+    const value = await client.get(key);
+
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    // 🔍 调试：检查返回值类型
+    console.log(`🔍 Redis GET: ${key} (类型: ${typeof value})`);
+
+    // 如果 Upstash 返回的是对象而不是字符串，重新序列化
+    if (typeof value === 'string') {
+      console.log(`   → 已是字符串，长度: ${value.length}`);
+      return value;
+    } else {
+      console.log(`   → 是对象，重新序列化为 JSON`);
+      const serialized = JSON.stringify(value);
+      console.log(`   → 序列化后长度: ${serialized.length}`);
+      return serialized;
+    }
   } catch (error) {
     console.error(`Redis GET 失败 (${key}):`, error);
     return null;
