@@ -23,10 +23,10 @@ export default async function Footer() {
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto">
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-8">
 
           {/* About */}
-          <div>
+          <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="text-2xl">🧈</div>
               <span className="text-lg font-bold text-gray-900">ButterNovel</span>
@@ -63,10 +63,10 @@ export default async function Footer() {
             </ul>
           </div>
 
-          {/* Categories */}
-          <div>
+          {/* Categories - 占用2列空间 */}
+          <div className="md:col-span-2">
             <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
               {categories.length > 0 ? (
                 categories.map((category) => (
                   <li key={category.slug}>
