@@ -2,25 +2,22 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { validateWithSchema, registerSchema } from '@/lib/validators'
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json()
+    const body = await req.json()
 
-    // 验证输入
-    if (!name || !email || !password) {
+    // ✅ 使用 Zod 验证
+    const validation = validateWithSchema(registerSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error, details: validation.details },
         { status: 400 }
       )
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
-        { status: 400 }
-      )
-    }
+    const { name, email, password } = validation.data
 
     // 检查邮箱是否已存在
     const existingUser = await prisma.user.findUnique({

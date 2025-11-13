@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
+import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
 
 // PUT /api/admin/novels/[id] - 更新小说（增量更新）
 export const PUT = withAdminAuth(async (
@@ -16,8 +17,19 @@ export const PUT = withAdminAuth(async (
     console.log('📝 [API] Received update request for novel:', params.id)
 
     const novelId = parseInt(params.id)
-    const updates = await request.json()
+    const body = await request.json()
 
+    // ✅ 使用 Zod 验证（验证基本字段，newCoverImage 在 schema 外处理）
+    const { newCoverImage, ...updateFields } = body
+    const validation = validateWithSchema(novelUpdateSchema, updateFields)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, details: validation.details },
+        { status: 400 }
+      )
+    }
+
+    const updates = { ...validation.data, newCoverImage }
     console.log('📦 [API] Updates to apply:', Object.keys(updates))
 
     // 获取当前小说数据

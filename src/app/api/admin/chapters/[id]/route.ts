@@ -3,13 +3,24 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
+import { validateWithSchema, chapterUpdateSchema } from '@/lib/validators'
 
 export const PUT = withAdminAuth(async (session, request: Request, props: { params: Promise<{ id: string }> }) => {
   try {
     const params = await props.params
-
     const chapterId = parseInt(params.id)
-    const updates = await request.json()
+    const body = await request.json()
+
+    // ✅ 使用 Zod 验证
+    const validation = validateWithSchema(chapterUpdateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, details: validation.details },
+        { status: 400 }
+      )
+    }
+
+    const updates = validation.data
 
     // 🔄 添加数据库重试机制，解决连接超时问题
     const currentChapter = await withRetry(
@@ -27,7 +38,7 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
     const data: any = {}
     if (updates.title !== undefined) data.title = updates.title
     if (updates.content !== undefined) data.content = updates.content
-    if (updates.wordCount !== undefined) data.wordCount = updates.wordCount
+    if (body.wordCount !== undefined) data.wordCount = body.wordCount
     if (updates.isPublished !== undefined) data.isPublished = updates.isPublished
 
     if (Object.keys(data).length === 0) {
@@ -43,8 +54,8 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
       { operationName: 'Update chapter' }
     )
 
-    if (updates.wordCount !== undefined && updates.wordCount !== currentChapter.wordCount) {
-      const wordCountDiff = updates.wordCount - currentChapter.wordCount
+    if (body.wordCount !== undefined && body.wordCount !== currentChapter.wordCount) {
+      const wordCountDiff = body.wordCount - currentChapter.wordCount
       // 🔄 添加数据库重试机制，解决连接超时问题
       await withRetry(
         () => prisma.novel.update({

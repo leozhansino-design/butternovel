@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
+import { validateWithSchema, ratingSchema } from '@/lib/validators'
 
 export async function POST(
   request: NextRequest,
@@ -31,23 +32,17 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { score, review } = body
 
-    // 验证评分
-    if (!score || ![2, 4, 6, 8, 10].includes(score)) {
+    // ✅ 使用 Zod 验证
+    const validation = validateWithSchema(ratingSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid score. Must be 2, 4, 6, 8, or 10' },
+        { error: validation.error, details: validation.details },
         { status: 400 }
       )
     }
 
-    // 验证评论长度（如果提供）
-    if (review && review.length > 1000) {
-      return NextResponse.json(
-        { error: 'Review too long. Maximum 1000 characters' },
-        { status: 400 }
-      )
-    }
+    const { score, review } = validation.data
 
     // ⚡ 使用重试机制检查小说是否存在
     const novel = await withRetry(() =>
