@@ -29,26 +29,37 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
     const fetchHistory = async () => {
       try {
         setLoading(true)
+        console.log('[ReadingHistory] Fetching history...')
         const res = await fetch('/api/reading-history')
+
+        console.log('[ReadingHistory] Response status:', res.status)
 
         // Handle unauthorized (not logged in)
         if (res.status === 401) {
+          console.log('[ReadingHistory] User not logged in')
           setNovels([])
           setLoading(false)
           return
         }
 
         const data = await res.json()
+        console.log('[ReadingHistory] Response data:', data)
 
-        if (res.ok && data.novels) {
-          setNovels(Array.isArray(data.novels) ? data.novels : [])
+        if (res.ok) {
+          // Handle successResponse wrapper format: {success: true, data: {novels: [...]}}
+          const novelsData = data.data?.novels || data.novels || []
+          const novelsArray = Array.isArray(novelsData) ? novelsData : []
+          console.log('[ReadingHistory] Setting', novelsArray.length, 'novels')
+          setNovels(novelsArray)
         } else {
-          setError(data.error || 'Failed to load reading history')
+          const errorMsg = data.error || data.message || `Failed to load (${res.status})`
+          console.error('[ReadingHistory] Error:', errorMsg)
+          setError(errorMsg)
           setNovels([])
         }
       } catch (error) {
-        console.error('Failed to fetch reading history:', error)
-        setError('Failed to load reading history')
+        console.error('[ReadingHistory] Exception:', error)
+        setError(error instanceof Error ? error.message : 'Network error')
         setNovels([])
       } finally {
         setLoading(false)
@@ -101,49 +112,44 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
 
   return (
     <div className="h-full overflow-y-auto p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-4">
         {novels && novels.map((novel) => (
           <Link
             key={novel.id}
             href={`/novels/${novel.slug}`}
             onClick={onClose}
-            className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+            className="group cursor-pointer"
           >
             {/* Cover Image */}
-            <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+            <div className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-shadow bg-gray-100">
               <img
                 src={novel.coverImage}
                 alt={novel.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
               />
-              {/* Status Badge */}
-              <div className="absolute top-2 right-2">
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+              {/* Status Badge - 缩小 */}
+              <div className="absolute top-1.5 right-1.5">
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${
                   novel.status === 'COMPLETED'
                     ? 'bg-emerald-500 text-white'
                     : 'bg-blue-500 text-white'
                 }`}>
-                  {novel.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
+                  {novel.status === 'COMPLETED' ? 'Done' : 'On'}
                 </span>
               </div>
             </div>
 
-            {/* Info */}
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 text-lg line-clamp-2 mb-2 group-hover:text-amber-600 transition-colors">
-                {novel.title}
-              </h3>
-
-              <p className="text-sm text-gray-600 mb-2">by {novel.authorName}</p>
-
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded-full font-medium">
-                  {novel.categoryName}
-                </span>
-                <span>•</span>
-                <span>{novel.totalChapters} chapters</span>
-              </div>
-            </div>
+            {/* Book Info - 和 MyLibrary 一样的样式 */}
+            <h3 className="mt-1.5 font-medium text-xs text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors leading-tight">
+              {novel.title}
+            </h3>
+            <p className="text-[10px] text-gray-500 mt-0.5">
+              {novel.categoryName}
+            </p>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              {novel.totalChapters} ch
+            </p>
           </Link>
         ))}
       </div>
