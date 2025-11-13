@@ -1,96 +1,57 @@
 /**
- * Redis 连接管理
+ * Redis 连接管理 (Upstash REST API)
  *
  * 功能：
- * - 单例模式连接 Redis
- * - 自动重连机制
- * - 优雅降级（Redis 故障时不影响应用）
- * - 连接池管理
+ * - 使用 Upstash Redis REST API（HTTP 连接，无需 TCP）
+ * - 优雅降级（Redis 不可用时自动使用数据库）
+ * - 无需端口或主机配置
  */
 
-import { Redis, RedisOptions } from 'ioredis';
+import { Redis } from '@upstash/redis';
 
 let redis: Redis | null = null;
 let isRedisAvailable = false;
-let connectionAttempted = false;
-
-// Redis 配置
-const redisConfig: RedisOptions = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
-  db: parseInt(process.env.REDIS_DB || '0'),
-
-  // 重连策略
-  retryStrategy(times: number) {
-    const delay = Math.min(times * 50, 2000);
-    console.log(`Redis 重连尝试 ${times}，延迟 ${delay}ms`);
-    return delay;
-  },
-
-  // 连接超时
-  connectTimeout: 10000,
-
-  // 最大重试次数
-  maxRetriesPerRequest: 3,
-
-  // 启用离线队列（连接断开时缓存命令）
-  enableOfflineQueue: false,
-
-  // 连接名称（便于调试）
-  connectionName: 'butternovel',
-};
 
 /**
  * 获取 Redis 客户端实例
- * 单例模式，确保整个应用只有一个连接
+ * 使用 Upstash REST API（不需要 TCP 连接）
  */
 export function getRedisClient(): Redis | null {
-  // 如果已经尝试连接且失败，直接返回 null
-  if (connectionAttempted && !isRedisAvailable) {
-    return null;
-  }
-
-  // 如果已经有可用的连接，直接返回
-  if (redis && isRedisAvailable) {
+  // 如果已经初始化，直接返回
+  if (redis) {
     return redis;
   }
 
-  // 尝试建立连接
+  // 🔧 修复: 在构建时跳过 Redis 初始化，避免静态生成失败
+  // Next.js 在构建时会尝试预渲染页面，此时不应该初始化 Redis
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
+
+  if (isBuildTime) {
+    console.log('⚠ 构建阶段跳过 Redis 初始化');
+    isRedisAvailable = false;
+    return null;
+  }
+
+  // 检查环境变量
+  const restUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const restToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!restUrl || !restToken) {
+    console.log('⚠ Redis 未配置（缺少 UPSTASH_REDIS_REST_URL 或 UPSTASH_REDIS_REST_TOKEN）');
+    console.log('→ 系统将自动降级到数据库查询');
+    isRedisAvailable = false;
+    return null;
+  }
+
   try {
-    connectionAttempted = true;
-
-    redis = new Redis(redisConfig);
-
-    // 连接成功事件
-    redis.on('connect', () => {
-      console.log('✓ Redis 连接成功');
-      isRedisAvailable = true;
+    // 创建 Upstash Redis 客户端
+    redis = new Redis({
+      url: restUrl,
+      token: restToken,
     });
 
-    // 连接就绪事件
-    redis.on('ready', () => {
-      console.log('✓ Redis 已就绪');
-      isRedisAvailable = true;
-    });
-
-    // 错误事件
-    redis.on('error', (error: Error) => {
-      console.error('✗ Redis 连接错误:', error.message);
-      isRedisAvailable = false;
-    });
-
-    // 断开连接事件
-    redis.on('close', () => {
-      console.log('⚠ Redis 连接已关闭');
-      isRedisAvailable = false;
-    });
-
-    // 重连事件
-    redis.on('reconnecting', () => {
-      console.log('↻ Redis 正在重连...');
-    });
-
+    isRedisAvailable = true;
+    console.log('✓ Redis 客户端已初始化 (Upstash REST API)');
     return redis;
   } catch (error) {
     console.error('✗ Redis 初始化失败:', error);
@@ -107,30 +68,35 @@ export function isRedisConnected(): boolean {
 }
 
 /**
- * 安全的 Redis 操作封装
- * 如果 Redis 不可用，自动降级为不操作（返回 null）
+ * 安全的 Redis GET 操作
+ * 如果 Redis 不可用，返回 null（自动降级）
  */
 export async function safeRedisGet(key: string): Promise<string | null> {
   const client = getRedisClient();
-  if (!client || !isRedisAvailable) {
+  if (!client) {
     return null;
   }
 
   try {
-    return await client.get(key);
+    const value = await client.get<string>(key);
+    return value;
   } catch (error) {
     console.error(`Redis GET 失败 (${key}):`, error);
     return null;
   }
 }
 
+/**
+ * 安全的 Redis SET 操作
+ * 如果 Redis 不可用，返回 false（自动降级）
+ */
 export async function safeRedisSet(
   key: string,
   value: string,
   ttlSeconds?: number
 ): Promise<boolean> {
   const client = getRedisClient();
-  if (!client || !isRedisAvailable) {
+  if (!client) {
     return false;
   }
 
@@ -147,14 +113,17 @@ export async function safeRedisSet(
   }
 }
 
+/**
+ * 安全的 Redis DEL 操作
+ * 支持删除单个或多个键
+ */
 export async function safeRedisDel(key: string | string[]): Promise<boolean> {
   const client = getRedisClient();
-  if (!client || !isRedisAvailable) {
+  if (!client) {
     return false;
   }
 
   try {
-    // 统一转换为数组形式，然后展开传递给 del
     const keys = Array.isArray(key) ? key : [key];
     if (keys.length > 0) {
       await client.del(...keys);
@@ -166,18 +135,25 @@ export async function safeRedisDel(key: string | string[]): Promise<boolean> {
   }
 }
 
+/**
+ * 删除匹配模式的所有键
+ * 注意：Upstash 不直接支持 KEYS 命令，这里使用简化版本
+ */
 export async function safeRedisDelPattern(pattern: string): Promise<number> {
   const client = getRedisClient();
-  if (!client || !isRedisAvailable) {
+  if (!client) {
     return 0;
   }
 
   try {
+    // Upstash REST API 支持 keys 命令
     const keys = await client.keys(pattern);
-    if (keys.length === 0) {
+
+    if (!keys || keys.length === 0) {
       return 0;
     }
 
+    // 删除所有匹配的键
     await client.del(...keys);
     return keys.length;
   } catch (error) {
@@ -187,20 +163,22 @@ export async function safeRedisDelPattern(pattern: string): Promise<number> {
 }
 
 /**
- * 关闭 Redis 连接
- * 用于应用关闭时清理资源
+ * 测试 Redis 连接
  */
-export async function closeRedis(): Promise<void> {
-  if (redis) {
-    try {
-      await redis.quit();
-      console.log('✓ Redis 连接已安全关闭');
-    } catch (error) {
-      console.error('✗ Redis 关闭失败:', error);
-    } finally {
-      redis = null;
-      isRedisAvailable = false;
-    }
+export async function testRedisConnection(): Promise<boolean> {
+  const client = getRedisClient();
+  if (!client) {
+    return false;
+  }
+
+  try {
+    await client.set('test:connection', 'ok');
+    const result = await client.get('test:connection');
+    await client.del('test:connection');
+    return result === 'ok';
+  } catch (error) {
+    console.error('Redis 连接测试失败:', error);
+    return false;
   }
 }
 

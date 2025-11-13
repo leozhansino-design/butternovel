@@ -11,17 +11,18 @@
     "db:push": "dotenv -e .env -- npx prisma db push",
     "db:seed": "dotenv -e .env -- npx tsx scripts/seed-categories.ts",
     "db:seed-admin": "dotenv -e .env -- npx tsx scripts/seed-admin-user.ts",
-    "db:studio": "dotenv -e .env -- npx prisma studio"
+    "db:studio": "dotenv -e .env -- npx prisma studio",
+    "cache:clear": "dotenv -e .env -- npx tsx scripts/clear-redis-cache.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.19.0",
+    "@upstash/redis": "^1.35.6",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.8.0",
     "dotenv": "^16.4.5",
-    "ioredis": "^5.8.2",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
     "next-auth": "^5.0.0-beta.30",
