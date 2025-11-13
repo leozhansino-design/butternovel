@@ -143,12 +143,21 @@ export default function Header({ user }: HeaderProps) {
                 </div>
               </div>
 
-              <Link 
-                href="/writer" 
-                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
-              >
-                Become a Writer
-              </Link>
+              {user ? (
+                <Link
+                  href="/dashboard"
+                  className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                >
+                  Writer Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/writer"
+                  className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                >
+                  Become a Writer
+                </Link>
+              )}
             </nav>
 
             {/* Search Bar - Desktop */}
@@ -359,13 +368,23 @@ export default function Header({ user }: HeaderProps) {
                   Fanfiction
                 </Link>
 
-                <Link 
-                  href="/writer" 
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Become a Writer
-                </Link>
+                {user ? (
+                  <Link
+                    href="/dashboard"
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Writer Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    href="/writer"
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Become a Writer
+                  </Link>
+                )}
 
                 <div className="pt-4 mt-4 border-t border-gray-200 space-y-2">
                   {user ? (
