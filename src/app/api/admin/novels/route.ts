@@ -88,7 +88,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                     slug,
                     coverImage: coverResult.url,
                     coverImagePublicId: coverResult.publicId,
-                    categoryId: parseInt(categoryId),
+                    categoryId,  // ✅ Zod 已经验证为 number 类型，不需要 parseInt
                     blurb,
                     status: status || 'ONGOING',
                     isPublished: isPublished || false,
