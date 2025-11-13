@@ -34,32 +34,39 @@ ButterNovel 现在集成了 Redis 缓存系统，可以显著提升网站性能�
 
 ## 安装和配置
 
-### 方案 1: 本地 Docker（推荐开发环境）
+### 推荐方案: Upstash Redis（生产 + 开发）
 
-```bash
-# 启动 Redis 容器
-docker run -d --name redis -p 6379:6379 redis:7-alpine
+**优势**:
+- ✓ 免费层额度充足
+- ✓ 无需 Docker 或本地安装
+- ✓ 使用 REST API（HTTP），无需 TCP 连接
+- ✓ 适合 Vercel 等 Serverless 环境
 
-# 验证运行状态
-docker ps | grep redis
-```
+**配置步骤**:
 
-### 方案 2: Upstash Redis（推荐生产环境）
+1. **注册 Upstash**
+   - 访问 [Upstash](https://upstash.com/)
+   - 使用 GitHub/Google 账号注册（免费）
 
-1. 访问 [Upstash](https://upstash.com/) 并创建免费账号
-2. 创建 Redis 数据库
-3. 复制连接信息到 `.env`
+2. **创建 Redis 数据库**
+   - 点击 "Create Database"
+   - 选择区域（推荐选离你近的）
+   - 点击 "Create"
 
-### 环境变量配置
+3. **复制连接信息**
+   - 点击 "REST API" 标签
+   - 复制以下信息：
+     - `UPSTASH_REDIS_REST_URL`
+     - `UPSTASH_REDIS_REST_TOKEN`
+
+4. **配置环境变量**
 
 在 `.env` 文件中添加：
 
 ```env
-# Redis 配置
-REDIS_HOST="localhost"        # 或 Upstash 提供的主机地址
-REDIS_PORT="6379"            # 或 Upstash 提供的端口
-REDIS_PASSWORD=""            # 如果有密码
-REDIS_DB="0"                 # 数据库编号
+# Upstash Redis REST API
+UPSTASH_REDIS_REST_URL="https://us1-xxxx.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="AXXXXxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 **注意**: 如果不配置这些变量，系统会自动使用数据库（不影响功能）。
