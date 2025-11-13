@@ -54,6 +54,16 @@ function handlePrismaError(error: any): { status: number; message: string; code?
     }
   }
 
+  // P2003: Foreign key constraint violation
+  if (error.code === 'P2003') {
+    const field = error.meta?.field_name || 'reference'
+    return {
+      status: 404,
+      message: `Referenced ${field} not found`,
+      code: 'FOREIGN_KEY_CONSTRAINT_FAILED'
+    }
+  }
+
   // P2025: Record not found
   if (error.code === 'P2025') {
     return {

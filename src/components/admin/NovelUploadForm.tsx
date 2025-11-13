@@ -5,16 +5,23 @@ import { useRouter } from 'next/navigation'
 import { Upload, BookOpen, Plus, X, Edit2, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 
-// 分类数据（Genres）
+// 分类数据（Genres）- 匹配数据库种子数据
 const genres = [
   { id: 1, name: 'Fantasy' },
-  { id: 2, name: 'Urban' },
-  { id: 3, name: 'Romance' },
+  { id: 2, name: 'Romance' },
+  { id: 3, name: 'Urban' },
   { id: 4, name: 'Sci-Fi' },
   { id: 5, name: 'Mystery' },
-  { id: 6, name: 'Action' },
+  { id: 6, name: 'Horror' },
   { id: 7, name: 'Adventure' },
-  { id: 8, name: 'Horror' },
+  { id: 8, name: 'Historical' },
+  { id: 9, name: 'Crime' },
+  { id: 10, name: 'LGBTQ+' },
+  { id: 11, name: 'Paranormal' },
+  { id: 12, name: 'System' },
+  { id: 13, name: 'Reborn' },
+  { id: 14, name: 'Revenge' },
+  { id: 15, name: 'Fanfiction' },
 ]
 
 // 字数限制

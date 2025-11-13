@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 import { redirect, notFound } from 'next/navigation'
-import ChapterAddForm from '@/components/admin/ChapterAddForm'
+import ChapterForm from '@/components/admin/ChapterForm'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -56,7 +56,12 @@ export default async function AddChapterPage(props: Props) {
         </p>
       </div>
 
-      <ChapterAddForm novelId={novelId} chapterNumber={nextChapterNumber} novelTitle={novel.title} />
+      <ChapterForm
+        mode="create"
+        novelId={novelId}
+        chapterNumber={nextChapterNumber}
+        novelTitle={novel.title}
+      />
     </div>
   )
 }

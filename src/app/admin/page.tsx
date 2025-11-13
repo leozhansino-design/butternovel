@@ -26,33 +26,34 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [rangeLabel, setRangeLabel] = useState('All Time')
 
+  // ✅ 将 fetchData 逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // 获取统计数据
+        const statsRes = await fetch(`/api/admin/stats?range=${range}`)
+        const statsData = await statsRes.json()
+        setStats(statsData.stats)
+        setRangeLabel(statsData.label)
+
+        // 获取图表数据
+        const chartRes = await fetch('/api/admin/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ range })
+        })
+        const chartDataRes = await chartRes.json()
+        setChartData(chartDataRes.data)
+      } catch (error) {
+        console.error('Failed to fetch data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchData()
   }, [range])
-
-  const fetchData = async () => {
-    setLoading(true)
-    try {
-      // 获取统计数据
-      const statsRes = await fetch(`/api/admin/stats?range=${range}`)
-      const statsData = await statsRes.json()
-      setStats(statsData.stats)
-      setRangeLabel(statsData.label)
-
-      // 获取图表数据
-      const chartRes = await fetch('/api/admin/stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ range })
-      })
-      const chartDataRes = await chartRes.json()
-      setChartData(chartDataRes.data)
-    } catch (error) {
-      console.error('Failed to fetch data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const rangeOptions: { value: TimeRange; label: string }[] = [
     { value: '1day', label: '1 Day' },

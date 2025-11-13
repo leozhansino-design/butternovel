@@ -2,18 +2,25 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
+import { validateWithSchema, chapterUpdateSchema } from '@/lib/validators'
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+export const PUT = withAdminAuth(async (session, request: Request, props: { params: Promise<{ id: string }> }) => {
   try {
     const params = await props.params
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const chapterId = parseInt(params.id)
+    const body = await request.json()
+
+    // ✅ 使用 Zod 验证
+    const validation = validateWithSchema(chapterUpdateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, details: validation.details },
+        { status: 400 }
+      )
     }
 
-    const chapterId = parseInt(params.id)
-    const updates = await request.json()
+    const updates = validation.data
 
     // 🔄 添加数据库重试机制，解决连接超时问题
     const currentChapter = await withRetry(
@@ -31,7 +38,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const data: any = {}
     if (updates.title !== undefined) data.title = updates.title
     if (updates.content !== undefined) data.content = updates.content
-    if (updates.wordCount !== undefined) data.wordCount = updates.wordCount
+    if (body.wordCount !== undefined) data.wordCount = body.wordCount
     if (updates.isPublished !== undefined) data.isPublished = updates.isPublished
 
     if (Object.keys(data).length === 0) {
@@ -47,8 +54,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       { operationName: 'Update chapter' }
     )
 
-    if (updates.wordCount !== undefined && updates.wordCount !== currentChapter.wordCount) {
-      const wordCountDiff = updates.wordCount - currentChapter.wordCount
+    if (body.wordCount !== undefined && body.wordCount !== currentChapter.wordCount) {
+      const wordCountDiff = body.wordCount - currentChapter.wordCount
       // 🔄 添加数据库重试机制，解决连接超时问题
       await withRetry(
         () => prisma.novel.update({
@@ -68,15 +75,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     console.error('Error updating chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to update' }, { status: 500 })
   }
-}
+})
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+export const DELETE = withAdminAuth(async (session, request: Request, props: { params: Promise<{ id: string }> }) => {
   try {
     const params = await props.params
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const chapterId = parseInt(params.id)
 
@@ -122,28 +125,17 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       )
     }
 
-    // 🔄 添加数据库重试机制，解决连接超时问题
-    const remainingChapters = await withRetry(
-      () => prisma.chapter.findMany({
-        where: {
-          novelId: chapter.novelId,
-          chapterNumber: { gt: chapter.chapterNumber }
-        },
-        orderBy: { chapterNumber: 'asc' }
-      }),
-      { operationName: 'Get remaining chapters' }
+    // ✅ 优化: 使用单次 SQL 批量更新代替循环 (N次 → 1次)
+    // 将所有后续章节的章节号减 1
+    await withRetry(
+      () => prisma.$executeRaw`
+        UPDATE "Chapter"
+        SET "chapterNumber" = "chapterNumber" - 1
+        WHERE "novelId" = ${chapter.novelId}
+        AND "chapterNumber" > ${chapter.chapterNumber}
+      `,
+      { operationName: 'Reorder remaining chapters' }
     )
-
-    for (const ch of remainingChapters) {
-      // 🔄 添加数据库重试机制，解决连接超时问题
-      await withRetry(
-        () => prisma.chapter.update({
-          where: { id: ch.id },
-          data: { chapterNumber: ch.chapterNumber - 1 }
-        }),
-        { operationName: 'Reorder chapter' }
-      )
-    }
 
     return NextResponse.json({ success: true, message: 'Chapter deleted' })
 
@@ -151,4 +143,4 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     console.error('Error deleting chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to delete' }, { status: 500 })
   }
-}
+})

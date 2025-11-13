@@ -1,8 +1,10 @@
 // src/app/api/novels/[id]/ratings/route.ts
-// 获取小说评分列表（分页）
+// Get novel ratings list with pagination
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { parsePaginationParams, createPaginationResponse } from '@/lib/pagination'
+import { successResponse, errorResponse, handleApiError, ErrorCode } from '@/lib/api-response'
 
 export async function GET(
   request: NextRequest,
@@ -13,26 +15,16 @@ export async function GET(
     const novelId = parseInt(id)
 
     if (isNaN(novelId)) {
-      return NextResponse.json(
-        { error: 'Invalid novel ID' },
-        { status: 400 }
-      )
+      return errorResponse('Invalid novel ID', ErrorCode.BAD_REQUEST)
     }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const offset = (page - 1) * limit
+    // ✅ Use pagination utility
+    const { page, limit, offset } = parsePaginationParams(request.url, {
+      defaultLimit: 10,
+      maxLimit: 50,
+    })
 
-    // 验证分页参数
-    if (page < 1 || limit < 1 || limit > 50) {
-      return NextResponse.json(
-        { error: 'Invalid pagination parameters' },
-        { status: 400 }
-      )
-    }
-
-    // 获取评分列表（只获取有评论的）
+    // Get ratings list (only with reviews)
     const ratings = await prisma.rating.findMany({
       where: {
         novelId,
@@ -56,7 +48,7 @@ export async function GET(
       take: limit,
     })
 
-    // 获取总数
+    // Get total count
     const total = await prisma.rating.count({
       where: {
         novelId,
@@ -66,20 +58,14 @@ export async function GET(
       },
     })
 
-    return NextResponse.json({
+    // ✅ Create standardized pagination response
+    const pagination = createPaginationResponse({ page, limit, offset }, total)
+
+    return successResponse({
       ratings,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination,
     })
   } catch (error) {
-    console.error('Error fetching ratings:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Failed to fetch ratings')
   }
 }

@@ -50,33 +50,27 @@ export default function RatingModal({
   const [submitting, setSubmitting] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
 
-  // 获取用户评分状态
+  // ✅ 获取用户评分状态 - 将逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
     if (isOpen && userId) {
+      const fetchUserRating = async () => {
+        try {
+          const res = await fetch(`/api/novels/${novelId}/user-rating`)
+          const data = await res.json()
+          if (data.hasRated) {
+            setHasRated(true)
+            setUserRating(data.rating.score)
+          }
+        } catch (error) {
+          console.error('Error fetching user rating:', error)
+        }
+      }
+
       fetchUserRating()
     }
   }, [isOpen, userId, novelId])
 
-  // 获取评分列表
-  useEffect(() => {
-    if (isOpen) {
-      fetchRatings(1)
-    }
-  }, [isOpen, novelId])
-
-  const fetchUserRating = async () => {
-    try {
-      const res = await fetch(`/api/novels/${novelId}/user-rating`)
-      const data = await res.json()
-      if (data.hasRated) {
-        setHasRated(true)
-        setUserRating(data.rating.score)
-      }
-    } catch (error) {
-      console.error('Error fetching user rating:', error)
-    }
-  }
-
+  // ✅ 获取评分列表 - 提取为可重用函数
   const fetchRatings = async (pageNum: number) => {
     setLoading(true)
     try {
@@ -97,6 +91,14 @@ export default function RatingModal({
       setLoading(false)
     }
   }
+
+  // ✅ 初始加载评分列表
+  useEffect(() => {
+    if (isOpen) {
+      fetchRatings(1)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, novelId])
 
   const handleStarClick = async (score: number) => {
     if (hasRated) return

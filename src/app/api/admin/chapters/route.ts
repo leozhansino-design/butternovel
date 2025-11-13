@@ -2,20 +2,24 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
+import { validateWithSchema, chapterCreateSchema } from '@/lib/validators'
 
-export async function POST(request: Request) {
+export const POST = withAdminAuth(async (session, request: Request) => {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const body = await request.json()
+
+    // ✅ 使用 Zod 验证
+    const validation = validateWithSchema(chapterCreateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, details: validation.details },
+        { status: 400 }
+      )
     }
 
-    const { novelId, title, content, chapterNumber, isPublished, wordCount } = await request.json()
-
-    if (!novelId || !title || !content) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
+    const { novelId, title, content, chapterNumber, isPublished } = validation.data
+    const wordCount = body.wordCount
 
     // 🔄 添加数据库重试机制，解决连接超时问题
     const novel = await withRetry(
@@ -74,4 +78,4 @@ export async function POST(request: Request) {
     console.error('Error creating chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to create chapter' }, { status: 500 })
   }
-}
+})

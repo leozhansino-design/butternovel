@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 
 type TimeRange = 'all' | '1day' | '3days' | '1week' | '1month' | '3months' | '6months' | '1year'
 
@@ -51,12 +51,8 @@ function getDateRange(range: TimeRange): { startDate: Date; label: string; days:
   }
 }
 
-export async function GET(request: Request) {
+export const GET = withAdminAuth(async (session, request: Request) => {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const url = new URL(request.url)
     const range = (url.searchParams.get('range') as TimeRange) || 'all'
@@ -113,67 +109,103 @@ export async function GET(request: Request) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withAdminAuth(async (session, request: Request) => {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const { range } = await request.json()
     const { startDate, label, days } = getDateRange(range)
-    
+
     let intervalDays = 1
     if (days >= 90) intervalDays = 7
     if (days >= 180) intervalDays = 14
     if (days >= 365) intervalDays = 30
-    
+
+    // ✅ 优化: 使用单次 GROUP BY 查询代替循环查询 (90次 → 3次)
+    // 并行执行 3 个查询,按天分组统计
+    const [novelsData, usersData, viewsData] = await Promise.all([
+      withRetry(
+        () => prisma.$queryRaw<Array<{date: Date, count: bigint}>>`
+          SELECT DATE_TRUNC('day', "createdAt") as date, COUNT(*) as count
+          FROM "Novel"
+          WHERE "createdAt" >= ${startDate}
+            AND "isPublished" = true
+            AND "isBanned" = false
+          GROUP BY DATE_TRUNC('day', "createdAt")
+          ORDER BY date ASC
+        `,
+        { operationName: 'Get novels chart data' }
+      ),
+      withRetry(
+        () => prisma.$queryRaw<Array<{date: Date, count: bigint}>>`
+          SELECT DATE_TRUNC('day', "createdAt") as date, COUNT(*) as count
+          FROM "User"
+          WHERE "createdAt" >= ${startDate}
+            AND "isActive" = true
+          GROUP BY DATE_TRUNC('day', "createdAt")
+          ORDER BY date ASC
+        `,
+        { operationName: 'Get users chart data' }
+      ),
+      withRetry(
+        () => prisma.$queryRaw<Array<{date: Date, count: bigint}>>`
+          SELECT DATE_TRUNC('day', "viewedAt") as date, COUNT(*) as count
+          FROM "NovelView"
+          WHERE "viewedAt" >= ${startDate}
+          GROUP BY DATE_TRUNC('day', "viewedAt")
+          ORDER BY date ASC
+        `,
+        { operationName: 'Get views chart data' }
+      )
+    ])
+
+    // 构建数据 Map 用于快速查找
+    const novelsMap = new Map<string, number>()
+    const usersMap = new Map<string, number>()
+    const viewsMap = new Map<string, number>()
+
+    novelsData.forEach(d => {
+      const dateKey = d.date.toISOString().split('T')[0]
+      novelsMap.set(dateKey, Number(d.count))
+    })
+
+    usersData.forEach(d => {
+      const dateKey = d.date.toISOString().split('T')[0]
+      usersMap.set(dateKey, Number(d.count))
+    })
+
+    viewsData.forEach(d => {
+      const dateKey = d.date.toISOString().split('T')[0]
+      viewsMap.set(dateKey, Number(d.count))
+    })
+
+    // 在内存中构建图表数据
     const chartData = []
     const totalIterations = Math.ceil(days / intervalDays)
-    
+
     for (let i = totalIterations - 1; i >= 0; i--) {
       const dayStart = new Date(startDate)
       dayStart.setDate(dayStart.getDate() + i * intervalDays)
       dayStart.setHours(0, 0, 0, 0)
-      
+
       const dayEnd = new Date(dayStart)
       dayEnd.setDate(dayEnd.getDate() + intervalDays)
-      dayEnd.setHours(0, 0, 0, 0)
 
-      // 🔄 添加数据库重试机制，解决连接超时问题
-      const novelsCount = await withRetry(
-        () => prisma.novel.count({
-          where: {
-            createdAt: { gte: dayStart, lt: dayEnd },
-            isPublished: true,
-            isBanned: false,
-          }
-        }),
-        { operationName: 'Count novels for chart' }
-      )
+      // 累加时间段内的数据
+      let novelsCount = 0
+      let usersCount = 0
+      let viewsCount = 0
 
-      const usersCount = await withRetry(
-        () => prisma.user.count({
-          where: {
-            createdAt: { gte: dayStart, lt: dayEnd },
-            isActive: true,
-          }
-        }),
-        { operationName: 'Count users for chart' }
-      )
+      for (let d = 0; d < intervalDays; d++) {
+        const checkDate = new Date(dayStart)
+        checkDate.setDate(checkDate.getDate() + d)
+        const dateKey = checkDate.toISOString().split('T')[0]
 
-      // ⭐ 修改这里 - 统计时间段内的真实浏览量
-      // 🔄 添加数据库重试机制，解决连接超时问题
-      const viewsCount = await withRetry(
-        () => prisma.novelView.count({
-          where: {
-            viewedAt: { gte: dayStart, lt: dayEnd }
-          }
-        }),
-        { operationName: 'Count views for chart' }
-      )
+        novelsCount += novelsMap.get(dateKey) || 0
+        usersCount += usersMap.get(dateKey) || 0
+        viewsCount += viewsMap.get(dateKey) || 0
+      }
 
       let dateLabel = ''
       if (intervalDays === 1) {
@@ -207,4 +239,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-}
+})

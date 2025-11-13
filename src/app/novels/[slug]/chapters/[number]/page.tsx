@@ -50,11 +50,16 @@ async function getChapterData(slug: string, chapterNumber: number) {
       { operationName: 'Get current chapter' }
     ),
 
+    // ✅ 优化: 只加载当前章节附近的章节 (窗口分页,防止大型小说崩溃)
     withRetry(
       () => prisma.chapter.findMany({
         where: {
           novel: { slug },
-          isPublished: true
+          isPublished: true,
+          chapterNumber: {
+            gte: Math.max(1, chapterNumber - 10),
+            lte: chapterNumber + 10
+          }
         },
         select: {
           id: true,
@@ -65,7 +70,7 @@ async function getChapterData(slug: string, chapterNumber: number) {
           chapterNumber: 'asc'
         }
       }),
-      { operationName: 'Get all chapters list' }
+      { operationName: 'Get nearby chapters list' }
     ),
 
     withRetry(
@@ -94,8 +99,9 @@ async function getChapterData(slug: string, chapterNumber: number) {
   }
 }
 
-// ✅ 修复：只保留这一个缓存配置（1小时）
-export const revalidate = 3600
+// ✅ 修复：页面必须是 dynamic 的，因为 layout 中的 HeaderWrapper 调用了 auth()
+// auth() 会使用 cookies/headers，导致页面变成动态的
+export const dynamic = 'force-dynamic'
 
 // 🔧 修复 build 连接池超时：允许动态参数，不强制预渲染所有章节
 export const dynamicParams = true

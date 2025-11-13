@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { getAdminSession } from '@/lib/admin-auth'
 import { redirect, notFound } from 'next/navigation'
-import ChapterEditForm from '@/components/admin/ChapterEditForm'
+import ChapterForm from '@/components/admin/ChapterForm'
 
 type Props = {
   params: Promise<{ id: string; chapterId: string }>
@@ -47,7 +47,18 @@ export default async function EditChapterPage(props: Props) {
         <h1 className="text-3xl font-bold text-gray-900">Edit Chapter</h1>
         <p className="text-gray-600 mt-1">Novel: {chapter.novel.title}</p>
       </div>
-      <ChapterEditForm chapter={chapter} novelId={novelId} />
+      <ChapterForm
+        mode="edit"
+        novelId={chapter.novelId}
+        novelTitle={chapter.novel.title}
+        chapterNumber={chapter.chapterNumber}
+        initialData={{
+          id: chapter.id,
+          title: chapter.title,
+          content: chapter.content,
+          isPublished: chapter.isPublished
+        }}
+      />
     </div>
   )
 }

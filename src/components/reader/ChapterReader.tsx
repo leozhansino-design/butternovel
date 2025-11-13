@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -91,12 +91,13 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   }, [])
 
   // ✅ 新增：预加载下一章功能
+  // ✅ router 是稳定引用，不需要包含在依赖中
   useEffect(() => {
     const nextChapterNumber = chapter.chapterNumber + 1
     if (nextChapterNumber <= totalChapters) {
       router.prefetch(`/novels/${novel.slug}/chapters/${nextChapterNumber}`)
     }
-  }, [chapter.chapterNumber, totalChapters, novel.slug, router])
+  }, [chapter.chapterNumber, totalChapters, novel.slug])
 
   useEffect(() => {
     if (readMode === 'page' && contentRef.current) {
@@ -162,29 +163,31 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const hasPrev = chapter.chapterNumber > 1
   const hasNext = chapter.chapterNumber < totalChapters
 
-  const goToPrevChapter = () => {
-    if (hasPrev) {
+  // ✅ 使用 useCallback 包装导航函数，避免不必要的 effect 重新运行
+  const goToPrevChapter = useCallback(() => {
+    if (chapter.chapterNumber > 1) {
       router.push(`/novels/${novel.slug}/chapters/${chapter.chapterNumber - 1}`)
     }
-  }
+  }, [novel.slug, chapter.chapterNumber])
 
-  const goToNextChapter = () => {
-    if (hasNext) {
+  const goToNextChapter = useCallback(() => {
+    if (chapter.chapterNumber < totalChapters) {
       router.push(`/novels/${novel.slug}/chapters/${chapter.chapterNumber + 1}`)
     }
-  }
+  }, [novel.slug, chapter.chapterNumber, totalChapters])
 
   // ✅ 修改：目录跳转时预加载下一章
-  const goToChapter = (chapterNumber: number) => {
+  const goToChapter = useCallback((chapterNumber: number) => {
     router.push(`/novels/${novel.slug}/chapters/${chapterNumber}`)
     setShowToc(false)
-    
+
     // ✅ 预加载跳转章节的下一章
     if (chapterNumber < totalChapters) {
       router.prefetch(`/novels/${novel.slug}/chapters/${chapterNumber + 1}`)
     }
-  }
+  }, [novel.slug, totalChapters])
 
+  // ✅ 添加导航函数到依赖数组（现在是 useCallback 包装的，引用稳定）
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (readMode === 'page') {
@@ -202,7 +205,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [readMode, currentPage, pages.length, hasPrev, hasNext])
+  }, [readMode, currentPage, pages.length, hasPrev, hasNext, goToPrevChapter, goToNextChapter])
 
   const currentContent = readMode === 'page' && pages.length > 0 ? pages[currentPage] : chapter.content
 

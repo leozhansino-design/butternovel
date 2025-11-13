@@ -1,28 +1,31 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
+import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
+import { parsePaginationParams, createPaginationResponse } from '@/lib/pagination'
+import { successResponse, handleApiError } from '@/lib/api-response'
 
 // POST /api/admin/novels - 创建小说
-export async function POST(request: Request) {
+export const POST = withAdminAuth(async (session, request: Request) => {
     try {
         console.log('📝 [API] Received upload request')
-
-        // 1. 验证管理员权限
-        const session = await getAdminSession()
-        if (!session) {
-            console.log('❌ [API] Unauthorized - No session')
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            )
-        }
         console.log('✅ [API] Session verified:', session.email)
 
-        // 2. 获取表单数据
+        // 2. 获取并验证表单数据
         const body = await request.json()
         console.log('📦 [API] Request body:', JSON.stringify(body, null, 2))
+
+        // ✅ 使用 Zod 验证
+        const validation = validateWithSchema(novelCreateSchema, body)
+        if (!validation.success) {
+            console.log('❌ [API] Validation failed:', validation.error)
+            return NextResponse.json(
+                { error: validation.error, details: validation.details },
+                { status: 400 }
+            )
+        }
 
         const {
             title,
@@ -32,16 +35,7 @@ export async function POST(request: Request) {
             status,
             isPublished,
             chapters
-        } = body
-
-        // 3. 验证必填字段
-        if (!title || !coverImage || !categoryId || !blurb) {
-            console.log('❌ [API] Missing required fields')
-            return NextResponse.json(
-                { error: 'Missing required fields: title, coverImage, categoryId, blurb' },
-                { status: 400 }
-            )
-        }
+        } = validation.data
 
         // ⭐ 新增：获取 AdminProfile 的 displayName
         console.log('👤 [API] Fetching admin profile...')
@@ -96,7 +90,7 @@ export async function POST(request: Request) {
                     slug,
                     coverImage: coverResult.url,
                     coverImagePublicId: coverResult.publicId,
-                    categoryId: parseInt(categoryId),
+                    categoryId,  // ✅ Zod 已经验证为 number 类型，不需要 parseInt
                     blurb,
                     status: status || 'ONGOING',
                     isPublished: isPublished || false,
@@ -148,22 +142,21 @@ export async function POST(request: Request) {
             { status: 500 }
         )
     }
-}
+})
 
-// GET /api/admin/novels - 获取所有小说
-export async function GET(request: Request) {
+// GET /api/admin/novels - Get all novels with filters
+export const GET = withAdminAuth(async (session, request: Request) => {
     try {
-        const session = await getAdminSession()
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        // ✅ Use pagination utility
+        const { page, limit, offset } = parsePaginationParams(request.url, {
+            defaultLimit: 10,
+            maxLimit: 50,
+        })
 
         const url = new URL(request.url)
         const search = url.searchParams.get('search') || ''
         const categoryId = url.searchParams.get('categoryId') || ''
         const status = url.searchParams.get('status') || ''
-        const page = parseInt(url.searchParams.get('page') || '1')
-        const limit = 10
 
         const where: any = {}
 
@@ -182,7 +175,7 @@ export async function GET(request: Request) {
             where.status = status
         }
 
-        // 🔄 添加数据库重试机制，解决连接超时问题
+        // Get novels with retry mechanism
         const total = await withRetry(
             () => prisma.novel.count({ where }),
             { operationName: 'Count novels' }
@@ -193,27 +186,21 @@ export async function GET(request: Request) {
                 where,
                 include: { category: true },
                 orderBy: { createdAt: 'desc' },
-                skip: (page - 1) * limit,
+                skip: offset,
                 take: limit
             }),
             { operationName: 'Get novels list' }
         )
 
-        return NextResponse.json({
+        // ✅ Create standardized pagination response
+        const pagination = createPaginationResponse({ page, limit, offset }, total)
+
+        return successResponse({
             novels,
-            pagination: {
-                total,
-                page,
-                limit,
-                pages: Math.ceil(total / limit)
-            }
+            pagination,
         })
 
     } catch (error: any) {
-        console.error('❌ [API] GET error:', error)
-        return NextResponse.json(
-            { error: 'Failed to fetch novels' },
-            { status: 500 }
-        )
+        return handleApiError(error, 'Failed to fetch novels')
     }
-}
+})

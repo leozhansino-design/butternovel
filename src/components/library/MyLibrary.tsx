@@ -33,22 +33,23 @@ export default function MyLibrary({ onClose }: MyLibraryProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [isSelectionMode, setIsSelectionMode] = useState(false)
 
+  // ✅ 将 fetchLibrary 逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
+    const fetchLibrary = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/library')
+        const data = await res.json()
+        setNovels(data.novels || [])
+      } catch (error) {
+        console.error('Failed to fetch library:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchLibrary()
   }, [])
-
-  const fetchLibrary = async () => {
-    try {
-      setLoading(true)
-      const res = await fetch('/api/library')
-      const data = await res.json()
-      setNovels(data.novels || [])
-    } catch (error) {
-      console.error('Failed to fetch library:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleNovelClick = (novel: NovelInLibrary) => {
     if (isSelectionMode) {

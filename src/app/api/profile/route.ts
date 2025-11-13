@@ -2,6 +2,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withErrorHandling, errorResponse, successResponse } from '@/lib/api-error-handler'
+import { validateWithSchema, profileUpdateSchema } from '@/lib/validators'
 
 // GET - 获取用户资料和统计
 export const GET = withErrorHandling(async () => {
@@ -62,15 +63,22 @@ export const PATCH = withErrorHandling(async (request: Request) => {
   }
 
   const body = await request.json()
-  const { name, bio } = body
 
-  // 验证
-  if (name && (typeof name !== 'string' || name.trim().length === 0)) {
-    return errorResponse('Invalid name', 400, 'INVALID_NAME')
+  // ✅ 使用 Zod 验证
+  const validation = validateWithSchema(profileUpdateSchema, body)
+  if (!validation.success) {
+    return errorResponse(validation.error, 400, 'VALIDATION_ERROR')
   }
 
-  if (bio && (typeof bio !== 'string' || bio.length > 500)) {
-    return errorResponse('Bio must be 500 characters or less', 400, 'INVALID_BIO')
+  const { name, bio } = validation.data
+
+  // ✅ 先检查用户是否存在 (防止 OAuth 用户被删除后仍有 session)
+  const existingUser = await prisma.user.findUnique({
+    where: { id: session.user.id }
+  })
+
+  if (!existingUser) {
+    return errorResponse('User not found', 404, 'USER_NOT_FOUND')
   }
 
   // 更新用户
