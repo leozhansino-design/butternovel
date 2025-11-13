@@ -21,23 +21,22 @@ export default function AdminProfileForm({ adminEmail }: Props) {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
 
-  // ⭐ 加载已保存的数据
-  const loadProfileData = async () => {
-    try {
-      const response = await fetch('/api/admin/profile')
-      if (response.ok) {
-        const data = await response.json()
-        setDisplayName(data.displayName || '')
-        setBio(data.bio || '')
-        setAvatarPreview(data.avatar || '')
-      }
-    } catch (error) {
-      console.error('Failed to load profile:', error)
-    }
-  }
-
-  // 初始化加载数据
+  // ⭐ 初始化加载数据 - 将逻辑移到 useEffect 内部，避免依赖问题
   React.useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        const response = await fetch('/api/admin/profile')
+        if (response.ok) {
+          const data = await response.json()
+          setDisplayName(data.displayName || '')
+          setBio(data.bio || '')
+          setAvatarPreview(data.avatar || '')
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error)
+      }
+    }
+
     loadProfileData()
   }, [])
 

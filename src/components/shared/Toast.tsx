@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface ToastProps {
   message: string
@@ -10,14 +10,21 @@ interface ToastProps {
 }
 
 export default function Toast({ message, type = 'success', isVisible, onClose }: ToastProps) {
+  // ✅ 使用 ref 保存最新的 onClose，避免不必要的 effect 重新运行
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
-        onClose()
+        onCloseRef.current()
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [isVisible, onClose])
+  }, [isVisible])
 
   if (!isVisible) return null
 

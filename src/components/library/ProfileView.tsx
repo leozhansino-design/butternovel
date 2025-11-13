@@ -33,27 +33,28 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // ✅ 将 fetchProfile 逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/profile')
+        const data = await res.json()
+
+        if (res.ok) {
+          setProfileData(data.user)
+          setEditName(data.user.name || '')
+          setEditBio(data.user.bio || '')
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchProfile()
   }, [])
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true)
-      const res = await fetch('/api/profile')
-      const data = await res.json()
-
-      if (res.ok) {
-        setProfileData(data.user)
-        setEditName(data.user.name || '')
-        setEditBio(data.user.bio || '')
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSave = async () => {
     if (editName.trim().length === 0) {
