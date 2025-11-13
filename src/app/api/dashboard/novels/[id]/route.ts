@@ -72,6 +72,21 @@ export async function PUT(
     const novelId = parseInt(id)
     const body = await request.json()
 
+    // Validate field lengths if provided
+    if (body.title && body.title.length > 120) {
+      return NextResponse.json(
+        { error: 'Title must be 120 characters or less' },
+        { status: 400 }
+      )
+    }
+
+    if (body.blurb && body.blurb.length > 1000) {
+      return NextResponse.json(
+        { error: 'Description must be 1000 characters or less' },
+        { status: 400 }
+      )
+    }
+
     // Check if novel belongs to this author
     const existingNovel = await prisma.novel.findFirst({
       where: {

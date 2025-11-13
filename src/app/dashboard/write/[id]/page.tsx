@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Send, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Save, Send, AlertCircle, MoreVertical } from 'lucide-react'
 import Link from 'next/link'
 
 const WORD_LIMIT = 5000
@@ -184,98 +184,115 @@ export default function WritePage() {
     }
   }
 
+  // Format last saved time
+  const formatLastSaved = (date: Date) => {
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000) // seconds
+
+    if (diff < 60) return 'just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
   if (!chapter) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-600">Loading...</div>
+      <div className="h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Fixed Top Toolbar */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* Left: Back Button */}
+    <div className="h-screen flex flex-col bg-white">
+      {/* Top toolbar - minimal and clean */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200">
+        <div className="flex items-center gap-4">
           <Link
             href={`/dashboard/novels/${chapter.novel.id}/chapters`}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <ArrowLeft size={20} />
-            <span className="font-medium">Back</span>
           </Link>
-
-          {/* Center: Novel Title & Chapter */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600">{chapter.novel.title}</p>
-            <p className="text-xs text-gray-500">
-              Chapter {chapter.chapterNumber} {isPublished ? '(Published)' : '(Draft)'}
-            </p>
+          <div className="text-sm text-gray-500">
+            {chapter.novel.title}
           </div>
+        </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-4">
-            {/* Word Count */}
-            <div className="text-right">
-              <p
-                className={`text-sm font-medium ${
-                  isOverLimit
-                    ? 'text-red-600'
-                    : isNearLimit
-                    ? 'text-orange-600'
-                    : 'text-gray-900'
-                }`}
-              >
-                {wordCount.toLocaleString()} / {WORD_LIMIT.toLocaleString()}
-              </p>
-              <p className="text-xs text-gray-500">words</p>
-            </div>
+        <div className="flex items-center gap-6">
+          {/* Word count */}
+          <span
+            className={`text-sm ${
+              isOverLimit
+                ? 'text-red-600 font-medium'
+                : isNearLimit
+                ? 'text-orange-500'
+                : 'text-gray-500'
+            }`}
+          >
+            {wordCount.toLocaleString()} / {WORD_LIMIT.toLocaleString()} words
+          </span>
 
-            {/* Save Draft */}
+          {/* Auto-save indicator */}
+          {lastSaved && (
+            <span className="text-xs text-gray-400">
+              {saving ? 'Saving...' : `Saved ${formatLastSaved(lastSaved)}`}
+            </span>
+          )}
+
+          {/* Save Draft */}
+          <button
+            onClick={handleSaveDraft}
+            disabled={saving || !title.trim() || !content.trim()}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+          >
+            {saving ? 'Saving...' : 'Save Draft'}
+          </button>
+
+          {/* Publish */}
+          {!isPublished && (
             <button
-              onClick={handleSaveDraft}
-              disabled={saving || !title.trim() || !content.trim()}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              onClick={handlePublish}
+              disabled={publishing || isOverLimit || !title.trim() || !content.trim()}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
             >
-              <Save size={18} />
-              {saving ? 'Saving...' : 'Save Draft'}
+              {publishing ? 'Publishing...' : 'Publish'}
             </button>
-
-            {/* Publish */}
-            {!isPublished && (
-              <button
-                onClick={handlePublish}
-                disabled={publishing || isOverLimit || !title.trim() || !content.trim()}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-              >
-                <Send size={18} />
-                {publishing ? 'Publishing...' : 'Publish'}
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="pt-16">
-        <div className="max-w-4xl mx-auto px-6 py-8">
+      {/* Editor area - maximum space */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-8 py-12">
           {/* Warning Alert */}
           {isNearLimit && (
             <div
-              className={`mb-6 p-4 rounded-lg border ${
+              className={`mb-8 p-4 rounded-lg border ${
                 isOverLimit
-                  ? 'bg-red-50 border-red-200 text-red-800'
-                  : 'bg-orange-50 border-orange-200 text-orange-800'
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-orange-50 border-orange-200'
               }`}
             >
               <div className="flex items-start gap-3">
-                <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
+                <AlertCircle
+                  size={20}
+                  className={`flex-shrink-0 mt-0.5 ${
+                    isOverLimit ? 'text-red-600' : 'text-orange-600'
+                  }`}
+                />
                 <div>
-                  <p className="font-medium">
+                  <p
+                    className={`font-medium ${
+                      isOverLimit ? 'text-red-800' : 'text-orange-800'
+                    }`}
+                  >
                     {isOverLimit ? 'Word limit reached!' : 'Approaching word limit'}
                   </p>
-                  <p className="text-sm mt-1">
+                  <p
+                    className={`text-sm mt-1 ${
+                      isOverLimit ? 'text-red-700' : 'text-orange-700'
+                    }`}
+                  >
                     {isOverLimit
                       ? `You've reached the maximum word limit of ${WORD_LIMIT.toLocaleString()} words. Please reduce your content to publish.`
                       : `You're approaching the maximum word limit. Consider wrapping up this chapter soon.`}
@@ -285,35 +302,24 @@ export default function WritePage() {
             </div>
           )}
 
-          {/* Chapter Title */}
-          <div className="mb-6">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Chapter Title"
-              className="w-full px-4 py-3 text-2xl font-bold border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent"
-              maxLength={100}
-            />
-          </div>
+          {/* Chapter title */}
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Chapter Title"
+            className="w-full text-3xl font-bold border-none outline-none mb-8 placeholder-gray-300"
+            maxLength={100}
+          />
 
-          {/* Chapter Content */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <textarea
-              value={content}
-              onChange={handleContentChange}
-              placeholder="Start writing your chapter here..."
-              className="w-full min-h-[600px] text-lg leading-relaxed focus:outline-none resize-none font-serif"
-              style={{ fontSize: '18px', lineHeight: '1.8' }}
-            />
-          </div>
-
-          {/* Last Saved Info */}
-          {lastSaved && (
-            <p className="text-sm text-gray-500 mt-4 text-center">
-              Auto-saved: {lastSaved.toLocaleTimeString()}
-            </p>
-          )}
+          {/* Content editor */}
+          <textarea
+            value={content}
+            onChange={handleContentChange}
+            placeholder="Start writing your story..."
+            className="w-full min-h-screen text-lg leading-relaxed border-none outline-none resize-none placeholder-gray-300"
+            style={{ fontFamily: 'Georgia, serif' }}
+          />
         </div>
       </div>
     </div>

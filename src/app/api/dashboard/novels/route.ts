@@ -89,6 +89,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate field lengths
+    if (title.length > 120) {
+      return NextResponse.json(
+        { error: 'Title must be 120 characters or less' },
+        { status: 400 }
+      )
+    }
+
+    if (blurb.length > 1000) {
+      return NextResponse.json(
+        { error: 'Description must be 1000 characters or less' },
+        { status: 400 }
+      )
+    }
+
     // Upload cover image to Cloudinary
     let coverImageUrl = ''
     let coverImagePublicId = ''

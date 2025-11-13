@@ -192,20 +192,22 @@ export default function NovelUploadForm() {
   }
 
   const blurbCharCount = formData.blurb.length
-  const blurbWarning = blurbCharCount > 900
+  const blurbWarning = blurbCharCount > 950
   const blurbError = blurbCharCount >= LIMITS.BLURB_MAX
 
   return (
-    <form onSubmit={(e) => handleSubmit(e, false)} className="grid grid-cols-2 gap-6">
-      {/* Left Column - Novel Details */}
-      <div className="space-y-6">
+    <form onSubmit={(e) => handleSubmit(e, false)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Left Column - Novel Details (2/3 width) */}
+      <div className="lg:col-span-2 space-y-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Novel Details</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Story Details</h2>
 
-          <div className="space-y-5">
+          <div className="space-y-6">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Title <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 required
@@ -217,17 +219,21 @@ export default function NovelUploadForm() {
                   }
                 }}
                 placeholder="Enter your story title"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 maxLength={LIMITS.TITLE_MAX}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.title.length} / {LIMITS.TITLE_MAX} characters
-              </p>
+              <div className="flex justify-end mt-1">
+                <span className="text-xs text-gray-500">
+                  {formData.title.length} / {LIMITS.TITLE_MAX}
+                </span>
+              </div>
             </div>
 
             {/* Blurb */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description <span className="text-red-500">*</span>
+              </label>
               <textarea
                 required
                 value={formData.blurb}
@@ -239,40 +245,36 @@ export default function NovelUploadForm() {
                 }}
                 rows={8}
                 placeholder="Write a compelling description for your story..."
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent resize-none text-sm ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent resize-none ${
                   blurbError
                     ? 'border-red-500 focus:ring-red-500'
-                    : blurbWarning
-                    ? 'border-yellow-500 focus:ring-yellow-500'
                     : 'border-gray-300 focus:ring-indigo-500'
                 }`}
                 maxLength={LIMITS.BLURB_MAX}
               />
-              <div className="flex items-center justify-between mt-1">
-                <p
-                  className={`text-xs font-medium ${
-                    blurbError ? 'text-red-600' : blurbWarning ? 'text-yellow-600' : 'text-gray-500'
-                  }`}
-                >
+              <div className="flex justify-between items-center mt-1">
+                <span className={`text-xs ${blurbCharCount > 950 ? 'text-red-500' : 'text-gray-500'}`}>
                   {blurbCharCount} / {LIMITS.BLURB_MAX} characters
-                </p>
+                </span>
                 {blurbError && (
-                  <p className="text-xs text-red-600 flex items-center gap-1">
+                  <span className="text-xs text-red-600 flex items-center gap-1">
                     <AlertCircle size={12} />
                     Limit reached
-                  </p>
+                  </span>
                 )}
               </div>
             </div>
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Genre <span className="text-red-500">*</span>
+              </label>
               <select
                 required
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 <option value="">Select a genre</option>
                 {genres.map((genre) => (
@@ -285,10 +287,13 @@ export default function NovelUploadForm() {
 
             {/* Cover Image */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cover Image <span className="text-red-500">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-3">Required size: 300x400px, Max 2MB</p>
 
               {coverPreview ? (
-                <div className="relative w-36 h-48 rounded-lg overflow-hidden border border-gray-300">
+                <div className="relative w-40 h-52 rounded-lg overflow-hidden border-2 border-gray-300">
                   <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
                   <button
                     type="button"
@@ -296,16 +301,16 @@ export default function NovelUploadForm() {
                       setCoverPreview('')
                       setFormData({ ...formData, coverImage: '' })
                     }}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-36 h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors">
-                  <Upload className="text-gray-400 mb-1" size={24} />
-                  <span className="text-xs text-gray-500 font-medium">Upload Cover</span>
-                  <span className="text-xs text-gray-400 mt-1">300x400px</span>
+                <label className="flex flex-col items-center justify-center w-40 h-52 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
+                  <Upload className="text-gray-400 mb-2" size={28} />
+                  <span className="text-sm text-gray-600 font-medium">Upload Cover</span>
+                  <span className="text-xs text-gray-400 mt-2">300x400px</span>
                   <span className="text-xs text-gray-400">Max 2MB</span>
                   <input
                     type="file"
@@ -347,77 +352,68 @@ export default function NovelUploadForm() {
         </div>
       </div>
 
-      {/* Right Column - Table of Contents */}
-      <div className="space-y-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+      {/* Right Column - Chapters (1/3 width) */}
+      <div className="lg:col-span-1 space-y-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Chapters ({chapters.length})</h2>
-            <button
-              type="button"
-              onClick={() => {
-                alert('Feature coming soon: This will redirect to a full-screen writing page')
-                // In the future, this would create a temporary chapter and redirect to write page
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-            >
-              <Plus size={16} />
-              Add Chapter
-            </button>
+            <h2 className="text-lg font-semibold text-gray-900">Chapters</h2>
+            <span className="text-sm text-gray-500">{chapters.length} total</span>
           </div>
 
           {/* Chapters List */}
           {chapters.length > 0 ? (
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+            <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
               {chapters.map((chapter) => (
                 <div
                   key={chapter.id}
-                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-gray-900 text-sm truncate">
-                        {chapter.number}. {chapter.title}
-                      </p>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          chapter.isPublished
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {chapter.isPublished ? 'Published' : 'Draft'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">{chapter.wordCount.toLocaleString()} words</p>
+                    <div className="font-medium text-sm text-gray-900">Ch {chapter.number}</div>
+                    <div className="text-xs text-gray-500 truncate">{chapter.title}</div>
+                    <div className="text-xs text-gray-400 mt-1">{chapter.wordCount.toLocaleString()} words</div>
                   </div>
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => alert('Edit functionality coming soon')}
-                      className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
+                  <div className="flex items-center gap-1">
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        chapter.isPublished
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}
                     >
-                      <Edit2 size={14} />
-                    </button>
+                      {chapter.isPublished ? 'Pub' : 'Draft'}
+                    </span>
                     <button
                       type="button"
                       onClick={() => handleDeleteChapter(chapter.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                     >
-                      <Trash2 size={14} />
+                      <X size={14} />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-500">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
-                <Plus className="text-gray-400" size={24} />
+            <div className="text-center py-12 mb-6">
+              <div className="text-gray-400 mb-3">
+                <Plus size={32} strokeWidth={1.5} className="mx-auto" />
               </div>
-              <p className="text-sm font-medium mb-1">No chapters yet</p>
-              <p className="text-xs text-gray-400">Add your first chapter to get started</p>
+              <p className="text-sm font-medium text-gray-900 mb-1">No chapters yet</p>
+              <p className="text-xs text-gray-500">Add your first chapter</p>
             </div>
           )}
+
+          {/* Add Chapter Button */}
+          <button
+            type="button"
+            onClick={() => {
+              alert('Feature coming soon: This will redirect to a full-screen writing page')
+            }}
+            className="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+          >
+            + Add Chapter
+          </button>
         </div>
 
         {/* Action Buttons */}
@@ -426,7 +422,7 @@ export default function NovelUploadForm() {
             <button
               type="submit"
               disabled={uploading}
-              className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {uploading ? 'Saving...' : 'Save as Draft'}
             </button>
@@ -434,15 +430,15 @@ export default function NovelUploadForm() {
               type="button"
               onClick={(e) => handleSubmit(e as any, true)}
               disabled={uploading || chapters.length === 0}
-              className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm"
+              className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
-              {uploading ? 'Publishing...' : 'Publish Novel'}
+              {uploading ? 'Publishing...' : 'Publish Story'}
             </button>
-            <p className="text-xs text-gray-500 text-center">
-              {chapters.length === 0
-                ? 'Add at least one published chapter to publish the novel'
-                : 'Make sure at least one chapter is published'}
-            </p>
+            {chapters.length === 0 && (
+              <p className="text-xs text-gray-500 text-center">
+                Add at least one chapter to publish
+              </p>
+            )}
           </div>
         </div>
       </div>

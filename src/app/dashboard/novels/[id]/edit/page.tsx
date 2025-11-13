@@ -26,7 +26,7 @@ const genres = [
 
 const LIMITS = {
   TITLE_MAX: 120,
-  BLURB_MAX: 3000,
+  BLURB_MAX: 1000,
 }
 
 const IMAGE_LIMITS = {
@@ -181,10 +181,8 @@ export default function EditNovelPage() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading...</div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     )
   }
@@ -194,32 +192,35 @@ export default function EditNovelPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/dashboard/novels"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-        >
-          <ArrowLeft size={20} />
-          Back to Novels
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Novel</h1>
-        <p className="text-gray-600">Update your novel information</p>
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          <Link
+            href="/dashboard/novels"
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Stories
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Story</h1>
+          <p className="text-sm text-gray-500 mt-1">Update your story information</p>
+        </div>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <BookOpen size={20} />
-            Novel Information
-          </h2>
+      <div className="max-w-5xl mx-auto px-6 py-8">
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Story Information</h2>
 
           <div className="space-y-6">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Novel Title *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Title <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 required
@@ -230,22 +231,25 @@ export default function EditNovelPage() {
                     setFormData({ ...formData, title: value })
                   }
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 maxLength={LIMITS.TITLE_MAX}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.title.length} / {LIMITS.TITLE_MAX} characters
-              </p>
+              <div className="flex justify-end mt-1">
+                <span className="text-xs text-gray-500">
+                  {formData.title.length} / {LIMITS.TITLE_MAX}
+                </span>
+              </div>
             </div>
 
             {/* Cover Image */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cover Image {newCoverImage && '(New)'}
+                Cover Image {newCoverImage && <span className="text-indigo-600">(New)</span>}
               </label>
+              <p className="text-xs text-gray-500 mb-3">Required size: 300x400px, Max 2MB</p>
 
               <div className="flex items-start gap-4">
-                <div className="relative w-48 h-64 rounded-lg overflow-hidden border-2 border-gray-300">
+                <div className="relative w-40 h-52 rounded-lg overflow-hidden border-2 border-gray-300">
                   <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
                   {newCoverImage && (
                     <button
@@ -254,16 +258,16 @@ export default function EditNovelPage() {
                         setCoverPreview(novel.coverImage)
                         setNewCoverImage('')
                       }}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
                     >
                       <X size={16} />
                     </button>
                   )}
                 </div>
 
-                <label className="flex flex-col items-center justify-center w-48 h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                  <Upload className="text-gray-400 mb-2" size={32} />
-                  <span className="text-sm text-gray-500 font-medium">Change Cover</span>
+                <label className="flex flex-col items-center justify-center w-40 h-52 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
+                  <Upload className="text-gray-400 mb-2" size={28} />
+                  <span className="text-sm text-gray-600 font-medium">Change Cover</span>
                   <span className="text-xs text-gray-400 mt-2">300x400px</span>
                   <span className="text-xs text-gray-400">Max 2MB</span>
                   <input
@@ -278,12 +282,14 @@ export default function EditNovelPage() {
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Genre *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Genre <span className="text-red-500">*</span>
+              </label>
               <select
                 required
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 {genres.map((genre) => (
                   <option key={genre.id} value={genre.id}>
@@ -308,12 +314,21 @@ export default function EditNovelPage() {
                   }
                 }}
                 rows={10}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 resize-none ${
+                  formData.blurb.length >= LIMITS.BLURB_MAX
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-indigo-500'
+                }`}
                 maxLength={LIMITS.BLURB_MAX}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.blurb.length} / {LIMITS.BLURB_MAX} characters
-              </p>
+              <div className="flex justify-between items-center mt-1">
+                <span className={`text-xs ${formData.blurb.length > 950 ? 'text-red-500' : 'text-gray-500'}`}>
+                  {formData.blurb.length} / {LIMITS.BLURB_MAX} characters
+                </span>
+                {formData.blurb.length >= LIMITS.BLURB_MAX && (
+                  <span className="text-xs text-red-600">Limit reached</span>
+                )}
+              </div>
             </div>
 
             {/* Status */}
@@ -358,23 +373,24 @@ export default function EditNovelPage() {
           </div>
         </div>
 
-        {/* Submit */}
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
-          <Link
-            href="/dashboard/novels"
-            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition-colors"
-          >
-            Cancel
-          </Link>
-        </div>
-      </form>
+          {/* Submit */}
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <Link
+              href="/dashboard/novels"
+              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors inline-flex items-center"
+            >
+              Cancel
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

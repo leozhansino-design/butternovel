@@ -24,6 +24,7 @@ export default function NovelsPage() {
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<number | null>(null)
+  const [publishing, setPublishing] = useState<number | null>(null)
   const [filter, setFilter] = useState<'all' | 'published' | 'drafts'>('all')
 
   useEffect(() => {
@@ -41,6 +42,47 @@ export default function NovelsPage() {
       console.error('Failed to fetch novels:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleTogglePublish = async (id: number, currentStatus: boolean, title: string) => {
+    const action = currentStatus ? 'unpublish' : 'publish'
+    const confirmMessage = currentStatus
+      ? `Are you sure you want to unpublish "${title}"? It will no longer be visible to readers.`
+      : `Are you sure you want to publish "${title}"? It will be visible to all readers.`
+
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    setPublishing(id)
+    try {
+      const response = await fetch(`/api/dashboard/novels/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublished: !currentStatus,
+        }),
+      })
+
+      if (response.ok) {
+        setNovels(
+          novels.map((novel) =>
+            novel.id === id ? { ...novel, isPublished: !currentStatus } : novel
+          )
+        )
+        alert(`Novel ${action}ed successfully`)
+      } else {
+        const data = await response.json()
+        alert(`Failed to ${action} novel: ${data.error}`)
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} novel:`, error)
+      alert(`An error occurred while ${action}ing the novel`)
+    } finally {
+      setPublishing(null)
     }
   }
 
@@ -79,25 +121,25 @@ export default function NovelsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">My Stories</h1>
+            <h1 className="text-2xl font-bold text-gray-900">My Stories</h1>
             <p className="text-sm text-gray-500 mt-1">
               {filteredNovels.length} {filteredNovels.length === 1 ? 'story' : 'stories'}
             </p>
           </div>
           <Link
             href="/dashboard/upload"
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
           >
             <Plus size={18} />
             New Story
@@ -105,38 +147,38 @@ export default function NovelsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Filters */}
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-1 mb-6 border-b border-gray-200">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`pb-3 px-4 border-b-2 font-medium transition-colors ${
               filter === 'all'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            All
+            All ({novels.length})
           </button>
           <button
             onClick={() => setFilter('published')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`pb-3 px-4 border-b-2 font-medium transition-colors ${
               filter === 'published'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Published
+            Published ({novels.filter((n) => n.isPublished).length})
           </button>
           <button
             onClick={() => setFilter('drafts')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`pb-3 px-4 border-b-2 font-medium transition-colors ${
               filter === 'drafts'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Drafts
+            Drafts ({novels.filter((n) => !n.isPublished).length})
           </button>
         </div>
 
@@ -233,22 +275,37 @@ export default function NovelsPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/dashboard/novels/${novel.id}/chapters`}
-                          className="text-sm text-gray-700 hover:text-indigo-600 font-medium"
+                          className="text-sm text-gray-600 hover:text-indigo-600 font-medium transition-colors"
                         >
-                          Manage
+                          Chapters
                         </Link>
                         <Link
                           href={`/dashboard/novels/${novel.id}/edit`}
-                          className="p-1 text-gray-400 hover:text-gray-600"
+                          className="text-sm text-gray-600 hover:text-indigo-600 font-medium transition-colors"
                         >
-                          <Edit size={16} />
+                          Edit
                         </Link>
+                        <button
+                          onClick={() => handleTogglePublish(novel.id, novel.isPublished, novel.title)}
+                          disabled={publishing === novel.id}
+                          className={`text-sm font-medium transition-colors disabled:opacity-50 ${
+                            novel.isPublished
+                              ? 'text-gray-600 hover:text-yellow-600'
+                              : 'text-gray-600 hover:text-green-600'
+                          }`}
+                        >
+                          {publishing === novel.id
+                            ? '...'
+                            : novel.isPublished
+                            ? 'Unpublish'
+                            : 'Publish'}
+                        </button>
                         <button
                           onClick={() => handleDelete(novel.id, novel.title)}
                           disabled={deleting === novel.id}
-                          className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                          className="text-sm text-gray-600 hover:text-red-600 font-medium transition-colors disabled:opacity-50"
                         >
-                          <Trash2 size={16} />
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -258,9 +315,11 @@ export default function NovelsPage() {
             </table>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 px-6 py-12 text-center">
-            <BookOpen className="mx-auto mb-3 text-gray-300" size={48} />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No stories found</h3>
+          <div className="bg-white rounded-lg border border-gray-200 px-6 py-20 text-center">
+            <div className="text-gray-400 mb-4">
+              <BookOpen size={48} strokeWidth={1.5} className="mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No stories found</h3>
             <p className="text-gray-500 mb-6">
               {filter === 'all'
                 ? 'Get started by creating your first story'
@@ -268,13 +327,15 @@ export default function NovelsPage() {
                 ? 'You have no published stories yet'
                 : 'You have no draft stories'}
             </p>
-            <Link
-              href="/dashboard/upload"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-            >
-              <Plus size={18} />
-              New Story
-            </Link>
+            {filter === 'all' && (
+              <Link
+                href="/dashboard/upload"
+                className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                <Plus size={18} />
+                Create Story
+              </Link>
+            )}
           </div>
         )}
       </div>
