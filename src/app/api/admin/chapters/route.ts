@@ -2,14 +2,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 
-export async function POST(request: Request) {
+export const POST = withAdminAuth(async (session, request: Request) => {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const { novelId, title, content, chapterNumber, isPublished, wordCount } = await request.json()
 
@@ -74,4 +70,4 @@ export async function POST(request: Request) {
     console.error('Error creating chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to create chapter' }, { status: 500 })
   }
-}
+})

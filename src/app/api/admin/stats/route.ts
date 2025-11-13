@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 
 type TimeRange = 'all' | '1day' | '3days' | '1week' | '1month' | '3months' | '6months' | '1year'
 
@@ -51,12 +51,8 @@ function getDateRange(range: TimeRange): { startDate: Date; label: string; days:
   }
 }
 
-export async function GET(request: Request) {
+export const GET = withAdminAuth(async (session, request: Request) => {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const url = new URL(request.url)
     const range = (url.searchParams.get('range') as TimeRange) || 'all'
@@ -113,14 +109,10 @@ export async function GET(request: Request) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function POST(request: Request) {
+export const POST = withAdminAuth(async (session, request: Request) => {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const { range } = await request.json()
     const { startDate, label, days } = getDateRange(range)
@@ -247,4 +239,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-}
+})

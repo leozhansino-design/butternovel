@@ -2,23 +2,18 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 
 // PUT /api/admin/novels/[id] - 更新小说（增量更新）
-export async function PUT(
+export const PUT = withAdminAuth(async (
+  session,
   request: Request,
   props: { params: Promise<{ id: string }> }  // ⭐ Next.js 15
-) {
+) => {
   try {
     const params = await props.params  // ⭐ await params
     console.log('📝 [API] Received update request for novel:', params.id)
-
-    // 验证管理员权限
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const novelId = parseInt(params.id)
     const updates = await request.json()
@@ -151,22 +146,17 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+})
 
 // DELETE /api/admin/novels/[id] - 删除小说
-export async function DELETE(
+export const DELETE = withAdminAuth(async (
+  session,
   request: Request,
   props: { params: Promise<{ id: string }> }  // ⭐ Next.js 15
-) {
+) => {
   try {
     const params = await props.params  // ⭐ await params
     console.log('🗑️ [API] Received delete request for novel:', params.id)
-
-    // 验证管理员权限
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const novelId = parseInt(params.id)
 
@@ -219,4 +209,4 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+})

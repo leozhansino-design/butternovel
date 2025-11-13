@@ -2,19 +2,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 
-export async function POST(
+export const POST = withAdminAuth(async (
+  session,
   request: Request,
   props: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const params = await props.params
-    const session = await getAdminSession()
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const novelId = parseInt(params.id)
     const { isBanned } = await request.json()
@@ -41,4 +37,4 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+})

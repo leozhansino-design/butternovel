@@ -2,15 +2,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getAdminSession } from '@/lib/admin-auth'
+import { withAdminAuth } from '@/lib/admin-middleware'
 
-export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+export const PUT = withAdminAuth(async (session, request: Request, props: { params: Promise<{ id: string }> }) => {
   try {
     const params = await props.params
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const chapterId = parseInt(params.id)
     const updates = await request.json()
@@ -68,15 +64,11 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     console.error('Error updating chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to update' }, { status: 500 })
   }
-}
+})
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+export const DELETE = withAdminAuth(async (session, request: Request, props: { params: Promise<{ id: string }> }) => {
   try {
     const params = await props.params
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const chapterId = parseInt(params.id)
 
@@ -140,4 +132,4 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     console.error('Error deleting chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to delete' }, { status: 500 })
   }
-}
+})
