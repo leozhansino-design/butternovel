@@ -19,7 +19,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
   const [error, setError] = useState('')
 
   const [loginData, setLoginData] = useState({
-    email: '',
+    identifier: '', // Can be email or username
     password: '',
   })
 
@@ -45,15 +45,24 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
     setError('')
 
     try {
-      // ✅ 使用 callbackUrl 让 NextAuth 处理重定向，确保 session 正确更新
-      await signIn('credentials', {
-        email: loginData.email,
+      // ✅ Use redirect: false to stay on current page
+      const result = await signIn('credentials', {
+        identifier: loginData.identifier,
         password: loginData.password,
-        callbackUrl: window.location.href,  // 登录后回到当前页面
+        redirect: false,
       })
-      // 如果成功，会自动重定向，不会执行到这里
+
+      if (result?.error) {
+        // Show specific error message from NextAuth
+        setError(result.error)
+        setLoading(false)
+      } else if (result?.ok) {
+        // Login successful - refresh page to update session
+        router.refresh()
+        onClose()
+      }
     } catch (error) {
-      setError('Invalid email or password')
+      setError('Something went wrong. Please try again')
       setLoading(false)
     }
   }
@@ -94,14 +103,21 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
         return
       }
 
-      // ✅ 注册成功后自动登录，跳转到首页
-      await signIn('credentials', {
-        email: registerData.email,
+      // ✅ 注册成功后自动登录，留在当前页面
+      const result = await signIn('credentials', {
+        identifier: registerData.email,
         password: registerData.password,
-        callbackUrl: '/',  // 注册后跳转到首页
+        redirect: false,
       })
 
-      // signIn with callbackUrl will redirect automatically
+      if (result?.error) {
+        setError(result.error)
+        setLoading(false)
+      } else if (result?.ok) {
+        // Registration and login successful - refresh page to update session
+        router.refresh()
+        onClose()
+      }
     } catch (error) {
       setError('Something went wrong')
       setLoading(false)
@@ -182,14 +198,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
+                    Email or Username
                   </label>
                   <input
-                    type="email"
-                    value={loginData.email}
-                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    type="text"
+                    value={loginData.identifier}
+                    onChange={(e) => setLoginData({ ...loginData, identifier: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="you@example.com"
+                    placeholder="you@example.com or username"
                     required
                   />
                 </div>

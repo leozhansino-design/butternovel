@@ -47,13 +47,13 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
         className="flex items-center gap-3 px-4 py-2 rounded-full hover:bg-gray-50 transition-all duration-200"
       >
         {user.image ? (
-          <img 
-            src={user.image} 
-            alt={user.name || 'User'} 
+          <img
+            src={user.image}
+            alt={user.name || 'User'}
             className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-200"
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-gray-200">
+          <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold text-sm ring-2 ring-gray-200 border border-gray-300">
             {user.name?.[0]?.toUpperCase() || 'U'}
           </div>
         )}
@@ -68,13 +68,13 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
           <div className="px-4 py-4 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
             <div className="flex items-center gap-3">
               {user.image ? (
-                <img 
-                  src={user.image} 
-                  alt={user.name || 'User'} 
+                <img
+                  src={user.image}
+                  alt={user.name || 'User'}
                   className="w-11 h-11 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-semibold">
+                <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold border border-gray-300">
                   {user.name?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
