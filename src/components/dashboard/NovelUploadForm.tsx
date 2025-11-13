@@ -1,0 +1,553 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Upload, BookOpen, Plus, X, Edit2, Trash2 } from 'lucide-react'
+import Image from 'next/image'
+
+// Category data (Genres)
+const genres = [
+  { id: 1, name: 'Fantasy' },
+  { id: 2, name: 'Romance' },
+  { id: 3, name: 'Urban' },
+  { id: 4, name: 'Sci-Fi' },
+  { id: 5, name: 'Mystery' },
+  { id: 6, name: 'Horror' },
+  { id: 7, name: 'Adventure' },
+  { id: 8, name: 'Historical' },
+  { id: 9, name: 'Crime' },
+  { id: 10, name: 'LGBTQ+' },
+  { id: 11, name: 'Paranormal' },
+  { id: 12, name: 'System' },
+  { id: 13, name: 'Reborn' },
+  { id: 14, name: 'Revenge' },
+  { id: 15, name: 'Fanfiction' },
+]
+
+// Limits
+const LIMITS = {
+  TITLE_MAX: 120,
+  BLURB_MAX: 3000,
+  CHAPTER_TITLE_MAX: 100,
+  CHAPTER_WORDS_MAX: 5000,
+}
+
+// Image limits
+const IMAGE_LIMITS = {
+  MAX_SIZE: 2 * 1024 * 1024,
+  REQUIRED_WIDTH: 300,
+  REQUIRED_HEIGHT: 400,
+  ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+}
+
+type Chapter = {
+  id: string
+  number: number
+  title: string
+  content: string
+  wordCount: number
+}
+
+export default function NovelUploadForm() {
+  const router = useRouter()
+  const [uploading, setUploading] = useState(false)
+  const [coverPreview, setCoverPreview] = useState<string>('')
+  const [showChapterForm, setShowChapterForm] = useState(false)
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null)
+
+  const [formData, setFormData] = useState({
+    title: '',
+    coverImage: '',
+    categoryId: '',
+    blurb: '',
+    status: 'ONGOING',
+    isPublished: false,
+  })
+
+  const [chapters, setChapters] = useState<Chapter[]>([])
+
+  const [currentChapter, setCurrentChapter] = useState({
+    title: '',
+    content: '',
+  })
+
+  // Calculate current chapter word count
+  const currentWordCount = currentChapter.content.trim().split(/\s+/).filter((w) => w).length
+  const isOverLimit = currentWordCount > LIMITS.CHAPTER_WORDS_MAX
+
+  // Handle cover upload
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!IMAGE_LIMITS.ALLOWED_TYPES.includes(file.type)) {
+      alert('Invalid file type. Please upload JPG, PNG, or WebP image.')
+      e.target.value = ''
+      return
+    }
+
+    if (file.size > IMAGE_LIMITS.MAX_SIZE) {
+      alert(`File too large. Maximum size is ${IMAGE_LIMITS.MAX_SIZE / 1024 / 1024}MB.`)
+      e.target.value = ''
+      return
+    }
+
+    const img = new window.Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      const width = img.width
+      const height = img.height
+
+      URL.revokeObjectURL(objectUrl)
+
+      if (width !== IMAGE_LIMITS.REQUIRED_WIDTH || height !== IMAGE_LIMITS.REQUIRED_HEIGHT) {
+        alert(
+          `Invalid image size.\nRequired: ${IMAGE_LIMITS.REQUIRED_WIDTH}x${IMAGE_LIMITS.REQUIRED_HEIGHT}px\nYour image: ${width}x${height}px`
+        )
+        e.target.value = ''
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string
+        setCoverPreview(base64)
+        setFormData({ ...formData, coverImage: base64 })
+      }
+      reader.readAsDataURL(file)
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      alert('Failed to load image. Please try another file.')
+      e.target.value = ''
+    }
+
+    img.src = objectUrl
+  }
+
+  // Add or update chapter
+  const handleAddChapter = () => {
+    if (!currentChapter.title || !currentChapter.content) {
+      alert('Please fill in chapter title and content')
+      return
+    }
+
+    const wordCount = currentChapter.content.trim().split(/\s+/).filter((w) => w).length
+    if (wordCount > LIMITS.CHAPTER_WORDS_MAX) {
+      alert(`Chapter exceeds maximum word limit of ${LIMITS.CHAPTER_WORDS_MAX.toLocaleString()} words`)
+      return
+    }
+
+    if (editingChapterId) {
+      // Edit existing chapter
+      setChapters(
+        chapters.map((ch) =>
+          ch.id === editingChapterId
+            ? { ...ch, title: currentChapter.title, content: currentChapter.content, wordCount }
+            : ch
+        )
+      )
+      setEditingChapterId(null)
+    } else {
+      // Add new chapter
+      const newChapter: Chapter = {
+        id: Math.random().toString(36).substr(2, 9),
+        number: chapters.length + 1,
+        title: currentChapter.title,
+        content: currentChapter.content,
+        wordCount: wordCount,
+      }
+      setChapters([...chapters, newChapter])
+    }
+
+    setCurrentChapter({ title: '', content: '' })
+    setShowChapterForm(false)
+  }
+
+  // Edit chapter
+  const handleEditChapter = (chapter: Chapter) => {
+    setEditingChapterId(chapter.id)
+    setCurrentChapter({ title: chapter.title, content: chapter.content })
+    setShowChapterForm(true)
+  }
+
+  // Delete chapter
+  const handleDeleteChapter = (id: string) => {
+    if (confirm('Are you sure you want to delete this chapter?')) {
+      const filtered = chapters.filter((c) => c.id !== id)
+      const renumbered = filtered.map((ch, index) => ({
+        ...ch,
+        number: index + 1,
+      }))
+      setChapters(renumbered)
+    }
+  }
+
+  // Submit form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Validate
+    if (!formData.title.trim() || !formData.coverImage || !formData.categoryId || !formData.blurb.trim()) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    if (chapters.length === 0) {
+      alert('Please add at least one chapter')
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      const response = await fetch('/api/dashboard/novels', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          coverImage: formData.coverImage,
+          categoryId: parseInt(formData.categoryId),
+          blurb: formData.blurb,
+          status: formData.status,
+          isPublished: formData.isPublished,
+          chapters: chapters.map((ch) => ({
+            title: ch.title,
+            content: ch.content,
+          })),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed')
+      }
+
+      alert(`Success! Novel "${data.novel.title}" has been uploaded!`)
+
+      // Redirect to novels page
+      router.push('/dashboard/novels')
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      alert('Error: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Basic Information */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <BookOpen size={20} />
+          Basic Information
+        </h2>
+
+        <div className="space-y-6">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Novel Title *</label>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value.length <= LIMITS.TITLE_MAX) {
+                  setFormData({ ...formData, title: value })
+                }
+              }}
+              placeholder="Enter novel title"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              maxLength={LIMITS.TITLE_MAX}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {formData.title.length} / {LIMITS.TITLE_MAX} characters
+            </p>
+          </div>
+
+          {/* Cover Image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image *</label>
+
+            {coverPreview ? (
+              <div className="relative w-48 h-64 rounded-lg overflow-hidden border-2 border-gray-300">
+                <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCoverPreview('')
+                    setFormData({ ...formData, coverImage: '' })
+                  }}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-48 h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                <Upload className="text-gray-400 mb-2" size={32} />
+                <span className="text-sm text-gray-500 font-medium">Upload Cover</span>
+                <span className="text-xs text-gray-400 mt-2">300x400px (exactly)</span>
+                <span className="text-xs text-gray-400">Max 2MB</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleCoverUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Genre *</label>
+            <select
+              required
+              value={formData.categoryId}
+              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select a genre</option>
+              {genres.map((genre) => (
+                <option key={genre.id} value={genre.id}>
+                  {genre.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Blurb */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description / Blurb *</label>
+            <textarea
+              required
+              value={formData.blurb}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value.length <= LIMITS.BLURB_MAX) {
+                  setFormData({ ...formData, blurb: value })
+                }
+              }}
+              rows={10}
+              placeholder="Write a compelling description..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              maxLength={LIMITS.BLURB_MAX}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {formData.blurb.length} / {LIMITS.BLURB_MAX} characters
+            </p>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="ONGOING"
+                  checked={formData.status === 'ONGOING'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="mr-2"
+                />
+                <span className="text-sm">Ongoing</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="COMPLETED"
+                  checked={formData.status === 'COMPLETED'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="mr-2"
+                />
+                <span className="text-sm">Completed</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Publish Status */}
+          <div>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={formData.isPublished}
+                onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
+                className="mr-2"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Publish immediately (uncheck to save as draft)
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Chapters */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <BookOpen size={20} />
+            Chapters ({chapters.length})
+          </h2>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingChapterId(null)
+              setCurrentChapter({ title: '', content: '' })
+              setShowChapterForm(!showChapterForm)
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={18} />
+            Add Chapter
+          </button>
+        </div>
+
+        {/* Add Chapter Form */}
+        {showChapterForm && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Chapter Title</label>
+              <input
+                type="text"
+                value={currentChapter.title}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length <= LIMITS.CHAPTER_TITLE_MAX) {
+                    setCurrentChapter({ ...currentChapter, title: value })
+                  }
+                }}
+                placeholder="e.g., Chapter 1: The Beginning"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxLength={LIMITS.CHAPTER_TITLE_MAX}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {currentChapter.title.length} / {LIMITS.CHAPTER_TITLE_MAX} characters
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Chapter Content
+                <span
+                  className={`ml-2 text-xs ${
+                    isOverLimit ? 'text-red-600 font-semibold' : 'text-gray-500'
+                  }`}
+                >
+                  ({currentWordCount.toLocaleString()} / {LIMITS.CHAPTER_WORDS_MAX.toLocaleString()}{' '}
+                  words)
+                </span>
+              </label>
+              <textarea
+                value={currentChapter.content}
+                onChange={(e) => setCurrentChapter({ ...currentChapter, content: e.target.value })}
+                rows={50}
+                placeholder="Write your chapter content here..."
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 resize-none font-mono text-sm ${
+                  isOverLimit ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                }`}
+              />
+              {isOverLimit && (
+                <p className="text-sm text-red-600 mt-2 font-medium">
+                  Warning: Chapter exceeds maximum word limit by{' '}
+                  {(currentWordCount - LIMITS.CHAPTER_WORDS_MAX).toLocaleString()} words
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleAddChapter}
+                disabled={isOverLimit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+              >
+                {editingChapterId ? 'Update Chapter' : 'Save Chapter'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowChapterForm(false)
+                  setCurrentChapter({ title: '', content: '' })
+                  setEditingChapterId(null)
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Chapters List */}
+        {chapters.length > 0 ? (
+          <div className="space-y-2">
+            {chapters.map((chapter) => (
+              <div
+                key={chapter.id}
+                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">
+                    Chapter {chapter.number}: {chapter.title}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">{chapter.wordCount.toLocaleString()} words</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEditChapter(chapter)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium"
+                  >
+                    <Edit2 size={16} />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteChapter(chapter.id)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            <BookOpen className="mx-auto mb-2 text-gray-400" size={48} />
+            <p className="font-medium">No chapters added yet</p>
+            <p className="text-sm">Click "Add Chapter" to start</p>
+          </div>
+        )}
+      </div>
+
+      {/* Submit */}
+      <div className="flex gap-4">
+        <button
+          type="submit"
+          disabled={uploading || chapters.length === 0}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+        >
+          {uploading ? 'Uploading...' : formData.isPublished ? 'Publish Novel' : 'Save as Draft'}
+        </button>
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+}
