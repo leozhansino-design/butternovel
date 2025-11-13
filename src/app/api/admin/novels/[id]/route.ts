@@ -5,6 +5,7 @@ import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
+import { invalidateNovelRelatedCaches, invalidateNovelCache, invalidateCategoryCache } from '@/lib/cache'
 
 // PUT /api/admin/novels/[id] - 更新小说（增量更新）
 export const PUT = withAdminAuth(async (
@@ -40,8 +41,10 @@ export const PUT = withAdminAuth(async (
         select: {
           id: true,
           title: true,
+          slug: true,
           coverImage: true,
-          coverImagePublicId: true
+          coverImagePublicId: true,
+          categoryId: true
         }
       }),
       { operationName: 'Get current novel for update' }
@@ -145,6 +148,22 @@ export const PUT = withAdminAuth(async (
 
     console.log('✅ [API] Novel updated successfully!')
 
+    // ⚡ Invalidate caches for old slug/category
+    await invalidateNovelCache(currentNovel.slug)
+    await invalidateCategoryCache(currentNovel.categoryId)
+
+    // ⚡ Invalidate caches for new slug/category (if changed)
+    if (updatedNovel.slug !== currentNovel.slug) {
+      await invalidateNovelCache(updatedNovel.slug)
+    }
+    if (updatedNovel.categoryId !== currentNovel.categoryId) {
+      await invalidateCategoryCache(updatedNovel.categoryId)
+    }
+
+    // ⚡ Invalidate home page cache
+    await invalidateNovelRelatedCaches(updatedNovel.slug, updatedNovel.categoryId)
+    console.log('🔄 [API] Cache invalidated for updated novel')
+
     return NextResponse.json({
       success: true,
       novel: updatedNovel,
@@ -180,7 +199,9 @@ export const DELETE = withAdminAuth(async (
         select: {
           id: true,
           title: true,
-          coverImagePublicId: true
+          slug: true,
+          coverImagePublicId: true,
+          categoryId: true
         }
       }),
       { operationName: 'Get novel for deletion' }
@@ -208,6 +229,10 @@ export const DELETE = withAdminAuth(async (
     )
 
     console.log(`✅ [API] Novel deleted: ${novel.title}`)
+
+    // ⚡ Invalidate all related caches
+    await invalidateNovelRelatedCaches(novel.slug, novel.categoryId)
+    console.log('🔄 [API] Cache invalidated for deleted novel')
 
     return NextResponse.json({
       success: true,

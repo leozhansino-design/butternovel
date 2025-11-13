@@ -2,6 +2,7 @@
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { withRetry, withConcurrency } from '@/lib/db-utils'
+import { getHomeNovels, setHomeNovels } from '@/lib/cache'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategorySection from '@/components/front/CategorySection'
@@ -76,7 +77,43 @@ async function getNovelsByCategory(categorySlug: string, limit: number = 10) {
   )
 }
 
-async function HomeContent() {
+type HomePageData = {
+  featuredBooks: Array<{
+    id: number
+    title: string
+    slug: string
+    coverImage: string
+    description: string
+    category: {
+      name: string
+    }
+  }>
+  categoryData: Array<{
+    name: string
+    slug: string
+    novels: Array<{
+      id: number
+      title: string
+      slug: string
+      coverImage: string
+      categoryName: string
+      status: string
+      chaptersCount: number
+      likesCount: number
+    }>
+  }>
+}
+
+async function getHomePageData(): Promise<HomePageData> {
+  // Try to get from Redis cache first
+  const cached = await getHomeNovels<HomePageData>()
+  if (cached) {
+    console.log('[Home] Using cached data')
+    return cached
+  }
+
+  console.log('[Home] Cache miss, fetching from database')
+
   // 获取所有类别
   const categories = await getAllCategories()
 
@@ -108,6 +145,21 @@ async function HomeContent() {
       name: novel.categoryName
     }
   }))
+
+  const homeData: HomePageData = {
+    featuredBooks,
+    categoryData
+  }
+
+  // Store in Redis cache for next time (1 hour TTL)
+  await setHomeNovels(homeData)
+
+  return homeData
+}
+
+async function HomeContent() {
+  // Get home page data (from cache or database)
+  const { featuredBooks, categoryData } = await getHomePageData()
 
   return (
     <main className="flex-1">

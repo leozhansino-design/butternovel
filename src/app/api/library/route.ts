@@ -2,6 +2,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withErrorHandling, errorResponse, successResponse } from '@/lib/api-error-handler'
+import { addToUserLibrary, removeFromUserLibrary } from '@/lib/cache'
 
 // GET - 获取用户书架
 export const GET = withErrorHandling(async () => {
@@ -112,15 +113,22 @@ export const POST = withErrorHandling(async (request: Request) => {
   })
 
   if (existing) {
+    // Ensure Redis is synced even if already in database
+    await addToUserLibrary(session.user.id, parseInt(novelId))
     return successResponse({ message: 'Already in library' })
   }
 
+  // Add to database
   await prisma.library.create({
     data: {
       userId: session.user.id,
       novelId: parseInt(novelId)
     }
   })
+
+  // ⚡ Sync with Redis Set for fast lookups
+  await addToUserLibrary(session.user.id, parseInt(novelId))
+  console.log('🔄 [Library] Added to Redis Set')
 
   return successResponse({ message: 'Added to library' })
 })
@@ -151,6 +159,10 @@ export const DELETE = withErrorHandling(async (request: Request) => {
   if (result.count === 0) {
     return errorResponse('Novel not in library', 404, 'NOT_IN_LIBRARY')
   }
+
+  // ⚡ Sync with Redis Set for fast lookups
+  await removeFromUserLibrary(session.user.id, parseInt(novelId))
+  console.log('🔄 [Library] Removed from Redis Set')
 
   return successResponse({ message: 'Removed from library' })
 })

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { validateWithSchema, chapterCreateSchema } from '@/lib/validators'
+import { invalidateChapterRelatedCaches } from '@/lib/cache'
 
 export const POST = withAdminAuth(async (session, request: Request) => {
   try {
@@ -25,7 +26,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     const novel = await withRetry(
       () => prisma.novel.findUnique({
         where: { id: novelId },
-        select: { id: true, totalChapters: true, wordCount: true }
+        select: { id: true, slug: true, categoryId: true, totalChapters: true, wordCount: true }
       }),
       { operationName: 'Get novel for new chapter' }
     )
@@ -68,6 +69,10 @@ export const POST = withAdminAuth(async (session, request: Request) => {
       }),
       { operationName: 'Update novel after chapter creation' }
     )
+
+    // ⚡ Invalidate chapter-related caches
+    await invalidateChapterRelatedCaches(novel.slug, novel.categoryId)
+    console.log('🔄 [API] Cache invalidated for new chapter')
 
     return NextResponse.json({
       success: true,

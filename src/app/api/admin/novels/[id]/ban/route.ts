@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
+import { invalidateNovelRelatedCaches } from '@/lib/cache'
 
 export const POST = withAdminAuth(async (
   session,
@@ -20,10 +21,14 @@ export const POST = withAdminAuth(async (
       () => prisma.novel.update({
         where: { id: novelId },
         data: { isBanned },
-        select: { id: true, title: true, isBanned: true }
+        select: { id: true, title: true, slug: true, isBanned: true, categoryId: true }
       }),
       { operationName: 'Update novel ban status' }
     )
+
+    // ⚡ Invalidate all related caches
+    await invalidateNovelRelatedCaches(novel.slug, novel.categoryId)
+    console.log('🔄 [API] Cache invalidated for ban/unban novel')
 
     return NextResponse.json({
       success: true,

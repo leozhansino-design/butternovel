@@ -1,10 +1,11 @@
 // src/app/novels/[slug]/page.tsx
-// ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容
+// ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容 + Redis缓存
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { auth } from '@/lib/auth'
+import { getNovelCache, setNovelCache } from '@/lib/cache'
 import Image from 'next/image'
 import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
@@ -16,7 +17,47 @@ import FirstChapterContent from '@/components/novel/FirstChapterContent'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 import RatingDisplay from '@/components/novel/RatingDisplay'
 
-async function getNovel(slug: string) {
+type NovelData = {
+  id: number
+  title: string
+  slug: string
+  coverImage: string
+  authorName: string
+  blurb: string
+  status: string
+  viewCount: number
+  wordCount: number
+  isPublished: boolean
+  isBanned: boolean
+  averageRating: number | null
+  totalRatings: number
+  category: {
+    id: number
+    name: string
+    slug: string
+  }
+  chapters: Array<{
+    id: number
+    title: string
+    chapterNumber: number
+    wordCount: number
+  }>
+  _count: {
+    chapters: number
+    likes: number
+  }
+}
+
+async function getNovel(slug: string): Promise<NovelData | null> {
+  // Try to get from Redis cache first
+  const cached = await getNovelCache<NovelData>(slug)
+  if (cached) {
+    console.log(`[Novel] Using cached data for: ${slug}`)
+    return cached
+  }
+
+  console.log(`[Novel] Cache miss for: ${slug}, fetching from database`)
+
   // ⚡ 性能优化：移除content，避免阻塞首屏渲染
   // 🔄 添加数据库重试机制，解决连接超时问题
   const novel = await withRetry(
@@ -51,7 +92,10 @@ async function getNovel(slug: string) {
     return null
   }
 
-  return novel
+  // Store in Redis cache for next time (10 minutes TTL)
+  await setNovelCache(slug, novel as NovelData)
+
+  return novel as NovelData
 }
 
 export const revalidate = 3600

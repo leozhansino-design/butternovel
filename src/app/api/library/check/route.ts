@@ -2,6 +2,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { isInUserLibrary } from '@/lib/cache'
 
 export async function GET(request: Request) {
   try {
@@ -18,16 +19,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Novel ID required' }, { status: 400 })
     }
 
-    const library = await prisma.library.findUnique({
-      where: {
-        userId_novelId: {
-          userId: session.user.id,
-          novelId: parseInt(novelId)
-        }
-      }
-    })
+    // ⚡ Try Redis first for fast lookup
+    const isInLibrary = await isInUserLibrary(session.user.id, parseInt(novelId))
 
-    return NextResponse.json({ isInLibrary: !!library })
+    return NextResponse.json({ isInLibrary })
   } catch (error) {
     console.error('GET /api/library/check error:', error)
     return NextResponse.json({ isInLibrary: false })
