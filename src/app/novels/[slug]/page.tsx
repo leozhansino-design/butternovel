@@ -5,17 +5,16 @@ import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { getOrSet, CacheKeys, CacheTTL } from '@/lib/cache'
-import { auth } from '@/lib/auth'
 import Image from 'next/image'
 import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
 import ViewTracker from '@/components/ViewTracker'
 import ReadingHistoryTracker from '@/components/ReadingHistoryTracker'
 import { formatNumber } from '@/lib/format'
-import AddToLibraryButton from '@/components/novel/AddToLibraryButton'
+import ClientAddToLibraryButton from '@/components/novel/ClientAddToLibraryButton'
 import FirstChapterContent from '@/components/novel/FirstChapterContent'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
-import RatingDisplay from '@/components/novel/RatingDisplay'
+import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：Redis 缓存 + 移除content + 数据库重试
@@ -62,6 +61,14 @@ async function getNovel(slug: string) {
 
 export const revalidate = 3600
 
+/**
+ * ⚡ CRITICAL FIX: Removed server-side auth() call
+ *
+ * Previously: Called auth() on server → forced dynamic rendering
+ * Now: Client components use useSession() → page can be statically cached
+ *
+ * Result: ISR works properly with revalidate = 3600 (1 hour)
+ */
 export default async function NovelDetailPage({
   params
 }: {
@@ -69,34 +76,10 @@ export default async function NovelDetailPage({
 }) {
   const { slug } = await params
 
-  // ⚡ 并行化数据获取 - 减少总等待时间
-  const [session, novel] = await Promise.all([
-    auth(),
-    getNovel(slug)
-  ])
+  const novel = await getNovel(slug)
 
   if (!novel) {
     notFound()
-  }
-
-  // 查询用户评分状态
-  // 🔄 添加数据库重试机制，解决连接超时问题
-  let userRating = null
-  if (session?.user?.id) {
-    userRating = await withRetry(
-      () => prisma.rating.findUnique({
-        where: {
-          userId_novelId: {
-            userId: session.user.id,
-            novelId: novel.id
-          }
-        },
-        select: {
-          score: true
-        }
-      }),
-      { operationName: 'Get user rating' }
-    )
   }
 
   const firstChapter = novel.chapters[0]
@@ -142,13 +125,10 @@ export default async function NovelDetailPage({
 
                       {/* Rating Display */}
                       <div className="w-[280px] mt-4">
-                        <RatingDisplay
+                        <ClientRatingDisplay
                           novelId={novel.id}
                           averageRating={novel.averageRating ?? 0}
                           totalRatings={novel.totalRatings}
-                          userId={session?.user?.id}
-                          hasUserRated={!!userRating}
-                          userRatingScore={userRating?.score}
                         />
                       </div>
                     </div>
@@ -240,10 +220,9 @@ export default async function NovelDetailPage({
                           Start Reading
                         </Link>
 
-                        {/* ⭐ 替换这里的button为AddToLibraryButton组件 */}
-                        <AddToLibraryButton 
+                        {/* ⭐ Client-side library button - fetches session independently */}
+                        <ClientAddToLibraryButton
                           novelId={novel.id}
-                          userId={session?.user?.id}
                         />
                       </div>
 
