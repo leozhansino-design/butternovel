@@ -1,40 +1,48 @@
 // src/app/api/reading-progress/route.ts
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import {
+  successResponse,
+  errorResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  handleApiError,
+  ErrorCode
+} from '@/lib/api-response'
 
-// POST - 记录阅读进度
+// POST - Save reading progress
 export async function POST(request: Request) {
   try {
     const session = await auth()
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const { novelId, chapterId } = await request.json()
 
     if (!novelId || !chapterId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      return errorResponse('Missing required fields', ErrorCode.BAD_REQUEST)
     }
 
-    // 验证章节是否存在
+    // Validate chapter exists
     const chapter = await prisma.chapter.findUnique({
       where: { id: parseInt(chapterId) },
       select: { id: true, novelId: true, chapterNumber: true, title: true }
     })
 
     if (!chapter) {
-      console.error(`Chapter not found: chapterId=${chapterId}`)
-      return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
+      return notFoundResponse('Chapter')
     }
 
     if (chapter.novelId !== parseInt(novelId)) {
-      console.error(`Chapter ${chapterId} does not belong to novel ${novelId}`)
-      return NextResponse.json({ error: 'Chapter does not belong to novel' }, { status: 400 })
+      return errorResponse(
+        'Chapter does not belong to novel',
+        ErrorCode.BAD_REQUEST
+      )
     }
 
-    // 更新或创建阅读历史
+    // Update or create reading history
     await prisma.readingHistory.upsert({
       where: {
         userId_novelId: {
@@ -54,9 +62,8 @@ export async function POST(request: Request) {
     })
 
     console.log(`✅ Reading progress saved: user=${session.user.id}, novel=${novelId}, chapter=${chapter.chapterNumber} (${chapter.title})`)
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error) {
-    console.error('POST /api/reading-progress error:', error)
-    return NextResponse.json({ error: 'Failed to save reading progress' }, { status: 500 })
+    return handleApiError(error, 'Failed to save reading progress')
   }
 }

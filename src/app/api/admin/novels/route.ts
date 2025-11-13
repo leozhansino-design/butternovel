@@ -4,6 +4,8 @@ import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
+import { parsePaginationParams, createPaginationResponse } from '@/lib/pagination'
+import { successResponse, handleApiError } from '@/lib/api-response'
 
 // POST /api/admin/novels - 创建小说
 export const POST = withAdminAuth(async (session, request: Request) => {
@@ -142,16 +144,19 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     }
 })
 
-// GET /api/admin/novels - 获取所有小说
+// GET /api/admin/novels - Get all novels with filters
 export const GET = withAdminAuth(async (session, request: Request) => {
     try {
-
         const url = new URL(request.url)
         const search = url.searchParams.get('search') || ''
         const categoryId = url.searchParams.get('categoryId') || ''
         const status = url.searchParams.get('status') || ''
-        const page = parseInt(url.searchParams.get('page') || '1')
-        const limit = 10
+
+        // ✅ Use pagination utility
+        const { page, limit, offset } = parsePaginationParams(url, {
+            defaultLimit: 10,
+            maxLimit: 50,
+        })
 
         const where: any = {}
 
@@ -170,7 +175,7 @@ export const GET = withAdminAuth(async (session, request: Request) => {
             where.status = status
         }
 
-        // 🔄 添加数据库重试机制，解决连接超时问题
+        // Get novels with retry mechanism
         const total = await withRetry(
             () => prisma.novel.count({ where }),
             { operationName: 'Count novels' }
@@ -181,27 +186,21 @@ export const GET = withAdminAuth(async (session, request: Request) => {
                 where,
                 include: { category: true },
                 orderBy: { createdAt: 'desc' },
-                skip: (page - 1) * limit,
+                skip: offset,
                 take: limit
             }),
             { operationName: 'Get novels list' }
         )
 
-        return NextResponse.json({
+        // ✅ Create standardized pagination response
+        const pagination = createPaginationResponse({ page, limit, offset }, total)
+
+        return successResponse({
             novels,
-            pagination: {
-                total,
-                page,
-                limit,
-                pages: Math.ceil(total / limit)
-            }
+            pagination,
         })
 
     } catch (error: any) {
-        console.error('❌ [API] GET error:', error)
-        return NextResponse.json(
-            { error: 'Failed to fetch novels' },
-            { status: 500 }
-        )
+        return handleApiError(error, 'Failed to fetch novels')
     }
 })
