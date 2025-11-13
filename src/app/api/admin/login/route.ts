@@ -1,25 +1,24 @@
 import { NextResponse } from 'next/server'
 import { SignJWT } from 'jose'
 import bcrypt from 'bcryptjs'
-
-// 管理员账号配置
-const ADMIN_ACCOUNTS = [
-  {
-    email: 'admin@butternovel.com',
-    // 你生成的密码哈希 - 密码: mySecretPassword123
-    password: '$2b$10$Uv8oQom7iY.ifYFiVY9i4eXwSiEUngoQa14jGWvMxyS2c/hpSyZ5C',
-    name: 'Admin',
-    role: 'super_admin'
-  },
-]
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json()
 
-    // 查找管理员
-    const admin = ADMIN_ACCOUNTS.find(a => a.email === email)
-    
+    // ✅ 从数据库查找管理员（不再使用硬编码）
+    const admin = await prisma.admin.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        role: true,
+      }
+    })
+
     if (!admin) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
 
     // 验证密码
     const isValid = await bcrypt.compare(password, admin.password)
-    
+
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -37,10 +36,17 @@ export async function POST(request: Request) {
       )
     }
 
-    // 创建 JWT Token
-    const secret = new TextEncoder().encode(
-      process.env.ADMIN_JWT_SECRET || 'butternovel-super-secret-key-min-32-characters-long-change-in-production'
-    )
+    // ✅ 创建 JWT Token - 移除默认值，强制要求环境变量
+    const jwtSecret = process.env.ADMIN_JWT_SECRET
+    if (!jwtSecret) {
+      console.error('ADMIN_JWT_SECRET is not configured')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    const secret = new TextEncoder().encode(jwtSecret)
 
     const token = await new SignJWT({
       email: admin.email,

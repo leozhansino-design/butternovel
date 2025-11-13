@@ -10,10 +10,14 @@ export async function getAdminSession() {
   }
 
   try {
-    const secret = new TextEncoder().encode(
-      process.env.ADMIN_JWT_SECRET || 'butternovel-super-secret-key-min-32-characters-long-change-in-production'
-    )
+    // ✅ 移除默认值 - 如果环境变量未设置，立即失败
+    const jwtSecret = process.env.ADMIN_JWT_SECRET
+    if (!jwtSecret) {
+      console.error('ADMIN_JWT_SECRET environment variable is not configured')
+      return null
+    }
 
+    const secret = new TextEncoder().encode(jwtSecret)
     const { payload } = await jwtVerify(token.value, secret)
 
     return {
