@@ -45,8 +45,10 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
         const data = await res.json()
         console.log('[ReadingHistory] Response data:', data)
 
-        if (res.ok && data.novels) {
-          const novelsArray = Array.isArray(data.novels) ? data.novels : []
+        if (res.ok) {
+          // Handle successResponse wrapper format: {success: true, data: {novels: [...]}}
+          const novelsData = data.data?.novels || data.novels || []
+          const novelsArray = Array.isArray(novelsData) ? novelsData : []
           console.log('[ReadingHistory] Setting', novelsArray.length, 'novels')
           setNovels(novelsArray)
         } else {
