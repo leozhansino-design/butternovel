@@ -104,12 +104,26 @@ export async function safeRedisSet(
   }
 
   try {
+    // 🔍 调试：验证 value 是字符串
+    if (typeof value !== 'string') {
+      console.error(`❌ Redis SET 错误：value 不是字符串！类型: ${typeof value}, 值:`, value);
+      // 强制转换为字符串
+      value = String(value);
+      console.log(`   → 已转换为字符串: ${value.substring(0, 100)}...`);
+    }
+
+    // 🔍 调试：显示写入的数据
+    console.log(`📝 Redis SET: ${key} (长度: ${value.length}, TTL: ${ttlSeconds || '无限'}s)`);
+    console.log(`   → 前100字符: ${value.substring(0, 100)}`);
+
     if (ttlSeconds) {
       // Upstash Redis 正确用法：使用选项对象
       await client.set(key, value, { ex: ttlSeconds });
     } else {
       await client.set(key, value);
     }
+
+    console.log(`✅ Redis SET 成功: ${key}`);
     return true;
   } catch (error) {
     console.error(`Redis SET 失败 (${key}):`, error);
