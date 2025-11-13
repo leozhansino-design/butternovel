@@ -5,7 +5,6 @@ async function getTopCategories() {
   try {
     const categories = await prisma.category.findMany({
       orderBy: { order: 'asc' },
-      take: 6,
       select: {
         slug: true,
         name: true,
