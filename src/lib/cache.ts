@@ -58,6 +58,20 @@ export const CacheTTL = {
 // ========================
 
 /**
+ * 安全的 JSON 序列化（处理 BigInt）
+ * Prisma 返回的数据可能包含 BigInt 类型（如 _count 字段）
+ */
+function safeStringify(data: any): string {
+  return JSON.stringify(data, (key, value) => {
+    // 将 BigInt 转换为 Number
+    if (typeof value === 'bigint') {
+      return Number(value);
+    }
+    return value;
+  });
+}
+
+/**
  * 通用缓存获取方法
  * 如果缓存命中，返回缓存数据；否则执行 fetchFunction 并缓存结果
  *
@@ -95,7 +109,7 @@ export async function getOrSet<T>(
     // 3. 将数据写入缓存（如果 Redis 可用）
     if (isRedisConnected()) {
       try {
-        const serialized = JSON.stringify(data);
+        const serialized = safeStringify(data); // 🔧 使用 BigInt 安全序列化
         await safeRedisSet(key, serialized, ttl);
         console.log(`✓ 数据已缓存: ${key} (TTL: ${ttl || '无限'}s)`);
       } catch (serializeError) {

@@ -263,6 +263,31 @@ INFO stats
 ### Q: 为什么不缓存章节内容？
 **A**: 章节内容通常很大（数 KB），缓存效益低。而且章节已按需加载，不需要缓存。
 
+### Q: 如何清除 Upstash Redis 缓存？
+**A**: 使用以下任一方法：
+
+**方法 1：使用脚本（推荐）**
+```bash
+npm run cache:clear
+```
+
+**方法 2：Upstash Dashboard**
+1. 访问 https://console.upstash.com/
+2. 选择你的 Redis 数据库
+3. 点击 "Data Browser" 标签
+4. 点击 "Flush Database" 按钮
+
+**方法 3：本地运行脚本**
+```bash
+npx tsx scripts/clear-redis-cache.ts
+```
+
+### Q: 日志显示 "BigInt 序列化错误" 怎么办？
+**A**: 这个问题已经修复。Prisma 返回的 `_count` 等字段是 BigInt 类型，我们的缓存系统现在会自动将 BigInt 转换为 Number。如果你之前部署过旧版本，请清除缓存：
+```bash
+npm run cache:clear
+```
+
 ## 维护建议
 
 ### 监控指标
@@ -275,7 +300,17 @@ INFO stats
 
 Redis 会自动根据 TTL 过期清理，无需手动维护。
 
-如果需要手动清理（如测试）：
+如果需要手动清理（如更新缓存格式后）：
+
+**Upstash Redis（推荐）**:
+```bash
+# 使用清除脚本
+npm run cache:clear
+
+# 或使用 Upstash Dashboard 的 "Flush Database" 按钮
+```
+
+**本地 Docker Redis（开发环境）**:
 ```bash
 # 清除所有缓存
 docker exec -it redis redis-cli FLUSHDB
