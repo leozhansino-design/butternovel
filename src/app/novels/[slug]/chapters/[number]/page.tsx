@@ -50,11 +50,16 @@ async function getChapterData(slug: string, chapterNumber: number) {
       { operationName: 'Get current chapter' }
     ),
 
+    // ✅ 优化: 只加载当前章节附近的章节 (窗口分页,防止大型小说崩溃)
     withRetry(
       () => prisma.chapter.findMany({
         where: {
           novel: { slug },
-          isPublished: true
+          isPublished: true,
+          chapterNumber: {
+            gte: Math.max(1, chapterNumber - 10),
+            lte: chapterNumber + 10
+          }
         },
         select: {
           id: true,
@@ -65,7 +70,7 @@ async function getChapterData(slug: string, chapterNumber: number) {
           chapterNumber: 'asc'
         }
       }),
-      { operationName: 'Get all chapters list' }
+      { operationName: 'Get nearby chapters list' }
     ),
 
     withRetry(

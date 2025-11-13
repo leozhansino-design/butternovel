@@ -73,6 +73,15 @@ export const PATCH = withErrorHandling(async (request: Request) => {
     return errorResponse('Bio must be 500 characters or less', 400, 'INVALID_BIO')
   }
 
+  // ✅ 先检查用户是否存在 (防止 OAuth 用户被删除后仍有 session)
+  const existingUser = await prisma.user.findUnique({
+    where: { id: session.user.id }
+  })
+
+  if (!existingUser) {
+    return errorResponse('User not found', 404, 'USER_NOT_FOUND')
+  }
+
   // 更新用户
   const updatedUser = await prisma.user.update({
     where: { id: session.user.id },

@@ -148,14 +148,18 @@ export const DELETE = withErrorHandling(async (request: Request) => {
     return errorResponse('Novel ID required', 400, 'MISSING_NOVEL_ID')
   }
 
-  await prisma.library.delete({
+  // ✅ 使用 deleteMany 代替 delete (不会在记录不存在时抛出错误)
+  const result = await prisma.library.deleteMany({
     where: {
-      userId_novelId: {
-        userId: session.user.id,
-        novelId: parseInt(novelId)
-      }
+      userId: session.user.id,
+      novelId: parseInt(novelId)
     }
   })
+
+  // 验证是否成功删除
+  if (result.count === 0) {
+    return errorResponse('Novel not in library', 404, 'NOT_IN_LIBRARY')
+  }
 
   return successResponse({ message: 'Removed from library' })
 })
