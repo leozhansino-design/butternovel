@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
-import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
+import { validateWithSchema, novelCreateSchema, countWords } from '@/lib/validators'
 import { parsePaginationParams, createPaginationResponse } from '@/lib/pagination'
 import { successResponse, handleApiError } from '@/lib/api-response'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
@@ -73,7 +73,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
         console.log('🔗 [API] Generated slug:', slug)
 
-        // 6. 计算总字数
+        // 6. 计算总字数（字符数）
         const wordCount = chapters?.reduce((total: number, ch: any) => {
             return total + (ch.content?.length || 0)
         }, 0) || 0

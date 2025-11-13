@@ -223,10 +223,10 @@ export const WORD_LIMITS = {
 } as const
 
 /**
- * 计算文本字数
+ * 计算文本字符数
  */
 export function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(w => w).length
+  return text.trim().length
 }
 
 /**
