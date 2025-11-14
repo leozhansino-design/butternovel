@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { validateWithSchema, chapterCreateSchema, countWords, WORD_LIMITS } from '@/lib/validators'
 
 // POST - Create a new chapter
 export async function POST(request: NextRequest) {
@@ -15,15 +16,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { novelId, title, content, isPublished } = body
 
-    // Validate required fields
-    if (!novelId || !title || !content) {
+    // ✅ Validate using Zod schema (validates title, content length, etc.)
+    const validation = validateWithSchema(chapterCreateSchema, {
+      novelId: body.novelId,
+      title: body.title,
+      content: body.content,
+      chapterNumber: 0, // Will be calculated below
+      isPublished: body.isPublished,
+    })
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error, details: validation.details },
         { status: 400 }
       )
     }
+
+    const { novelId, title, content, isPublished } = validation.data
 
     // Check if novel belongs to this author
     const novel = await prisma.novel.findFirst({

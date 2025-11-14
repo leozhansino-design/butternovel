@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { validateWithSchema, chapterUpdateSchema } from '@/lib/validators'
 
 // GET - Get a single chapter
 export async function GET(
@@ -73,6 +74,20 @@ export async function PUT(
     const { id } = await params
     const chapterId = parseInt(id)
     const body = await request.json()
+
+    // ✅ Validate using Zod schema (validates title, content length, etc.)
+    const validation = validateWithSchema(chapterUpdateSchema, {
+      title: body.title,
+      content: body.content,
+      isPublished: body.isPublished,
+    })
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error, details: validation.details },
+        { status: 400 }
+      )
+    }
 
     // Check if chapter belongs to this author
     const existingChapter = await prisma.chapter.findFirst({

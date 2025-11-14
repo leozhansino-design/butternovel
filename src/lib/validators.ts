@@ -32,7 +32,7 @@ export const novelCreateSchema = z.object({
 
   chapters: z.array(z.object({
     title: z.string().min(1).max(100),
-    content: z.string().min(1)
+    content: z.string().min(1).max(30000)
   })).optional()
 })
 
@@ -56,14 +56,15 @@ export const chapterCreateSchema = z.object({
     .min(1, '标题不能为空')
     .max(100, '标题最多100字'),
   content: z.string()
-    .min(1, '内容不能为空'),
+    .min(1, '内容不能为空')
+    .max(30000, '内容最多30000字'),
   chapterNumber: z.coerce.number().int().positive(),
   isPublished: z.boolean().optional(),
 })
 
 export const chapterUpdateSchema = z.object({
   title: z.string().min(1).max(100).optional(),
-  content: z.string().min(1).optional(),
+  content: z.string().min(1).max(30000).optional(),
   isPublished: z.boolean().optional(),
 })
 
@@ -217,7 +218,7 @@ export const WORD_LIMITS = {
   TITLE_MAX: 120,
   BLURB_MAX: 3000,
   CHAPTER_TITLE_MAX: 100,
-  CHAPTER_WORDS_MAX: 5000,
+  CHAPTER_WORDS_MAX: 30000,
   COMMENT_MAX: 500,
   REVIEW_MAX: 1000,
 } as const

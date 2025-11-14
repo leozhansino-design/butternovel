@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import cloudinary from '@/lib/cloudinary'
+import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
 
 // GET - Get a single novel
 export async function GET(
@@ -72,17 +73,12 @@ export async function PUT(
     const novelId = parseInt(id)
     const body = await request.json()
 
-    // Validate field lengths if provided
-    if (body.title && body.title.length > 120) {
-      return NextResponse.json(
-        { error: 'Title must be 120 characters or less' },
-        { status: 400 }
-      )
-    }
+    // ✅ Validate using Zod schema (validates title, blurb lengths, etc.)
+    const validation = validateWithSchema(novelUpdateSchema, body)
 
-    if (body.blurb && body.blurb.length > 3000) {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Blurb must be 3000 characters or less' },
+        { error: validation.error, details: validation.details },
         { status: 400 }
       )
     }
