@@ -54,6 +54,7 @@ model User {
   chapterProgress ChapterProgress[]
   comments        Comment[]
   ratings         Rating[]
+  ratingLikes     RatingLike[] // 评分点赞
 
   // 社区功能（后期）
   forumPosts   ForumPost[]
@@ -281,6 +282,7 @@ model Rating {
   id     String @id @default(cuid())
   score  Int // 评分：2, 4, 6, 8, 10
   review String? @db.Text // 评论内容（可选）
+  likeCount Int @default(0) // 点赞数
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -291,9 +293,36 @@ model Rating {
   novelId Int
   novel   Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
 
+  likes RatingLike[] // 点赞列表
+
   @@unique([userId, novelId]) // 每个用户只能评分一次
   @@index([novelId])
   @@index([createdAt])
+  @@index([novelId, likeCount, createdAt]) // 用于排序：按点赞数和时间
+}
+
+// 评分点赞
+model RatingLike {
+  id String @id @default(cuid())
+
+  createdAt DateTime @default(now())
+
+  // 用户（登录用户或游客）
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId  String? // 游客标识 (基于IP+UserAgent的hash)
+
+  // 元数据
+  ipAddress String?
+  userAgent String?  @db.Text
+
+  // 评分
+  ratingId String
+  rating   Rating @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ratingId]) // 登录用户每个评分只能点赞一次
+  @@unique([guestId, ratingId]) // 游客每个评分只能点赞一次
+  @@index([ratingId])
 }
 
 // ============================================

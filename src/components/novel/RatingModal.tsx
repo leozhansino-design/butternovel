@@ -12,6 +12,8 @@ interface Rating {
   score: number
   review: string | null
   createdAt: string
+  likeCount: number
+  userHasLiked: boolean
   user: {
     id: string
     name: string | null
@@ -154,6 +156,29 @@ export default function RatingModal({
     setShowReviewInput(false)
   }
 
+  // 处理点赞
+  const handleLike = async (ratingId: string, currentLiked: boolean) => {
+    try {
+      const res = await fetch(`/api/ratings/${ratingId}/like`, {
+        method: 'POST',
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        // 更新ratings列表中的点赞状态
+        setRatings(prevRatings =>
+          prevRatings.map(r =>
+            r.id === ratingId
+              ? { ...r, likeCount: data.likeCount, userHasLiked: data.liked }
+              : r
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Error liking rating:', error)
+    }
+  }
+
   const renderStars = (score: number, size: 'large' | 'small' = 'large') => {
     const starCount = score / 2 // Convert 2-10 to 1-5 stars
     const fullStars = Math.floor(starCount)
@@ -195,7 +220,7 @@ export default function RatingModal({
 
   const renderInteractiveStars = () => {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         {[1, 2, 3, 4, 5].map((star) => {
           const score = star * 2
           const isFilled = hoverRating ? score <= hoverRating : userRating ? score <= userRating : false
@@ -212,7 +237,7 @@ export default function RatingModal({
               onClick={() => handleStarClick(score)}
             >
               <svg
-                className="w-6 h-6"
+                className="w-8 h-8"
                 fill={isFilled ? '#FFB800' : '#E5E7EB'}
                 viewBox="0 0 24 24"
               >
@@ -244,19 +269,19 @@ export default function RatingModal({
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
         <div
-          className="bg-white rounded-xl shadow-2xl w-full max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col"
+          className="bg-white rounded-xl shadow-2xl w-full max-w-[750px] max-h-[85vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-gray-900">
+        <div className="p-8 border-b border-gray-200">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <span className="text-4xl font-bold text-gray-900">
                 {averageRating > 0 ? averageRating.toFixed(1) : '-'}
               </span>
               <div>
-                {averageRating > 0 && renderStars(averageRating, 'small')}
-                <p className="text-sm text-gray-500 mt-1">
+                {averageRating > 0 && renderStars(averageRating, 'large')}
+                <p className="text-base text-gray-500 mt-2">
                   {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'}
                 </p>
               </div>
@@ -265,15 +290,17 @@ export default function RatingModal({
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Your rating:</span>
-            {renderInteractiveStars()}
+            <span className="text-base font-medium text-gray-700">Your rating:</span>
+            <div className="flex gap-1">
+              {renderInteractiveStars()}
+            </div>
           </div>
         </div>
 
@@ -335,9 +362,35 @@ export default function RatingModal({
                       {rating.review && (
                         <p className="text-gray-700 text-sm leading-relaxed mb-2">{rating.review}</p>
                       )}
-                      <span className="text-xs text-gray-400">
-                        {formatRelativeTime(rating.createdAt)}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">
+                          {formatRelativeTime(rating.createdAt)}
+                        </span>
+                        <button
+                          onClick={() => handleLike(rating.id, rating.userHasLiked)}
+                          className="flex items-center gap-1 text-xs transition-colors"
+                        >
+                          <svg
+                            className={`w-4 h-4 transition-all ${
+                              rating.userHasLiked
+                                ? 'fill-indigo-600 text-indigo-600'
+                                : 'fill-none text-gray-400 hover:text-indigo-600'
+                            }`}
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"
+                            />
+                          </svg>
+                          <span className={rating.userHasLiked ? 'text-indigo-600 font-medium' : 'text-gray-500'}>
+                            {rating.likeCount > 0 ? rating.likeCount : ''}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
