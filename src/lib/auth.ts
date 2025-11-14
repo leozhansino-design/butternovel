@@ -27,10 +27,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 30 * 24 * 60 * 60,
   },
 
-  pages: {
-    signIn: "/auth/login",
-    error: "/auth/login?error=Configuration",
-  },
+  // ✅ Remove custom pages config to prevent redirect to /auth/login
+  // This allows Google OAuth to work directly from AuthModal without intermediate redirect
+  // The /auth/login page can still be accessed directly via URL if needed
 
   providers: [
     Google({
