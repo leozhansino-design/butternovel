@@ -11,23 +11,50 @@ async function updateNovelAuthors() {
   try {
     console.log('🔧 Updating novel author IDs...\n')
 
-    // Find butterpicks user
-    const butterpicksUser = await prisma.user.findUnique({
-      where: { email: 'butterpicks@gmail.com' },
+    // Find admin user
+    const adminUser = await prisma.user.findUnique({
+      where: { email: 'admin@butternovel.com' },
       select: { id: true, name: true, email: true, role: true }
     })
 
-    if (!butterpicksUser) {
-      console.error('❌ Butterpicks user not found!')
-      console.log('Please make sure butterpicks@gmail.com account exists')
-      return
+    let targetUser = adminUser
+
+    if (!adminUser) {
+      console.error('❌ Admin user not found!')
+      console.log('Please make sure admin@butternovel.com account exists')
+      console.log('\nTrying to find any admin user...')
+
+      // Try to find any user with ADMIN role
+      const anyAdmin = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { role: { not: 'USER' } },
+            { email: { contains: 'admin' } }
+          ]
+        },
+        select: { id: true, name: true, email: true, role: true }
+      })
+
+      if (anyAdmin) {
+        console.log('\n📋 Found alternative admin user:')
+        console.log(`   ID: ${anyAdmin.id}`)
+        console.log(`   Name: ${anyAdmin.name}`)
+        console.log(`   Email: ${anyAdmin.email}`)
+        console.log(`   Role: ${anyAdmin.role}`)
+        console.log('\n⚠️  Using this user instead')
+        targetUser = anyAdmin
+      } else {
+        console.log('\n❌ No admin users found at all!')
+        console.log('Please create an admin user first or check the email address')
+        return
+      }
     }
 
-    console.log('📋 Found butterpicks user:')
-    console.log(`   ID: ${butterpicksUser.id}`)
-    console.log(`   Name: ${butterpicksUser.name}`)
-    console.log(`   Email: ${butterpicksUser.email}`)
-    console.log(`   Role: ${butterpicksUser.role}\n`)
+    console.log('📋 Found admin user:')
+    console.log(`   ID: ${targetUser.id}`)
+    console.log(`   Name: ${targetUser.name}`)
+    console.log(`   Email: ${targetUser.email}`)
+    console.log(`   Role: ${targetUser.role}\n`)
 
     // Get all novels with invalid authorIds
     const novels = await prisma.novel.findMany({
@@ -60,7 +87,7 @@ async function updateNovelAuthors() {
     }
 
     console.log(`\n📝 Found ${needsUpdate.length} novels that need updating`)
-    console.log(`Will update all to authorId: ${butterpicksUser.id}\n`)
+    console.log(`Will update all to authorId: ${targetUser.id}\n`)
 
     // Ask for confirmation (in script, we'll just proceed)
     console.log('Updating novels...\n')
@@ -73,23 +100,23 @@ async function updateNovelAuthors() {
         }
       },
       data: {
-        authorId: butterpicksUser.id,
-        authorName: butterpicksUser.name || 'ButterPicks'
+        authorId: targetUser.id,
+        authorName: targetUser.name || 'Admin'
       }
     })
 
     updatedCount = result.count
 
     console.log(`✅ Successfully updated ${updatedCount} novels!`)
-    console.log(`   All novels now have authorId: ${butterpicksUser.id}`)
-    console.log(`   Author name: ${butterpicksUser.name || 'ButterPicks'}\n`)
+    console.log(`   All novels now have authorId: ${targetUser.id}`)
+    console.log(`   Author name: ${targetUser.name || 'Admin'}\n`)
 
     // Verify the update
     console.log('🔍 Verifying updates...')
     const remainingIssues = await prisma.novel.findMany({
       where: {
         authorId: {
-          not: butterpicksUser.id
+          not: targetUser.id
         }
       },
       select: {

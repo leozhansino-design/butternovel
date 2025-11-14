@@ -14,6 +14,7 @@
     "db:set-admin": "dotenv -e .env -- npx tsx scripts/set-admin-role.ts",
     "db:check-authors": "dotenv -e .env -- npx tsx scripts/check-author-ids.ts",
     "db:fix-authors": "dotenv -e .env -- npx tsx scripts/update-novel-authors.ts",
+    "db:diagnose": "dotenv -e .env -- npx tsx scripts/diagnose-profile-404.ts",
     "db:studio": "dotenv -e .env -- npx prisma studio",
     "cache:clear": "dotenv -e .env -- npx tsx scripts/clear-redis-cache.ts"
   },
