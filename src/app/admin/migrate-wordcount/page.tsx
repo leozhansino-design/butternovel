@@ -21,6 +21,7 @@ export default function MigrateWordCountPage() {
     try {
       const res = await fetch('/api/admin/migrate-wordcount', {
         method: 'POST',
+        credentials: 'include' // ✅ 确保 cookie 总是被发送
       })
 
       const data = await res.json()

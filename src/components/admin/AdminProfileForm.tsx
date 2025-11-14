@@ -25,7 +25,9 @@ export default function AdminProfileForm({ adminEmail }: Props) {
   React.useEffect(() => {
     const loadProfileData = async () => {
       try {
-        const response = await fetch('/api/admin/profile')
+        const response = await fetch('/api/admin/profile', {
+          credentials: 'include' // ✅ 确保 cookie 总是被发送
+        })
         if (response.ok) {
           const data = await response.json()
           setDisplayName(data.displayName || '')
@@ -93,6 +95,7 @@ export default function AdminProfileForm({ adminEmail }: Props) {
       const response = await fetch('/api/admin/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ 确保 cookie 总是被发送
         body: JSON.stringify({
           displayName: displayName.trim(),
           bio: bio.trim(),
