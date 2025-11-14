@@ -1,9 +1,7 @@
 // src/components/shared/HeaderWrapper.tsx
-import { auth } from '@/lib/auth'
+// ✅ Header now uses useSession() directly, no need to pass user prop
 import Header from './Header'
 
-export default async function HeaderWrapper() {
-  const session = await auth()
-  
-  return <Header user={session?.user} />
+export default function HeaderWrapper() {
+  return <Header />
 }

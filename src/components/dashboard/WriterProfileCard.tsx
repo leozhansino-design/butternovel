@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 
 type WriterProfileCardProps = {
   user: {
@@ -20,6 +21,9 @@ type ProfileData = {
 }
 
 export default function WriterProfileCard({ user }: WriterProfileCardProps) {
+  // ✅ Get session update function
+  const { update } = useSession()
+
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -88,6 +92,12 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
           bio: data.user.bio
         } : null)
         setIsEditing(false)
+
+        // ✅ Update next-auth session to sync with Header/UserMenu
+        await update({
+          ...user,
+          name: data.user.name,
+        })
       } else {
         setError(data.error || 'Failed to update profile')
       }
@@ -151,6 +161,12 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
           ...prev,
           avatar: data.avatar
         } : null)
+
+        // ✅ Update next-auth session to sync avatar with Header/UserMenu
+        await update({
+          ...user,
+          image: data.avatar,
+        })
       } else {
         setError(data.error || 'Failed to upload avatar')
       }
