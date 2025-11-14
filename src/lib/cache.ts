@@ -177,9 +177,14 @@ export async function invalidatePattern(pattern: string): Promise<void> {
 /**
  * 清除首页所有缓存
  * 场景：创建新小说、更新小说分类
+ *
+ * ⚡ 优化：现在只需清除单个缓存键 home:all-data
  */
 export async function invalidateHomeCache(): Promise<void> {
   console.log('清除首页缓存...');
+  // ✅ 优化：使用单个缓存键
+  await invalidate('home:all-data');
+  // 保留旧的模式删除以防万一
   await invalidatePattern(CacheKeys.PATTERN_HOME);
 }
 
