@@ -1,6 +1,6 @@
 // 贡献度计算逻辑
 
-import { prisma } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { ContributionType } from '@prisma/client'
 import { CONTRIBUTION_POINTS, getUserLevel } from './badge-system'
 
