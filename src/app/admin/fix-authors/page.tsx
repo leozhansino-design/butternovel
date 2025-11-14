@@ -1,33 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 
 export default function FixAuthorsPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
   const [diagnosisResults, setDiagnosisResults] = useState<any>(null)
+  const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [fixResults, setFixResults] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Redirect if not admin
-  if (status === 'loading') {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p>Loading...</p>
-    </div>
-  }
-
-  if (!session || session.user?.role !== 'ADMIN') {
-    router.push('/')
-    return null
-  }
 
   const handleDiagnose = async () => {
     setLoading(true)
     setError(null)
     setDiagnosisResults(null)
+    setFixResults(null)
 
     try {
       const res = await fetch('/api/admin/fix-authors', {
@@ -38,6 +24,10 @@ export default function FixAuthorsPage() {
 
       if (res.ok) {
         setDiagnosisResults(data.data)
+        // Auto-select suggested admin if available
+        if (data.data.suggestedAdmin) {
+          setSelectedUserId(data.data.suggestedAdmin.id)
+        }
       } else {
         setError(data.error || 'Failed to diagnose')
       }
@@ -49,7 +39,12 @@ export default function FixAuthorsPage() {
   }
 
   const handleFix = async () => {
-    if (!confirm('Are you sure you want to fix all invalid author IDs? This will update the database.')) {
+    if (!selectedUserId) {
+      setError('Please select a user to set as author')
+      return
+    }
+
+    if (!confirm(`Are you sure you want to set all invalid novels to user ID: ${selectedUserId}?\n\nThis will update the database.`)) {
       return
     }
 
@@ -59,7 +54,9 @@ export default function FixAuthorsPage() {
 
     try {
       const res = await fetch('/api/admin/fix-authors', {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: selectedUserId })
       })
 
       const data = await res.json()
@@ -102,13 +99,15 @@ export default function FixAuthorsPage() {
             {loading ? 'Loading...' : '🔍 Diagnose'}
           </button>
 
-          <button
-            onClick={handleFix}
-            disabled={loading}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Loading...' : '🔧 Fix All'}
-          </button>
+          {diagnosisResults && diagnosisResults.invalidNovels > 0 && (
+            <button
+              onClick={handleFix}
+              disabled={loading || !selectedUserId}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Loading...' : '🔧 Fix All'}
+            </button>
+          )}
         </div>
 
         {error && (
@@ -137,14 +136,31 @@ export default function FixAuthorsPage() {
               </div>
             </div>
 
-            {diagnosisResults.suggestedAdmin && (
+            {diagnosisResults.invalidNovels > 0 && (
               <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="font-semibold text-amber-800 mb-2">Suggested Admin User:</p>
-                <div className="text-sm text-amber-700">
-                  <p><strong>ID:</strong> {diagnosisResults.suggestedAdmin.id}</p>
-                  <p><strong>Email:</strong> {diagnosisResults.suggestedAdmin.email}</p>
-                  <p><strong>Name:</strong> {diagnosisResults.suggestedAdmin.name}</p>
-                  <p><strong>Writer Name:</strong> {diagnosisResults.suggestedAdmin.writerName}</p>
+                <p className="font-semibold text-amber-800 mb-3">Select User to Set as Author:</p>
+                <div className="space-y-2">
+                  {diagnosisResults.users.map((user: any) => (
+                    <label key={user.id} className="flex items-start gap-3 p-3 bg-white rounded border hover:border-amber-400 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="userId"
+                        value={user.id}
+                        checked={selectedUserId === user.id}
+                        onChange={(e) => setSelectedUserId(e.target.value)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{user.name || 'Unnamed User'}</div>
+                        <div className="text-sm text-gray-600">Email: {user.email}</div>
+                        <div className="text-sm text-gray-600">Writer Name: {user.writerName || 'N/A'}</div>
+                        <div className="text-xs text-gray-500 font-mono">ID: {user.id}</div>
+                      </div>
+                      {diagnosisResults.suggestedAdmin?.id === user.id && (
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">Suggested</span>
+                      )}
+                    </label>
+                  ))}
                 </div>
               </div>
             )}
@@ -189,14 +205,14 @@ export default function FixAuthorsPage() {
               </div>
             )}
 
-            {fixResults.fix?.selectedAdmin && (
+            {fixResults.fix?.selectedUser && (
               <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="font-semibold text-blue-800 mb-2">Updated all novels to use:</p>
                 <div className="text-sm text-blue-700">
-                  <p><strong>ID:</strong> {fixResults.fix.selectedAdmin.id}</p>
-                  <p><strong>Email:</strong> {fixResults.fix.selectedAdmin.email}</p>
-                  <p><strong>Name:</strong> {fixResults.fix.selectedAdmin.name}</p>
-                  <p><strong>Writer Name:</strong> {fixResults.fix.selectedAdmin.writerName}</p>
+                  <p><strong>ID:</strong> {fixResults.fix.selectedUser.id}</p>
+                  <p><strong>Email:</strong> {fixResults.fix.selectedUser.email}</p>
+                  <p><strong>Name:</strong> {fixResults.fix.selectedUser.name}</p>
+                  <p><strong>Writer Name:</strong> {fixResults.fix.selectedUser.writerName}</p>
                 </div>
               </div>
             )}

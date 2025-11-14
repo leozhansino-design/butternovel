@@ -175,7 +175,7 @@ export async function invalidatePattern(pattern: string): Promise<void> {
 // ========================
 
 /**
- * 清除首页所有缓存
+ * 清除首页所有缓存 (Redis + Next.js ISR)
  * 场景：创建新小说、更新小说分类
  *
  * ⚡ 优化：现在只需清除单个缓存键 home:all-data
@@ -186,19 +186,37 @@ export async function invalidateHomeCache(): Promise<void> {
   await invalidate('home:all-data');
   // 保留旧的模式删除以防万一
   await invalidatePattern(CacheKeys.PATTERN_HOME);
+
+  // ⚡ Clear Next.js ISR cache
+  try {
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/', 'page');
+    console.log('✓ Next.js ISR cache cleared for home page');
+  } catch (error) {
+    console.error('✗ Failed to clear Next.js ISR cache:', error);
+  }
 }
 
 /**
- * 清除某个小说的所有缓存
+ * 清除某个小说的所有缓存 (Redis + Next.js ISR)
  * 场景：更新小说信息、发布新章节、删除章节
  */
 export async function invalidateNovelCache(slug: string): Promise<void> {
   console.log(`清除小说缓存: ${slug}`);
   await invalidatePattern(CacheKeys.PATTERN_NOVEL(slug));
+
+  // ⚡ Clear Next.js ISR cache for novel detail page
+  try {
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath(`/novels/${slug}`, 'page');
+    console.log(`✓ Next.js ISR cache cleared for novel: ${slug}`);
+  } catch (error) {
+    console.error(`✗ Failed to clear Next.js ISR cache for novel ${slug}:`, error);
+  }
 }
 
 /**
- * 清除某个分类的所有缓存
+ * 清除某个分类的所有缓存 (Redis + Next.js ISR)
  * 场景：该分类下有小说变动
  */
 export async function invalidateCategoryCache(categorySlug: string): Promise<void> {
@@ -207,6 +225,15 @@ export async function invalidateCategoryCache(categorySlug: string): Promise<voi
     invalidate(CacheKeys.HOME_CATEGORY(categorySlug)),
     invalidatePattern(CacheKeys.PATTERN_CATEGORY(categorySlug)),
   ]);
+
+  // ⚡ Clear Next.js ISR cache for category page
+  try {
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath(`/category/${categorySlug}`, 'page');
+    console.log(`✓ Next.js ISR cache cleared for category: ${categorySlug}`);
+  } catch (error) {
+    console.error(`✗ Failed to clear Next.js ISR cache for category ${categorySlug}:`, error);
+  }
 }
 
 /**
