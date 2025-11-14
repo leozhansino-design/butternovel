@@ -2,7 +2,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { User } from 'lucide-react'
 
 type WriterProfileCardProps = {
   user: {
@@ -185,8 +184,8 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-center h-32">
+      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl shadow-xl border border-white/30 p-6">
+        <div className="flex items-center justify-center h-24">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
       </div>
@@ -195,8 +194,8 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
 
   if (!profileData) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-center h-32">
+      <div className="relative backdrop-blur-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl shadow-xl border border-white/30 p-6">
+        <div className="flex items-center justify-center h-24">
           <p className="text-gray-600">Failed to load profile</p>
         </div>
       </div>
@@ -206,23 +205,21 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
   const avatarUrl = profileData.avatar || user.image
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Author Profile</h2>
-        <User className="text-gray-400" size={20} />
-      </div>
+    <div className="relative backdrop-blur-2xl bg-white/70 rounded-2xl shadow-xl border border-white/30 p-6">
+      {/* 渐变背景装饰 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent rounded-2xl pointer-events-none" />
 
-      <div className="flex items-start gap-4">
+      <div className="relative flex items-center gap-6">
         {/* Avatar with upload */}
         <div className="relative group flex-shrink-0">
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt={profileData.name || 'User'}
-              className="w-20 h-20 rounded-lg object-cover ring-2 ring-gray-200"
+              className="w-24 h-24 rounded-2xl object-cover ring-4 ring-white/50 shadow-lg"
             />
           ) : (
-            <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 font-semibold text-2xl ring-2 ring-gray-200">
+            <div className="w-24 h-24 rounded-2xl bg-white flex items-center justify-center text-gray-900 font-bold text-3xl ring-4 ring-white/50 shadow-lg border border-gray-300">
               {profileData.name?.[0]?.toUpperCase() || 'U'}
             </div>
           )}
@@ -231,7 +228,7 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
           <button
             onClick={handleAvatarClick}
             disabled={uploadingAvatar || isEditing}
-            className="absolute inset-0 bg-black/60 rounded-lg opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-xs font-medium disabled:cursor-not-allowed"
+            className="absolute inset-0 bg-black/70 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-xs font-semibold disabled:cursor-not-allowed"
           >
             {uploadingAvatar ? 'Uploading...' : 'Change'}
           </button>
@@ -248,13 +245,13 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
         {/* User info */}
         <div className="flex-1 min-w-0">
           {isEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white/80"
                   placeholder="Your name"
                 />
               </div>
@@ -263,25 +260,25 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
                   maxLength={500}
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  rows={2}
+                  className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none bg-white/80"
                   placeholder="Tell readers about yourself..."
                 />
-                <span className="text-xs text-gray-500 mt-1">{editBio.length}/500</span>
+                <span className="text-xs text-gray-400 mt-1">{editBio.length}/500</span>
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  className="px-5 py-2 text-sm bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-600 transition-all disabled:opacity-50 shadow-md"
                 >
                   {saving ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   onClick={handleCancel}
                   disabled={saving}
-                  className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  className="px-5 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-white/80 transition-colors"
                 >
                   Cancel
                 </button>
@@ -290,15 +287,15 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
           ) : (
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-xl font-bold text-gray-900 truncate">
+                <h2 className="text-2xl font-bold text-gray-900 truncate">
                   {profileData.name || 'Anonymous Writer'}
-                </h3>
+                </h2>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-50 rounded transition-colors flex-shrink-0"
+                  className="p-2 text-gray-400 hover:text-indigo-500 hover:bg-white/60 rounded-lg transition-colors flex-shrink-0"
                   title="Edit profile"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                 </button>
@@ -306,7 +303,7 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
               <p className="text-gray-600 text-sm mb-3 truncate">{profileData.email}</p>
 
               {profileData.bio ? (
-                <p className="text-gray-700 text-sm leading-relaxed line-clamp-2">{profileData.bio}</p>
+                <p className="text-gray-700 text-sm leading-relaxed line-clamp-1">{profileData.bio}</p>
               ) : (
                 <p className="text-gray-400 italic text-sm">No bio yet. Click the edit button to add one!</p>
               )}
