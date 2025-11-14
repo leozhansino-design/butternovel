@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const novel = await prisma.novel.findFirst({
       where: {
         id: novelId,
-        authorId: session.user.email,
+        authorId: session.user.id,
       },
       include: {
         chapters: {

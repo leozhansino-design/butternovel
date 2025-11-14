@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import cloudinary from '@/lib/cloudinary'
+import { invalidateNovelRelatedCache } from '@/lib/cache'
 import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
 
 // GET - Get a single novel
@@ -25,7 +26,7 @@ export async function GET(
     const novel = await prisma.novel.findFirst({
       where: {
         id: novelId,
-        authorId: session.user.email,
+        authorId: session.user.id,
       },
       include: {
         category: true,
@@ -87,7 +88,7 @@ export async function PUT(
     const existingNovel = await prisma.novel.findFirst({
       where: {
         id: novelId,
-        authorId: session.user.email,
+        authorId: session.user.id,
       },
     })
 
@@ -123,6 +124,16 @@ export async function PUT(
       coverImagePublicId = uploadResult.public_id
     }
 
+    // Validate categoryId if provided
+    let categoryId = existingNovel.categoryId
+    if (body.categoryId) {
+      const parsed = parseInt(body.categoryId)
+      if (isNaN(parsed)) {
+        return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 })
+      }
+      categoryId = parsed
+    }
+
     // Update novel
     const updatedNovel = await prisma.novel.update({
       where: { id: novelId },
@@ -131,12 +142,21 @@ export async function PUT(
         blurb: body.blurb || existingNovel.blurb,
         coverImage: coverImageUrl,
         coverImagePublicId,
-        categoryId: body.categoryId ? parseInt(body.categoryId) : existingNovel.categoryId,
+        categoryId,
         status: body.status || existingNovel.status,
         isPublished: body.isPublished !== undefined ? body.isPublished : existingNovel.isPublished,
         isDraft: body.isPublished !== undefined ? !body.isPublished : existingNovel.isDraft,
       },
+      include: {
+        category: {
+          select: { slug: true }
+        }
+      }
     })
+
+    // ⚡ Clear cache: home page, category page, and novel detail page
+    await invalidateNovelRelatedCache(updatedNovel.slug, updatedNovel.category?.slug)
+    console.log('✓ Cache cleared for updated novel')
 
     return NextResponse.json({
       message: 'Novel updated successfully',
@@ -173,7 +193,7 @@ export async function DELETE(
     const existingNovel = await prisma.novel.findFirst({
       where: {
         id: novelId,
-        authorId: session.user.email,
+        authorId: session.user.id,
       },
     })
 

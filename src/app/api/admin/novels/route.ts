@@ -51,6 +51,28 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         const authorName = adminProfile?.displayName || 'Admin'
         console.log('✅ [API] Author name:', authorName)
 
+        // 🔧 CRITICAL FIX: Get User.id from email
+        // Problem: Previously used session.email as authorId, causing 404 and "user not found" errors
+        // Solution: Query User table to get the actual user ID
+        console.log('👤 [API] Looking up user ID from email:', session.email)
+        const user = await withRetry(
+            () => prisma.user.findUnique({
+                where: { email: session.email },
+                select: { id: true }
+            }),
+            { operationName: 'Get user ID from email' }
+        )
+
+        if (!user) {
+            console.error('❌ [API] User not found for email:', session.email)
+            return NextResponse.json(
+                { error: 'User account not found. Admin must have a user account to create novels.' },
+                { status: 404 }
+            )
+        }
+
+        console.log('✅ [API] Found user ID:', user.id)
+
         // 4. 上传封面到 Cloudinary
         console.log('📤 [API] Uploading cover to Cloudinary...')
         let coverResult
@@ -96,9 +118,9 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                     status: status || 'ONGOING',
                     isPublished: isPublished || false,
                     isDraft: !isPublished,
-                    // ⭐ 改这里：使用 AdminProfile 的 displayName
+                    // ⭐ FIXED: Use User.id instead of email
                     authorName: authorName,
-                    authorId: session.email, // 用 email 作为 authorId
+                    authorId: user.id, // ✅ Use User.id (not email!) - Fixes 404 and follow errors
                     totalChapters: chapters?.length || 0,
                     wordCount,
 
@@ -173,7 +195,14 @@ export const GET = withAdminAuth(async (session, request: Request) => {
         }
 
         if (categoryId) {
-            where.categoryId = parseInt(categoryId)
+            const parsed = parseInt(categoryId)
+            if (isNaN(parsed)) {
+                return NextResponse.json(
+                    { error: 'Invalid category ID' },
+                    { status: 400 }
+                )
+            }
+            where.categoryId = parsed
         }
 
         if (status) {
