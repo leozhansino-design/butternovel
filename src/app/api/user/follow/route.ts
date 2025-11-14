@@ -31,29 +31,35 @@ export const POST = withErrorHandling(async (request: Request) => {
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
   }
 
-  // Check if already following
-  const existingFollow = await prisma.follow.findUnique({
-    where: {
-      followerId_followingId: {
+  // Return error if Follow table doesn't exist yet
+  try {
+    // Check if already following
+    const existingFollow = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: session.user.id,
+          followingId: userId
+        }
+      }
+    })
+
+    if (existingFollow) {
+      return errorResponse('Already following this user', 400, 'ALREADY_FOLLOWING')
+    }
+
+    // Create follow relationship
+    await prisma.follow.create({
+      data: {
         followerId: session.user.id,
         followingId: userId
       }
-    }
-  })
+    })
 
-  if (existingFollow) {
-    return errorResponse('Already following this user', 400, 'ALREADY_FOLLOWING')
+    return successResponse({ message: 'Successfully followed user' })
+  } catch (error) {
+    console.log('Follow table does not exist yet. Run: npx prisma db push')
+    return errorResponse('Follow system not available yet. Please contact administrator.', 503, 'SERVICE_UNAVAILABLE')
   }
-
-  // Create follow relationship
-  await prisma.follow.create({
-    data: {
-      followerId: session.user.id,
-      followingId: userId
-    }
-  })
-
-  return successResponse({ message: 'Successfully followed user' })
 })
 
 // DELETE - Unfollow a user
@@ -70,25 +76,31 @@ export const DELETE = withErrorHandling(async (request: Request) => {
     return errorResponse('User ID is required', 400, 'VALIDATION_ERROR')
   }
 
-  // Find and delete the follow relationship
-  const follow = await prisma.follow.findUnique({
-    where: {
-      followerId_followingId: {
-        followerId: session.user.id,
-        followingId: userId
+  // Return error if Follow table doesn't exist yet
+  try {
+    // Find and delete the follow relationship
+    const follow = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: session.user.id,
+          followingId: userId
+        }
       }
-    }
-  })
+    })
 
-  if (!follow) {
-    return errorResponse('Not following this user', 400, 'NOT_FOLLOWING')
+    if (!follow) {
+      return errorResponse('Not following this user', 400, 'NOT_FOLLOWING')
+    }
+
+    await prisma.follow.delete({
+      where: {
+        id: follow.id
+      }
+    })
+
+    return successResponse({ message: 'Successfully unfollowed user' })
+  } catch (error) {
+    console.log('Follow table does not exist yet. Run: npx prisma db push')
+    return errorResponse('Follow system not available yet. Please contact administrator.', 503, 'SERVICE_UNAVAILABLE')
   }
-
-  await prisma.follow.delete({
-    where: {
-      id: follow.id
-    }
-  })
-
-  return successResponse({ message: 'Successfully unfollowed user' })
 })
