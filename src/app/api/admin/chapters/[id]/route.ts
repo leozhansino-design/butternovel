@@ -45,7 +45,11 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
 
     const data: any = {}
     if (updates.title !== undefined) data.title = updates.title
-    if (updates.content !== undefined) data.content = updates.content
+    if (updates.content !== undefined) {
+      data.content = updates.content
+      // ⭐ 当内容更新时，自动重新计算字符数
+      data.wordCount = updates.content.trim().length
+    }
     if (body.wordCount !== undefined) data.wordCount = body.wordCount
     if (updates.isPublished !== undefined) data.isPublished = updates.isPublished
 

@@ -37,10 +37,10 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
     const slug = `chapter-${chapterNumber}`
 
-    // ⭐ FIX: 改为计算单词数，而不是字符数
+    // ⭐ FIX: 计算字符数（中英文通用）
     const calculatedWordCount = wordCount !== undefined
       ? wordCount
-      : content.trim().split(/\s+/).filter((w: string) => w).length
+      : content.trim().length
 
     // 🔄 添加数据库重试机制，解决连接超时问题
     const chapter = await withRetry(
