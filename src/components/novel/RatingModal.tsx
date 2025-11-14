@@ -72,6 +72,9 @@ export default function RatingModal({
   const [submittingReply, setSubmittingReply] = useState(false)
   const [showRepliesFor, setShowRepliesFor] = useState<Set<string>>(new Set())
 
+  // Sort state
+  const [sortBy, setSortBy] = useState<'likes' | 'newest'>('likes')
+
   // ✅ 获取用户评分状态 - 将逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
     if (isOpen && userId) {
@@ -93,10 +96,11 @@ export default function RatingModal({
   }, [isOpen, userId, novelId])
 
   // ✅ 获取评分列表 - 提取为可重用函数
-  const fetchRatings = async (pageNum: number) => {
+  const fetchRatings = async (pageNum: number, sort?: 'likes' | 'newest') => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/novels/${novelId}/ratings?page=${pageNum}&limit=10`)
+      const sortParam = sort || sortBy
+      const res = await fetch(`/api/novels/${novelId}/ratings?page=${pageNum}&limit=10&sortBy=${sortParam}`)
       const data = await res.json()
 
       if (pageNum === 1) {
@@ -121,6 +125,14 @@ export default function RatingModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, novelId])
+
+  // ✅ Re-fetch when sort changes
+  useEffect(() => {
+    if (isOpen) {
+      fetchRatings(1, sortBy)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy])
 
   const handleStarClick = async (score: number) => {
     if (hasRated) return
@@ -505,7 +517,33 @@ export default function RatingModal({
 
         {/* Reviews List */}
         <div className="flex-1 overflow-y-auto p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Reviews</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Reviews</h3>
+
+            {/* Sort buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSortBy('likes')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  sortBy === 'likes'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Most Liked
+              </button>
+              <button
+                onClick={() => setSortBy('newest')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  sortBy === 'newest'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Newest
+              </button>
+            </div>
+          </div>
 
           {ratings.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No reviews yet. Be the first!</p>
@@ -565,6 +603,12 @@ export default function RatingModal({
                         </button>
                         <button
                           onClick={() => {
+                            // Check login status first
+                            if (!userId) {
+                              setShowAuthModal(true)
+                              return
+                            }
+
                             if (activeReplyTo === rating.id) {
                               setActiveReplyTo(null)
                               setReplyContent('')

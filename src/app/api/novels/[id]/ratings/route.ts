@@ -41,10 +41,18 @@ export async function GET(
       maxLimit: 50,
     })
 
+    // Get sort parameter from query string
+    const url = new URL(request.url)
+    const sortBy = url.searchParams.get('sortBy') || 'likes' // 'likes' or 'newest'
+
     // Get ratings list (only with reviews)
     let ratings
     try {
-      // 尝试按点赞数排序（如果字段存在）
+      // ✅ Sort by likes or newest
+      const orderBy = sortBy === 'newest'
+        ? [{ createdAt: 'desc' as const }]
+        : [{ likeCount: 'desc' as const }, { createdAt: 'desc' as const }]
+
       ratings = await prisma.rating.findMany({
         where: {
           novelId,
@@ -60,11 +68,13 @@ export async function GET(
               avatar: true,
             },
           },
+          _count: {
+            select: {
+              replies: true,
+            },
+          },
         },
-        orderBy: [
-          { likeCount: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy,
         skip: offset,
         take: limit,
       })
@@ -84,6 +94,11 @@ export async function GET(
               id: true,
               name: true,
               avatar: true,
+            },
+          },
+          _count: {
+            select: {
+              replies: true,
             },
           },
         },
@@ -113,10 +128,15 @@ export async function GET(
           console.warn('[Ratings API] RatingLike table not found, using defaults')
         }
 
+        // ✅ Include replyCount from _count
+        const replyCount = (rating as any)._count?.replies || 0
+
         return {
           ...rating,
           likeCount,
           userHasLiked: !!userLike,
+          replyCount,
+          _count: undefined, // Remove _count from response
         }
       })
     )

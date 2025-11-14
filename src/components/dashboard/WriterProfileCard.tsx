@@ -95,7 +95,6 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
 
         // ✅ Update next-auth session to sync with Header/UserMenu
         await update({
-          ...user,
           name: data.user.name,
         })
       } else {
@@ -164,7 +163,6 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
 
         // ✅ Update next-auth session to sync avatar with Header/UserMenu
         await update({
-          ...user,
           image: data.avatar,
         })
       } else {
