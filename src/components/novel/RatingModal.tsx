@@ -4,10 +4,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { signIn } from 'next-auth/react'
 import AuthModal from '@/components/auth/AuthModal'
 import UserBadge from '@/components/badge/UserBadge'
+import LibraryModal from '@/components/shared/LibraryModal'
 
 interface Reply {
   id: string
@@ -60,6 +61,7 @@ export default function RatingModal({
 }: RatingModalProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [userRating, setUserRating] = useState<number | null>(null)
   const [hasRated, setHasRated] = useState(false)
   const [hoverRating, setHoverRating] = useState<number | null>(null)
@@ -80,6 +82,15 @@ export default function RatingModal({
 
   // Sort state
   const [sortBy, setSortBy] = useState<'likes' | 'newest'>('likes')
+
+  // Library Modal state for viewing user profiles
+  const [showLibraryModal, setShowLibraryModal] = useState(false)
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null)
+
+  const handleUserClick = (clickedUserId: string) => {
+    setViewingUserId(clickedUserId)
+    setShowLibraryModal(true)
+  }
 
   // ✅ 获取用户评分状态 - 将逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
@@ -558,7 +569,7 @@ export default function RatingModal({
               {ratings.map((rating) => (
                 <div key={rating.id} className="border-b border-gray-100 pb-4 last:border-0">
                   <div className="flex items-start gap-3">
-                    <Link href={`/profile/${rating.user.id}`} className="flex-shrink-0">
+                    <button onClick={() => handleUserClick(rating.user.id)} className="flex-shrink-0 cursor-pointer">
                       <UserBadge
                         avatar={rating.user.avatar}
                         name={rating.user.name}
@@ -567,15 +578,15 @@ export default function RatingModal({
                         size="small"
                         showLevelName={false}
                       />
-                    </Link>
+                    </button>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <Link
-                          href={`/profile/${rating.user.id}`}
-                          className="font-semibold text-gray-900 text-sm hover:text-amber-600 transition-colors"
+                        <button
+                          onClick={() => handleUserClick(rating.user.id)}
+                          className="font-semibold text-gray-900 text-sm hover:text-amber-600 transition-colors cursor-pointer"
                         >
                           {rating.user.name || 'Anonymous'}
-                        </Link>
+                        </button>
                         {renderStars(rating.score, 'small')}
                       </div>
                       {rating.review && (
@@ -698,6 +709,16 @@ export default function RatingModal({
         onClose={() => setShowAuthModal(false)}
         defaultTab="login"
       />
+
+      {/* Library Modal for viewing user profiles */}
+      {viewingUserId && (
+        <LibraryModal
+          isOpen={showLibraryModal}
+          onClose={() => setShowLibraryModal(false)}
+          user={session?.user || {}}
+          viewUserId={viewingUserId}
+        />
+      )}
     </>
   )
 }
