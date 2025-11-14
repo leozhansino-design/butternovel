@@ -58,7 +58,7 @@ export const chapterCreateSchema = z.object({
   content: z.string()
     .min(1, '内容不能为空')
     .max(30000, '内容最多30000字'),
-  chapterNumber: z.coerce.number().int().positive(),
+  chapterNumber: z.coerce.number().int().min(0), // Allow 0 for auto-calculation
   isPublished: z.boolean().optional(),
 })
 

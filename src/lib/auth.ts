@@ -156,6 +156,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!existingUser) {
           console.log('[Auth] Creating new user account')
+          console.log('[Auth] Google user data:', {
+            email: user.email,
+            name: user.name,
+            avatarUrl: user.image,
+            isGoogleProvider: account?.provider === 'google'
+          })
           await prisma.user.create({
             data: {
               email: user.email,
@@ -164,17 +170,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               googleId: account?.providerAccountId || null,
             },
           })
-          console.log('[Auth] User account created successfully')
+          console.log('[Auth] User account created successfully with avatar:', user.image)
         } else {
-          console.log('[Auth] User found:', existingUser.id)
+          console.log('[Auth] Existing user found:', existingUser.id)
 
-          if (!existingUser.googleId && account?.providerAccountId) {
-            console.log('[Auth] Linking Google OAuth account')
-            await prisma.user.update({
-              where: { email: user.email },
-              data: { googleId: account.providerAccountId },
-            })
-            console.log('[Auth] Google account linked')
+          // Update Google ID and avatar if signing in with Google
+          if (account?.provider === 'google') {
+            const updateData: any = {}
+
+            // Link Google ID if not already linked
+            if (!existingUser.googleId && account.providerAccountId) {
+              updateData.googleId = account.providerAccountId
+              console.log('[Auth] Linking Google OAuth account')
+            }
+
+            // Update avatar from Google if user doesn't have a custom avatar
+            // or if they haven't uploaded their own avatar yet
+            if (user.image) {
+              // Check if current avatar is from Google (contains googleusercontent.com)
+              // or if user has no avatar
+              const currentAvatar = (existingUser as any).avatar
+              const isGoogleAvatar = currentAvatar?.includes('googleusercontent.com')
+              const hasNoAvatar = !currentAvatar
+
+              if (hasNoAvatar || isGoogleAvatar) {
+                updateData.avatar = user.image
+                console.log('[Auth] Updating Google avatar:', user.image)
+              }
+            }
+
+            // Perform update if there are changes
+            if (Object.keys(updateData).length > 0) {
+              await prisma.user.update({
+                where: { email: user.email },
+                data: updateData,
+              })
+              console.log('[Auth] Updated user with Google data:', updateData)
+            }
           }
         }
 

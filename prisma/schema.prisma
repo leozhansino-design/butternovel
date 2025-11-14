@@ -70,6 +70,9 @@ model User {
   contributionLogs   ContributionLog[]
   readingSessions    ReadingSession[]
 
+  // Privacy settings
+  libraryPrivacy Boolean @default(false) // false = public (default), true = private (only visible to self)
+
   // Follow system
   following Follow[] @relation("UserFollowing")
   followers Follow[] @relation("UserFollowers")

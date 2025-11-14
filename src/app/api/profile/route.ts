@@ -23,6 +23,7 @@ export const GET = withErrorHandling(async () => {
       contributionPoints: true,
       level: true,
       totalReadingTime: true,
+      libraryPrivacy: true,  // Include privacy setting
       _count: {
         select: {
           library: true,
