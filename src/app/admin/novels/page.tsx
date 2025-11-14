@@ -168,7 +168,7 @@ export default async function ManageNovelsPage(props: Props) {
             <tbody className="divide-y divide-gray-200">
               {novels.map((novel) => (
                 <tr key={novel.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 max-w-xs">
                     <div className="flex items-center gap-3">
                       <div className="relative w-12 h-16 flex-shrink-0">
                         <Image
@@ -179,16 +179,16 @@ export default async function ManageNovelsPage(props: Props) {
                           className="rounded object-cover"
                         />
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-medium text-gray-900 truncate">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-gray-900 truncate max-w-[200px]">
                           {novel.title}
-                          {novel.isBanned && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                              BANNED
-                            </span>
-                          )}
                         </div>
-                        <div className="text-sm text-gray-500 truncate">
+                        {novel.isBanned && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
+                            BANNED
+                          </span>
+                        )}
+                        <div className="text-sm text-gray-500">
                           ID: {novel.id}
                         </div>
                       </div>
