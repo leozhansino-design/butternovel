@@ -25,6 +25,7 @@ export const GET = withErrorHandling(async (
       level: true,
       totalReadingTime: true,
       createdAt: true,
+      libraryPrivacy: true,  // Include privacy setting
       _count: {
         select: {
           ratings: true,

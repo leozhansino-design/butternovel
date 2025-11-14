@@ -84,7 +84,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
     if (loadingUser) {
       return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+          <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-md" onClick={onClose} />
           <div className="relative bg-white rounded-3xl shadow-2xl p-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
           </div>
@@ -95,7 +95,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
     if (!otherUserData) {
       return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+          <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-md" onClick={onClose} />
           <div className="relative bg-white rounded-3xl shadow-2xl p-12">
             <p>User not found</p>
             <button onClick={onClose} className="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg">Close</button>
@@ -106,7 +106,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+        <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-md" onClick={onClose} />
         <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-2xl w-[95vw] max-w-7xl h-[90vh] overflow-auto">
           <button
             onClick={onClose}

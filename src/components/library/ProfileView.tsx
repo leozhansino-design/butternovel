@@ -25,6 +25,7 @@ type ProfileData = {
   bio: string | null
   contributionPoints: number
   level: number
+  libraryPrivacy: boolean  // Privacy setting for library
   stats: {
     booksRead: number
     following: number
@@ -50,8 +51,36 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
   const [editBio, setEditBio] = useState('')
   const [error, setError] = useState('')
   const [avatarError, setAvatarError] = useState('')
+  const [updatingPrivacy, setUpdatingPrivacy] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Handle privacy toggle
+  const handlePrivacyToggle = async (newValue: boolean) => {
+    setUpdatingPrivacy(true)
+    try {
+      console.log('[ProfileView] Updating library privacy to:', newValue)
+      const res = await fetch('/api/profile/privacy', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ libraryPrivacy: newValue })
+      })
+
+      if (res.ok) {
+        setProfileData(prev => prev ? { ...prev, libraryPrivacy: newValue } : null)
+        console.log('[ProfileView] Privacy updated successfully')
+      } else {
+        const data = await res.json()
+        console.error('[ProfileView] Failed to update privacy:', data)
+        alert(data.error || 'Failed to update privacy settings')
+      }
+    } catch (error) {
+      console.error('[ProfileView] Error updating privacy:', error)
+      alert('Failed to update privacy settings')
+    } finally {
+      setUpdatingPrivacy(false)
+    }
+  }
 
   // ✅ Fetch profile data
   useEffect(() => {
@@ -423,6 +452,33 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                   <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg">
                     <div className="text-sm font-bold text-gray-900">{formatReadingTime(profileData.stats.readingTime)}</div>
                     <div className="text-xs text-gray-600 mt-0.5">Reading Time</div>
+                  </div>
+                </div>
+
+                {/* Privacy Settings */}
+                <div className="mt-3">
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-gray-900">Library Privacy</div>
+                        <div className="text-xs text-gray-600 mt-0.5">
+                          {profileData.libraryPrivacy ? 'Only you can see your library' : 'Everyone can see your library'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handlePrivacyToggle(!profileData.libraryPrivacy)}
+                        disabled={updatingPrivacy}
+                        className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          profileData.libraryPrivacy ? 'bg-amber-500' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            profileData.libraryPrivacy ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

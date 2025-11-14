@@ -7,8 +7,11 @@ import UserBadge from '@/components/badge/UserBadge'
 import { formatReadingTime, getUserLevel } from '@/lib/badge-system'
 import RatingsTabComponent from './RatingsTab'
 import FollowListModal from './FollowListModal'
+import MyLibrary from '@/components/library/MyLibrary'
+import ReadingHistory from '@/components/library/ReadingHistory'
+import WorksTab from '@/components/library/WorksTab'
 
-type Tab = 'ratings'
+type Tab = 'novels' | 'library' | 'history' | 'reviews'
 
 type UserData = {
   id: string
@@ -18,6 +21,7 @@ type UserData = {
   contributionPoints: number
   level: number
   createdAt: Date
+  libraryPrivacy?: boolean  // Privacy setting for library
   stats: {
     booksRead: number
     following: number
@@ -34,7 +38,7 @@ interface PublicUserProfileProps {
 export default function PublicUserProfile({ user }: PublicUserProfileProps) {
   const router = useRouter()
   const { data: session } = useSession()
-  const [activeTab, setActiveTab] = useState<Tab>('ratings')
+  const [activeTab, setActiveTab] = useState<Tab>('reviews')
   const [isFollowing, setIsFollowing] = useState(false)
   const [followersCount, setFollowersCount] = useState(user.stats.followers)
   const [followingCount, setFollowingCount] = useState(user.stats.following)
@@ -43,6 +47,16 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
   const levelData = getUserLevel(user.contributionPoints)
 
   const isOwnProfile = session?.user?.id === user.id
+
+  // Check if library is private and user is not the owner
+  const isLibraryPrivate = user.libraryPrivacy && !isOwnProfile
+
+  console.log('[PublicUserProfile] User data:', {
+    userId: user.id,
+    isOwnProfile,
+    libraryPrivacy: user.libraryPrivacy,
+    isLibraryPrivate
+  })
 
   // Check if current user is following this user
   useEffect(() => {
@@ -95,9 +109,9 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
   })
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Top user info section */}
-      <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
+      <div className="flex-shrink-0 bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl border border-white/30 p-8 mb-6 mx-6 mt-6">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
           {/* Avatar + Badge */}
           <div className="flex-shrink-0 flex flex-col items-center gap-2">
@@ -179,23 +193,80 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
             </div>
 
             {/* Reading Time - separate row */}
-            <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
-              <div className="text-lg font-bold text-gray-900">
-                {formatReadingTime(user.stats.readingTime)}
+            <div className="mt-4">
+              <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
+                <div className="text-lg font-bold text-gray-900">
+                  {formatReadingTime(user.stats.readingTime)}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">Reading Time</div>
               </div>
-              <div className="text-xs text-gray-600 mt-1">Reading Time</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Ratings section */}
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h2 className="text-xl font-bold text-gray-900">Reviews</h2>
+      {/* Tab Navigation */}
+      <div className="flex-shrink-0 px-6">
+        <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setActiveTab('novels')}
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                activeTab === 'novels'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+              }`}
+            >
+              Novels
+            </button>
+            {/* Only show Library tab if not private or if viewing own profile */}
+            {!isLibraryPrivate && (
+              <button
+                onClick={() => setActiveTab('library')}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                  activeTab === 'library'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                    : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+                }`}
+              >
+                Library
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                activeTab === 'history'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+              }`}
+            >
+              Reading History
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                activeTab === 'reviews'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+              }`}
+            >
+              Reviews
+            </button>
+          </div>
         </div>
-        <div className="p-6">
-          <RatingsTabComponent userId={user.id} />
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1 overflow-hidden px-6 pt-4 pb-6">
+        <div className="h-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
+          {activeTab === 'novels' && <WorksTab userId={user.id} />}
+          {activeTab === 'library' && <MyLibrary userId={user.id} viewOnly={!isOwnProfile} />}
+          {activeTab === 'history' && <ReadingHistory userId={user.id} viewOnly={!isOwnProfile} />}
+          {activeTab === 'reviews' && (
+            <div className="h-full overflow-y-auto p-6">
+              <RatingsTabComponent userId={user.id} />
+            </div>
+          )}
         </div>
       </div>
 
