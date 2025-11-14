@@ -13,6 +13,8 @@
     "db:seed-admin": "dotenv -e .env -- npx tsx scripts/seed-admin-user.ts",
     "db:set-admin": "dotenv -e .env -- npx tsx scripts/set-admin-role.ts",
     "db:studio": "dotenv -e .env -- npx prisma studio",
+    "db:diagnose": "dotenv -e .env -- npx tsx scripts/diagnose-authors.ts",
+    "db:fix-authors": "dotenv -e .env -- npx tsx scripts/fix-authors.ts",
     "cache:clear": "dotenv -e .env -- npx tsx scripts/clear-redis-cache.ts"
   },
   "dependencies": {
