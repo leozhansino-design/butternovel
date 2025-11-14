@@ -53,7 +53,7 @@ export default function NewChapterPage() {
   }, [novelId])
 
   // Save draft
-  const saveDraft = useCallback(async (redirectToNew = false) => {
+  const saveDraft = useCallback(async (clearFormAfterSave = false) => {
     if (!title.trim() || !content.trim()) return
 
     setSaving(true)
@@ -75,12 +75,23 @@ export default function NewChapterPage() {
         const data = await response.json()
         setLastSaved(new Date())
 
-        if (redirectToNew) {
-          // Redirect to new chapter page
-          alert('Chapter saved! Redirecting to add next chapter...')
-          router.push(`/dashboard/novels/${novelId}/chapters/new`)
-          router.refresh()
+        if (clearFormAfterSave) {
+          // Clear form for next chapter
+          setTitle('')
+          setContent('')
+          setLastSaved(null)
+
+          // Refresh chapter list
+          const novelResponse = await fetch(`/api/dashboard/novels/${novelId}`)
+          if (novelResponse.ok) {
+            const novelData = await novelResponse.json()
+            setNovel(novelData.novel)
+            setChapters(novelData.novel.chapters || [])
+          }
         }
+      } else {
+        const data = await response.json()
+        alert(`Failed to save: ${data.error}`)
       }
     } catch (error) {
       console.error('Failed to save draft:', error)
@@ -88,7 +99,7 @@ export default function NewChapterPage() {
     } finally {
       setSaving(false)
     }
-  }, [novelId, title, content, router])
+  }, [novelId, title, content])
 
   // Auto-save
   useEffect(() => {
@@ -135,13 +146,19 @@ export default function NewChapterPage() {
 
       if (response.ok) {
         const data = await response.json()
-        alert('Chapter published successfully! Redirecting to add next chapter...')
-        // Redirect to add next chapter page
-        router.push(`/dashboard/novels/${novelId}/chapters/new`)
-        // Clear form for new chapter
+
+        // Clear form for next chapter
         setTitle('')
         setContent('')
         setLastSaved(null)
+
+        // Refresh chapter list
+        const novelResponse = await fetch(`/api/dashboard/novels/${novelId}`)
+        if (novelResponse.ok) {
+          const novelData = await novelResponse.json()
+          setNovel(novelData.novel)
+          setChapters(novelData.novel.chapters || [])
+        }
       } else {
         const data = await response.json()
         alert(`Failed to publish: ${data.error}`)
@@ -216,10 +233,10 @@ export default function NewChapterPage() {
               <button
                 onClick={() => {
                   if (!title.trim() || !content.trim()) {
-                    alert('Please save the current chapter first before adding a new one')
+                    alert('Please write some content before adding a new chapter')
                     return
                   }
-                  // Save current chapter first, then redirect to new chapter page
+                  // Save current chapter and clear form for next chapter
                   saveDraft(true)
                 }}
                 disabled={saving}
