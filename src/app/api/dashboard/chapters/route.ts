@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Check if novel belongs to this author
     const novel = await prisma.novel.findFirst({
       where: {
-        id: parseInt(novelId),
+        id: novelId,
         authorId: session.user.email,
       },
       include: {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Create chapter
     const chapter = await prisma.chapter.create({
       data: {
-        novelId: parseInt(novelId),
+        novelId,
         chapterNumber: nextChapterNumber,
         title,
         slug,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // Update novel statistics
     await prisma.novel.update({
-      where: { id: parseInt(novelId) },
+      where: { id: novelId },
       data: {
         totalChapters: { increment: 1 },
         wordCount: { increment: wordCount },
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     if (isPublished === true && !novel.isPublished) {
       // Chapter is being published and novel is still a draft
       await prisma.novel.update({
-        where: { id: parseInt(novelId) },
+        where: { id: novelId },
         data: { isPublished: true },
       })
     }
