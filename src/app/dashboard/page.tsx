@@ -85,7 +85,8 @@ export default async function DashboardPage() {
   const session = await auth()
 
   if (!session?.user?.email) {
-    redirect('/auth/login?callbackUrl=/dashboard')
+    // ✅ 跳转到首页，用户可以在那里通过AuthModal登录
+    redirect('/')
   }
 
   const { stats, recentNovels } = await getDashboardStats(session.user.email)

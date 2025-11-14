@@ -12,7 +12,8 @@ export default async function Layout({
   const session = await auth()
 
   if (!session?.user) {
-    redirect('/auth/login?callbackUrl=/dashboard')
+    // ✅ 跳转到首页，用户可以在那里通过AuthModal登录
+    redirect('/')
   }
 
   return (

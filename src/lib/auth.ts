@@ -27,10 +27,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: 30 * 24 * 60 * 60,
   },
 
-  pages: {
-    signIn: "/auth/login",
-    error: "/auth/login?error=Configuration",
-  },
+  // ✅ 移除 pages 配置，避免自动重定向到登录页面
+  // 所有登录都通过 AuthModal 进行，不需要独立的登录页面
 
   providers: [
     Google({
@@ -99,10 +97,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
-      // 返回原始 url 而不是 baseUrl，这样登录后会跳回原来的页面
-      return url
+      // ✅ 优化重定向逻辑：确保总是返回到正确的页面
+
+      // 1. 如果是相对路径，拼接baseUrl
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`
+      }
+
+      // 2. 如果是完整URL，检查是否同源
+      try {
+        const urlObj = new URL(url)
+        const baseUrlObj = new URL(baseUrl)
+
+        // 同源则返回完整URL
+        if (urlObj.origin === baseUrlObj.origin) {
+          return url
+        }
+
+        // 不同源则返回baseUrl（安全考虑）
+        console.warn(`[Auth] Redirect to different origin blocked: ${url}`)
+        return baseUrl
+      } catch (error) {
+        // URL解析失败，返回baseUrl
+        console.error(`[Auth] Invalid redirect URL: ${url}`)
+        return baseUrl
+      }
     },
 
     async signIn({ user, account }) {

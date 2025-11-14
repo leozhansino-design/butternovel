@@ -73,7 +73,7 @@ async function WriterContent() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/auth/login"
+              href="/dashboard"
               className="px-8 py-4 bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold rounded-lg transition-colors shadow-sm"
             >
               Start Writing Now
