@@ -9,8 +9,9 @@ import RatingsTabComponent from './RatingsTab'
 import FollowListModal from './FollowListModal'
 import PublicLibraryView from './PublicLibraryView'
 import PublicReadingHistory from './PublicReadingHistory'
+import PublicNovelsView from './PublicNovelsView'
 
-type Tab = 'reviews' | 'library' | 'history'
+type Tab = 'novels' | 'library' | 'history' | 'reviews'
 
 type UserData = {
   id: string
@@ -37,7 +38,7 @@ interface PublicUserProfileProps {
 export default function PublicUserProfile({ user }: PublicUserProfileProps) {
   const router = useRouter()
   const { data: session } = useSession()
-  const [activeTab, setActiveTab] = useState<Tab>('reviews')
+  const [activeTab, setActiveTab] = useState<Tab>('novels')
   const [isFollowing, setIsFollowing] = useState(false)
   const [followersCount, setFollowersCount] = useState(user.stats.followers)
   const [followingCount, setFollowingCount] = useState(user.stats.following)
@@ -208,6 +209,16 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
       <div className="flex-shrink-0 px-6">
         <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-4">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setActiveTab('novels')}
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                activeTab === 'novels'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+              }`}
+            >
+              Novels
+            </button>
             {/* Only show Library tab if not private or if viewing own profile */}
             {!isLibraryPrivate && (
               <button
@@ -248,6 +259,9 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
       {/* Tab Content */}
       <div className="flex-1 overflow-hidden px-6 pt-4 pb-6">
         <div className="h-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
+          {activeTab === 'novels' && (
+            <PublicNovelsView userId={user.id} />
+          )}
           {activeTab === 'library' && (
             <PublicLibraryView userId={user.id} />
           )}
