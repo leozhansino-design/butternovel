@@ -2,11 +2,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import MyLibrary from '@/components/library/MyLibrary'
 import ProfileView from '@/components/library/ProfileView'
 import ReadingHistory from '@/components/library/ReadingHistory'
 import WorksTab from '@/components/library/WorksTab'
 import RatingsTab from '@/components/profile/RatingsTab'
+import PublicUserProfile from '@/components/profile/PublicUserProfile'
 
 interface LibraryModalProps {
   isOpen: boolean
@@ -17,15 +19,43 @@ interface LibraryModalProps {
     image?: string | null
   }
   defaultView?: 'profile' | 'library' | 'history' | 'novels' | 'reviews'
+  viewUserId?: string // Optional: View another user's profile
 }
 
-export default function LibraryModal({ isOpen, onClose, user, defaultView = 'library' }: LibraryModalProps) {
+export default function LibraryModal({ isOpen, onClose, user, defaultView = 'library', viewUserId }: LibraryModalProps) {
+  const { data: session } = useSession()
   const [activeTab, setActiveTab] = useState<'novels' | 'library' | 'history' | 'reviews'>(
     defaultView === 'history' ? 'history' :
     defaultView === 'novels' ? 'novels' :
     defaultView === 'reviews' ? 'reviews' :
     'library'
   )
+  const [otherUserData, setOtherUserData] = useState<any>(null)
+  const [loadingUser, setLoadingUser] = useState(false)
+
+  // Check if viewing another user's profile
+  const isViewingOtherUser = viewUserId && viewUserId !== session?.user?.id
+
+  // Fetch other user's data if viewing another user
+  useEffect(() => {
+    if (isOpen && isViewingOtherUser) {
+      const fetchUserData = async () => {
+        try {
+          setLoadingUser(true)
+          const res = await fetch(`/api/user/${viewUserId}`)
+          const data = await res.json()
+          if (res.ok && data.success) {
+            setOtherUserData(data.data)
+          }
+        } catch (error) {
+          console.error('Failed to fetch user data:', error)
+        } finally {
+          setLoadingUser(false)
+        }
+      }
+      fetchUserData()
+    }
+  }, [isOpen, isViewingOtherUser, viewUserId])
 
   // 当 defaultView 改变时更新视图
   useEffect(() => {
@@ -44,6 +74,50 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
 
   if (!isOpen) return null
 
+  // If viewing another user, show simplified version with only profile and reviews
+  if (isViewingOtherUser) {
+    if (loadingUser) {
+      return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+          <div className="relative bg-white rounded-3xl shadow-2xl p-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+          </div>
+        </div>
+      )
+    }
+
+    if (!otherUserData) {
+      return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+          <div className="relative bg-white rounded-3xl shadow-2xl p-12">
+            <p>User not found</p>
+            <button onClick={onClose} className="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg">Close</button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-2xl w-[95vw] max-w-7xl h-[90vh] overflow-auto">
+          <button
+            onClick={onClose}
+            className="absolute top-6 right-6 z-10 p-2.5 hover:bg-white/80 rounded-full transition-all bg-white/60 backdrop-blur-sm shadow-lg hover:shadow-xl"
+          >
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <PublicUserProfile user={otherUserData} />
+        </div>
+      </div>
+    )
+  }
+
+  // Otherwise, show normal library modal for current user
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop - 模糊背景 */}

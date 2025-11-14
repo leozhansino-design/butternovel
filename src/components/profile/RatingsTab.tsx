@@ -41,14 +41,19 @@ export default function RatingsTab({ userId }: RatingsTabProps = {}) {
       setLoading(true)
       const userIdParam = userId ? `&userId=${userId}` : ''
       const res = await fetch(`/api/profile/ratings?page=${page}&limit=10${userIdParam}`)
-      const data = await res.json()
+      const response = await res.json()
 
-      if (res.ok) {
-        setRatings(data.ratings)
-        setTotalPages(data.pagination.totalPages)
+      if (res.ok && response.success) {
+        // API返回格式: { success: true, data: { ratings: [...], pagination: {...} } }
+        setRatings(response.data?.ratings || [])
+        setTotalPages(response.data?.pagination?.totalPages || 1)
+      } else {
+        console.error('Failed to fetch ratings:', response.error)
+        setRatings([])
       }
     } catch (error) {
       console.error('Failed to fetch ratings:', error)
+      setRatings([])
     } finally {
       setLoading(false)
     }
