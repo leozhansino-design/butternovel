@@ -565,6 +565,12 @@ export default function RatingModal({
                         </button>
                         <button
                           onClick={() => {
+                            // Check login status first
+                            if (!userId) {
+                              setShowAuthModal(true)
+                              return
+                            }
+
                             if (activeReplyTo === rating.id) {
                               setActiveReplyTo(null)
                               setReplyContent('')
