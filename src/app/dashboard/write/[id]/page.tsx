@@ -328,8 +328,9 @@ export default function EditChapterPage() {
                 value={content}
                 onChange={handleContentChange}
                 placeholder="Start writing your chapter here..."
-                className="w-full min-h-[500px] text-lg leading-relaxed focus:outline-none resize-none font-serif border-0 focus:ring-0"
-                style={{ fontSize: '18px', lineHeight: '1.8' }}
+                className="w-full min-h-screen text-lg leading-relaxed focus:outline-none resize-none font-serif border-0 focus:ring-0"
+                style={{ fontSize: '18px', lineHeight: '1.8', height: 'auto' }}
+                rows={30}
               />
             </div>
           </div>
