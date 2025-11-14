@@ -57,11 +57,6 @@ export async function GET(
             avatar: true,
           },
         },
-        _count: {
-          select: {
-            likes: true,
-          },
-        },
       },
       orderBy: [
         { likeCount: 'desc' },  // 先按点赞数降序
