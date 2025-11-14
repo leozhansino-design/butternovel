@@ -83,6 +83,7 @@ export default function ChapterForm({
           chapterNumber,
           title: title.trim(),
           content: content.trim(),
+          wordCount: wordCount,  // ⭐ 发送字符数
           isPublished,
         }),
       })
