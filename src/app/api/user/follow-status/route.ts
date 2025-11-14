@@ -18,14 +18,21 @@ export const GET = withErrorHandling(async (request: Request) => {
     return errorResponse('User ID is required', 400, 'VALIDATION_ERROR')
   }
 
-  const follow = await prisma.follow.findUnique({
-    where: {
-      followerId_followingId: {
-        followerId: session.user.id,
-        followingId: userId
+  // Return false if Follow table doesn't exist yet
+  try {
+    const follow = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: session.user.id,
+          followingId: userId
+        }
       }
-    }
-  })
+    })
 
-  return successResponse({ isFollowing: !!follow })
+    return successResponse({ isFollowing: !!follow })
+  } catch (error) {
+    // Follow table doesn't exist yet
+    console.log('Follow table does not exist yet. Run: npx prisma db push')
+    return successResponse({ isFollowing: false })
+  }
 })

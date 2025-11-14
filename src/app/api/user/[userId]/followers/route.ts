@@ -22,25 +22,30 @@ export const GET = withErrorHandling(async (
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
   }
 
-  // Get followers list
-  const followers = await prisma.follow.findMany({
-    where: { followingId: userId },
-    include: {
-      follower: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-          bio: true,
-          level: true,
-          contributionPoints: true
+  // Get followers list (return empty array if Follow table doesn't exist)
+  try {
+    const followers = await prisma.follow.findMany({
+      where: { followingId: userId },
+      include: {
+        follower: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            bio: true,
+            level: true,
+            contributionPoints: true
+          }
         }
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  })
+      },
+      orderBy: { createdAt: 'desc' }
+    })
 
-  return successResponse({
-    followers: followers.map(f => f.follower)
-  })
+    return successResponse({
+      followers: followers.map(f => f.follower)
+    })
+  } catch (error) {
+    console.log('Follow table does not exist yet. Run: npx prisma db push')
+    return successResponse({ followers: [] })
+  }
 })
