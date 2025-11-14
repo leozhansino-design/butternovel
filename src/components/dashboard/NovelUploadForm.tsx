@@ -404,16 +404,11 @@ export default function NovelUploadForm() {
             </div>
           )}
 
-          {/* Add Chapter Button */}
-          <button
-            type="button"
-            onClick={() => {
-              alert('Feature coming soon: This will redirect to a full-screen writing page')
-            }}
-            className="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-          >
-            + Add Chapter
-          </button>
+          {/* Info Note */}
+          <div className="text-xs text-gray-500 text-center py-4">
+            <p className="mb-1">💡 Tip: Add chapters after creating your story</p>
+            <p>Save as draft first, then go to "My Stories" to add chapters</p>
+          </div>
         </div>
 
         {/* Action Buttons */}
