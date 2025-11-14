@@ -11,6 +11,7 @@
     "db:push": "dotenv -e .env -- npx prisma db push",
     "db:seed": "dotenv -e .env -- npx tsx scripts/seed-categories.ts",
     "db:seed-admin": "dotenv -e .env -- npx tsx scripts/seed-admin-user.ts",
+    "db:set-admin": "dotenv -e .env -- npx tsx scripts/set-admin-role.ts",
     "db:studio": "dotenv -e .env -- npx prisma studio",
     "cache:clear": "dotenv -e .env -- npx tsx scripts/clear-redis-cache.ts"
   },

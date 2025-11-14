@@ -164,9 +164,12 @@ export default async function NovelDetailPage({
                         </h1>
                         <div className="flex items-center gap-2 text-lg flex-wrap">
                           <span className="text-gray-600">by</span>
-                          <span className="font-semibold text-gray-900">
+                          <Link
+                            href={`/profile/${novel.authorId}`}
+                            className="font-semibold text-gray-900 hover:text-amber-600 transition-colors cursor-pointer"
+                          >
                             {novel.authorName}
-                          </span>
+                          </Link>
                           <FollowAuthorButton authorId={novel.authorId} authorName={novel.authorName} />
                         </div>
                       </div>

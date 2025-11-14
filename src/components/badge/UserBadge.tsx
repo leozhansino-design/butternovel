@@ -55,12 +55,18 @@ export default function UserBadge({
   className = '',
 }: UserBadgeProps) {
   const [mounted, setMounted] = useState(false)
+  const [imageError, setImageError] = useState(false)
   const levelData = getUserLevel(contributionPoints)
   const config = sizeConfig[size]
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Reset image error when avatar changes
+  useEffect(() => {
+    setImageError(false)
+  }, [avatar])
 
   // 生成边框样式
   const getBorderStyle = (): React.CSSProperties => {
@@ -141,12 +147,14 @@ export default function UserBadge({
             marginTop: levelData.badgeStyle.gradient ? '0' : `${config.borderWidth}px`,
           }}
         >
-          {avatar ? (
+          {avatar && !imageError ? (
             <Image
               src={avatar}
               alt={name || 'User avatar'}
               fill
               className="object-cover"
+              onError={() => setImageError(true)}
+              unoptimized={avatar.includes('googleusercontent.com')}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-white text-gray-900 font-semibold border border-gray-300" style={{ fontSize: `${config.avatar * 0.4}px` }}>

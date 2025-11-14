@@ -9,10 +9,15 @@ interface FollowAuthorButtonProps {
 }
 
 export default function FollowAuthorButton({ authorId, authorName }: FollowAuthorButtonProps) {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [isFollowing, setIsFollowing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checkingStatus, setCheckingStatus] = useState(true)
+
+  // Don't show if authorId is missing
+  if (!authorId) {
+    return null
+  }
 
   const isOwnProfile = session?.user?.id === authorId
 
@@ -67,12 +72,16 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
     }
   }
 
-  // Don't show button if viewing own profile or not logged in
-  if (!session?.user?.id || isOwnProfile) {
+  // Don't show button if viewing own profile (wait for session to load first)
+  if (status === 'loading') {
+    return null // Wait for session to load
+  }
+
+  if (isOwnProfile) {
     return null
   }
 
-  if (checkingStatus) {
+  if (checkingStatus && session?.user?.id) {
     return null // Or a small loading spinner
   }
 

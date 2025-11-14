@@ -30,6 +30,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
       name: true,
       avatar: true,
       bio: true,
+      role: true,
       contributionPoints: true,
       level: true,
       totalReadingTime: true,

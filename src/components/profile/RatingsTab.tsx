@@ -135,14 +135,16 @@ export default function RatingsTab({ userId }: RatingsTabProps = {}) {
           >
             <div className="flex gap-4">
               {/* 小说封面 */}
-              <Link href={`/novels/${rating.novel.slug}`} className="flex-shrink-0">
-                <div className="relative w-24 h-32 rounded-lg overflow-hidden shadow-md hover:scale-105 transition-transform">
+              <Link href={`/novels/${rating.novel.slug}`} className="flex-shrink-0 group">
+                <div className="relative w-24 h-32 rounded-lg overflow-hidden shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200 cursor-pointer">
                   <Image
                     src={rating.novel.coverImage}
                     alt={rating.novel.title}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:brightness-110 transition-all"
                   />
+                  {/* Overlay on hover - pointer-events-none to allow clicks */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
                 </div>
               </Link>
 
@@ -150,7 +152,7 @@ export default function RatingsTab({ userId }: RatingsTabProps = {}) {
               <div className="flex-1 min-w-0">
                 <Link
                   href={`/novels/${rating.novel.slug}`}
-                  className="text-lg font-bold text-gray-900 hover:text-amber-600 transition-colors line-clamp-1"
+                  className="text-lg font-bold text-gray-900 hover:text-amber-600 transition-colors line-clamp-1 cursor-pointer"
                 >
                   {rating.novel.title}
                 </Link>

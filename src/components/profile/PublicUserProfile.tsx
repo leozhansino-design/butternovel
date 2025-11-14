@@ -18,6 +18,7 @@ type UserData = {
   name: string | null
   avatar: string | null
   bio: string | null
+  role: string
   contributionPoints: number
   level: number
   createdAt: Date
@@ -47,20 +48,14 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
   const levelData = getUserLevel(user.contributionPoints)
 
   const isOwnProfile = session?.user?.id === user.id
+  const isAdmin = user.role !== 'USER' // Check if user is admin/moderator
 
   // Check if library is private and user is not the owner
   const isLibraryPrivate = user.libraryPrivacy && !isOwnProfile
 
-  console.log('[PublicUserProfile] User data:', {
-    userId: user.id,
-    isOwnProfile,
-    libraryPrivacy: user.libraryPrivacy,
-    isLibraryPrivate
-  })
-
   // Check if current user is following this user
   useEffect(() => {
-    if (session?.user?.id && !isOwnProfile) {
+    if (session?.user?.id && session.user.id !== user.id) {
       fetch(`/api/user/follow-status?userId=${user.id}`)
         .then(res => res.json())
         .then(data => {
@@ -70,7 +65,7 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
         })
         .catch(err => console.error('Failed to fetch follow status:', err))
     }
-  }, [session, user.id, isOwnProfile])
+  }, [session?.user?.id, user.id])
 
   const handleFollowToggle = async () => {
     if (!session?.user?.id) {
@@ -136,8 +131,8 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
                 {user.name || 'Anonymous Reader'}
               </h1>
 
-              {/* Follow button - only show if not own profile and user is logged in */}
-              {!isOwnProfile && session?.user?.id && (
+              {/* Follow button - only show if not own profile, user is logged in, and target is not admin */}
+              {!isOwnProfile && !isAdmin && session?.user?.id && (
                 <button
                   onClick={handleFollowToggle}
                   disabled={loading}
@@ -159,48 +154,61 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
 
             <p className="text-gray-500 text-sm mb-4">Joined {joinDate}</p>
 
-            {/* Stats cards - 4 cards in a row with frosted glass effect */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              {/* Books Read */}
-              <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
-                <div className="text-2xl font-bold text-gray-900">{user.stats.booksRead}</div>
-                <div className="text-xs text-gray-600 mt-1">Books Read</div>
-              </div>
+            {/* Stats cards - Show different stats for admin vs regular users */}
+            {!isAdmin ? (
+              <>
+                {/* Regular user stats - 4 cards in a row with frosted glass effect */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {/* Books Read */}
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
+                    <div className="text-2xl font-bold text-gray-900">{user.stats.booksRead}</div>
+                    <div className="text-xs text-gray-600 mt-1">Books Read</div>
+                  </div>
 
-              {/* Following - clickable */}
-              <button
-                onClick={() => setShowFollowModal('following')}
-                className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
-              >
-                <div className="text-2xl font-bold text-gray-900">{followingCount}</div>
-                <div className="text-xs text-gray-600 mt-1">Following</div>
-              </button>
+                  {/* Following - clickable */}
+                  <button
+                    onClick={() => setShowFollowModal('following')}
+                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
+                  >
+                    <div className="text-2xl font-bold text-gray-900">{followingCount}</div>
+                    <div className="text-xs text-gray-600 mt-1">Following</div>
+                  </button>
 
-              {/* Followers - clickable */}
-              <button
-                onClick={() => setShowFollowModal('followers')}
-                className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
-              >
-                <div className="text-2xl font-bold text-gray-900">{followersCount}</div>
-                <div className="text-xs text-gray-600 mt-1">Followers</div>
-              </button>
+                  {/* Followers - clickable */}
+                  <button
+                    onClick={() => setShowFollowModal('followers')}
+                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
+                  >
+                    <div className="text-2xl font-bold text-gray-900">{followersCount}</div>
+                    <div className="text-xs text-gray-600 mt-1">Followers</div>
+                  </button>
 
-              {/* Reviews */}
-              <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
-                <div className="text-2xl font-bold text-gray-900">{user.stats.totalRatings}</div>
-                <div className="text-xs text-gray-600 mt-1">Reviews</div>
-              </div>
-            </div>
-
-            {/* Reading Time - separate row */}
-            <div className="mt-4">
-              <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
-                <div className="text-lg font-bold text-gray-900">
-                  {formatReadingTime(user.stats.readingTime)}
+                  {/* Reviews */}
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
+                    <div className="text-2xl font-bold text-gray-900">{user.stats.totalRatings}</div>
+                    <div className="text-xs text-gray-600 mt-1">Reviews</div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600 mt-1">Reading Time</div>
-              </div>
-            </div>
+
+                {/* Reading Time - separate row */}
+                <div className="mt-4">
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
+                    <div className="text-lg font-bold text-gray-900">
+                      {formatReadingTime(user.stats.readingTime)}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">Reading Time</div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Admin badge */}
+                <div className="backdrop-blur-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/60 rounded-lg p-4 text-center shadow-lg">
+                  <div className="text-lg font-bold text-amber-700">Official Account</div>
+                  <div className="text-xs text-amber-600 mt-1">ButterNovel Team</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -219,39 +227,44 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
             >
               Novels
             </button>
-            {/* Only show Library tab if not private or if viewing own profile */}
-            {!isLibraryPrivate && (
-              <button
-                onClick={() => setActiveTab('library')}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
-                  activeTab === 'library'
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
-                    : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
-                }`}
-              >
-                Library
-              </button>
+            {/* Only show other tabs for regular users (not admin) */}
+            {!isAdmin && (
+              <>
+                {/* Only show Library tab if not private or if viewing own profile */}
+                {!isLibraryPrivate && (
+                  <button
+                    onClick={() => setActiveTab('library')}
+                    className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                      activeTab === 'library'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                        : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+                    }`}
+                  >
+                    Library
+                  </button>
+                )}
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                    activeTab === 'history'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                      : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+                  }`}
+                >
+                  Reading History
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                    activeTab === 'reviews'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                      : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+                  }`}
+                >
+                  Reviews
+                </button>
+              </>
             )}
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
-                activeTab === 'history'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
-                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
-              }`}
-            >
-              Reading History
-            </button>
-            <button
-              onClick={() => setActiveTab('reviews')}
-              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
-                activeTab === 'reviews'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
-                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
-              }`}
-            >
-              Reviews
-            </button>
           </div>
         </div>
       </div>
