@@ -67,12 +67,12 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
     }
   }
 
-  // Don't show button if viewing own profile or not logged in
-  if (!session?.user?.id || isOwnProfile) {
+  // Don't show button if viewing own profile
+  if (isOwnProfile) {
     return null
   }
 
-  if (checkingStatus) {
+  if (checkingStatus && session?.user?.id) {
     return null // Or a small loading spinner
   }
 
