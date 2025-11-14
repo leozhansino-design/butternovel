@@ -66,6 +66,8 @@ export async function GET(
               id: true,
               name: true,
               avatar: true,
+              contributionPoints: true,
+              level: true,
             },
           },
           _count: {
@@ -94,6 +96,8 @@ export async function GET(
               id: true,
               name: true,
               avatar: true,
+              contributionPoints: true,
+              level: true,
             },
           },
           _count: {

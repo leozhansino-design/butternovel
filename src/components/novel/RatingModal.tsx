@@ -4,8 +4,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import AuthModal from '@/components/auth/AuthModal'
+import UserBadge from '@/components/badge/UserBadge'
 
 interface Reply {
   id: string
@@ -15,6 +17,8 @@ interface Reply {
     id: string
     name: string | null
     avatar: string | null
+    contributionPoints: number
+    level: number
   }
   childReplies?: Reply[]
 }
@@ -30,6 +34,8 @@ interface Rating {
     id: string
     name: string | null
     avatar: string | null
+    contributionPoints: number
+    level: number
   }
   replies?: Reply[]
   replyCount?: number
@@ -552,22 +558,24 @@ export default function RatingModal({
               {ratings.map((rating) => (
                 <div key={rating.id} className="border-b border-gray-100 pb-4 last:border-0">
                   <div className="flex items-start gap-3">
-                    {rating.user.avatar ? (
-                      <img
-                        src={rating.user.avatar}
-                        alt={rating.user.name || 'User'}
-                        className="w-8 h-8 rounded-full"
+                    <Link href={`/profile/${rating.user.id}`} className="flex-shrink-0">
+                      <UserBadge
+                        avatar={rating.user.avatar}
+                        name={rating.user.name}
+                        level={rating.user.level}
+                        contributionPoints={rating.user.contributionPoints}
+                        size="small"
+                        showLevelName={false}
                       />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold text-sm border border-gray-300">
-                        {rating.user.name?.[0]?.toUpperCase() || 'U'}
-                      </div>
-                    )}
+                    </Link>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-gray-900 text-sm">
+                        <Link
+                          href={`/profile/${rating.user.id}`}
+                          className="font-semibold text-gray-900 text-sm hover:text-amber-600 transition-colors"
+                        >
                           {rating.user.name || 'Anonymous'}
-                        </span>
+                        </Link>
                         {renderStars(rating.score, 'small')}
                       </div>
                       {rating.review && (

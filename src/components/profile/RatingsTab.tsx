@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
+interface RatingsTabProps {
+  userId?: string // 可选：查询指定用户的评分
+}
+
 type Rating = {
   id: string
   score: number
@@ -22,7 +26,7 @@ type Rating = {
   }
 }
 
-export default function RatingsTab() {
+export default function RatingsTab({ userId }: RatingsTabProps = {}) {
   const [ratings, setRatings] = useState<Rating[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -30,12 +34,13 @@ export default function RatingsTab() {
 
   useEffect(() => {
     fetchRatings()
-  }, [page])
+  }, [page, userId])
 
   const fetchRatings = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`/api/profile/ratings?page=${page}&limit=10`)
+      const userIdParam = userId ? `&userId=${userId}` : ''
+      const res = await fetch(`/api/profile/ratings?page=${page}&limit=10${userIdParam}`)
       const data = await res.json()
 
       if (res.ok) {
