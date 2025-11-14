@@ -70,9 +70,30 @@ model User {
   contributionLogs   ContributionLog[]
   readingSessions    ReadingSession[]
 
+  // Follow system
+  following Follow[] @relation("UserFollowing")
+  followers Follow[] @relation("UserFollowers")
+
   @@index([email])
   @@index([isWriter])
   @@index([level, contributionPoints])
+}
+
+// Follow system
+model Follow {
+  id String @id @default(cuid())
+
+  followerId  String
+  follower    User   @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+
+  followingId String
+  following   User   @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId]) // One user can only follow another user once
+  @@index([followerId])
+  @@index([followingId])
 }
 
 // ============================================

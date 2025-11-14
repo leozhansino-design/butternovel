@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 import MyLibrary from '@/components/library/MyLibrary'
 import ProfileView from '@/components/library/ProfileView'
 import ReadingHistory from '@/components/library/ReadingHistory'
+import WorksTab from '@/components/library/WorksTab'
+import RatingsTab from '@/components/profile/RatingsTab'
 
 interface LibraryModalProps {
   isOpen: boolean
@@ -14,17 +16,26 @@ interface LibraryModalProps {
     email?: string | null
     image?: string | null
   }
-  defaultView?: 'profile' | 'library' | 'history'
+  defaultView?: 'profile' | 'library' | 'history' | 'novels' | 'reviews'
 }
 
 export default function LibraryModal({ isOpen, onClose, user, defaultView = 'library' }: LibraryModalProps) {
-  const [activeTab, setActiveTab] = useState<'library' | 'history'>(defaultView === 'history' ? 'history' : 'library')
+  const [activeTab, setActiveTab] = useState<'novels' | 'library' | 'history' | 'reviews'>(
+    defaultView === 'history' ? 'history' :
+    defaultView === 'novels' ? 'novels' :
+    defaultView === 'reviews' ? 'reviews' :
+    'library'
+  )
 
   // 当 defaultView 改变时更新视图
   useEffect(() => {
     if (isOpen) {
       if (defaultView === 'history') {
         setActiveTab('history')
+      } else if (defaultView === 'novels') {
+        setActiveTab('novels')
+      } else if (defaultView === 'reviews') {
+        setActiveTab('reviews')
       } else {
         setActiveTab('library')
       }
@@ -58,23 +69,33 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
           <ProfileView user={user} />
         </div>
 
-        {/* 中间 - Library 筛选栏 (往下移) */}
+        {/* 中间 - Tab 导航栏 */}
         <div className="flex-shrink-0 px-6 pt-4">
           <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveTab('novels')}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                  activeTab === 'novels'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                    : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+                }`}
+              >
+                Novels
+              </button>
               <button
                 onClick={() => setActiveTab('library')}
-                className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
                   activeTab === 'library'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
                 }`}
               >
-                My Library
+                Library
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
                   activeTab === 'history'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
@@ -82,15 +103,27 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
               >
                 Reading History
               </button>
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                  activeTab === 'reviews'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                    : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+                }`}
+              >
+                Reviews
+              </button>
             </div>
           </div>
         </div>
 
-        {/* 底部 - 书籍网格 */}
+        {/* 底部 - Tab 内容 */}
         <div className="flex-1 overflow-hidden px-6 pt-4 pb-6">
           <div className="h-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
+            {activeTab === 'novels' && <WorksTab onClose={onClose} />}
             {activeTab === 'library' && <MyLibrary onClose={onClose} />}
             {activeTab === 'history' && <ReadingHistory onClose={onClose} />}
+            {activeTab === 'reviews' && <RatingsTab />}
           </div>
         </div>
       </div>

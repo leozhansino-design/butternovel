@@ -36,9 +36,20 @@ export const GET = withErrorHandling(async () => {
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
   }
 
-  // 获取阅读统计
-  const totalChaptersRead = await prisma.chapterProgress.count({
-    where: { userId: session.user.id }
+  // 获取读过的书数量（从 ReadingHistory 统计唯一的小说）
+  const booksReadRecords = await prisma.readingHistory.findMany({
+    where: { userId: session.user.id },
+    select: { novelId: true },
+    distinct: ['novelId']
+  })
+  const booksRead = booksReadRecords.length
+
+  // 获取关注数和粉丝数
+  const following = await prisma.follow.count({
+    where: { followerId: session.user.id }
+  })
+  const followers = await prisma.follow.count({
+    where: { followingId: session.user.id }
   })
 
   return successResponse({
@@ -51,10 +62,11 @@ export const GET = withErrorHandling(async () => {
       contributionPoints: user.contributionPoints,
       level: user.level,
       stats: {
-        booksInLibrary: user._count.library,
-        chaptersRead: totalChaptersRead,
-        readingTime: user.totalReadingTime, // 总阅读时长（分钟）
-        totalRatings: user._count.ratings, // 总评分数（获赞数可以后续添加）
+        booksRead: booksRead, // 读过的书数量（唯一小说）
+        following: following, // 关注数
+        followers: followers, // 粉丝数
+        totalRatings: user._count.ratings, // 评分数
+        readingTime: user.totalReadingTime, // 阅读时长（分钟）
       }
     }
   })

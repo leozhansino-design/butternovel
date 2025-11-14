@@ -207,21 +207,25 @@ export function getLevelName(level: number, lang: 'zh' | 'en' = 'zh'): string {
 }
 
 /**
- * 格式化阅读时长
+ * 格式化阅读时长（英文）
  * @param minutes 总分钟数
- * @returns 格式化的时长字符串 "XX小时XX分钟"
+ * @returns 格式化的时长字符串 "XX hours XX minutes"
  */
 export function formatReadingTime(minutes: number): string {
+  if (minutes === 0) {
+    return '0 minutes'
+  }
+
   if (minutes < 60) {
-    return `${minutes}分钟`
+    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`
   }
 
   const hours = Math.floor(minutes / 60)
   const remainingMinutes = minutes % 60
 
   if (remainingMinutes === 0) {
-    return `${hours}小时`
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`
   }
 
-  return `${hours}小时${remainingMinutes}分钟`
+  return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${remainingMinutes} ${remainingMinutes === 1 ? 'minute' : 'minutes'}`
 }

@@ -47,12 +47,22 @@ export default async function PublicProfilePage({ params }: PageProps) {
     notFound()
   }
 
-  // Get completed chapters count
-  const completedChapters = await prisma.chapterProgress.count({
+  // Get books read count (unique novels from reading history)
+  const booksReadRecords = await prisma.readingHistory.findMany({
     where: {
       userId: user.id,
-      isCompleted: true,
     },
+    select: { novelId: true },
+    distinct: ['novelId'],
+  })
+  const booksRead = booksReadRecords.length
+
+  // Get following and followers counts
+  const following = await prisma.follow.count({
+    where: { followerId: user.id }
+  })
+  const followers = await prisma.follow.count({
+    where: { followingId: user.id }
   })
 
   return (
@@ -61,10 +71,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
         user={{
           ...user,
           stats: {
-            booksInLibrary: user._count.library,
-            chaptersRead: completedChapters,
-            readingTime: user.totalReadingTime,
+            booksRead: booksRead,
+            following: following,
+            followers: followers,
             totalRatings: user._count.ratings,
+            readingTime: user.totalReadingTime,
           },
         }}
       />
