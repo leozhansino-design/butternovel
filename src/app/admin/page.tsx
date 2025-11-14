@@ -20,11 +20,11 @@ interface ChartDataPoint {
 }
 
 export default function AdminDashboardPage() {
-  const [range, setRange] = useState<TimeRange>('all')
+  const [range, setRange] = useState<TimeRange>('1day')
   const [stats, setStats] = useState<Stats | null>(null)
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
   const [loading, setLoading] = useState(true)
-  const [rangeLabel, setRangeLabel] = useState('All Time')
+  const [rangeLabel, setRangeLabel] = useState('1 Day')
 
   // ✅ 将 fetchData 逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
