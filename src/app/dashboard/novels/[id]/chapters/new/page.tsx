@@ -240,7 +240,7 @@ export default function NewChapterPage() {
             {/* Action Buttons */}
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-200">
               <button
-                onClick={saveDraft}
+                onClick={() => saveDraft(false)}
                 disabled={saving || !title.trim() || !content.trim()}
                 className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
               >
