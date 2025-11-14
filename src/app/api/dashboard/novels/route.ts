@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import cloudinary from '@/lib/cloudinary'
 import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
+import { invalidateNovelRelatedCache } from '@/lib/cache'
 
 // GET - List all novels by the current author
 export async function GET(request: NextRequest) {
@@ -154,8 +155,15 @@ export async function POST(request: NextRequest) {
       },
       include: {
         chapters: true,
+        category: {
+          select: { slug: true }
+        }
       },
     })
+
+    // ⚡ Clear cache: home page and category page
+    await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
+    console.log('✓ Cache cleared for new novel')
 
     return NextResponse.json({
       message: 'Novel created successfully',
