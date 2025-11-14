@@ -24,26 +24,37 @@ export default function RatingDisplay({
   userRatingScore,
 }: RatingDisplayProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [hoverRating, setHoverRating] = useState<number | null>(null)
+  const [isHovered, setIsHovered] = useState(false)
 
-  const renderStars = (score: number, interactive: boolean = false) => {
+  // ✅ 始终显示小说的平均分星星
+  const renderStars = (score: number) => {
     const starCount = score / 2 // Convert 2-10 to 1-5 stars
     const fullStars = Math.floor(starCount)
     const hasHalfStar = starCount % 1 >= 0.5
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
 
-    const color = '#FFB800'
-    const emptyColor = '#E5E7EB'
+    // ✅ 未评分用户hover时高亮星星
+    const color = (!hasUserRated && isHovered) ? '#FFA500' : '#FFB800'
+    const emptyColor = (!hasUserRated && isHovered) ? '#FFD700' : '#E5E7EB'
 
     return (
       <div className="flex items-center gap-1">
         {[...Array(fullStars)].map((_, i) => (
-          <svg key={`full-${i}`} className="w-6 h-6" fill={color} viewBox="0 0 24 24">
+          <svg
+            key={`full-${i}`}
+            className={`w-6 h-6 transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
+            fill={color}
+            viewBox="0 0 24 24"
+          >
             <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
           </svg>
         ))}
         {hasHalfStar && (
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
+          <svg
+            className={`w-6 h-6 transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+          >
             <defs>
               <linearGradient id="half-star">
                 <stop offset="50%" stopColor={color} />
@@ -57,7 +68,12 @@ export default function RatingDisplay({
           </svg>
         )}
         {[...Array(emptyStars)].map((_, i) => (
-          <svg key={`empty-${i}`} className="w-6 h-6" fill={emptyColor} viewBox="0 0 24 24">
+          <svg
+            key={`empty-${i}`}
+            className={`w-6 h-6 transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
+            fill={emptyColor}
+            viewBox="0 0 24 24"
+          >
             <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
           </svg>
         ))}
@@ -65,83 +81,38 @@ export default function RatingDisplay({
     )
   }
 
-  const renderInteractiveStars = () => {
-    const displayRating = hoverRating || (hasUserRated && userRatingScore ? userRatingScore : 0)
-
-    return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => {
-          const score = star * 2
-          const isFilled = displayRating >= score
-
-          return (
-            <button
-              key={star}
-              type="button"
-              disabled={hasUserRated}
-              className={`transition-all ${
-                hasUserRated ? 'cursor-default' : 'cursor-pointer hover:scale-110'
-              }`}
-              onMouseEnter={() => !hasUserRated && setHoverRating(score)}
-              onMouseLeave={() => !hasUserRated && setHoverRating(null)}
-              onClick={() => !hasUserRated && setIsModalOpen(true)}
-            >
-              <svg
-                className="w-6 h-6"
-                fill={isFilled ? '#FFB800' : '#E5E7EB'}
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-              </svg>
-            </button>
-          )
-        })}
-      </div>
-    )
-  }
-
   return (
     <>
       <div className="mt-4">
-        {totalRatings === 0 ? (
-          <div className="text-center">
-            <div
-              className={`flex items-center justify-center gap-1 mb-2 ${
-                !hasUserRated ? 'cursor-pointer' : 'cursor-default'
-              }`}
-              onClick={() => !hasUserRated && setIsModalOpen(true)}
-            >
-              {renderInteractiveStars()}
-            </div>
-            <p className="text-sm text-gray-500">No ratings yet</p>
+        <div className="text-center">
+          {/* ✅ 星星区域：始终显示平均分，未评分用户hover有效果 */}
+          <div
+            className={`flex items-center justify-center gap-1 mb-2 ${
+              !hasUserRated ? 'cursor-pointer' : 'cursor-default'
+            }`}
+            onMouseEnter={() => !hasUserRated && setIsHovered(true)}
+            onMouseLeave={() => !hasUserRated && setIsHovered(false)}
+            onClick={() => setIsModalOpen(true)}
+          >
+            {renderStars(averageRating)}
           </div>
-        ) : (
-          <div className="text-center">
-            <div
-              className={`flex items-center justify-center gap-2 mb-2 ${
-                !hasUserRated ? 'cursor-pointer' : 'cursor-default'
-              }`}
-              onClick={() => !hasUserRated && setIsModalOpen(true)}
+
+          {/* 评分数字和统计 */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-2xl font-bold text-gray-900">
+              {totalRatings > 0 ? averageRating.toFixed(1) : '-'}
+            </span>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="text-sm text-gray-500 hover:text-amber-700 hover:underline transition-colors"
             >
-              {hasUserRated ? (
-                renderStars(averageRating)
-              ) : (
-                renderInteractiveStars()
-              )}
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl font-bold text-gray-900">
-                {averageRating.toFixed(1)}
-              </span>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="text-sm text-gray-500 hover:text-amber-700 hover:underline transition-colors"
-              >
-                {formatNumber(totalRatings)} {totalRatings === 1 ? 'rating' : 'ratings'}
-              </button>
-            </div>
+              {totalRatings > 0
+                ? `${formatNumber(totalRatings)} ${totalRatings === 1 ? 'rating' : 'ratings'}`
+                : 'No ratings yet'
+              }
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       <RatingModal

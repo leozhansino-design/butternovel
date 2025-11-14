@@ -97,11 +97,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // ✅ 优化重定向逻辑：确保总是返回到正确的页面
+      // ✅ 优化重定向逻辑：确保Google登录后返回到正确的页面
+
+      console.log('[Auth] Redirect callback:', { url, baseUrl })
 
       // 1. 如果是相对路径，拼接baseUrl
       if (url.startsWith("/")) {
-        return `${baseUrl}${url}`
+        const fullUrl = `${baseUrl}${url}`
+        console.log('[Auth] Redirecting to relative path:', fullUrl)
+        return fullUrl
       }
 
       // 2. 如果是完整URL，检查是否同源
@@ -109,17 +113,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const urlObj = new URL(url)
         const baseUrlObj = new URL(baseUrl)
 
-        // 同源则返回完整URL
+        // 同源则返回完整URL（包括查询参数和hash）
         if (urlObj.origin === baseUrlObj.origin) {
+          console.log('[Auth] Redirecting to same origin:', url)
           return url
         }
 
         // 不同源则返回baseUrl（安全考虑）
-        console.warn(`[Auth] Redirect to different origin blocked: ${url}`)
+        console.warn(`[Auth] Redirect to different origin blocked: ${url}, returning baseUrl`)
         return baseUrl
       } catch (error) {
         // URL解析失败，返回baseUrl
-        console.error(`[Auth] Invalid redirect URL: ${url}`)
+        console.error(`[Auth] Invalid redirect URL: ${url}, error:`, error)
         return baseUrl
       }
     },
