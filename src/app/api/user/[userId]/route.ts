@@ -1,6 +1,7 @@
 // src/app/api/user/[userId]/route.ts
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { withErrorHandling, errorResponse, successResponse } from '@/lib/api-error-handler'
+import { withErrorHandling, errorResponse } from '@/lib/api-error-handler'
 
 // GET - Get public user profile data
 export const GET = withErrorHandling(async (
