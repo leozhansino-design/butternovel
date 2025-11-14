@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const novels = await prisma.novel.findMany({
       where: {
-        authorId: session.user.email,
+        authorId: session.user.id,
       },
       include: {
         category: {
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         coverImage: coverImageUrl,
         coverImagePublicId,
         blurb,
-        authorId: session.user.email,
+        authorId: session.user.id,
         authorName: session.user.name || 'Anonymous Author',
         categoryId,
         status: status || 'ONGOING',

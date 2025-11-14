@@ -25,7 +25,7 @@ export async function GET(
       where: {
         id: chapterId,
         novel: {
-          authorId: session.user.email,
+          authorId: session.user.id,
         },
       },
       include: {
@@ -94,7 +94,7 @@ export async function PUT(
       where: {
         id: chapterId,
         novel: {
-          authorId: session.user.email,
+          authorId: session.user.id,
         },
       },
     })
@@ -189,7 +189,7 @@ export async function DELETE(
       where: {
         id: chapterId,
         novel: {
-          authorId: session.user.email,
+          authorId: session.user.id,
         },
       },
     })
