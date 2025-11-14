@@ -16,12 +16,28 @@ export async function GET() {
       return unauthorizedResponse()
     }
 
-    // Count unique novels the user has read
-    const booksReadCount = await prisma.readingHistory.count({
+    // ⭐ 修正逻辑：只统计至少完成1个章节的小说
+    // 获取所有已完成的章节
+    const completedChapters = await prisma.chapterProgress.findMany({
       where: {
-        userId: session.user.id
-      }
+        userId: session.user.id,
+        isCompleted: true,
+      },
+      include: {
+        chapter: {
+          select: {
+            novelId: true,
+          },
+        },
+      },
     })
+
+    // 提取唯一的小说ID
+    const uniqueNovelIds = new Set(
+      completedChapters.map((progress) => progress.chapter.novelId)
+    )
+
+    const booksReadCount = uniqueNovelIds.size
 
     return successResponse({
       booksRead: booksReadCount
