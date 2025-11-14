@@ -415,7 +415,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    {chapter.wordCount.toLocaleString()} words
+                    {chapter.wordCount.toLocaleString()} characters
                   </p>
                 </div>
                 

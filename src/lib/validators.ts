@@ -218,13 +218,17 @@ export const WORD_LIMITS = {
   TITLE_MAX: 120,
   BLURB_MAX: 3000,
   CHAPTER_TITLE_MAX: 100,
-  CHAPTER_WORDS_MAX: 30000,
+  CHAPTER_CHARS_MAX: 30000, // ✅ 改名：字符数限制（不是单词数）
   COMMENT_MAX: 500,
   REVIEW_MAX: 1000,
 } as const
 
+// ⚠️ 向后兼容：保留旧名称
+export const CHAPTER_WORDS_MAX = WORD_LIMITS.CHAPTER_CHARS_MAX
+
 /**
- * 计算文本字符数
+ * 计算文本字符数（不是英文单词数）
+ * ✅ 适用于中文、英文等所有语言
  */
 export function countWords(text: string): number {
   return text.trim().length
