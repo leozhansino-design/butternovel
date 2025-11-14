@@ -274,6 +274,13 @@ export default function NovelsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
+                          href={`/novels/${novel.slug}`}
+                          target="_blank"
+                          className="text-sm text-gray-600 hover:text-indigo-600 font-medium transition-colors"
+                        >
+                          View
+                        </Link>
+                        <Link
                           href={`/dashboard/novels/${novel.id}/chapters`}
                           className="text-sm text-gray-600 hover:text-indigo-600 font-medium transition-colors"
                         >

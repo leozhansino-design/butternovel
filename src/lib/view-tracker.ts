@@ -16,22 +16,24 @@ function generateGuestId(ipAddress: string, userAgent: string): string {
   return crypto.createHash('md5').update(data).digest('hex')
 }
 
-// ✅ 2. 检查是否在24小时内已浏览
+// ✅ 2. 检查是否今天已浏览（每天计数一次）
 async function hasViewedRecently(
   novelId: number,
   userId: string | null | undefined,  // ✅ 修复：允许 null
   guestId: string
 ): Promise<boolean> {
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  // 获取今天的开始时间（00:00:00）
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
 
   try {
     // ✅ 优化: 使用 findFirst 代替 count，更快
     const recentView = await prisma.novelView.findFirst({
       where: {
         novelId,
-        ...(userId 
-          ? { userId, viewedAt: { gte: twentyFourHoursAgo } }
-          : { guestId, viewedAt: { gte: twentyFourHoursAgo } }
+        ...(userId
+          ? { userId, viewedAt: { gte: todayStart } }
+          : { guestId, viewedAt: { gte: todayStart } }
         )
       },
       select: { id: true }

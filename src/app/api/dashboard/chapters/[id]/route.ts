@@ -122,6 +122,22 @@ export async function PUT(
       })
     }
 
+    // Auto-publish novel when a chapter is published
+    if (body.isPublished === true && !existingChapter.isPublished) {
+      // Chapter is being published for the first time
+      const novel = await prisma.novel.findUnique({
+        where: { id: existingChapter.novelId },
+      })
+
+      // If novel is still a draft, publish it automatically
+      if (novel && !novel.isPublished) {
+        await prisma.novel.update({
+          where: { id: existingChapter.novelId },
+          data: { isPublished: true },
+        })
+      }
+    }
+
     return NextResponse.json({
       message: 'Chapter updated successfully',
       chapter: updatedChapter,

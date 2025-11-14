@@ -81,6 +81,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Auto-publish novel when a chapter is published
+    if (isPublished === true && !novel.isPublished) {
+      // Chapter is being published and novel is still a draft
+      await prisma.novel.update({
+        where: { id: parseInt(novelId) },
+        data: { isPublished: true },
+      })
+    }
+
     return NextResponse.json({
       message: 'Chapter created successfully',
       chapter,

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, X, Plus, Edit2, Trash2, AlertCircle } from 'lucide-react'
+import { Upload, X, Plus, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 
 // Category data (Genres)
@@ -40,15 +40,6 @@ const IMAGE_LIMITS = {
   ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
 }
 
-type Chapter = {
-  id: string
-  number: number
-  title: string
-  content: string
-  wordCount: number
-  isPublished: boolean
-}
-
 export default function NovelUploadForm() {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
@@ -62,8 +53,6 @@ export default function NovelUploadForm() {
     status: 'ONGOING',
     isPublished: false,
   })
-
-  const [chapters, setChapters] = useState<Chapter[]>([])
 
   // Handle cover upload
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,39 +106,14 @@ export default function NovelUploadForm() {
     img.src = objectUrl
   }
 
-  // Delete chapter
-  const handleDeleteChapter = (id: string) => {
-    if (confirm('Are you sure you want to delete this chapter?')) {
-      const filtered = chapters.filter((c) => c.id !== id)
-      const renumbered = filtered.map((ch, index) => ({
-        ...ch,
-        number: index + 1,
-      }))
-      setChapters(renumbered)
-    }
-  }
-
   // Submit form
-  const handleSubmit = async (e: React.FormEvent, publishNow: boolean = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // Validate
     if (!formData.title.trim() || !formData.coverImage || !formData.categoryId || !formData.blurb.trim()) {
       alert('Please fill in all required fields')
       return
-    }
-
-    if (publishNow && chapters.length === 0) {
-      alert('Please add at least one chapter before publishing')
-      return
-    }
-
-    if (publishNow) {
-      const hasPublishedChapter = chapters.some((ch) => ch.isPublished)
-      if (!hasPublishedChapter) {
-        alert('Please publish at least one chapter before publishing the novel')
-        return
-      }
     }
 
     setUploading(true)
@@ -166,12 +130,8 @@ export default function NovelUploadForm() {
           categoryId: parseInt(formData.categoryId),
           blurb: formData.blurb,
           status: formData.status,
-          isPublished: publishNow,
-          chapters: chapters.map((ch) => ({
-            title: ch.title,
-            content: ch.content,
-            isPublished: ch.isPublished,
-          })),
+          isPublished: false, // Always save as draft initially
+          chapters: [], // No chapters on creation
         }),
       })
 
@@ -181,8 +141,9 @@ export default function NovelUploadForm() {
         throw new Error(data.error || 'Upload failed')
       }
 
-      alert(`Success! Novel "${data.novel.title}" has been ${publishNow ? 'published' : 'saved as draft'}!`)
-      router.push('/dashboard/novels')
+      alert(`Success! Novel "${data.novel.title}" has been created! Redirecting to add first chapter...`)
+      // Redirect to add first chapter page
+      router.push(`/dashboard/novels/${data.novel.id}/chapters/new`)
     } catch (error: any) {
       console.error('Upload error:', error)
       alert('Error: ' + error.message)
@@ -196,7 +157,7 @@ export default function NovelUploadForm() {
   const blurbError = blurbCharCount >= LIMITS.BLURB_MAX
 
   return (
-    <form onSubmit={(e) => handleSubmit(e, false)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Left Column - Novel Details (2/3 width) */}
       <div className="lg:col-span-2 space-y-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -352,89 +313,32 @@ export default function NovelUploadForm() {
         </div>
       </div>
 
-      {/* Right Column - Chapters (1/3 width) */}
+      {/* Right Column - Action Button (1/3 width) */}
       <div className="lg:col-span-1 space-y-6">
+        {/* Info Note */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Chapters</h2>
-            <span className="text-sm text-gray-500">{chapters.length} total</span>
-          </div>
-
-          {/* Chapters List */}
-          {chapters.length > 0 ? (
-            <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
-              {chapters.map((chapter) => (
-                <div
-                  key={chapter.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900">Ch {chapter.number}</div>
-                    <div className="text-xs text-gray-500 truncate">{chapter.title}</div>
-                    <div className="text-xs text-gray-400 mt-1">{chapter.wordCount.toLocaleString()} words</div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        chapter.isPublished
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}
-                    >
-                      {chapter.isPublished ? 'Pub' : 'Draft'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteChapter(chapter.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+          <div className="text-center py-8 mb-6">
+            <div className="text-gray-400 mb-4">
+              <Plus size={48} strokeWidth={1.5} className="mx-auto" />
             </div>
-          ) : (
-            <div className="text-center py-12 mb-6">
-              <div className="text-gray-400 mb-3">
-                <Plus size={32} strokeWidth={1.5} className="mx-auto" />
-              </div>
-              <p className="text-sm font-medium text-gray-900 mb-1">No chapters yet</p>
-              <p className="text-xs text-gray-500">Add your first chapter</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Create Your Story</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Fill in the story details and click the button below to create your novel.
+            </p>
+            <div className="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="mb-1">💡 Tip: Add chapters after creating your story</p>
+              <p>After creation, you'll be redirected to add your first chapter</p>
             </div>
-          )}
-
-          {/* Info Note */}
-          <div className="text-xs text-gray-500 text-center py-4">
-            <p className="mb-1">💡 Tip: Add chapters after creating your story</p>
-            <p>Save as draft first, then go to "My Stories" to add chapters</p>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="space-y-3">
-            <button
-              type="submit"
-              disabled={uploading}
-              className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-            >
-              {uploading ? 'Saving...' : 'Save as Draft'}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => handleSubmit(e as any, true)}
-              disabled={uploading || chapters.length === 0}
-              className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-            >
-              {uploading ? 'Publishing...' : 'Publish Story'}
-            </button>
-            {chapters.length === 0 && (
-              <p className="text-xs text-gray-500 text-center">
-                Add at least one chapter to publish
-              </p>
-            )}
-          </div>
+          {/* Action Button */}
+          <button
+            type="submit"
+            disabled={uploading}
+            className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-lg"
+          >
+            {uploading ? 'Creating...' : 'Create My Story'}
+          </button>
         </div>
       </div>
     </form>

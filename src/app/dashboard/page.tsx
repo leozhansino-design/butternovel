@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import WriterProfileCard from '@/components/dashboard/WriterProfileCard'
 
 async function getDashboardStats(userEmail: string) {
   try {
@@ -102,6 +103,11 @@ export default async function DashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Writer Profile - Full Width at Top */}
+        <div className="mb-8">
+          <WriterProfileCard user={session.user} />
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-6 mb-8">
           {/* Total Stories */}

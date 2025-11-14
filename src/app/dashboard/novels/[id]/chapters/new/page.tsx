@@ -53,7 +53,7 @@ export default function NewChapterPage() {
   }, [novelId])
 
   // Save draft
-  const saveDraft = useCallback(async () => {
+  const saveDraft = useCallback(async (clearFormAfterSave = false) => {
     if (!title.trim() || !content.trim()) return
 
     setSaving(true)
@@ -74,8 +74,24 @@ export default function NewChapterPage() {
       if (response.ok) {
         const data = await response.json()
         setLastSaved(new Date())
-        alert('Draft saved successfully!')
-        router.push(`/dashboard/novels/${novelId}/chapters`)
+
+        if (clearFormAfterSave) {
+          // Clear form for next chapter
+          setTitle('')
+          setContent('')
+          setLastSaved(null)
+
+          // Refresh chapter list
+          const novelResponse = await fetch(`/api/dashboard/novels/${novelId}`)
+          if (novelResponse.ok) {
+            const novelData = await novelResponse.json()
+            setNovel(novelData.novel)
+            setChapters(novelData.novel.chapters || [])
+          }
+        }
+      } else {
+        const data = await response.json()
+        alert(`Failed to save: ${data.error}`)
       }
     } catch (error) {
       console.error('Failed to save draft:', error)
@@ -83,7 +99,7 @@ export default function NewChapterPage() {
     } finally {
       setSaving(false)
     }
-  }, [novelId, title, content, router])
+  }, [novelId, title, content])
 
   // Auto-save
   useEffect(() => {
@@ -129,8 +145,20 @@ export default function NewChapterPage() {
       })
 
       if (response.ok) {
-        alert('Chapter published successfully!')
-        router.push(`/dashboard/novels/${novelId}/chapters`)
+        const data = await response.json()
+
+        // Clear form for next chapter
+        setTitle('')
+        setContent('')
+        setLastSaved(null)
+
+        // Refresh chapter list
+        const novelResponse = await fetch(`/api/dashboard/novels/${novelId}`)
+        if (novelResponse.ok) {
+          const novelData = await novelResponse.json()
+          setNovel(novelData.novel)
+          setChapters(novelData.novel.chapters || [])
+        }
       } else {
         const data = await response.json()
         alert(`Failed to publish: ${data.error}`)
@@ -181,7 +209,7 @@ export default function NewChapterPage() {
               </div>
 
               {/* Chapter Navigation */}
-              <div className="space-y-1 max-h-96 overflow-y-auto">
+              <div className="space-y-1 max-h-96 overflow-y-auto mb-3">
                 {chapters.map((chapter) => (
                   <Link
                     key={chapter.id}
@@ -200,6 +228,22 @@ export default function NewChapterPage() {
                   <div className="text-xs text-indigo-500">Currently editing</div>
                 </div>
               </div>
+
+              {/* Add Next Chapter Button */}
+              <button
+                onClick={() => {
+                  if (!title.trim() || !content.trim()) {
+                    alert('Please write some content before adding a new chapter')
+                    return
+                  }
+                  // Save current chapter and clear form for next chapter
+                  saveDraft(true)
+                }}
+                disabled={saving}
+                className="w-full px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? 'Saving...' : '+ Add Next Chapter'}
+              </button>
             </div>
           </div>
 
@@ -213,7 +257,7 @@ export default function NewChapterPage() {
             {/* Action Buttons */}
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-200">
               <button
-                onClick={saveDraft}
+                onClick={() => saveDraft(false)}
                 disabled={saving || !title.trim() || !content.trim()}
                 className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
               >
@@ -258,8 +302,9 @@ export default function NewChapterPage() {
                 value={content}
                 onChange={handleContentChange}
                 placeholder="Start writing your chapter here..."
-                className="w-full min-h-[500px] text-lg leading-relaxed focus:outline-none resize-none font-serif border-0 focus:ring-0"
-                style={{ fontSize: '18px', lineHeight: '1.8' }}
+                className="w-full min-h-screen text-lg leading-relaxed focus:outline-none resize-none font-serif border-0 focus:ring-0"
+                style={{ fontSize: '18px', lineHeight: '1.8', height: 'auto' }}
+                rows={30}
               />
             </div>
           </div>
