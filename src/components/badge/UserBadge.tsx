@@ -138,7 +138,7 @@ export default function UserBadge({
             width: `${config.avatar}px`,
             height: `${config.avatar}px`,
             margin: 'auto',
-            marginTop: badgeStyle.gradient ? '0' : `${config.borderWidth}px`,
+            marginTop: levelData.badgeStyle.gradient ? '0' : `${config.borderWidth}px`,
           }}
         >
           {avatar ? (
