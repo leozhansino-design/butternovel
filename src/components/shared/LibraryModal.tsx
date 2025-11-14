@@ -16,13 +16,13 @@ interface LibraryModalProps {
     email?: string | null
     image?: string | null
   }
-  defaultView?: 'profile' | 'library' | 'history' | 'works' | 'reviews'
+  defaultView?: 'profile' | 'library' | 'history' | 'novels' | 'reviews'
 }
 
 export default function LibraryModal({ isOpen, onClose, user, defaultView = 'library' }: LibraryModalProps) {
-  const [activeTab, setActiveTab] = useState<'works' | 'library' | 'history' | 'reviews'>(
+  const [activeTab, setActiveTab] = useState<'novels' | 'library' | 'history' | 'reviews'>(
     defaultView === 'history' ? 'history' :
-    defaultView === 'works' ? 'works' :
+    defaultView === 'novels' ? 'novels' :
     defaultView === 'reviews' ? 'reviews' :
     'library'
   )
@@ -32,8 +32,8 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
     if (isOpen) {
       if (defaultView === 'history') {
         setActiveTab('history')
-      } else if (defaultView === 'works') {
-        setActiveTab('works')
+      } else if (defaultView === 'novels') {
+        setActiveTab('novels')
       } else if (defaultView === 'reviews') {
         setActiveTab('reviews')
       } else {
@@ -74,14 +74,14 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
           <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-4">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setActiveTab('works')}
+                onClick={() => setActiveTab('novels')}
                 className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
-                  activeTab === 'works'
+                  activeTab === 'novels'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
                 }`}
               >
-                Works
+                Novels
               </button>
               <button
                 onClick={() => setActiveTab('library')}
@@ -91,7 +91,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
                 }`}
               >
-                My Library
+                Library
               </button>
               <button
                 onClick={() => setActiveTab('history')}
@@ -120,7 +120,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
         {/* 底部 - Tab 内容 */}
         <div className="flex-1 overflow-hidden px-6 pt-4 pb-6">
           <div className="h-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
-            {activeTab === 'works' && <WorksTab onClose={onClose} />}
+            {activeTab === 'novels' && <WorksTab onClose={onClose} />}
             {activeTab === 'library' && <MyLibrary onClose={onClose} />}
             {activeTab === 'history' && <ReadingHistory onClose={onClose} />}
             {activeTab === 'reviews' && <RatingsTab />}

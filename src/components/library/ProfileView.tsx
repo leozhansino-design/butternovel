@@ -3,8 +3,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import UserBadge from '@/components/badge/UserBadge'
 import { formatReadingTime, getUserLevel } from '@/lib/badge-system'
+import FollowListModal from '@/components/profile/FollowListModal'
 
 type ProfileViewProps = {
   user: {
@@ -24,14 +26,16 @@ type ProfileData = {
   contributionPoints: number
   level: number
   stats: {
-    booksInLibrary: number
-    chaptersRead: number
-    readingTime: number
+    booksRead: number
+    following: number
+    followers: number
     totalRatings: number
+    readingTime: number
   }
 }
 
 export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
+  const router = useRouter()
   // ✅ Get session update function
   const { update } = useSession()
 
@@ -40,6 +44,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [showFollowModal, setShowFollowModal] = useState<'following' | 'followers' | null>(null)
 
   const [editName, setEditName] = useState('')
   const [editBio, setEditBio] = useState('')
@@ -273,7 +278,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
             {/* Level name below avatar */}
             <div className="text-center">
-              <p className="text-xs font-semibold text-amber-600">{levelData.name}</p>
+              <p className="text-xs font-semibold text-amber-600">{levelData.nameEn}</p>
             </div>
           </div>
 
@@ -344,30 +349,44 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                   <p className="text-gray-400 italic text-sm mb-4">No bio yet. Click the edit button to add one!</p>
                 )}
 
-                {/* Stats cards - 4 cards in a row */}
+                {/* Stats cards - 4 cards in a row with frosted glass effect */}
                 <div className="grid grid-cols-4 gap-3">
-                  {/* Library */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 text-center">
-                    <div className="text-lg font-bold text-blue-600">{profileData.stats.booksInLibrary}</div>
-                    <div className="text-xs text-blue-800 mt-0.5">Library</div>
+                  {/* Books Read */}
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg">
+                    <div className="text-lg font-bold text-gray-900">{profileData.stats.booksRead}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">Books Read</div>
                   </div>
 
-                  {/* Books Read */}
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center">
-                    <div className="text-lg font-bold text-green-600">{profileData.stats.chaptersRead}</div>
-                    <div className="text-xs text-green-800 mt-0.5">Chapters Read</div>
-                  </div>
+                  {/* Following - clickable */}
+                  <button
+                    onClick={() => setShowFollowModal('following')}
+                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
+                  >
+                    <div className="text-lg font-bold text-gray-900">{profileData.stats.following}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">Following</div>
+                  </button>
+
+                  {/* Followers - clickable */}
+                  <button
+                    onClick={() => setShowFollowModal('followers')}
+                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
+                  >
+                    <div className="text-lg font-bold text-gray-900">{profileData.stats.followers}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">Followers</div>
+                  </button>
 
                   {/* Reviews */}
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 text-center">
-                    <div className="text-lg font-bold text-purple-600">{profileData.stats.totalRatings}</div>
-                    <div className="text-xs text-purple-800 mt-0.5">Reviews</div>
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg">
+                    <div className="text-lg font-bold text-gray-900">{profileData.stats.totalRatings}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">Reviews</div>
                   </div>
+                </div>
 
-                  {/* Reading Time */}
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 text-center">
-                    <div className="text-sm font-bold text-orange-600">{formatReadingTime(profileData.stats.readingTime)}</div>
-                    <div className="text-xs text-orange-800 mt-0.5">Reading Time</div>
+                {/* Reading Time - separate row */}
+                <div className="mt-3">
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg">
+                    <div className="text-sm font-bold text-gray-900">{formatReadingTime(profileData.stats.readingTime)}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">Reading Time</div>
                   </div>
                 </div>
               </div>
@@ -375,6 +394,20 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Follow List Modal */}
+      {showFollowModal && profileData && (
+        <FollowListModal
+          isOpen={!!showFollowModal}
+          onClose={() => setShowFollowModal(null)}
+          userId={profileData.id}
+          type={showFollowModal}
+          onUserClick={(userId) => {
+            setShowFollowModal(null)
+            router.push(`/profile/${userId}`)
+          }}
+        />
+      )}
     </div>
   )
 }

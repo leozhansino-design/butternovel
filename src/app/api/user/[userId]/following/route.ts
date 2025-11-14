@@ -1,0 +1,46 @@
+// src/app/api/user/[userId]/following/route.ts
+import { prisma } from '@/lib/prisma'
+import { withErrorHandling, errorResponse, successResponse } from '@/lib/api-error-handler'
+
+// GET - Get list of users that this user is following
+export const GET = withErrorHandling(async (
+  request: Request,
+  context: { params: Promise<{ userId: string }> }
+) => {
+  const { userId } = await context.params
+
+  if (!userId) {
+    return errorResponse('User ID is required', 400, 'VALIDATION_ERROR')
+  }
+
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  })
+
+  if (!user) {
+    return errorResponse('User not found', 404, 'USER_NOT_FOUND')
+  }
+
+  // Get following list
+  const following = await prisma.follow.findMany({
+    where: { followerId: userId },
+    include: {
+      following: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+          bio: true,
+          level: true,
+          contributionPoints: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  return successResponse({
+    following: following.map(f => f.following)
+  })
+})
