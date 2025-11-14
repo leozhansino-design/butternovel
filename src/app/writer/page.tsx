@@ -1,5 +1,7 @@
 // src/app/writer/page.tsx
 import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
 import Footer from '@/components/shared/Footer'
 import Link from 'next/link'
 
@@ -85,11 +87,10 @@ async function WriterContent() {
           </div>
         </div>
 
-        {/* Coming Soon Notice */}
+        {/* Info Notice */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500">
-            ℹ️ Writer dashboard and publishing tools are currently under development.
-            Sign up now to get early access!
+            ✨ Already have an account? You'll be automatically redirected to your Writer Dashboard.
           </p>
         </div>
       </div>
@@ -103,7 +104,15 @@ export const revalidate = 3600
 // ⚡ CRITICAL: 覆盖 Upstash Redis 的 no-store，允许 ISR 缓存（虽然此页面不使用 Redis）
 export const fetchCache = 'default-cache'
 
-export default function WriterPage() {
+export default async function WriterPage() {
+  // Check if user is already logged in
+  const session = await auth()
+
+  // If logged in, redirect to dashboard
+  if (session?.user) {
+    redirect('/dashboard')
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Suspense fallback={

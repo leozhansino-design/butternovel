@@ -160,7 +160,7 @@ export default async function ManageNovelsPage(props: Props) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
                   Actions
                 </th>
               </tr>
@@ -229,18 +229,18 @@ export default async function ManageNovelsPage(props: Props) {
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
+                  <td className="px-6 py-4 text-right w-64">
+                    <div className="flex justify-end gap-2 flex-nowrap">
                       <Link
                         href={`/admin/novels/${novel.id}/edit`}
-                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
                       >
                         Edit
                       </Link>
                       <Link
                         href={`/novels/${novel.slug}`}
                         target="_blank"
-                        className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                        className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors whitespace-nowrap"
                       >
                         View
                       </Link>
