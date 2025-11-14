@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useReadingTimeTracker } from '@/hooks/useReadingTimeTracker'
 
 interface Chapter {
   id: number
@@ -59,6 +60,9 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const [showSettings, setShowSettings] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [pages, setPages] = useState<string[]>([])
+
+  // ⭐ 追踪阅读时长
+  useReadingTimeTracker(chapter.id)
 
   // ⭐ 新增：进入章节时立即记录阅读进度
   useEffect(() => {

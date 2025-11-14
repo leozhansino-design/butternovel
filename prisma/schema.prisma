@@ -43,6 +43,10 @@ model User {
   isActive   Boolean @default(true)
   isBanned   Boolean @default(false)
 
+  // ⭐ 用户等级系统
+  contributionPoints  Int @default(0)  // 贡献度分数
+  totalReadingMinutes Int @default(0)  // 总阅读时长（分钟）
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -461,6 +465,22 @@ model NovelView {
   @@index([novelId, userId, viewedAt])
   @@index([novelId, guestId, viewedAt])
   @@index([viewedAt])  // 用于定期清理旧数据
+}
+
+// ⭐ 阅读时长追踪
+model ReadingSession {
+  id        String   @id @default(cuid())
+  userId    String
+  chapterId Int
+
+  startTime DateTime @default(now())
+  endTime   DateTime?
+  duration  Int      @default(0)  // 阅读时长（分钟）
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([chapterId])
 }
 
 
