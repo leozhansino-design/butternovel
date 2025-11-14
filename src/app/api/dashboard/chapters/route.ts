@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { validateWithSchema, chapterCreateSchema, countWords, WORD_LIMITS } from '@/lib/validators'
 
 // POST - Create a new chapter
 export async function POST(request: NextRequest) {
@@ -15,20 +16,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { novelId, title, content, isPublished } = body
 
-    // Validate required fields
-    if (!novelId || !title || !content) {
+    // ✅ Validate using Zod schema (validates title, content length, etc.)
+    const validation = validateWithSchema(chapterCreateSchema, {
+      novelId: body.novelId,
+      title: body.title,
+      content: body.content,
+      chapterNumber: 0, // Will be calculated below
+      isPublished: body.isPublished,
+    })
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error, details: validation.details },
         { status: 400 }
       )
     }
 
+    const { novelId, title, content, isPublished } = validation.data
+
     // Check if novel belongs to this author
     const novel = await prisma.novel.findFirst({
       where: {
-        id: parseInt(novelId),
+        id: novelId,
         authorId: session.user.email,
       },
       include: {
@@ -62,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Create chapter
     const chapter = await prisma.chapter.create({
       data: {
-        novelId: parseInt(novelId),
+        novelId,
         chapterNumber: nextChapterNumber,
         title,
         slug,
@@ -74,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // Update novel statistics
     await prisma.novel.update({
-      where: { id: parseInt(novelId) },
+      where: { id: novelId },
       data: {
         totalChapters: { increment: 1 },
         wordCount: { increment: wordCount },
@@ -85,7 +95,7 @@ export async function POST(request: NextRequest) {
     if (isPublished === true && !novel.isPublished) {
       // Chapter is being published and novel is still a draft
       await prisma.novel.update({
-        where: { id: parseInt(novelId) },
+        where: { id: novelId },
         data: { isPublished: true },
       })
     }

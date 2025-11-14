@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import cloudinary from '@/lib/cloudinary'
+import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
 
 // GET - List all novels by the current author
 export async function GET(request: NextRequest) {
@@ -79,30 +80,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, coverImage, categoryId, blurb, status, isPublished, chapters } = body
 
-    // Validate required fields
-    if (!title || !coverImage || !categoryId || !blurb) {
+    // ✅ Validate using Zod schema (validates title, blurb, chapters, etc.)
+    const validation = validateWithSchema(novelCreateSchema, body)
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error, details: validation.details },
         { status: 400 }
       )
     }
 
-    // Validate field lengths
-    if (title.length > 120) {
-      return NextResponse.json(
-        { error: 'Title must be 120 characters or less' },
-        { status: 400 }
-      )
-    }
-
-    if (blurb.length > 3000) {
-      return NextResponse.json(
-        { error: 'Blurb must be 3000 characters or less' },
-        { status: 400 }
-      )
-    }
+    const { title, coverImage, categoryId, blurb, status, isPublished, chapters } = validation.data
 
     // Upload cover image to Cloudinary
     let coverImageUrl = ''
@@ -144,7 +133,7 @@ export async function POST(request: NextRequest) {
         blurb,
         authorId: session.user.email,
         authorName: session.user.name || 'Anonymous Author',
-        categoryId: parseInt(categoryId),
+        categoryId,
         status: status || 'ONGOING',
         isPublished: isPublished || false,
         isDraft: !isPublished,

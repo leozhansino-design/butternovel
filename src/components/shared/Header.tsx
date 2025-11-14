@@ -3,20 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import AuthModal from '@/components/auth/AuthModal';
 import UserMenu from '@/components/shared/UserMenu';
 import LibraryModal from '@/components/shared/LibraryModal';
 
-type HeaderProps = {
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  } | null;
-};
-
-export default function Header({ user }: HeaderProps) {
+export default function Header() {
+  // ✅ Use useSession to get real-time session updates
+  const { data: session } = useSession();
+  const user = session?.user;
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

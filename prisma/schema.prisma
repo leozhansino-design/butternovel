@@ -55,6 +55,7 @@ model User {
   comments        Comment[]
   ratings         Rating[]
   ratingLikes     RatingLike[] // 评分点赞
+  ratingReplies   RatingReply[] // 评分回复
 
   // 社区功能（后期）
   forumPosts   ForumPost[]
@@ -294,6 +295,7 @@ model Rating {
   novel   Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
 
   likes RatingLike[] // 点赞列表
+  replies RatingReply[] // 回复列表
 
   @@unique([userId, novelId]) // 每个用户只能评分一次
   @@index([novelId])
@@ -323,6 +325,32 @@ model RatingLike {
   @@unique([userId, ratingId]) // 登录用户每个评分只能点赞一次
   @@unique([guestId, ratingId]) // 游客每个评分只能点赞一次
   @@index([ratingId])
+}
+
+// 评分回复
+model RatingReply {
+  id String @id @default(cuid())
+  content String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 用户 (必须登录才能回复)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 评分
+  ratingId String
+  rating   Rating @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+
+  // 嵌套回复支持 (可选 - 如果这是对其他回复的回复)
+  parentReplyId String?
+  parentReply   RatingReply?  @relation("ReplyToReply", fields: [parentReplyId], references: [id], onDelete: Cascade)
+  childReplies  RatingReply[] @relation("ReplyToReply")
+
+  @@index([ratingId, createdAt])
+  @@index([parentReplyId])
+  @@index([userId])
 }
 
 // ============================================
