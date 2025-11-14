@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         blurb,
         authorId: session.user.email,
         authorName: session.user.name || 'Anonymous Author',
-        categoryId: parseInt(categoryId),
+        categoryId,
         status: status || 'ONGOING',
         isPublished: isPublished || false,
         isDraft: !isPublished,
