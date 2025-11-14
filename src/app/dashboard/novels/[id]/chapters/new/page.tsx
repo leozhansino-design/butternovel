@@ -53,7 +53,7 @@ export default function NewChapterPage() {
   }, [novelId])
 
   // Save draft
-  const saveDraft = useCallback(async () => {
+  const saveDraft = useCallback(async (redirectToNew = false) => {
     if (!title.trim() || !content.trim()) return
 
     setSaving(true)
@@ -74,8 +74,13 @@ export default function NewChapterPage() {
       if (response.ok) {
         const data = await response.json()
         setLastSaved(new Date())
-        alert('Draft saved successfully!')
-        router.push(`/dashboard/novels/${novelId}/chapters`)
+
+        if (redirectToNew) {
+          // Redirect to new chapter page
+          alert('Chapter saved! Redirecting to add next chapter...')
+          router.push(`/dashboard/novels/${novelId}/chapters/new`)
+          router.refresh()
+        }
       }
     } catch (error) {
       console.error('Failed to save draft:', error)
@@ -129,8 +134,14 @@ export default function NewChapterPage() {
       })
 
       if (response.ok) {
-        alert('Chapter published successfully!')
-        router.push(`/dashboard/novels/${novelId}/chapters`)
+        const data = await response.json()
+        alert('Chapter published successfully! Redirecting to add next chapter...')
+        // Redirect to add next chapter page
+        router.push(`/dashboard/novels/${novelId}/chapters/new`)
+        // Clear form for new chapter
+        setTitle('')
+        setContent('')
+        setLastSaved(null)
       } else {
         const data = await response.json()
         alert(`Failed to publish: ${data.error}`)
@@ -181,7 +192,7 @@ export default function NewChapterPage() {
               </div>
 
               {/* Chapter Navigation */}
-              <div className="space-y-1 max-h-96 overflow-y-auto">
+              <div className="space-y-1 max-h-96 overflow-y-auto mb-3">
                 {chapters.map((chapter) => (
                   <Link
                     key={chapter.id}
@@ -200,6 +211,22 @@ export default function NewChapterPage() {
                   <div className="text-xs text-indigo-500">Currently editing</div>
                 </div>
               </div>
+
+              {/* Add Next Chapter Button */}
+              <button
+                onClick={() => {
+                  if (!title.trim() || !content.trim()) {
+                    alert('Please save the current chapter first before adding a new one')
+                    return
+                  }
+                  // Save current chapter first, then redirect to new chapter page
+                  saveDraft(true)
+                }}
+                disabled={saving}
+                className="w-full px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? 'Saving...' : '+ Add Next Chapter'}
+              </button>
             </div>
           </div>
 

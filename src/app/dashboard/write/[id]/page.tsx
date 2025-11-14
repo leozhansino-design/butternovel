@@ -246,7 +246,7 @@ export default function EditChapterPage() {
               </div>
 
               {/* Chapter Navigation */}
-              <div className="space-y-1 max-h-96 overflow-y-auto">
+              <div className="space-y-1 max-h-96 overflow-y-auto mb-3">
                 {chapters.map((chapter) => (
                   <Link
                     key={chapter.id}
@@ -262,6 +262,14 @@ export default function EditChapterPage() {
                   </Link>
                 ))}
               </div>
+
+              {/* Add Next Chapter Button */}
+              <Link
+                href={`/dashboard/novels/${novel.id}/chapters/new`}
+                className="block w-full px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors text-center"
+              >
+                + Add Next Chapter
+              </Link>
             </div>
           </div>
 

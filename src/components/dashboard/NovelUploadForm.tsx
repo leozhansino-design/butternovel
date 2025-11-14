@@ -181,8 +181,9 @@ export default function NovelUploadForm() {
         throw new Error(data.error || 'Upload failed')
       }
 
-      alert(`Success! Novel "${data.novel.title}" has been ${publishNow ? 'published' : 'saved as draft'}!`)
-      router.push('/dashboard/novels')
+      alert(`Success! Novel "${data.novel.title}" has been ${publishNow ? 'published' : 'saved as draft'}! Redirecting to add first chapter...`)
+      // Redirect to add first chapter page
+      router.push(`/dashboard/novels/${data.novel.id}/chapters/new`)
     } catch (error: any) {
       console.error('Upload error:', error)
       alert('Error: ' + error.message)
