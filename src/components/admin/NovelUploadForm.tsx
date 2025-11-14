@@ -72,9 +72,9 @@ export default function NovelUploadForm() {
     content: '',
   })
 
-  // ⭐ 计算当前章节字数
-  const currentWordCount = currentChapter.content.trim().split(/\s+/).filter(w => w).length
-  const isOverLimit = currentWordCount > LIMITS.CHAPTER_WORDS_MAX
+  // ⭐ 计算当前章节字符数
+  const currentWordCount = currentChapter.content.trim().length
+  const isOverLimit = currentWordCount > LIMITS.CHAPTER_CHARS_MAX
 
   // 处理封面上传
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -513,9 +513,9 @@ export default function NovelUploadForm() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Chapter Content
-                {/* ⭐ 显示字数和限制 */}
+                {/* ⭐ 显示字符数和限制 */}
                 <span className={`ml-2 text-xs ${isOverLimit ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
-                  ({currentWordCount.toLocaleString()} / {LIMITS.CHAPTER_WORDS_MAX.toLocaleString()} words)
+                  ({currentWordCount.toLocaleString()} / {LIMITS.CHAPTER_CHARS_MAX.toLocaleString()} characters)
                 </span>
               </label>
               <textarea
@@ -530,7 +530,7 @@ export default function NovelUploadForm() {
               {/* ⭐ 超过限制时显示警告 */}
               {isOverLimit && (
                 <p className="text-sm text-red-600 mt-2 font-medium">
-                  ⚠️ Warning: Chapter exceeds maximum word limit by {(currentWordCount - LIMITS.CHAPTER_WORDS_MAX).toLocaleString()} words
+                  ⚠️ Warning: Chapter exceeds maximum character limit by {(currentWordCount - LIMITS.CHAPTER_CHARS_MAX).toLocaleString()} characters
                 </p>
               )}
             </div>
