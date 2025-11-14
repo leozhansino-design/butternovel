@@ -74,11 +74,9 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
         {/* Menu Items */}
         <div className="py-2">
           {/* Profile */}
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onOpenLibrary?.('profile');
-            }}
+          <Link
+            href="/profile"
+            onClick={() => setIsOpen(false)}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <div className="w-5 h-5 flex items-center justify-center">
@@ -87,7 +85,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
               </svg>
             </div>
             <span>Profile</span>
-          </button>
+          </Link>
 
           {/* My Library */}
           <button

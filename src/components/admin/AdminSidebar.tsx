@@ -50,7 +50,10 @@ export default function AdminSidebar({ adminName, adminEmail }: Props) {
   const handleLogout = async () => {
     if (!confirm('Are you sure you want to logout?')) return
     try {
-      await fetch('/api/admin/logout', { method: 'POST' })
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'include' // ✅ 确保 cookie 总是被发送
+      })
       router.push('/auth/admin-login')
       router.refresh()
     } catch (error) {

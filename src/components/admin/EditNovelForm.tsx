@@ -125,6 +125,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
       const response = await fetch(`/api/admin/novels/${novel.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ 确保 cookie 总是被发送
         body: JSON.stringify(updates)
       })
 
@@ -162,6 +163,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
       const response = await fetch(`/api/admin/chapters/${chapterId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ 确保 cookie 总是被发送
         body: JSON.stringify({ isPublished: !currentStatus })
       })
 
@@ -196,7 +198,8 @@ export default function EditNovelForm({ novel, categories }: Props) {
 
     try {
       const response = await fetch(`/api/admin/novels/${novel.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include' // ✅ 确保 cookie 总是被发送
       })
 
       const data = await response.json()

@@ -32,7 +32,9 @@ export default function AdminDashboardPage() {
       setLoading(true)
       try {
         // 获取统计数据
-        const statsRes = await fetch(`/api/admin/stats?range=${range}`)
+        const statsRes = await fetch(`/api/admin/stats?range=${range}`, {
+          credentials: 'include' // ✅ 确保 cookie 总是被发送
+        })
         const statsData = await statsRes.json()
         setStats(statsData.stats)
         setRangeLabel(statsData.label)
@@ -41,6 +43,7 @@ export default function AdminDashboardPage() {
         const chartRes = await fetch('/api/admin/stats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // ✅ 确保 cookie 总是被发送
           body: JSON.stringify({ range })
         })
         const chartDataRes = await chartRes.json()

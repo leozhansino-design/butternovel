@@ -31,6 +31,7 @@ export default function BanButton({ novelId, isBanned }: Props) {
       const response = await fetch(`/api/admin/novels/${novelId}/ban`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ 确保 cookie 总是被发送
         body: JSON.stringify({ isBanned: newBannedState })
       })
 

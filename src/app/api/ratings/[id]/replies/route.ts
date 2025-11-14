@@ -23,6 +23,8 @@ export async function GET(request: NextRequest, { params }: Params) {
             id: true,
             name: true,
             avatar: true,
+            contributionPoints: true,
+            level: true,
           },
         },
         childReplies: {
@@ -138,6 +140,8 @@ export async function POST(request: NextRequest, { params }: Params) {
             id: true,
             name: true,
             avatar: true,
+            contributionPoints: true,
+            level: true,
           },
         },
       },

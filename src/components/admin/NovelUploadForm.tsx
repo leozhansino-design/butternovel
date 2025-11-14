@@ -228,6 +228,7 @@ export default function NovelUploadForm() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // ✅ 确保 cookie 总是被发送
         body: JSON.stringify({
           title: formData.title,
           coverImage: formData.coverImage,
