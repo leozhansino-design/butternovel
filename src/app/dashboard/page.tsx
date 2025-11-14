@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import WriterProfileCard from '@/components/dashboard/WriterProfileCard'
 
 async function getDashboardStats(userEmail: string) {
   try {
@@ -102,44 +103,51 @@ export default async function DashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
-          {/* Total Stories */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-500">Total Stories</p>
-              <BookOpen className="text-gray-400" size={20} />
+        <div className="grid grid-cols-3 gap-6 mb-8">
+          {/* Left: Stats Cards */}
+          <div className="col-span-2 grid grid-cols-2 gap-6">
+            {/* Total Stories */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-500">Total Stories</p>
+                <BookOpen className="text-gray-400" size={20} />
+              </div>
+              <p className="text-3xl font-semibold text-gray-900">{stats.totalNovels}</p>
             </div>
-            <p className="text-3xl font-semibold text-gray-900">{stats.totalNovels}</p>
+
+            {/* Total Chapters */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-500">Total Chapters</p>
+                <FileText className="text-gray-400" size={20} />
+              </div>
+              <p className="text-3xl font-semibold text-gray-900">{stats.totalChapters}</p>
+            </div>
+
+            {/* Total Views */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-500">Total Views</p>
+                <Eye className="text-gray-400" size={20} />
+              </div>
+              <p className="text-3xl font-semibold text-gray-900">{stats.totalViews.toLocaleString()}</p>
+            </div>
+
+            {/* Average Rating */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-500">Avg. Rating</p>
+                <Star className="text-gray-400" size={20} />
+              </div>
+              <p className="text-3xl font-semibold text-gray-900">
+                {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : '—'}
+              </p>
+            </div>
           </div>
 
-          {/* Total Chapters */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-500">Total Chapters</p>
-              <FileText className="text-gray-400" size={20} />
-            </div>
-            <p className="text-3xl font-semibold text-gray-900">{stats.totalChapters}</p>
-          </div>
-
-          {/* Total Views */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-500">Total Views</p>
-              <Eye className="text-gray-400" size={20} />
-            </div>
-            <p className="text-3xl font-semibold text-gray-900">{stats.totalViews.toLocaleString()}</p>
-          </div>
-
-          {/* Average Rating */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-500">Avg. Rating</p>
-              <Star className="text-gray-400" size={20} />
-            </div>
-            <p className="text-3xl font-semibold text-gray-900">
-              {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : '—'}
-            </p>
+          {/* Right: Writer Profile */}
+          <div className="col-span-1">
+            <WriterProfileCard user={session.user} />
           </div>
         </div>
 

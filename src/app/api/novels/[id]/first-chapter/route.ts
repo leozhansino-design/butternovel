@@ -1,44 +1,45 @@
 // src/app/api/novels/[id]/first-chapter/route.ts
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import {
-  successResponse,
-  notFoundResponse,
-  handleApiError
-} from '@/lib/api-response'
 
-// GET - Get first chapter of a novel
+// GET - Get first chapter ID for a novel (for reading history tracking)
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
     const novelId = parseInt(id)
 
-    if (isNaN(novelId)) {
-      return notFoundResponse('Novel')
-    }
-
-    // Find first published chapter
+    // Find the first published chapter
     const firstChapter = await prisma.chapter.findFirst({
       where: {
         novelId,
-        isPublished: true
+        isPublished: true,
       },
       orderBy: {
-        chapterNumber: 'asc'
+        chapterNumber: 'asc',
       },
       select: {
-        id: true
-      }
+        id: true,
+      },
     })
 
     if (!firstChapter) {
-      return notFoundResponse('Chapter')
+      return NextResponse.json(
+        { error: 'No published chapters found' },
+        { status: 404 }
+      )
     }
 
-    return successResponse({ chapterId: firstChapter.id })
+    return NextResponse.json({
+      chapterId: firstChapter.id,
+    })
   } catch (error) {
-    return handleApiError(error, 'Failed to get first chapter')
+    console.error('[First Chapter API] Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch first chapter' },
+      { status: 500 }
+    )
   }
 }
