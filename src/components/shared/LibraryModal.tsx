@@ -42,13 +42,18 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
       const fetchUserData = async () => {
         try {
           setLoadingUser(true)
+          console.log('[LibraryModal] Fetching user data for userId:', viewUserId)
           const res = await fetch(`/api/user/${viewUserId}`)
           const data = await res.json()
+          console.log('[LibraryModal] Response:', { ok: res.ok, status: res.status, data })
           if (res.ok && data.success) {
+            console.log('[LibraryModal] Setting user data:', data.data)
             setOtherUserData(data.data)
+          } else {
+            console.error('[LibraryModal] Failed to load user:', { ok: res.ok, success: data.success, data })
           }
         } catch (error) {
-          console.error('Failed to fetch user data:', error)
+          console.error('[LibraryModal] Failed to fetch user data:', error)
         } finally {
           setLoadingUser(false)
         }

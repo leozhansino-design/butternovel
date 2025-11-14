@@ -88,6 +88,8 @@ export default function RatingModal({
   const [viewingUserId, setViewingUserId] = useState<string | null>(null)
 
   const handleUserClick = (clickedUserId: string) => {
+    console.log('[RatingModal] User clicked, userId:', clickedUserId)
+    console.log('[RatingModal] Current session userId:', session?.user?.id)
     setViewingUserId(clickedUserId)
     setShowLibraryModal(true)
   }

@@ -60,7 +60,7 @@ export const GET = withErrorHandling(async (
     console.log('Follow table does not exist yet. Run: npx prisma db push')
   }
 
-  return successResponse({
+  const userData = {
     ...user,
     stats: {
       booksRead: booksRead,
@@ -69,5 +69,16 @@ export const GET = withErrorHandling(async (
       totalRatings: user._count.ratings,
       readingTime: user.totalReadingTime,
     },
+  }
+
+  console.log('[API /api/user/[userId]] Returning user data:', {
+    userId: userId,
+    userName: user.name,
+    hasStats: !!userData.stats
   })
+
+  return NextResponse.json({
+    success: true,
+    data: userData
+  }, { status: 200 })
 })
