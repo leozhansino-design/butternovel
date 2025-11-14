@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Edit, Trash2, FileText, Eye } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, Trash2, FileText, Eye, Send, Archive } from 'lucide-react'
 
 type Chapter = {
   id: number
@@ -30,6 +30,7 @@ export default function ChaptersPage() {
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<number | null>(null)
+  const [toggling, setToggling] = useState<number | null>(null)
 
   useEffect(() => {
     fetchNovel()
@@ -52,6 +53,40 @@ export default function ChaptersPage() {
       router.push('/dashboard/novels')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleTogglePublish = async (id: number, currentStatus: boolean) => {
+    const action = currentStatus ? 'unpublish' : 'publish'
+    if (!confirm(`Are you sure you want to ${action} this chapter?`)) {
+      return
+    }
+
+    setToggling(id)
+    try {
+      const response = await fetch(`/api/dashboard/chapters/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublished: !currentStatus,
+        }),
+      })
+
+      if (response.ok) {
+        // Refresh chapters
+        await fetchNovel()
+        alert(`Chapter ${action}ed successfully`)
+      } else {
+        const data = await response.json()
+        alert(`Failed to ${action} chapter: ${data.error}`)
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} chapter:`, error)
+      alert('An error occurred')
+    } finally {
+      setToggling(null)
     }
   }
 
@@ -112,13 +147,23 @@ export default function ChaptersPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{novel.title}</h1>
             <p className="text-gray-600">Manage chapters for this novel</p>
           </div>
-          <Link
-            href={`/dashboard/novels/${novelId}/chapters/new`}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            <Plus size={20} />
-            Add Chapter
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/novels/${novel.slug}`}
+              target="_blank"
+              className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              <Eye size={20} />
+              View Novel
+            </Link>
+            <Link
+              href={`/dashboard/novels/${novelId}/chapters/new`}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              <Plus size={20} />
+              Add Chapter
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -144,7 +189,7 @@ export default function ChaptersPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                     Updated
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider w-80">
                     Actions
                   </th>
                 </tr>
@@ -182,19 +227,43 @@ export default function ChaptersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {new Date(chapter.updatedAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium w-80">
+                      <div className="flex items-center justify-end gap-2 flex-nowrap">
                         <Link
                           href={`/dashboard/write/${chapter.id}`}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium whitespace-nowrap"
                         >
                           <Edit size={14} />
                           Edit
                         </Link>
+                        <Link
+                          href={`/novels/${novel.slug}/chapters/${chapter.chapterNumber}`}
+                          target="_blank"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors font-medium whitespace-nowrap"
+                        >
+                          <Eye size={14} />
+                          View
+                        </Link>
+                        <button
+                          onClick={() => handleTogglePublish(chapter.id, chapter.isPublished)}
+                          disabled={toggling === chapter.id}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded transition-colors font-medium disabled:opacity-50 whitespace-nowrap ${
+                            chapter.isPublished
+                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          }`}
+                        >
+                          {chapter.isPublished ? <Archive size={14} /> : <Send size={14} />}
+                          {toggling === chapter.id
+                            ? 'Loading...'
+                            : chapter.isPublished
+                            ? 'Unpublish'
+                            : 'Publish'}
+                        </button>
                         <button
                           onClick={() => handleDelete(chapter.id, chapter.chapterNumber)}
                           disabled={deleting === chapter.id}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium disabled:opacity-50"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium disabled:opacity-50 whitespace-nowrap"
                         >
                           <Trash2 size={14} />
                           {deleting === chapter.id ? 'Deleting...' : 'Delete'}
