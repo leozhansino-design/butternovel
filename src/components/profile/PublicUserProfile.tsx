@@ -7,7 +7,10 @@ import UserBadge from '@/components/badge/UserBadge'
 import { formatReadingTime, getUserLevel } from '@/lib/badge-system'
 import RatingsTabComponent from './RatingsTab'
 import FollowListModal from './FollowListModal'
-type Tab = 'reviews'
+import PublicLibraryView from './PublicLibraryView'
+import PublicReadingHistory from './PublicReadingHistory'
+
+type Tab = 'reviews' | 'library' | 'history'
 
 type UserData = {
   id: string
@@ -201,15 +204,61 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
         </div>
       </div>
 
-      {/* Reviews Section */}
-      <div className="flex-1 overflow-hidden px-6 pb-6">
-        <div className="h-full bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl border border-white/30 overflow-hidden">
-          <div className="border-b border-gray-200 px-6 py-4 bg-white/50">
-            <h2 className="text-xl font-bold text-gray-900">Reviews</h2>
+      {/* Tab Navigation */}
+      <div className="flex-shrink-0 px-6">
+        <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-4">
+          <div className="flex items-center gap-3">
+            {/* Only show Library tab if not private or if viewing own profile */}
+            {!isLibraryPrivate && (
+              <button
+                onClick={() => setActiveTab('library')}
+                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                  activeTab === 'library'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                    : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+                }`}
+              >
+                Library
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                activeTab === 'history'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+              }`}
+            >
+              Reading History
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                activeTab === 'reviews'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                  : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
+              }`}
+            >
+              Reviews
+            </button>
           </div>
-          <div className="h-[calc(100%-4rem)] overflow-y-auto p-6">
-            <RatingsTabComponent userId={user.id} />
-          </div>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1 overflow-hidden px-6 pt-4 pb-6">
+        <div className="h-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
+          {activeTab === 'library' && (
+            <PublicLibraryView userId={user.id} />
+          )}
+          {activeTab === 'history' && (
+            <PublicReadingHistory userId={user.id} />
+          )}
+          {activeTab === 'reviews' && (
+            <div className="h-full overflow-y-auto p-6">
+              <RatingsTabComponent userId={user.id} />
+            </div>
+          )}
         </div>
       </div>
 
