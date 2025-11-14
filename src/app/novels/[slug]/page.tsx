@@ -16,6 +16,7 @@ import ChapterPreview from '@/components/novel/ChapterPreview'
 import TableOfContents from '@/components/novel/TableOfContents'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
+import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：Redis 缓存 + 移除content + 数据库重试
@@ -25,7 +26,23 @@ async function getNovel(slug: string) {
       const novel = await withRetry(
         () => prisma.novel.findUnique({
           where: { slug },
-          include: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            coverImage: true,
+            blurb: true,
+            authorId: true,  // ⭐ Added for follow functionality
+            authorName: true,
+            status: true,
+            isPublished: true,
+            isBanned: true,
+            viewCount: true,
+            likeCount: true,
+            wordCount: true,
+            averageRating: true,
+            totalRatings: true,
+            createdAt: true,
             category: true,
             chapters: {
               where: { isPublished: true },
@@ -145,11 +162,12 @@ export default async function NovelDetailPage({
                         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
                           {novel.title}
                         </h1>
-                        <div className="flex items-center gap-2 text-lg">
+                        <div className="flex items-center gap-2 text-lg flex-wrap">
                           <span className="text-gray-600">by</span>
                           <span className="font-semibold text-gray-900">
                             {novel.authorName}
                           </span>
+                          <FollowAuthorButton authorId={novel.authorId} authorName={novel.authorName} />
                         </div>
                       </div>
 

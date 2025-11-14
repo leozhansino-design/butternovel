@@ -33,6 +33,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
       contributionPoints: true,
       level: true,
       totalReadingTime: true,
+      libraryPrivacy: true,
       createdAt: true,
       _count: {
         select: {

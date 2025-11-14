@@ -133,7 +133,7 @@ export default function UserBadge({
       >
         {/* 内部圆形头像 */}
         <div
-          className="relative rounded-full overflow-hidden bg-gray-200"
+          className="relative rounded-full overflow-hidden bg-white"
           style={{
             width: `${config.avatar}px`,
             height: `${config.avatar}px`,
@@ -144,12 +144,12 @@ export default function UserBadge({
           {avatar ? (
             <Image
               src={avatar}
-              alt={name || '用户头像'}
+              alt={name || 'User avatar'}
               fill
               className="object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500 text-white font-bold text-2xl">
+            <div className="w-full h-full flex items-center justify-center bg-white text-gray-900 font-semibold border border-gray-300" style={{ fontSize: `${config.avatar * 0.4}px` }}>
               {name?.[0]?.toUpperCase() || 'U'}
             </div>
           )}
