@@ -15,9 +15,12 @@ export const novelCreateSchema = z.object({
   coverImage: z.string()
     .min(1, '封面不能为空'),
 
-  categoryId: z.coerce.number()
+  categoryId: z.coerce.number({
+    invalid_type_error: 'Please select a genre/category',
+    required_error: 'Genre/category is required'
+  })
     .int('分类ID必须是整数')
-    .positive('分类ID必须是正整数'),
+    .positive('Please select a valid genre/category'),
 
   blurb: z.string()
     .min(1, '简介不能为空')
@@ -31,15 +34,17 @@ export const novelCreateSchema = z.object({
   isDraft: z.boolean().optional(),
 
   chapters: z.array(z.object({
-    title: z.string().min(1).max(100),
-    content: z.string().min(1).max(30000)
+    title: z.string().min(1, 'Chapter title cannot be empty').max(100, 'Chapter title too long'),
+    content: z.string().min(1, 'Chapter content cannot be empty').max(30000, 'Chapter content too long')
   })).optional()
 })
 
 export const novelUpdateSchema = z.object({
-  title: z.string().min(1).max(120).optional(),
-  blurb: z.string().min(1).max(3000).optional(),
-  categoryId: z.coerce.number().int().positive().optional(),
+  title: z.string().min(1, 'Title cannot be empty').max(120, 'Title too long').optional(),
+  blurb: z.string().min(1, 'Blurb cannot be empty').max(3000, 'Blurb too long').optional(),
+  categoryId: z.coerce.number({
+    invalid_type_error: 'Please select a genre/category'
+  }).int().positive('Please select a valid genre/category').optional(),
   status: z.enum(['ONGOING', 'COMPLETED']).optional(),
   coverImage: z.string().optional(),
   isPublished: z.boolean().optional(),
@@ -63,8 +68,8 @@ export const chapterCreateSchema = z.object({
 })
 
 export const chapterUpdateSchema = z.object({
-  title: z.string().min(1).max(100).optional(),
-  content: z.string().min(1).max(30000).optional(),
+  title: z.string().min(1, 'Title cannot be empty').max(100, 'Title too long').optional(),
+  content: z.string().min(1, 'Content cannot be empty').max(30000, 'Content too long').optional(),
   isPublished: z.boolean().optional(),
 })
 

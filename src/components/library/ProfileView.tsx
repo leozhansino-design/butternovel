@@ -49,6 +49,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
   const [editName, setEditName] = useState('')
   const [editBio, setEditBio] = useState('')
   const [error, setError] = useState('')
+  const [avatarError, setAvatarError] = useState('')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -139,28 +140,33 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Clear previous error
+    setAvatarError('')
+
     // 验证文件类型
     if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file (PNG, JPG, etc.)')
+      setAvatarError('Please upload an image file (PNG, JPG, etc.)')
+      e.target.value = ''
       return
     }
 
     // 验证文件大小 (最大 512KB)
     if (file.size > 512 * 1024) {
-      setError('Image must be smaller than 512KB')
+      setAvatarError('Image must be under 512KB')
+      e.target.value = ''
       return
     }
 
     try {
       setUploadingAvatar(true)
-      setError('')
 
       // 验证图片尺寸必须是 512x512
       const validImage = await validateImageSize(file, 512, 512)
 
       if (!validImage) {
-        setError('Image must be exactly 512x512 pixels')
+        setAvatarError('Image must be exactly 512x512 pixels')
         setUploadingAvatar(false)
+        e.target.value = ''
         return
       }
 
@@ -184,12 +190,15 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
         await update({
           image: data.avatar,
         })
+
+        // Clear error on success
+        setAvatarError('')
       } else {
-        setError(data.error || 'Failed to upload avatar')
+        setAvatarError(data.error || 'Failed to upload avatar')
       }
     } catch (error) {
       console.error('Failed to upload avatar:', error)
-      setError('Failed to upload avatar')
+      setAvatarError('Failed to upload avatar')
     } finally {
       setUploadingAvatar(false)
       // 清空 input，允许重新选择同一文件
@@ -247,7 +256,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
           {/* Avatar with Badge and upload */}
           <div className="flex-shrink-0 flex flex-col items-center gap-2">
             <div className="relative group">
-              <div onClick={handleAvatarClick} className="cursor-pointer">
+              <div onClick={handleAvatarClick} className="cursor-pointer" title="Upload avatar: 512x512px, max 512KB">
                 <UserBadge
                   avatar={avatarUrl}
                   name={profileData.name}
@@ -258,13 +267,21 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                 />
               </div>
 
-              {/* Upload overlay */}
+              {/* Upload overlay with requirements */}
               <button
                 onClick={handleAvatarClick}
                 disabled={uploadingAvatar}
-                className="absolute inset-0 bg-black/70 rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-xs font-semibold disabled:cursor-not-allowed"
+                className="absolute inset-0 bg-black/70 rounded-full opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center text-white text-xs font-semibold disabled:cursor-not-allowed"
               >
-                {uploadingAvatar ? 'Uploading...' : 'Change'}
+                {uploadingAvatar ? (
+                  <span>Uploading...</span>
+                ) : (
+                  <>
+                    <span>Change</span>
+                    <span className="text-[10px] font-normal mt-1">512x512px</span>
+                    <span className="text-[10px] font-normal">max 512KB</span>
+                  </>
+                )}
               </button>
 
               <input
@@ -280,6 +297,13 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
             <div className="text-center">
               <p className="text-xs font-semibold text-amber-600">{levelData.nameEn}</p>
             </div>
+
+            {/* Avatar error message */}
+            {avatarError && (
+              <div className="text-center max-w-[120px]">
+                <p className="text-xs text-red-600 font-medium">{avatarError}</p>
+              </div>
+            )}
           </div>
 
           {/* User info */}

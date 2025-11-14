@@ -395,22 +395,27 @@ export default function RatingModal({
     return (
       <div key={reply.id} className={`${depth > 0 ? 'ml-8 mt-2' : 'mt-2'}`}>
         <div className="flex items-start gap-2">
-          {reply.user.avatar ? (
-            <img
-              src={reply.user.avatar}
-              alt={reply.user.name || 'User'}
-              className="w-6 h-6 rounded-full"
-            />
-          ) : (
-            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold text-xs border border-gray-300">
-              {reply.user.name?.[0]?.toUpperCase() || 'U'}
-            </div>
-          )}
+          <button onClick={() => handleUserClick(reply.user.id)} className="flex-shrink-0 cursor-pointer">
+            {reply.user.avatar ? (
+              <img
+                src={reply.user.avatar}
+                alt={reply.user.name || 'User'}
+                className="w-6 h-6 rounded-full"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold text-xs border border-gray-300">
+                {reply.user.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )}
+          </button>
           <div className="flex-1">
             <div className="bg-gray-50 rounded-lg px-3 py-2">
-              <span className="font-semibold text-gray-900 text-xs">
+              <button
+                onClick={() => handleUserClick(reply.user.id)}
+                className="font-semibold text-gray-900 text-xs hover:text-amber-600 transition-colors cursor-pointer"
+              >
                 {reply.user.name || 'Anonymous'}
-              </span>
+              </button>
               <p className="text-gray-700 text-sm mt-1">{reply.content}</p>
             </div>
             <div className="flex items-center gap-3 mt-1 ml-1">
