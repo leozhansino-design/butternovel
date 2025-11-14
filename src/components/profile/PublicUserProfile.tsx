@@ -53,16 +53,9 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
   // Check if library is private and user is not the owner
   const isLibraryPrivate = user.libraryPrivacy && !isOwnProfile
 
-  console.log('[PublicUserProfile] User data:', {
-    userId: user.id,
-    isOwnProfile,
-    libraryPrivacy: user.libraryPrivacy,
-    isLibraryPrivate
-  })
-
   // Check if current user is following this user
   useEffect(() => {
-    if (session?.user?.id && !isOwnProfile) {
+    if (session?.user?.id && session.user.id !== user.id) {
       fetch(`/api/user/follow-status?userId=${user.id}`)
         .then(res => res.json())
         .then(data => {
@@ -72,7 +65,7 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
         })
         .catch(err => console.error('Failed to fetch follow status:', err))
     }
-  }, [session, user.id, isOwnProfile])
+  }, [session?.user?.id, user.id])
 
   const handleFollowToggle = async () => {
     if (!session?.user?.id) {

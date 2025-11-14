@@ -143,8 +143,8 @@ export default function RatingsTab({ userId }: RatingsTabProps = {}) {
                     fill
                     className="object-cover group-hover:brightness-110 transition-all"
                   />
-                  {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                  {/* Overlay on hover - pointer-events-none to allow clicks */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
                 </div>
               </Link>
 
