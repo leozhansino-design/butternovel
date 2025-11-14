@@ -3,6 +3,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import UserBadge from '@/components/badge/UserBadge'
+import { formatReadingTime, getUserLevel } from '@/lib/badge-system'
 
 type ProfileViewProps = {
   user: {
@@ -19,7 +21,14 @@ type ProfileData = {
   email: string | null
   avatar: string | null
   bio: string | null
-  booksRead?: number
+  contributionPoints: number
+  level: number
+  stats: {
+    booksInLibrary: number
+    chaptersRead: number
+    readingTime: number
+    totalRatings: number
+  }
 }
 
 export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
@@ -38,25 +47,16 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // ✅ Fetch profile and stats in parallel
+  // ✅ Fetch profile data
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true)
-        // Fetch profile and stats in parallel
-        const [profileRes, statsRes] = await Promise.all([
-          fetch('/api/profile'),
-          fetch('/api/profile/stats')
-        ])
-
+        const profileRes = await fetch('/api/profile')
         const profileData = await profileRes.json()
-        const statsData = await statsRes.json()
 
         if (profileRes.ok) {
-          setProfileData({
-            ...profileData.user,
-            booksRead: statsData.booksRead || 0
-          })
+          setProfileData(profileData.user)
           setEditName(profileData.user.name || '')
           setEditBio(profileData.user.bio || '')
         }
@@ -150,11 +150,11 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
       setUploadingAvatar(true)
       setError('')
 
-      // 验证图片尺寸必须是 256x256
-      const validImage = await validateImageSize(file, 256, 256)
+      // 验证图片尺寸必须是 512x512
+      const validImage = await validateImageSize(file, 512, 512)
 
       if (!validImage) {
-        setError('Image must be exactly 256x256 pixels')
+        setError('Image must be exactly 512x512 pixels')
         setUploadingAvatar(false)
         return
       }
@@ -229,6 +229,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
   }
 
   const avatarUrl = profileData.avatar || user.image
+  const levelData = getUserLevel(profileData.contributionPoints)
 
   return (
     <div>
@@ -238,36 +239,42 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-2xl pointer-events-none" />
 
         <div className="relative flex items-start gap-6">
-          {/* Avatar with upload */}
-          <div className="relative group flex-shrink-0">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={profileData.name || 'User'}
-                className="w-24 h-24 rounded-2xl object-cover ring-4 ring-white/50 shadow-lg"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-2xl bg-white flex items-center justify-center text-gray-900 font-bold text-3xl ring-4 ring-white/50 shadow-lg border border-gray-300">
-                {profileData.name?.[0]?.toUpperCase() || 'U'}
+          {/* Avatar with Badge and upload */}
+          <div className="flex-shrink-0 flex flex-col items-center gap-2">
+            <div className="relative group">
+              <div onClick={handleAvatarClick} className="cursor-pointer">
+                <UserBadge
+                  avatar={avatarUrl}
+                  name={profileData.name}
+                  level={profileData.level}
+                  contributionPoints={profileData.contributionPoints}
+                  size="large"
+                  showLevelName={false}
+                />
               </div>
-            )}
 
-            {/* Upload overlay */}
-            <button
-              onClick={handleAvatarClick}
-              disabled={uploadingAvatar}
-              className="absolute inset-0 bg-black/70 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-xs font-semibold disabled:cursor-not-allowed"
-            >
-              {uploadingAvatar ? 'Uploading...' : 'Change'}
-            </button>
+              {/* Upload overlay */}
+              <button
+                onClick={handleAvatarClick}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 bg-black/70 rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white text-xs font-semibold disabled:cursor-not-allowed"
+              >
+                {uploadingAvatar ? 'Uploading...' : 'Change'}
+              </button>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
-            />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Level name below avatar */}
+            <div className="text-center">
+              <p className="text-xs font-semibold text-amber-600">{levelData.name}</p>
+            </div>
           </div>
 
           {/* User info */}
@@ -328,23 +335,41 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                     </svg>
                   </button>
                 </div>
-                <p className="text-gray-600 text-sm mb-3 truncate">{profileData.email}</p>
+                <p className="text-gray-600 text-sm mb-4 truncate">{profileData.email}</p>
 
-                {/* Books Read stat */}
-                <div className="mb-3">
-                  <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-sm font-semibold">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    {profileData.booksRead || 0} {(profileData.booksRead || 0) === 1 ? 'book' : 'books'} read
-                  </span>
-                </div>
-
+                {/* Bio */}
                 {profileData.bio ? (
-                  <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">{profileData.bio}</p>
+                  <p className="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-2">{profileData.bio}</p>
                 ) : (
-                  <p className="text-gray-400 italic text-sm">No bio yet. Click the edit button to add one!</p>
+                  <p className="text-gray-400 italic text-sm mb-4">No bio yet. Click the edit button to add one!</p>
                 )}
+
+                {/* Stats cards - 4 cards in a row */}
+                <div className="grid grid-cols-4 gap-3">
+                  {/* Library */}
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-blue-600">{profileData.stats.booksInLibrary}</div>
+                    <div className="text-xs text-blue-800 mt-0.5">Library</div>
+                  </div>
+
+                  {/* Books Read */}
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-green-600">{profileData.stats.chaptersRead}</div>
+                    <div className="text-xs text-green-800 mt-0.5">Chapters Read</div>
+                  </div>
+
+                  {/* Reviews */}
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-purple-600">{profileData.stats.totalRatings}</div>
+                    <div className="text-xs text-purple-800 mt-0.5">Reviews</div>
+                  </div>
+
+                  {/* Reading Time */}
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 text-center">
+                    <div className="text-sm font-bold text-orange-600">{formatReadingTime(profileData.stats.readingTime)}</div>
+                    <div className="text-xs text-orange-800 mt-0.5">Reading Time</div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
