@@ -96,7 +96,8 @@ export default function UsersManagementPage() {
 
   // 筛选和分页
   const [page, setPage] = useState(1)
-  const [limit] = useState(20)
+  const [limit] = useState(10) // 每页显示10条
+  const maxPages = 10 // 最多显示10页
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState('')
   const [authMethod, setAuthMethod] = useState('all')
@@ -175,7 +176,9 @@ export default function UsersManagementPage() {
     fetchUsers()
   }
 
-  const totalPages = Math.ceil(total / limit)
+  // 限制最多显示10页（100条记录）
+  const totalPages = Math.min(Math.ceil(total / limit), maxPages)
+  const displayTotal = Math.min(total, maxPages * limit)
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -240,11 +243,14 @@ export default function UsersManagementPage() {
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-gray-600 text-sm font-medium mb-1">作家</h3>
-            <p className="text-3xl font-bold text-purple-600">{stats.writers.toLocaleString()}</p>
-            <p className="mt-2 text-xs text-gray-500">
-              占比 {((stats.writers / stats.total) * 100).toFixed(1)}%
+            <h3 className="text-gray-600 text-sm font-medium mb-1">用户活跃率</h3>
+            <p className="text-3xl font-bold text-purple-600">
+              {((stats.byStatus.active / stats.total) * 100).toFixed(1)}%
             </p>
+            <div className="mt-2 text-xs text-gray-500">
+              <div>{stats.byStatus.active.toLocaleString()} 活跃用户</div>
+              <div className="text-gray-400">（有评论/评分/阅读记录）</div>
+            </div>
           </div>
         </div>
       )}
@@ -467,8 +473,8 @@ export default function UsersManagementPage() {
             {totalPages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  显示 {(page - 1) * limit + 1} - {Math.min(page * limit, total)} / 共{' '}
-                  {total} 条
+                  显示 {(page - 1) * limit + 1} - {Math.min(page * limit, displayTotal)} / 共{' '}
+                  {displayTotal} 条 {total > displayTotal && `(最多显示${maxPages}页)`}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -497,8 +503,8 @@ export default function UsersManagementPage() {
 
       {/* User Detail Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-gray-200">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
               <h2 className="text-2xl font-bold">用户详情</h2>
               <button
@@ -574,43 +580,70 @@ export default function UsersManagementPage() {
 
                 {/* Statistics */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">活动统计</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">评论</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {selectedUser.stats.comments}
+                  <h3 className="text-lg font-semibold mb-3">用户参与度分析</h3>
+
+                  {/* Key Metrics */}
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                      <p className="text-xs text-gray-600 mb-1">账号年龄</p>
+                      <p className="text-xl font-bold text-blue-700">
+                        {Math.floor((new Date().getTime() - new Date(selectedUser.createdAt).getTime()) / (1000 * 60 * 60 * 24))} 天
                       </p>
                     </div>
-                    <div className="bg-purple-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">评分</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {selectedUser.stats.ratings}
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                      <p className="text-xs text-gray-600 mb-1">参与度评分</p>
+                      <p className="text-xl font-bold text-purple-700">
+                        {(selectedUser.stats.comments * 3 +
+                          selectedUser.stats.ratings * 5 +
+                          selectedUser.stats.replies * 2 +
+                          selectedUser.stats.likes * 1) || 0}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">综合活动指数</p>
                     </div>
-                    <div className="bg-pink-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">点赞</p>
-                      <p className="text-2xl font-bold text-pink-600">
-                        {selectedUser.stats.likes}
-                      </p>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">书架</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {selectedUser.stats.libraryBooks}
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">阅读记录</p>
-                      <p className="text-2xl font-bold text-yellow-600">
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                      <p className="text-xs text-gray-600 mb-1">阅读活跃度</p>
+                      <p className="text-xl font-bold text-green-700">
                         {selectedUser.stats.readingHistory}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">阅读过的书</p>
                     </div>
-                    <div className="bg-indigo-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">回复</p>
-                      <p className="text-2xl font-bold text-indigo-600">
-                        {selectedUser.stats.replies}
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4">
+                      <p className="text-xs text-gray-600 mb-1">社区贡献</p>
+                      <p className="text-xl font-bold text-orange-700">
+                        {selectedUser.stats.comments + selectedUser.stats.ratings + selectedUser.stats.replies}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">评论+评分+回复</p>
+                    </div>
+                  </div>
+
+                  {/* Detailed Stats */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">详细统计</h4>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">💬 评论数</span>
+                        <span className="font-semibold">{selectedUser.stats.comments}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">⭐ 评分数</span>
+                        <span className="font-semibold">{selectedUser.stats.ratings}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">👍 点赞数</span>
+                        <span className="font-semibold">{selectedUser.stats.likes}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">📚 书架藏书</span>
+                        <span className="font-semibold">{selectedUser.stats.libraryBooks}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">📖 阅读记录</span>
+                        <span className="font-semibold">{selectedUser.stats.readingHistory}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">💭 回复数</span>
+                        <span className="font-semibold">{selectedUser.stats.replies}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
