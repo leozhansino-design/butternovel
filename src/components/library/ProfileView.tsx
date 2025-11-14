@@ -62,6 +62,12 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
         const profileData = await profileRes.json()
 
         if (profileRes.ok) {
+          console.log('[ProfileView] Profile data loaded:', {
+            userId: profileData.user.id,
+            avatarFromDb: profileData.user.avatar,
+            sessionAvatar: user.image,
+            isGoogleAvatar: profileData.user.avatar?.includes('googleusercontent.com')
+          })
           setProfileData(profileData.user)
           setEditName(profileData.user.name || '')
           setEditBio(profileData.user.bio || '')
@@ -160,11 +166,11 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
     try {
       setUploadingAvatar(true)
 
-      // 验证图片尺寸必须是 512x512
-      const validImage = await validateImageSize(file, 512, 512)
+      // 验证图片最小尺寸（至少 256x256，服务端会自动裁剪为正方形）
+      const validImage = await validateImageMinSize(file, 256, 256)
 
       if (!validImage) {
-        setAvatarError('Image must be exactly 512x512 pixels')
+        setAvatarError('Image must be at least 256x256 pixels')
         setUploadingAvatar(false)
         e.target.value = ''
         return
@@ -206,19 +212,25 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
     }
   }
 
-  // 验证图片尺寸（必须是精确尺寸）
-  const validateImageSize = (file: File, requiredWidth: number, requiredHeight: number): Promise<boolean> => {
+  // 验证图片最小尺寸（宽高都必须 >= 最小值，服务端会自动裁剪）
+  const validateImageMinSize = (file: File, minWidth: number, minHeight: number): Promise<boolean> => {
     return new Promise((resolve) => {
       const img = new Image()
 
       img.onload = () => {
         URL.revokeObjectURL(img.src)
-        const isValid = img.width === requiredWidth && img.height === requiredHeight
+        const isValid = img.width >= minWidth && img.height >= minHeight
+        console.log('[ProfileView] Image validation:', {
+          actual: { width: img.width, height: img.height },
+          required: { minWidth, minHeight },
+          isValid
+        })
         resolve(isValid)
       }
 
       img.onerror = () => {
         URL.revokeObjectURL(img.src)
+        console.error('[ProfileView] Failed to load image for validation')
         resolve(false)
       }
 
@@ -256,7 +268,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
           {/* Avatar with Badge and upload */}
           <div className="flex-shrink-0 flex flex-col items-center gap-2">
             <div className="relative group">
-              <div onClick={handleAvatarClick} className="cursor-pointer" title="Upload avatar: 512x512px, max 512KB">
+              <div onClick={handleAvatarClick} className="cursor-pointer" title="Upload avatar: min 256x256px, max 512KB">
                 <UserBadge
                   avatar={avatarUrl}
                   name={profileData.name}
@@ -278,7 +290,7 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
                 ) : (
                   <>
                     <span>Change</span>
-                    <span className="text-[10px] font-normal mt-1">512x512px</span>
+                    <span className="text-[10px] font-normal mt-1">min 256x256</span>
                     <span className="text-[10px] font-normal">max 512KB</span>
                   </>
                 )}
