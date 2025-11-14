@@ -97,33 +97,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // ✅ 优化重定向逻辑：确保Google登录后返回到正确的页面
+      // ✅ 彻底修复：提取路径部分，拼接到baseUrl
+      // 问题：预览环境的callbackUrl域名与生产环境不同，导致被拒绝
+      // 解决：提取路径+查询+hash，拼接到当前baseUrl
 
       console.log('[Auth] Redirect callback:', { url, baseUrl })
 
-      // 1. 如果是相对路径，拼接baseUrl
+      // 1. 如果是相对路径，直接拼接baseUrl
       if (url.startsWith("/")) {
         const fullUrl = `${baseUrl}${url}`
         console.log('[Auth] Redirecting to relative path:', fullUrl)
         return fullUrl
       }
 
-      // 2. 如果是完整URL，检查是否同源
+      // 2. 如果是完整URL，提取路径部分并拼接到baseUrl
       try {
         const urlObj = new URL(url)
         const baseUrlObj = new URL(baseUrl)
 
-        // 同源则返回完整URL（包括查询参数和hash）
+        // ✅ 同源：直接返回完整URL
         if (urlObj.origin === baseUrlObj.origin) {
-          console.log('[Auth] Redirecting to same origin:', url)
+          console.log('[Auth] Same origin, redirecting to:', url)
           return url
         }
 
-        // 不同源则返回baseUrl（安全考虑）
-        console.warn(`[Auth] Redirect to different origin blocked: ${url}, returning baseUrl`)
-        return baseUrl
+        // ✅ 不同源：提取路径、查询参数、hash，拼接到baseUrl
+        // 例如：url = https://preview.vercel.app/novels/my-novel
+        //      baseUrl = https://butternovel.com
+        //      返回 = https://butternovel.com/novels/my-novel
+        const path = urlObj.pathname + urlObj.search + urlObj.hash
+        const redirectUrl = `${baseUrl}${path}`
+
+        console.log('[Auth] Different origin detected:')
+        console.log('  - Original URL:', url)
+        console.log('  - Extracted path:', path)
+        console.log('  - Redirecting to:', redirectUrl)
+
+        return redirectUrl
       } catch (error) {
-        // URL解析失败，返回baseUrl
+        // URL解析失败，回退到baseUrl
         console.error(`[Auth] Invalid redirect URL: ${url}, error:`, error)
         return baseUrl
       }
