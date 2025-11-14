@@ -69,3 +69,59 @@ body {
 .animate-slide-down {
   animation: slideDown 0.3s ease-out;
 }
+
+/* 用户等级勋章动画 */
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 3s ease-in-out infinite;
+}
+
+@keyframes rotateSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-rotate-slow {
+  animation: rotateSlow 20s linear infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  25% {
+    opacity: 0.95;
+    transform: scale(1.03) rotate(2deg);
+    filter: brightness(1.1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(0.98);
+    filter: brightness(1);
+  }
+  75% {
+    opacity: 0.95;
+    transform: scale(1.02) rotate(-2deg);
+    filter: brightness(1.15);
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 4s ease-in-out infinite;
+}

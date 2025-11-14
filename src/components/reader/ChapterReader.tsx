@@ -60,6 +60,10 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const [currentPage, setCurrentPage] = useState(0)
   const [pages, setPages] = useState<string[]>([])
 
+  // ⭐ 阅读时长追踪
+  const startTimeRef = useRef<number>(Date.now())
+  const [isChapterCompleted, setIsChapterCompleted] = useState(false)
+
   // ⭐ 新增：进入章节时立即记录阅读进度
   useEffect(() => {
     const saveProgress = async () => {
@@ -78,7 +82,105 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     }
 
     saveProgress()
+    // 重置计时器
+    startTimeRef.current = Date.now()
+    setIsChapterCompleted(false)
   }, [novel.id, chapter.id])
+
+  // ⭐ 阅读时长追踪 - 每分钟保存一次
+  useEffect(() => {
+    const saveReadingTime = async () => {
+      const duration = Math.floor((Date.now() - startTimeRef.current) / 1000) // 秒
+
+      if (duration < 10) return // 忽略少于10秒的阅读
+
+      try {
+        await fetch('/api/reading-time', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chapterId: chapter.id,
+            novelId: novel.id,
+            duration,
+          })
+        })
+        // 重置计时器
+        startTimeRef.current = Date.now()
+      } catch (error) {
+        console.error('Failed to save reading time:', error)
+      }
+    }
+
+    // 每分钟保存一次
+    const interval = setInterval(saveReadingTime, 60000)
+
+    // 页面卸载时保存
+    const handleBeforeUnload = () => {
+      saveReadingTime()
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      saveReadingTime()
+    }
+  }, [chapter.id, novel.id])
+
+  // ⭐ 检测章节完成 - 滚动到底部
+  useEffect(() => {
+    if (readMode !== 'scroll' || isChapterCompleted) return
+
+    const handleScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight
+      const scrollTop = window.scrollY
+      const clientHeight = window.innerHeight
+
+      // 滚动到距离底部100px以内就算完成
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        markChapterAsCompleted()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [readMode, isChapterCompleted])
+
+  // ⭐ 检测章节完成 - 翻页到最后一页
+  useEffect(() => {
+    if (readMode !== 'page' || isChapterCompleted) return
+
+    if (pages.length > 0 && currentPage === pages.length - 1) {
+      // 延迟3秒后标记为完成（给用户时间阅读最后一页）
+      const timer = setTimeout(() => {
+        markChapterAsCompleted()
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [readMode, currentPage, pages.length, isChapterCompleted])
+
+  // ⭐ 标记章节为已完成
+  const markChapterAsCompleted = async () => {
+    if (isChapterCompleted) return
+
+    setIsChapterCompleted(true)
+
+    try {
+      await fetch('/api/chapter-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chapterId: chapter.id,
+          isCompleted: true,
+        })
+      })
+      console.log('✓ Chapter marked as completed')
+    } catch (error) {
+      console.error('Failed to mark chapter as completed:', error)
+    }
+  }
 
   useEffect(() => {
     const savedMode = localStorage.getItem('readMode') as ReadMode

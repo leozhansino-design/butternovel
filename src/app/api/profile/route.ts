@@ -20,9 +20,13 @@ export const GET = withErrorHandling(async () => {
       email: true,
       avatar: true,
       bio: true,
+      contributionPoints: true,
+      level: true,
+      totalReadingTime: true,
       _count: {
         select: {
-          library: true
+          library: true,
+          ratings: true,
         }
       }
     }
@@ -44,11 +48,13 @@ export const GET = withErrorHandling(async () => {
       email: user.email,
       avatar: user.avatar,
       bio: user.bio,
+      contributionPoints: user.contributionPoints,
+      level: user.level,
       stats: {
         booksInLibrary: user._count.library,
         chaptersRead: totalChaptersRead,
-        // 阅读时长可以后续添加
-        readingTime: 0
+        readingTime: user.totalReadingTime, // 总阅读时长（分钟）
+        totalRatings: user._count.ratings, // 总评分数（获赞数可以后续添加）
       }
     }
   })

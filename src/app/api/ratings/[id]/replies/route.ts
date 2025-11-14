@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { addRatingReplyContribution } from '@/lib/contribution'
 
 type Params = {
   params: Promise<{ id: string }>
@@ -141,6 +142,19 @@ export async function POST(request: NextRequest, { params }: Params) {
         },
       },
     })
+
+    // ⭐ 添加贡献度
+    try {
+      const contributionResult = await addRatingReplyContribution(session.user.id, reply.id)
+      console.log(`✓ Contribution added for user ${session.user.id}: +${contributionResult.user.contributionPoints} points`)
+
+      if (contributionResult.levelUp) {
+        console.log(`🎉 User leveled up: ${contributionResult.oldLevel} -> ${contributionResult.newLevel}`)
+      }
+    } catch (error) {
+      console.error('Error adding contribution:', error)
+      // 不影响主流程，只记录错误
+    }
 
     return NextResponse.json({
       reply,

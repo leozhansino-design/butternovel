@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
 import { validateWithSchema, ratingSchema } from '@/lib/validators'
 import { invalidateNovelCache } from '@/lib/cache'
+import { addRatingContribution } from '@/lib/contribution'
 
 export async function POST(
   request: NextRequest,
@@ -136,6 +137,19 @@ export async function POST(
     // ⚡ 清除小说详情缓存（评分数据已更新）
     await invalidateNovelCache(novel.slug)
     console.log(`✓ Cache cleared after rating submission for novel: ${novel.slug}`)
+
+    // ⭐ 添加贡献度
+    try {
+      const contributionResult = await addRatingContribution(session.user.id, result.rating.id)
+      console.log(`✓ Contribution added for user ${session.user.id}: +${contributionResult.user.contributionPoints} points`)
+
+      if (contributionResult.levelUp) {
+        console.log(`🎉 User leveled up: ${contributionResult.oldLevel} -> ${contributionResult.newLevel}`)
+      }
+    } catch (error) {
+      console.error('Error adding contribution:', error)
+      // 不影响主流程，只记录错误
+    }
 
     return NextResponse.json(result, { status: 201 })
   } catch (error) {

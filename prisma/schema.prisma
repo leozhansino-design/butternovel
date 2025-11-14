@@ -62,8 +62,17 @@ model User {
   forumReplies ForumReply[]
   helpedCount  Int         @default(0)
 
+  // 用户等级勋章系统
+  contributionPoints Int @default(0) // 贡献度分数
+  level              Int @default(1) // 当前等级 (1-8)
+  totalReadingTime   Int @default(0) // 总阅读时长（分钟）
+
+  contributionLogs   ContributionLog[]
+  readingSessions    ReadingSession[]
+
   @@index([email])
   @@index([isWriter])
+  @@index([level, contributionPoints])
 }
 
 // ============================================
@@ -468,4 +477,53 @@ enum AdminRole {
   SUPER_ADMIN // 超级管理员
   ADMIN // 管理员
   MODERATOR // 内容审核员
+}
+
+// ============================================
+// 用户等级勋章系统
+// ============================================
+
+// 贡献度日志
+model ContributionLog {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  points      Int              // 获得的分数
+  type        ContributionType
+  description String?
+
+  // 关联的资源ID（可选）
+  relatedId String? // Rating/Comment/RatingReply的ID
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+enum ContributionType {
+  RATING        // 评分
+  COMMENT       // 评论
+  RATING_REPLY  // 评分回复
+  DAILY_READ    // 每日阅读
+  CHAPTER_READ  // 完成章节阅读
+  OTHER
+}
+
+// 阅读会话（用于统计阅读时长）
+model ReadingSession {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  chapterId Int
+  novelId   Int
+
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+  duration  Int       @default(0) // 阅读时长（秒）
+
+  @@index([userId, startTime])
+  @@index([novelId])
 }
