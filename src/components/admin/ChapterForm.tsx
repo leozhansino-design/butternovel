@@ -36,10 +36,10 @@ export default function ChapterForm({
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  // 计算字数
+  // ✅ 计算字符数
   const wordCount = countWords(content)
-  const isOverLimit = wordCount > WORD_LIMITS.CHAPTER_WORDS_MAX
-  const wordPercentage = Math.min(100, (wordCount / WORD_LIMITS.CHAPTER_WORDS_MAX) * 100)
+  const isOverLimit = wordCount > WORD_LIMITS.CHAPTER_CHARS_MAX
+  const wordPercentage = Math.min(100, (wordCount / WORD_LIMITS.CHAPTER_CHARS_MAX) * 100)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +62,7 @@ export default function ChapterForm({
     }
 
     if (isOverLimit) {
-      setMessage({ type: 'error', text: `章节内容超出字数限制 (${wordCount}/${WORD_LIMITS.CHAPTER_WORDS_MAX})` })
+      setMessage({ type: 'error', text: `章节内容超出字符数限制 (${wordCount}/${WORD_LIMITS.CHAPTER_CHARS_MAX})` })
       return
     }
 
@@ -195,7 +195,7 @@ export default function ChapterForm({
           <div className="mt-2">
             <div className="flex items-center justify-between mb-1">
               <div className={`text-sm font-medium ${isOverLimit ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
-                字数: {wordCount.toLocaleString()} / {WORD_LIMITS.CHAPTER_WORDS_MAX.toLocaleString()}
+                字符数: {wordCount.toLocaleString()} / {WORD_LIMITS.CHAPTER_CHARS_MAX.toLocaleString()}
                 {isOverLimit && ' ⚠️ 超出限制'}
               </div>
             </div>

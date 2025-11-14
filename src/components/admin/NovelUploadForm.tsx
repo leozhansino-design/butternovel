@@ -29,7 +29,7 @@ const LIMITS = {
   TITLE_MAX: 120,
   BLURB_MAX: 3000,
   CHAPTER_TITLE_MAX: 100,
-  CHAPTER_WORDS_MAX: 5000,
+  CHAPTER_CHARS_MAX: 30000, // ✅ 字符数限制（不是单词数）
 }
 
 // 图片规格限制
@@ -135,9 +135,10 @@ export default function NovelUploadForm() {
       return
     }
     
-    const wordCount = currentChapter.content.trim().split(/\s+/).filter(w => w).length
-    if (wordCount > LIMITS.CHAPTER_WORDS_MAX) {
-      alert(`❌ Chapter exceeds maximum word limit!\n\nMax: ${LIMITS.CHAPTER_WORDS_MAX.toLocaleString()} words\nCurrent: ${wordCount.toLocaleString()} words\n\nPlease reduce the content.`)
+    // ✅ 计算字符数（不是单词数）
+    const wordCount = currentChapter.content.trim().length
+    if (wordCount > LIMITS.CHAPTER_CHARS_MAX) {
+      alert(`❌ Chapter exceeds maximum character limit!\n\nMax: ${LIMITS.CHAPTER_CHARS_MAX.toLocaleString()} characters\nCurrent: ${wordCount.toLocaleString()} characters\n\nPlease reduce the content.`)
       return
     }
     
@@ -571,7 +572,7 @@ export default function NovelUploadForm() {
                     Chapter {chapter.number}: {chapter.title}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {chapter.wordCount.toLocaleString()} words
+                    {chapter.wordCount.toLocaleString()} characters
                   </p>
                 </div>
                 {/* ⭐ Edit 和 Delete 按钮 */}
