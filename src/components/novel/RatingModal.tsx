@@ -7,6 +7,18 @@ import { useRouter, usePathname } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import AuthModal from '@/components/auth/AuthModal'
 
+interface Reply {
+  id: string
+  content: string
+  createdAt: string
+  user: {
+    id: string
+    name: string | null
+    avatar: string | null
+  }
+  childReplies?: Reply[]
+}
+
 interface Rating {
   id: string
   score: number
@@ -19,6 +31,8 @@ interface Rating {
     name: string | null
     avatar: string | null
   }
+  replies?: Reply[]
+  replyCount?: number
 }
 
 interface RatingModalProps {
@@ -51,6 +65,12 @@ export default function RatingModal({
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+
+  // Reply state
+  const [activeReplyTo, setActiveReplyTo] = useState<string | null>(null) // ratingId or replyId
+  const [replyContent, setReplyContent] = useState('')
+  const [submittingReply, setSubmittingReply] = useState(false)
+  const [showRepliesFor, setShowRepliesFor] = useState<Set<string>>(new Set())
 
   // ✅ 获取用户评分状态 - 将逻辑移到 useEffect 内部，避免依赖问题
   useEffect(() => {
@@ -179,6 +199,81 @@ export default function RatingModal({
     }
   }
 
+  // Fetch replies for a rating
+  const fetchReplies = async (ratingId: string) => {
+    try {
+      const res = await fetch(`/api/ratings/${ratingId}/replies`)
+      if (res.ok) {
+        const data = await res.json()
+        // Update rating with fetched replies
+        setRatings(prevRatings =>
+          prevRatings.map(r =>
+            r.id === ratingId
+              ? { ...r, replies: data.replies, replyCount: data.count }
+              : r
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Error fetching replies:', error)
+    }
+  }
+
+  // Toggle replies display
+  const toggleReplies = async (ratingId: string) => {
+    const newShowReplies = new Set(showRepliesFor)
+
+    if (newShowReplies.has(ratingId)) {
+      newShowReplies.delete(ratingId)
+    } else {
+      newShowReplies.add(ratingId)
+      // Fetch replies if not already fetched
+      const rating = ratings.find(r => r.id === ratingId)
+      if (!rating?.replies) {
+        await fetchReplies(ratingId)
+      }
+    }
+
+    setShowRepliesFor(newShowReplies)
+  }
+
+  // Submit reply
+  const handleSubmitReply = async (ratingId: string, parentReplyId?: string) => {
+    if (!userId) {
+      setShowAuthModal(true)
+      return
+    }
+
+    if (!replyContent.trim()) return
+
+    setSubmittingReply(true)
+    try {
+      const res = await fetch(`/api/ratings/${ratingId}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: replyContent.trim(),
+          parentReplyId: parentReplyId || null,
+        }),
+      })
+
+      if (res.ok) {
+        // Refresh replies
+        await fetchReplies(ratingId)
+        setReplyContent('')
+        setActiveReplyTo(null)
+      } else {
+        const error = await res.json()
+        alert(error.error || 'Failed to post reply')
+      }
+    } catch (error) {
+      console.error('Error submitting reply:', error)
+      alert('Failed to post reply')
+    } finally {
+      setSubmittingReply(false)
+    }
+  }
+
   const renderStars = (score: number, size: 'large' | 'small' = 'large') => {
     const starCount = score / 2 // Convert 2-10 to 1-5 stars
     const fullStars = Math.floor(starCount)
@@ -261,6 +356,84 @@ export default function RatingModal({
     if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`
 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  // Render a single reply
+  const renderReply = (reply: Reply, ratingId: string, depth: number = 0) => {
+    const isReplyingTo = activeReplyTo === reply.id
+    const maxDepth = 2 // Limit nesting depth
+
+    return (
+      <div key={reply.id} className={`${depth > 0 ? 'ml-8 mt-2' : 'mt-2'}`}>
+        <div className="flex items-start gap-2">
+          {reply.user.avatar ? (
+            <img
+              src={reply.user.avatar}
+              alt={reply.user.name || 'User'}
+              className="w-6 h-6 rounded-full"
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold text-xs border border-gray-300">
+              {reply.user.name?.[0]?.toUpperCase() || 'U'}
+            </div>
+          )}
+          <div className="flex-1">
+            <div className="bg-gray-50 rounded-lg px-3 py-2">
+              <span className="font-semibold text-gray-900 text-xs">
+                {reply.user.name || 'Anonymous'}
+              </span>
+              <p className="text-gray-700 text-sm mt-1">{reply.content}</p>
+            </div>
+            <div className="flex items-center gap-3 mt-1 ml-1">
+              <span className="text-xs text-gray-400">
+                {formatRelativeTime(reply.createdAt)}
+              </span>
+              {depth < maxDepth && (
+                <button
+                  onClick={() => setActiveReplyTo(isReplyingTo ? null : reply.id)}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  {isReplyingTo ? 'Cancel' : 'Reply'}
+                </button>
+              )}
+            </div>
+
+            {/* Reply input for this reply */}
+            {isReplyingTo && (
+              <div className="mt-2">
+                <textarea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder="Write a reply..."
+                  maxLength={500}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-gray-400">{replyContent.length}/500</span>
+                  <button
+                    onClick={() => handleSubmitReply(ratingId, reply.id)}
+                    disabled={submittingReply || !replyContent.trim()}
+                    className="px-4 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingReply ? 'Posting...' : 'Post Reply'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Nested replies */}
+            {reply.childReplies && reply.childReplies.length > 0 && (
+              <div className="mt-1">
+                {reply.childReplies.map(childReply =>
+                  renderReply(childReply, ratingId, depth + 1)
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!isOpen) return null
@@ -390,7 +563,63 @@ export default function RatingModal({
                             {rating.likeCount > 0 ? rating.likeCount : ''}
                           </span>
                         </button>
+                        <button
+                          onClick={() => {
+                            if (activeReplyTo === rating.id) {
+                              setActiveReplyTo(null)
+                              setReplyContent('')
+                            } else {
+                              setActiveReplyTo(rating.id)
+                              setReplyContent('')
+                            }
+                          }}
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition-colors font-medium"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                          Reply
+                        </button>
+                        {(rating.replyCount ?? 0) > 0 && (
+                          <button
+                            onClick={() => toggleReplies(rating.id)}
+                            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                          >
+                            {showRepliesFor.has(rating.id) ? 'Hide' : 'View'} {rating.replyCount} {rating.replyCount === 1 ? 'reply' : 'replies'}
+                          </button>
+                        )}
                       </div>
+
+                      {/* Reply input for this rating */}
+                      {activeReplyTo === rating.id && (
+                        <div className="mt-3">
+                          <textarea
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            placeholder="Write a reply..."
+                            maxLength={500}
+                            rows={2}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                          />
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-gray-400">{replyContent.length}/500</span>
+                            <button
+                              onClick={() => handleSubmitReply(rating.id)}
+                              disabled={submittingReply || !replyContent.trim()}
+                              className="px-4 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {submittingReply ? 'Posting...' : 'Post Reply'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Display replies */}
+                      {showRepliesFor.has(rating.id) && rating.replies && rating.replies.length > 0 && (
+                        <div className="mt-3 pl-2 border-l-2 border-gray-200">
+                          {rating.replies.map(reply => renderReply(reply, rating.id))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
