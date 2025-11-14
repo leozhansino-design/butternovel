@@ -41,42 +41,81 @@ export async function GET(
       maxLimit: 50,
     })
 
-    // Get ratings list (only with reviews) - 按点赞数和时间排序
-    const ratings = await prisma.rating.findMany({
-      where: {
-        novelId,
-        review: {
-          not: null,
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
+    // Get ratings list (only with reviews)
+    let ratings
+    try {
+      // 尝试按点赞数排序（如果字段存在）
+      ratings = await prisma.rating.findMany({
+        where: {
+          novelId,
+          review: {
+            not: null,
           },
         },
-      },
-      orderBy: [
-        { likeCount: 'desc' },  // 先按点赞数降序
-        { createdAt: 'desc' },   // 再按时间降序
-      ],
-      skip: offset,
-      take: limit,
-    })
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: [
+          { likeCount: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        skip: offset,
+        take: limit,
+      })
+    } catch (error) {
+      // 如果likeCount字段不存在，只按时间排序
+      console.warn('[Ratings API] likeCount field not found, using fallback sorting')
+      ratings = await prisma.rating.findMany({
+        where: {
+          novelId,
+          review: {
+            not: null,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: offset,
+        take: limit,
+      })
+    }
 
     // 检查当前用户对每个评分的点赞状态
     const ratingsWithLikeStatus = await Promise.all(
       ratings.map(async (rating) => {
-        const userLike = await prisma.ratingLike.findFirst({
-          where: userId
-            ? { userId, ratingId: rating.id }
-            : { guestId, ratingId: rating.id }
-        })
+        let userLike = null
+        let likeCount = 0
+
+        try {
+          userLike = await prisma.ratingLike.findFirst({
+            where: userId
+              ? { userId, ratingId: rating.id }
+              : { guestId, ratingId: rating.id }
+          })
+          likeCount = (rating as any).likeCount || 0
+        } catch (error) {
+          // RatingLike表还不存在，返回默认值
+          console.warn('[Ratings API] RatingLike table not found, using defaults')
+        }
 
         return {
           ...rating,
+          likeCount,
           userHasLiked: !!userLike,
         }
       })
