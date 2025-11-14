@@ -1,7 +1,7 @@
 // src/components/admin/EditNovelForm.tsx - 优化版
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -74,9 +74,9 @@ export default function EditNovelForm({ novel, categories }: Props) {
     reader.readAsDataURL(file)
   }
 
-  // 检测表单改动
-  function detectChanges() {
-    const changed = 
+  // ✅ Auto-detect changes whenever any field changes (fixes async state update issue)
+  useEffect(() => {
+    const changed =
       title !== novel.title ||
       blurb !== novel.blurb ||
       categoryId !== novel.categoryId.toString() ||
@@ -85,7 +85,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
       newCoverImage !== null
 
     setHasChanges(changed)
-  }
+  }, [title, blurb, categoryId, status, isPublished, newCoverImage, novel])
 
   // ⭐ 保存为草稿 (不发布)
   async function handleSaveDraft() {
@@ -282,10 +282,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
             <input
               type="text"
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value)
-                detectChanges()
-              }}
+              onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -299,10 +296,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
             </label>
             <textarea
               value={blurb}
-              onChange={(e) => {
-                setBlurb(e.target.value)
-                detectChanges()
-              }}
+              onChange={(e) => setBlurb(e.target.value)}
               maxLength={3000}
               rows={6}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -318,10 +312,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
               </label>
               <select
                 value={categoryId}
-                onChange={(e) => {
-                  setCategoryId(e.target.value)
-                  detectChanges()
-                }}
+                onChange={(e) => setCategoryId(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {categories.map(cat => (
@@ -336,10 +327,7 @@ export default function EditNovelForm({ novel, categories }: Props) {
               </label>
               <select
                 value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value)
-                  detectChanges()
-                }}
+                onChange={(e) => setStatus(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="ONGOING">Ongoing</option>
