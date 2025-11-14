@@ -6,8 +6,23 @@ If you're seeing these issues:
 - Clicking author name shows 404 error
 - Follow button shows "user not found"
 - Cannot follow/unfollow authors
+- After changing user name, profile becomes inaccessible
 
 This means the `authorId` field in the Novel table doesn't match any real user ID in the database.
+
+## Quick Diagnosis
+
+First, run the diagnostic script to see the exact problem:
+
+```bash
+npm run db:diagnose
+```
+
+This will show you:
+- All users in the database with their IDs and emails
+- All novels with their author IDs
+- Which novels have invalid author IDs
+- Name mismatches between User and Novel tables
 
 ## Solution
 
@@ -28,16 +43,17 @@ This will show you:
 
 ### Step 2: Fix Author IDs
 
-Run this command to automatically update all invalid author IDs to the butterpicks account:
+Run this command to automatically update all invalid author IDs to the admin account:
 
 ```bash
 npm run db:fix-authors
 ```
 
 This will:
-- Find the butterpicks user (butterpicks@gmail.com)
-- Update all novels with invalid author IDs to use butterpicks' real user ID
-- Update the author name to match the butterpicks account name
+- Find the admin user (admin@butternovel.com)
+- If not found, will look for any user with admin role
+- Update all novels with invalid author IDs to use the admin's real user ID
+- Update the author name to match the admin account name
 
 ### Step 3: Verify the Fix
 
@@ -64,16 +80,17 @@ The system automatically prevents users from following themselves:
 
 ## Troubleshooting
 
-### "Butterpicks user not found"
+### "Admin user not found"
 
-If the fix script says butterpicks user is not found:
+If the fix script says admin user is not found:
 
-1. Make sure you've logged in with butterpicks@gmail.com at least once
+1. Make sure you've created the admin account (admin@butternovel.com)
 2. Check the User table in Prisma Studio:
    ```bash
    npm run db:studio
    ```
-3. Look for a user with email `butterpicks@gmail.com`
+3. Look for a user with email `admin@butternovel.com`
+4. The script will automatically try to find any admin user as fallback
 
 ### Still seeing 404
 
