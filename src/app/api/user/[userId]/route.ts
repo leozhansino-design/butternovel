@@ -21,6 +21,7 @@ export const GET = withErrorHandling(async (
       name: true,
       avatar: true,
       bio: true,
+      role: true,  // Include role for admin check
       contributionPoints: true,
       level: true,
       totalReadingTime: true,
