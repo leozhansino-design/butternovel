@@ -57,13 +57,20 @@ export default async function PublicProfilePage({ params }: PageProps) {
   })
   const booksRead = booksReadRecords.length
 
-  // Get following and followers counts
-  const following = await prisma.follow.count({
-    where: { followerId: user.id }
-  })
-  const followers = await prisma.follow.count({
-    where: { followingId: user.id }
-  })
+  // Get following and followers counts (default to 0 if Follow table doesn't exist)
+  let following = 0
+  let followers = 0
+  try {
+    following = await prisma.follow.count({
+      where: { followerId: user.id }
+    })
+    followers = await prisma.follow.count({
+      where: { followingId: user.id }
+    })
+  } catch (error) {
+    // Follow table doesn't exist yet. Run: npx prisma db push
+    console.log('Follow table does not exist yet. Run: npx prisma db push')
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50 to-amber-50">

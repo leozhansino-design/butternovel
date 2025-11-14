@@ -44,13 +44,20 @@ export const GET = withErrorHandling(async () => {
   })
   const booksRead = booksReadRecords.length
 
-  // 获取关注数和粉丝数
-  const following = await prisma.follow.count({
-    where: { followerId: session.user.id }
-  })
-  const followers = await prisma.follow.count({
-    where: { followingId: session.user.id }
-  })
+  // 获取关注数和粉丝数 (如果 Follow 表不存在则返回 0)
+  let following = 0
+  let followers = 0
+  try {
+    following = await prisma.follow.count({
+      where: { followerId: session.user.id }
+    })
+    followers = await prisma.follow.count({
+      where: { followingId: session.user.id }
+    })
+  } catch (error) {
+    // Follow 表不存在，使用默认值 0
+    console.log('Follow table does not exist yet. Run: npx prisma db push')
+  }
 
   return successResponse({
     user: {
