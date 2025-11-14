@@ -80,9 +80,9 @@ export async function PUT(
       )
     }
 
-    if (body.blurb && body.blurb.length > 1000) {
+    if (body.blurb && body.blurb.length > 3000) {
       return NextResponse.json(
-        { error: 'Description must be 1000 characters or less' },
+        { error: 'Blurb must be 3000 characters or less' },
         { status: 400 }
       )
     }

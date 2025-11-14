@@ -27,9 +27,9 @@ const genres = [
 // Limits
 const LIMITS = {
   TITLE_MAX: 120,
-  BLURB_MAX: 1000, // Changed from 3000 to 1000
+  BLURB_MAX: 3000, // Maximum characters for novel blurb
   CHAPTER_TITLE_MAX: 100,
-  CHAPTER_WORDS_MAX: 5000,
+  CHAPTER_CONTENT_MAX: 30000, // Maximum characters for chapter content
 }
 
 // Image limits
@@ -192,7 +192,7 @@ export default function NovelUploadForm() {
   }
 
   const blurbCharCount = formData.blurb.length
-  const blurbWarning = blurbCharCount > 950
+  const blurbWarning = blurbCharCount > 2850 // Warn at 95%
   const blurbError = blurbCharCount >= LIMITS.BLURB_MAX
 
   return (
@@ -232,7 +232,7 @@ export default function NovelUploadForm() {
             {/* Blurb */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description <span className="text-red-500">*</span>
+                Blurb <span className="text-red-500">*</span>
               </label>
               <textarea
                 required
@@ -244,7 +244,7 @@ export default function NovelUploadForm() {
                   }
                 }}
                 rows={8}
-                placeholder="Write a compelling description for your story..."
+                placeholder="Write a compelling blurb for your story..."
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent resize-none ${
                   blurbError
                     ? 'border-red-500 focus:ring-red-500'
@@ -253,7 +253,7 @@ export default function NovelUploadForm() {
                 maxLength={LIMITS.BLURB_MAX}
               />
               <div className="flex justify-between items-center mt-1">
-                <span className={`text-xs ${blurbCharCount > 950 ? 'text-red-500' : 'text-gray-500'}`}>
+                <span className={`text-xs ${blurbWarning ? 'text-red-500' : 'text-gray-500'}`}>
                   {blurbCharCount} / {LIMITS.BLURB_MAX} characters
                 </span>
                 {blurbError && (

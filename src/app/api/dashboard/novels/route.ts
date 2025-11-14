@@ -97,9 +97,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (blurb.length > 1000) {
+    if (blurb.length > 3000) {
       return NextResponse.json(
-        { error: 'Description must be 1000 characters or less' },
+        { error: 'Blurb must be 3000 characters or less' },
         { status: 400 }
       )
     }

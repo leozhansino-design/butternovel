@@ -69,8 +69,6 @@ export default function TableOfContents({ chapters, novelSlug }: TableOfContents
 
                     {/* 元信息 */}
                     <div className="flex items-center gap-3 text-xs text-gray-500">
-                      <span>{(chapter.wordCount || 0).toLocaleString()} characters</span>
-                      <span>•</span>
                       <span>{formatDistanceToNow(new Date(chapter.createdAt), { addSuffix: true })}</span>
                     </div>
                   </div>

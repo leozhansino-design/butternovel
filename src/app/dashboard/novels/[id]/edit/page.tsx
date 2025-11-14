@@ -26,7 +26,7 @@ const genres = [
 
 const LIMITS = {
   TITLE_MAX: 120,
-  BLURB_MAX: 1000,
+  BLURB_MAX: 3000,
 }
 
 const IMAGE_LIMITS = {
@@ -302,7 +302,7 @@ export default function EditNovelPage() {
             {/* Blurb */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description / Blurb *
+                Blurb <span className="text-red-500">*</span>
               </label>
               <textarea
                 required
@@ -322,7 +322,7 @@ export default function EditNovelPage() {
                 maxLength={LIMITS.BLURB_MAX}
               />
               <div className="flex justify-between items-center mt-1">
-                <span className={`text-xs ${formData.blurb.length > 950 ? 'text-red-500' : 'text-gray-500'}`}>
+                <span className={`text-xs ${formData.blurb.length > 2850 ? 'text-red-500' : 'text-gray-500'}`}>
                   {formData.blurb.length} / {LIMITS.BLURB_MAX} characters
                 </span>
                 {formData.blurb.length >= LIMITS.BLURB_MAX && (
