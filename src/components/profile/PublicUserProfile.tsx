@@ -159,8 +159,8 @@ export default function PublicUserProfile({ user, onNovelClick }: PublicUserProf
               )}
             </div>
 
-            {/* Bio */}
-            {user.bio && (
+            {/* Bio - only show for non-official accounts here */}
+            {!isOfficial && user.bio && (
               <p className="text-gray-700 text-sm leading-relaxed mb-4">{user.bio}</p>
             )}
 
@@ -168,14 +168,29 @@ export default function PublicUserProfile({ user, onNovelClick }: PublicUserProf
 
             {/* Stats cards */}
             {isOfficial ? (
-              // Official account: only show Followers
-              <div className="mt-4">
+              // Official account: show bio and compact follower button
+              <div className="mt-4 space-y-3">
+                {/* Bio section - larger display for official account */}
+                {user.bio && (
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-5 shadow-lg">
+                    <p className="text-gray-700 text-sm leading-relaxed">{user.bio}</p>
+                  </div>
+                )}
+
+                {/* Compact follower button */}
                 <button
                   onClick={() => setShowFollowModal('followers')}
-                  className="w-full backdrop-blur-xl bg-gradient-to-r from-blue-500/20 to-indigo-600/20 border-2 border-blue-500/40 rounded-lg p-6 text-center shadow-lg hover:from-blue-500/30 hover:to-indigo-600/30 transition-all cursor-pointer"
+                  className="w-full backdrop-blur-xl bg-gradient-to-r from-blue-500/20 to-indigo-600/20 border-2 border-blue-500/40 rounded-lg p-4 text-center shadow-lg hover:from-blue-500/30 hover:to-indigo-600/30 transition-all cursor-pointer"
                 >
-                  <div className="text-3xl font-bold text-gray-900">{followersCount}</div>
-                  <div className="text-sm text-gray-700 mt-2 font-semibold">Followers</div>
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                    </svg>
+                    <div>
+                      <span className="text-2xl font-bold text-gray-900">{followersCount}</span>
+                      <span className="text-sm text-gray-700 ml-2 font-semibold">Followers</span>
+                    </div>
+                  </div>
                 </button>
               </div>
             ) : (
