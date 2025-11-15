@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     const comments = await prisma.paragraphComment.findMany({
       where: {
         chapterId: parseInt(chapterId),
-        paragraphIndex: parseInt(paragraphIndex)
+        paragraphIndex: parseInt(paragraphIndex),
+        parentId: null, // Only get top-level comments, not replies
       },
       include: {
         user: {
@@ -31,9 +32,15 @@ export async function GET(request: NextRequest) {
             avatar: true,
             level: true,
             contributionPoints: true,
-            role: true
+            role: true,
+            isOfficial: true,
           }
-        }
+        },
+        _count: {
+          select: {
+            replies: true,
+          },
+        },
       },
       orderBy: [
         { likeCount: 'desc' },
@@ -136,9 +143,15 @@ export async function POST(request: NextRequest) {
             avatar: true,
             level: true,
             contributionPoints: true,
-            role: true
+            role: true,
+            isOfficial: true,
           }
-        }
+        },
+        _count: {
+          select: {
+            replies: true,
+          },
+        },
       }
     })
 
