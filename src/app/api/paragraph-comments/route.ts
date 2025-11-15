@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { uploadCommentImage } from '@/lib/cloudinary'
+import { Prisma } from '@prisma/client'
 
 // GET - 获取某个段落的评论
 export async function GET(request: NextRequest) {
@@ -124,35 +125,60 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 创建评论
-    const comment = await prisma.paragraphComment.create({
-      data: {
-        novelId: parseInt(novelId),
-        chapterId: parseInt(chapterId),
-        paragraphIndex: parseInt(paragraphIndex),
-        content: content.trim(),
-        imageUrl,
-        imagePublicId,
-        userId: session.user.id
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            level: true,
-            contributionPoints: true,
-            role: true,
-            isOfficial: true,
-          }
+    // 创建评论（使用事务）
+    const comment = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // 1. 创建评论
+      const newComment = await tx.paragraphComment.create({
+        data: {
+          novelId: parseInt(novelId),
+          chapterId: parseInt(chapterId),
+          paragraphIndex: parseInt(paragraphIndex),
+          content: content.trim(),
+          imageUrl,
+          imagePublicId,
+          userId: session.user.id
         },
-        _count: {
-          select: {
-            replies: true,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+              level: true,
+              contributionPoints: true,
+              role: true,
+              isOfficial: true,
+            }
+          },
+          _count: {
+            select: {
+              replies: true,
+            },
+          },
+        }
+      })
+
+      // 2. 添加贡献度积分
+      await tx.user.update({
+        where: { id: session.user.id },
+        data: {
+          contributionPoints: {
+            increment: 5,
           },
         },
-      }
+      })
+
+      // 3. 创建贡献度日志
+      await tx.contributionLog.create({
+        data: {
+          userId: session.user.id,
+          type: 'COMMENT',
+          points: 5,
+          description: 'Posted a paragraph comment',
+        },
+      })
+
+      return newComment
     })
 
     return NextResponse.json({ success: true, data: comment })

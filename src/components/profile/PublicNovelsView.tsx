@@ -24,26 +24,48 @@ interface PublicNovelsViewProps {
 export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
 
-  useEffect(() => {
-    const fetchNovels = async () => {
-      try {
+  const fetchNovels = async (pageNum: number, append: boolean = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true)
+      } else {
         setLoading(true)
-        const res = await fetch(`/api/public/user/${userId}/novels`)
-        const data = await res.json()
+      }
 
-        if (res.ok) {
+      const res = await fetch(`/api/public/user/${userId}/novels?page=${pageNum}&limit=20`)
+      const data = await res.json()
+
+      if (res.ok) {
+        if (append) {
+          setNovels(prev => [...prev, ...(data.novels || [])])
+        } else {
           setNovels(data.novels || [])
         }
-      } catch (error) {
-        console.error('Failed to fetch novels:', error)
-      } finally {
-        setLoading(false)
+        setHasMore(data.pagination?.hasMore || false)
+        setTotalCount(data.pagination?.totalCount || 0)
       }
+    } catch (error) {
+      console.error('Failed to fetch novels:', error)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
     }
+  }
 
-    fetchNovels()
+  useEffect(() => {
+    fetchNovels(1, false)
   }, [userId])
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1
+    setPage(nextPage)
+    fetchNovels(nextPage, true)
+  }
 
   if (loading) {
     return (
@@ -79,6 +101,13 @@ export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
 
   return (
     <div className="h-full overflow-y-auto p-6">
+      {/* Total count */}
+      {totalCount > 0 && (
+        <div className="mb-4 text-sm text-gray-600">
+          Showing {novels.length} of {totalCount} novels
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {novels.map((novel) => (
           <Link
@@ -157,6 +186,26 @@ export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
           </Link>
         ))}
       </div>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+          >
+            {loadingMore ? (
+              <span className="flex items-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Loading...
+              </span>
+            ) : (
+              `Load More (${totalCount - novels.length} remaining)`
+            )}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -27,6 +27,7 @@ export const GET = withErrorHandling(async (
       role: true,  // Include role for admin check
       contributionPoints: true,
       level: true,
+      isOfficial: true,  // Include official account flag
       totalReadingTime: true,
       createdAt: true,
       libraryPrivacy: true,  // Include privacy setting
@@ -62,6 +63,7 @@ export const GET = withErrorHandling(async (
               bio: adminProfile.bio || null,
               role: 'ADMIN',
               isVerified: true,
+              isOfficial: true,  // Mark as official account
             },
             select: {
               id: true,
@@ -71,6 +73,7 @@ export const GET = withErrorHandling(async (
               role: true,
               contributionPoints: true,
               level: true,
+              isOfficial: true,
               totalReadingTime: true,
               createdAt: true,
               libraryPrivacy: true,
@@ -96,6 +99,7 @@ export const GET = withErrorHandling(async (
                 bio: adminProfile.bio || null,
                 role: 'ADMIN',
                 isVerified: true,
+                isOfficial: true,  // Mark as official account
               },
               select: {
                 id: true,
@@ -105,6 +109,7 @@ export const GET = withErrorHandling(async (
                 role: true,
                 contributionPoints: true,
                 level: true,
+                isOfficial: true,
                 totalReadingTime: true,
                 createdAt: true,
                 libraryPrivacy: true,
