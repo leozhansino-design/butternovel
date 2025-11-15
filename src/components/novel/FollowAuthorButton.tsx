@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 
 interface FollowAuthorButtonProps {
@@ -21,27 +21,29 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
 
   const isOwnProfile = session?.user?.id === authorId
 
+  // 🔧 FIX: 使用 useCallback 防止无限循环
+  const checkFollowStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/user/follow-status?userId=${authorId}`)
+      const data = await res.json()
+      if (data.isFollowing !== undefined) {
+        setIsFollowing(data.isFollowing)
+      }
+    } catch (error) {
+      console.error('[FollowAuthorButton] Failed to check follow status:', error)
+    } finally {
+      setCheckingStatus(false)
+    }
+  }, [authorId])
+
   // Check follow status
   useEffect(() => {
     if (session?.user?.id && !isOwnProfile) {
-      const checkFollowStatus = async () => {
-        try {
-          const res = await fetch(`/api/user/follow-status?userId=${authorId}`)
-          const data = await res.json()
-          if (data.isFollowing !== undefined) {
-            setIsFollowing(data.isFollowing)
-          }
-        } catch (error) {
-          console.error('Failed to check follow status:', error)
-        } finally {
-          setCheckingStatus(false)
-        }
-      }
       checkFollowStatus()
     } else {
       setCheckingStatus(false)
     }
-  }, [session, authorId, isOwnProfile])
+  }, [session?.user?.id, isOwnProfile, checkFollowStatus])
 
   const handleFollowToggle = async () => {
     if (!session?.user?.id) {

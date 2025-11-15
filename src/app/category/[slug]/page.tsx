@@ -156,18 +156,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   )
 }
 
-// Generate static params for all categories at build time
-export async function generateStaticParams() {
-  try {
-    const categories = await prisma.category.findMany({
-      select: { slug: true }
-    }) as any[]
+// 🔧 FIX: 允许动态路由参数，避免 404
+export const dynamicParams = true
 
-    return categories.map(category => ({
-      slug: category.slug
-    }))
-  } catch (error) {
-    console.error('Failed to generate static params for categories:', error)
-    return []
-  }
+// 🔧 FIX: 完全禁用静态生成，避免构建时数据库连接问题
+// 在 serverless 环境中，构建时访问数据库会导致连接池耗尽
+// 所有页面将在请求时动态生成
+export async function generateStaticParams() {
+  // 返回空数组，不预渲染任何页面
+  // 通过 dynamicParams = true 允许所有路由在运行时动态生成
+  return []
 }

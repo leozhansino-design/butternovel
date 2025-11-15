@@ -2,7 +2,7 @@
 // src/components/novel/RatingModal.tsx
 // 评分 Modal 组件
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { signIn } from 'next-auth/react'
@@ -112,8 +112,8 @@ export default function RatingModal({
     }
   }, [isOpen, userId, novelId])
 
-  // ✅ 获取评分列表 - 提取为可重用函数
-  const fetchRatings = async (pageNum: number, sort?: 'likes' | 'newest') => {
+  // 🔧 FIX: 使用 useCallback 防止无限循环
+  const fetchRatings = useCallback(async (pageNum: number, sort?: 'likes' | 'newest') => {
     setLoading(true)
     try {
       const sortParam = sort || sortBy
@@ -133,23 +133,21 @@ export default function RatingModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [novelId, sortBy])
 
   // ✅ 初始加载评分列表
   useEffect(() => {
     if (isOpen) {
       fetchRatings(1)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, novelId])
+  }, [isOpen, fetchRatings])
 
   // ✅ Re-fetch when sort changes
   useEffect(() => {
     if (isOpen) {
       fetchRatings(1, sortBy)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy])
+  }, [sortBy, isOpen, fetchRatings])
 
   // 防止背景滚动 - Prevent background scroll when modal is open
   useEffect(() => {
