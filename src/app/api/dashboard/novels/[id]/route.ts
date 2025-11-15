@@ -195,6 +195,11 @@ export async function DELETE(
         id: novelId,
         authorId: session.user.id,
       },
+      include: {
+        category: {
+          select: { slug: true }
+        }
+      }
     })
 
     if (!existingNovel) {
@@ -203,6 +208,10 @@ export async function DELETE(
         { status: 404 }
       )
     }
+
+    // Store slug and category slug for cache invalidation
+    const novelSlug = existingNovel.slug
+    const categorySlug = existingNovel.category?.slug
 
     // Delete cover image from Cloudinary
     if (existingNovel.coverImagePublicId) {
@@ -217,6 +226,10 @@ export async function DELETE(
     await prisma.novel.delete({
       where: { id: novelId },
     })
+
+    // ⚡ CRITICAL: Clear cache after deletion
+    await invalidateNovelRelatedCache(novelSlug, categorySlug)
+    console.log('✓ Cache cleared for deleted novel:', novelSlug)
 
     return NextResponse.json({
       message: 'Novel deleted successfully',

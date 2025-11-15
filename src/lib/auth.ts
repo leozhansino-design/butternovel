@@ -162,10 +162,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             avatarUrl: user.image,
             isGoogleProvider: account?.provider === 'google'
           })
+
+          // ⚠️ CRITICAL: Sanitize name - replace "butterpicks" (reserved for official accounts)
+          let sanitizedName = user.name || "User"
+          const normalizedName = sanitizedName.toLowerCase()
+          if (normalizedName === 'butterpicks' || normalizedName.includes('butterpicks')) {
+            // Extract email username or use "User" + random number
+            const emailUsername = user.email.split('@')[0]
+            sanitizedName = emailUsername.replace(/[^a-zA-Z0-9]/g, '_') || `User${Math.floor(Math.random() * 10000)}`
+            console.log('[Auth] Reserved name detected, replaced with:', sanitizedName)
+          }
+
           await prisma.user.create({
             data: {
               email: user.email,
-              name: user.name || "User",
+              name: sanitizedName,
               avatar: user.image || null,
               googleId: account?.providerAccountId || null,
             },

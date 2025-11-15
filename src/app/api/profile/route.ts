@@ -100,11 +100,26 @@ export const PATCH = withErrorHandling(async (request: Request) => {
 
   // ✅ 先检查用户是否存在 (防止 OAuth 用户被删除后仍有 session)
   const existingUser = await prisma.user.findUnique({
-    where: { id: session.user.id }
+    where: { id: session.user.id },
+    select: { id: true, role: true }
   })
 
   if (!existingUser) {
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
+  }
+
+  // ⚠️ CRITICAL: Reserve "butterpicks" name for admin/official accounts only
+  if (name !== undefined) {
+    const normalizedName = name.trim().toLowerCase()
+    const isReservedName = normalizedName === 'butterpicks' || normalizedName.includes('butterpicks')
+
+    if (isReservedName && existingUser.role !== 'ADMIN') {
+      return errorResponse(
+        'This name is reserved for official accounts. Please choose a different name.',
+        400,
+        'RESERVED_NAME'
+      )
+    }
   }
 
   // 更新用户
