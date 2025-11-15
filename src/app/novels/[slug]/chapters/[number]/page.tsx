@@ -15,87 +15,110 @@ interface PageProps {
 
 async function getChapterData(slug: string, chapterNumber: number) {
   // 🔄 添加数据库重试机制，解决连接超时问题
-  const [novel, chapter, chapters, nextChapterContent] = await Promise.all([
-    withRetry(
-      () => prisma.novel.findUnique({
-        where: { slug },
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          _count: {
-            select: { chapters: true }
+  try {
+    const [novel, chapter, chapters, nextChapterContent] = await Promise.all([
+      withRetry(
+        () => prisma.novel.findUnique({
+          where: { slug },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            _count: {
+              select: { chapters: true }
+            }
           }
-        }
-      }),
-      { operationName: 'Get novel for chapter page' }
-    ),
+        }),
+        { operationName: 'Get novel for chapter page' }
+      ),
 
-    withRetry(
-      () => prisma.chapter.findFirst({
-        where: {
-          novel: { slug },
-          chapterNumber: chapterNumber,
-          isPublished: true
-        },
-        select: {
-          id: true,
-          title: true,
-          chapterNumber: true,
-          content: true,
-          wordCount: true,
-          novelId: true,
-        }
-      }),
-      { operationName: 'Get current chapter' }
-    ),
-
-    // ✅ 优化: 只加载当前章节附近的章节 (窗口分页,防止大型小说崩溃)
-    withRetry(
-      () => prisma.chapter.findMany({
-        where: {
-          novel: { slug },
-          isPublished: true,
-          chapterNumber: {
-            gte: Math.max(1, chapterNumber - 10),
-            lte: chapterNumber + 10
+      withRetry(
+        () => prisma.chapter.findFirst({
+          where: {
+            novel: { slug },
+            chapterNumber: chapterNumber,
+            isPublished: true
+          },
+          select: {
+            id: true,
+            title: true,
+            chapterNumber: true,
+            content: true,
+            wordCount: true,
+            novelId: true,
           }
-        },
-        select: {
-          id: true,
-          chapterNumber: true,
-          title: true
-        },
-        orderBy: {
-          chapterNumber: 'asc'
-        }
-      }),
-      { operationName: 'Get nearby chapters list' }
-    ),
+        }),
+        { operationName: 'Get current chapter' }
+      ),
 
-    withRetry(
-      () => prisma.chapter.findFirst({
-        where: {
-          novel: { slug },
-          chapterNumber: chapterNumber + 1,
-          isPublished: true
-        },
-        select: {
-          content: true,
-        }
-      }),
-      { operationName: 'Get next chapter for prefetch' }
-    )
-  ])
+      // ✅ 优化: 只加载当前章节附近的章节 (窗口分页,防止大型小说崩溃)
+      withRetry(
+        () => prisma.chapter.findMany({
+          where: {
+            novel: { slug },
+            isPublished: true,
+            chapterNumber: {
+              gte: Math.max(1, chapterNumber - 10),
+              lte: chapterNumber + 10
+            }
+          },
+          select: {
+            id: true,
+            chapterNumber: true,
+            title: true
+          },
+          orderBy: {
+            chapterNumber: 'asc'
+          }
+        }),
+        { operationName: 'Get nearby chapters list' }
+      ),
 
-  if (!novel || !chapter) return null
+      withRetry(
+        () => prisma.chapter.findFirst({
+          where: {
+            novel: { slug },
+            chapterNumber: chapterNumber + 1,
+            isPublished: true
+          },
+          select: {
+            content: true,
+          }
+        }),
+        { operationName: 'Get next chapter for prefetch' }
+      )
+    ])
 
-  return {
-    novel,
-    chapter,
-    chapters,
-    nextChapterContent,
-    totalChapters: novel._count.chapters
+    if (!novel || !chapter) return null
+
+    return {
+      novel,
+      chapter,
+      chapters,
+      nextChapterContent,
+      totalChapters: novel._count.chapters
+    }
+  } catch (error: unknown) {
+    // 🔧 FIX: Better error logging for Server Component errors
+    console.error('[Chapter Page] Error fetching chapter data:', {
+      slug,
+      chapterNumber,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
+
+    // Check for specific database errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const dbError = error as { code: string }
+      if (dbError.code === 'P1001') {
+        console.error('[Chapter Page] Database connection failed - max connections may be reached')
+      } else if (dbError.code === 'P1008') {
+        console.error('[Chapter Page] Database operation timed out')
+      }
+    }
+
+    // Re-throw to let Next.js handle it
+    throw error
   }
 }
 
