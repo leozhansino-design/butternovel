@@ -177,19 +177,17 @@ export default function PublicUserProfile({ user, onNovelClick }: PublicUserProf
                   </div>
                 )}
 
-                {/* Compact follower button */}
+                {/* Compact follower button - small size */}
                 <button
                   onClick={() => setShowFollowModal('followers')}
-                  className="w-full backdrop-blur-xl bg-gradient-to-r from-blue-500/20 to-indigo-600/20 border-2 border-blue-500/40 rounded-lg p-4 text-center shadow-lg hover:from-blue-500/30 hover:to-indigo-600/30 transition-all cursor-pointer"
+                  className="w-full backdrop-blur-xl bg-gradient-to-r from-blue-500/20 to-indigo-600/20 border border-blue-500/30 rounded-lg px-4 py-2 shadow-md hover:from-blue-500/30 hover:to-indigo-600/30 transition-all cursor-pointer"
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
                     </svg>
-                    <div>
-                      <span className="text-2xl font-bold text-gray-900">{followersCount}</span>
-                      <span className="text-sm text-gray-700 ml-2 font-semibold">Followers</span>
-                    </div>
+                    <span className="text-lg font-bold text-gray-900">{followersCount}</span>
+                    <span className="text-xs text-gray-600">Followers</span>
                   </div>
                 </button>
               </div>
