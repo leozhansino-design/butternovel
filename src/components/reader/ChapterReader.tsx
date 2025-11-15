@@ -544,10 +544,10 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
           </div>
         </div>
 
-        {/* 评论面板 - 桌面：从Header下方开始，移动：全屏覆盖 */}
+        {/* 评论面板 - 侧边栏形式，从右边滑入 */}
         {isCommentPanelOpen && (
           <div
-            className={`fixed z-50 shadow-2xl border-l border-gray-200 transition-transform duration-300 ease-in-out ${
+            className={`fixed z-50 shadow-2xl border-l border-gray-200 transition-transform duration-300 ease-out ${
               isCommentPanelOpen ? 'translate-x-0' : 'translate-x-full'
             } ${bgColors[bgColor].bg} ${bgColors[bgColor].text}
             lg:top-16 lg:right-0 lg:w-[30%] lg:h-[calc(100vh-4rem)]
@@ -568,8 +568,8 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
       {/* Table of Contents */}
       {showToc && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowToc(false)} />
-          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
+          <div className="fixed inset-0 bg-black/50 z-60" onClick={() => setShowToc(false)} />
+          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-70 overflow-y-auto`}>
             <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
               <h3 className="font-bold text-lg">Table of Contents</h3>
               <button onClick={() => setShowToc(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -601,8 +601,8 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
       {/* Settings */}
       {showSettings && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSettings(false)} />
-          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
+          <div className="fixed inset-0 bg-black/50 z-60" onClick={() => setShowSettings(false)} />
+          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-70 overflow-y-auto`}>
             <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
               <h3 className="font-bold text-lg">Reader Settings</h3>
               <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">

@@ -87,17 +87,18 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
     return null // Or a small loading spinner
   }
 
+  // 🔧 FIX: 已经follow的作者，完全隐藏按钮
+  if (isFollowing) {
+    return null
+  }
+
   return (
     <button
       onClick={handleFollowToggle}
       disabled={loading}
-      className={`ml-3 px-4 py-1.5 rounded-full font-semibold text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
-        isFollowing
-          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600'
-      }`}
+      className="ml-3 px-4 py-1.5 rounded-full font-semibold text-sm transition-all shadow-md bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {loading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
+      {loading ? 'Loading...' : 'Follow'}
     </button>
   )
 }
