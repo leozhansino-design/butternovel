@@ -1,8 +1,7 @@
 // src/app/api/paragraph-comments/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import prisma from '@/lib/prisma'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { uploadCommentImage } from '@/lib/cloudinary'
 
 // GET - 获取某个段落的评论
@@ -55,7 +54,7 @@ export async function GET(request: NextRequest) {
 // POST - 发表段落评论
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
