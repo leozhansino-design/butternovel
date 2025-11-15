@@ -89,14 +89,17 @@ async function HomeContent() {
   )
 }
 
-// ✅ ISR: 1小时重新验证
-// 使用静态生成 + ISR，大幅减少服务器负载
-export const revalidate = 3600
-
-// ✅ 移除 force-dynamic，使用 ISR 缓存整个页面
-// Redis 层：getHomePageData() 使用 Redis 缓存数据（1小时TTL）
-// Next.js 层：页面使用 ISR 缓存（1小时revalidate）
-// 结果：首次部署只需1次数据库查询，后续访问直接返回静态页面
+// ✅ 使用 force-dynamic 确保 Redis 缓存层工作
+// 策略：每次请求都检查 Redis，只有 miss 时查数据库
+//
+// 缓存架构：
+// 1. Redis 缓存（home:all-data，TTL=1小时）
+// 2. 并发控制：防止缓存击穿
+//
+// 首次部署可能有多个并发请求（预热、health check、边缘节点）
+// 这是正常的，getOrSet 会处理并发，只有第一个请求查数据库
+export const dynamic = 'force-dynamic'
+export const revalidate = 0 // 禁用 ISR，完全依赖 Redis
 
 export default function HomePage() {
   return (
