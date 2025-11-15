@@ -390,12 +390,16 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
       </div>
 
       {/* ✅ 内容区域 - 支持分屏 */}
-      <div className={`container mx-auto px-4 py-8 ${isCommentPanelOpen ? 'max-w-7xl' : 'max-w-4xl'} transition-all duration-300`}>
-        <div className={`flex gap-6 ${isCommentPanelOpen ? 'flex-row' : 'flex-col'}`}>
-          {/* 正文区域 */}
+      <div className="relative">
+        {/* 正文区域 - 从中间向左平移 */}
+        <div
+          className={`container mx-auto px-4 py-8 max-w-4xl transition-all duration-500 ease-in-out ${
+            isCommentPanelOpen ? 'transform -translate-x-[15%]' : ''
+          }`}
+        >
           <div
             ref={contentRef}
-            className={`${isCommentPanelOpen ? 'w-1/2' : 'w-full'} overflow-y-auto transition-all duration-300`}
+            className="w-full"
           >
             <div className={`prose prose-lg max-w-none ${fontSizes[fontSize].class}`} style={{ lineHeight: fontSizes[fontSize].lineHeight }}>
               {showParagraphComments && readMode === 'scroll' ? (
@@ -406,8 +410,8 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                       <div className="leading-loose whitespace-pre-wrap">
                         {paragraph}
                       </div>
-                      {/* 段落评论按钮 */}
-                      <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* 段落评论按钮 - 固定在段落右下角 */}
+                      <div className="flex justify-end mt-2">
                         <ParagraphCommentButton
                           chapterId={chapter.id}
                           paragraphIndex={index}
@@ -427,74 +431,78 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
             </div>
           </div>
 
-          {/* 评论面板区域 */}
-          {isCommentPanelOpen && (
-            <div className="w-1/2 h-[80vh] sticky top-24 overflow-hidden rounded-lg border border-gray-200 shadow-xl">
-              <ParagraphCommentPanel
-                novelId={novel.id}
-                chapterId={chapter.id}
-                paragraphIndex={activeParagraphIndex}
-                onClose={() => setActiveParagraphIndex(null)}
-              />
+          {readMode === 'page' && pages.length > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-8 py-4 border-t border-gray-200">
+              <button
+                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+                className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              <span className="text-sm font-medium">
+                Page {currentPage + 1} / {pages.length}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage(Math.min(pages.length - 1, currentPage + 1))}
+                disabled={currentPage === pages.length - 1}
+                className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           )}
+
+          <div className="flex items-center justify-between mt-12 pt-8 border-t border-gray-200">
+            {hasPrev ? (
+              <button
+                onClick={goToPrevChapter}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous Chapter
+              </button>
+            ) : (
+              <div></div>
+            )}
+
+            {hasNext && (
+              <button
+                onClick={goToNextChapter}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg ml-auto"
+              >
+                Next Chapter
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
-        {readMode === 'page' && pages.length > 1 && (
-          <div className="flex items-center justify-center gap-4 mt-8 py-4 border-t border-gray-200">
-            <button
-              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-              disabled={currentPage === 0}
-              className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            
-            <span className="text-sm font-medium">
-              Page {currentPage + 1} / {pages.length}
-            </span>
-            
-            <button
-              onClick={() => setCurrentPage(Math.min(pages.length - 1, currentPage + 1))}
-              disabled={currentPage === pages.length - 1}
-              className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+        {/* 评论面板 - 固定在右侧，从右滑入 */}
+        {isCommentPanelOpen && (
+          <div
+            className={`fixed top-0 right-0 h-screen w-[30%] bg-white shadow-2xl border-l border-gray-200 z-50 transition-transform duration-500 ease-in-out ${
+              isCommentPanelOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            <ParagraphCommentPanel
+              novelId={novel.id}
+              chapterId={chapter.id}
+              paragraphIndex={activeParagraphIndex}
+              onClose={() => setActiveParagraphIndex(null)}
+            />
           </div>
         )}
-
-        <div className="flex items-center justify-between mt-12 pt-8 border-t border-gray-200">
-          {hasPrev ? (
-            <button
-              onClick={goToPrevChapter}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Previous Chapter
-            </button>
-          ) : (
-            <div></div>
-          )}
-
-          {hasNext && (
-            <button
-              onClick={goToNextChapter}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg ml-auto"
-            >
-              Next Chapter
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Table of Contents */}
