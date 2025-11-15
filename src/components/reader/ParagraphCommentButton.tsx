@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface ParagraphCommentButtonProps {
   chapterId: number
@@ -18,11 +18,8 @@ export default function ParagraphCommentButton({
   const [commentCount, setCommentCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchCommentCount()
-  }, [chapterId, paragraphIndex])
-
-  const fetchCommentCount = async () => {
+  // 🔧 FIX: 使用 useCallback 防止无限循环和不必要的重新渲染
+  const fetchCommentCount = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch(
@@ -33,11 +30,15 @@ export default function ParagraphCommentButton({
         setCommentCount(data.data?.length || 0)
       }
     } catch (error) {
-      console.error('Failed to fetch comment count:', error)
+      console.error('[ParagraphCommentButton] Failed to fetch comment count:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [chapterId, paragraphIndex])
+
+  useEffect(() => {
+    fetchCommentCount()
+  }, [fetchCommentCount])
 
   // 根据评论数量决定样式
   const getButtonStyle = () => {
