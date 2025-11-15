@@ -7,11 +7,12 @@ import crypto from 'crypto'
 // POST - 点赞段落评论
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
-    const commentId = params.id
+    const { id } = await context.params
+    const commentId = id
 
     // 检查评论是否存在
     const comment = await prisma.paragraphComment.findUnique({
@@ -93,11 +94,12 @@ export async function POST(
 // DELETE - 取消点赞段落评论
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
-    const commentId = params.id
+    const { id } = await context.params
+    const commentId = id
 
     let userId: string | undefined
     let guestId: string | undefined

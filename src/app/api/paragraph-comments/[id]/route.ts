@@ -7,7 +7,7 @@ import { deleteImage } from '@/lib/cloudinary'
 // DELETE - 删除段落评论
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -18,7 +18,8 @@ export async function DELETE(
       )
     }
 
-    const commentId = params.id
+    const { id } = await context.params
+    const commentId = id
 
     // 查找评论
     const comment = await prisma.paragraphComment.findUnique({
