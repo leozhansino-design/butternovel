@@ -411,10 +411,10 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
 
       {/* ✅ 内容区域 - 支持分屏 */}
       <div className="relative">
-        {/* 正文区域 - 从中间向左平移 */}
+        {/* 正文区域 - 桌面端给评论留空间，移动端全宽 */}
         <div
-          className={`container mx-auto px-4 py-8 max-w-4xl transition-all duration-500 ease-in-out ${
-            isCommentPanelOpen ? 'transform -translate-x-[15%]' : ''
+          className={`container mx-auto px-4 py-8 max-w-4xl transition-all duration-300 ${
+            isCommentPanelOpen ? 'lg:mr-[30%]' : ''
           }`}
         >
           <div
@@ -508,18 +508,22 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
           </div>
         </div>
 
-        {/* 评论面板 - 固定在右侧，从右滑入 */}
+        {/* 评论面板 - 桌面：从Header下方开始，移动：全屏覆盖 */}
         {isCommentPanelOpen && (
           <div
-            className={`fixed top-0 right-0 h-screen w-[30%] bg-white shadow-2xl border-l border-gray-200 z-50 transition-transform duration-500 ease-in-out ${
+            className={`fixed z-50 shadow-2xl border-l border-gray-200 transition-transform duration-300 ease-in-out ${
               isCommentPanelOpen ? 'translate-x-0' : 'translate-x-full'
-            }`}
+            } ${bgColors[bgColor].bg} ${bgColors[bgColor].text}
+            lg:top-16 lg:right-0 lg:w-[30%] lg:h-[calc(100vh-4rem)]
+            max-lg:inset-0 max-lg:w-full max-lg:h-screen max-lg:top-0`}
           >
             <ParagraphCommentPanel
               novelId={novel.id}
               chapterId={chapter.id}
               paragraphIndex={activeParagraphIndex}
               onClose={() => setActiveParagraphIndex(null)}
+              bgColor={bgColors[bgColor].bg}
+              textColor={bgColors[bgColor].text}
             />
           </div>
         )}

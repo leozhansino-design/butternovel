@@ -20,13 +20,13 @@ const databaseUrl = new URL(rawDatabaseUrl)
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
 // 🔧 FIX: Optimized connection pool settings to prevent "Max client connections reached"
-// - connection_limit: Reduced from 15 to 10 (prevents exhausting Neon's free tier limit of 20)
-// - pool_timeout: Increased from 20 to 60 (wait longer for available connection)
-// - connect_timeout: Reduced from 15 to 10 (fail faster on connection issues)
-databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '10')
-databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '60')
+// - connection_limit: Reduced to 5 (conservative limit to prevent exhausting database connections)
+// - pool_timeout: Increased to 120 (wait longer for available connection)
+// - connect_timeout: 10 seconds (fail faster on connection issues)
+databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '5')
+databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '120')
 databaseUrl.searchParams.set('connect_timeout', '10')
-databaseUrl.searchParams.set('socket_timeout', '45')
+databaseUrl.searchParams.set('socket_timeout', '60')
 
 // 3. 🔧 CRITICAL FIX: Proper Prisma singleton pattern
 // This prevents creating multiple PrismaClient instances in development

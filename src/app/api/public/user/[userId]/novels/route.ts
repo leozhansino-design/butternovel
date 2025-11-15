@@ -7,17 +7,25 @@ export async function GET(
 ) {
   try {
     const { userId } = await context.params
+    const { searchParams } = new URL(request.url)
+
+    // Pagination parameters
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const skip = (page - 1) * limit
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
-    // Check if user exists
+    // Support both User.id and email for backward compatibility
+    const isEmail = userId.includes('@')
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: isEmail ? { email: userId } : { id: userId },
       select: {
         id: true,
-        name: true
+        name: true,
+        email: true
       }
     })
 
@@ -25,34 +33,62 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Fetch user's published novels
-    const novels = await prisma.novel.findMany({
-      where: {
-        authorId: userId,
-        isPublished: true
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        coverImage: true,
-        isPublished: true,
-        viewCount: true,
-        likeCount: true,
-        _count: {
-          select: {
-            chapters: true,
-            ratings: true
+    // Query novels by both user.id and user.email (for backward compatibility)
+    // Old novels may have email as authorId, new ones use user.id
+    const [novels, totalCount] = await Promise.all([
+      prisma.novel.findMany({
+        where: {
+          OR: [
+            { authorId: user.id },
+            { authorId: user.email }
+          ],
+          isPublished: true
+        },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          coverImage: true,
+          isPublished: true,
+          status: true,
+          viewCount: true,
+          likeCount: true,
+          _count: {
+            select: {
+              chapters: true,
+              ratings: true
+            }
           }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.novel.count({
+        where: {
+          OR: [
+            { authorId: user.id },
+            { authorId: user.email }
+          ],
+          isPublished: true
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
+      })
+    ])
+
+    return NextResponse.json({
+      novels,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + novels.length < totalCount
       }
     })
-
-    return NextResponse.json({ novels })
   } catch (error) {
+    console.error('[Novels API] Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
