@@ -88,39 +88,55 @@ export async function getOrSet<T>(
   fetchFunction: () => Promise<T>,
   ttl?: number
 ): Promise<T> {
+  console.log(`🔄 [CACHE getOrSet] Starting for key: ${key}, TTL: ${ttl || 'none'}`);
+  const operationStartTime = Date.now();
+
   try {
     // 1. 尝试从缓存获取
+    console.log(`🔍 [CACHE getOrSet] Attempting to fetch from cache: ${key}`);
     const cached = await safeRedisGet(key);
 
     if (cached) {
       // 缓存命中
       try {
+        console.log(`📦 [CACHE getOrSet] Parsing cached data for key: ${key}`);
         const data = JSON.parse(cached);
+        const totalDuration = Date.now() - operationStartTime;
+        console.log(`✅ [CACHE getOrSet] Cache HIT! Returning cached data (key: ${key}, total duration: ${totalDuration}ms)`);
         return data as T;
       } catch (parseError) {
-        console.error(`✗ 缓存数据解析失败 (${key}):`, parseError);
+        console.error(`🚨 [CACHE getOrSet] Cache data parse failed (${key}):`, parseError);
         // 解析失败，删除损坏的缓存
         await safeRedisDel(key);
       }
     }
 
     // 2. 缓存未命中或 Redis 不可用，从数据库获取
+    console.log(`💾 [CACHE getOrSet] Cache MISS, fetching from database (key: ${key})`);
+    const dbStartTime = Date.now();
     const data = await fetchFunction();
+    const dbDuration = Date.now() - dbStartTime;
+    console.log(`✅ [CACHE getOrSet] Database fetch complete (key: ${key}, db duration: ${dbDuration}ms)`);
 
     // 3. 将数据写入缓存（如果 Redis 可用）
     if (isRedisConnected()) {
       try {
+        console.log(`💾 [CACHE getOrSet] Writing to cache (key: ${key})`);
         const serialized = safeStringify(data); // 🔧 使用 BigInt 安全序列化
         await safeRedisSet(key, serialized, ttl);
       } catch (serializeError) {
-        console.error(`✗ 数据序列化失败 (${key}):`, serializeError);
+        console.error(`🚨 [CACHE getOrSet] Data serialization failed (${key}):`, serializeError);
       }
+    } else {
+      console.log(`⚠️ [CACHE getOrSet] Redis not connected, skipping cache write (key: ${key})`);
     }
 
+    const totalDuration = Date.now() - operationStartTime;
+    console.log(`✅ [CACHE getOrSet] Complete (key: ${key}, total duration: ${totalDuration}ms, db: ${dbDuration}ms)`);
     return data;
   } catch (error) {
     // 如果任何步骤失败，回退到直接查询数据库
-    console.error(`✗ 缓存操作失败，回退到数据库查询 (${key}):`, error);
+    console.error(`🚨 [CACHE getOrSet] Operation failed, falling back to database (${key}):`, error);
     return fetchFunction();
   }
 }
@@ -170,18 +186,28 @@ export async function invalidatePattern(pattern: string): Promise<void> {
  * ⚡ 优化：现在只需清除单个缓存键 home:all-data
  */
 export async function invalidateHomeCache(): Promise<void> {
+  console.log(`🗑️ [CACHE invalidateHomeCache] Starting home cache invalidation`);
+  const startTime = Date.now();
+
   // ✅ 优化：使用单个缓存键
+  console.log(`🗑️ [CACHE invalidateHomeCache] Invalidating 'home:all-data'`);
   await invalidate('home:all-data');
+
   // 保留旧的模式删除以防万一
+  console.log(`🗑️ [CACHE invalidateHomeCache] Invalidating pattern 'home:*'`);
   await invalidatePattern(CacheKeys.PATTERN_HOME);
 
   // ⚡ Clear Next.js ISR cache
   try {
+    console.log(`🗑️ [CACHE invalidateHomeCache] Revalidating Next.js path '/'`);
     const { revalidatePath } = await import('next/cache');
     revalidatePath('/', 'page');
   } catch (error) {
-    console.error('✗ Failed to clear Next.js ISR cache:', error);
+    console.error('🚨 [CACHE invalidateHomeCache] Failed to clear Next.js ISR cache:', error);
   }
+
+  const duration = Date.now() - startTime;
+  console.log(`✅ [CACHE invalidateHomeCache] Complete (duration: ${duration}ms)`);
 }
 
 /**
@@ -189,15 +215,24 @@ export async function invalidateHomeCache(): Promise<void> {
  * 场景：更新小说信息、发布新章节、删除章节
  */
 export async function invalidateNovelCache(slug: string): Promise<void> {
-  await invalidatePattern(CacheKeys.PATTERN_NOVEL(slug));
+  console.log(`🗑️ [CACHE invalidateNovelCache] Starting for novel: ${slug}`);
+  const startTime = Date.now();
+
+  const pattern = CacheKeys.PATTERN_NOVEL(slug);
+  console.log(`🗑️ [CACHE invalidateNovelCache] Invalidating pattern: ${pattern}`);
+  await invalidatePattern(pattern);
 
   // ⚡ Clear Next.js ISR cache for novel detail page
   try {
+    console.log(`🗑️ [CACHE invalidateNovelCache] Revalidating Next.js path '/novels/${slug}'`);
     const { revalidatePath } = await import('next/cache');
     revalidatePath(`/novels/${slug}`, 'page');
   } catch (error) {
-    console.error(`✗ Failed to clear Next.js ISR cache for novel ${slug}:`, error);
+    console.error(`🚨 [CACHE invalidateNovelCache] Failed to clear Next.js ISR cache for novel ${slug}:`, error);
   }
+
+  const duration = Date.now() - startTime;
+  console.log(`✅ [CACHE invalidateNovelCache] Complete for novel ${slug} (duration: ${duration}ms)`);
 }
 
 /**
@@ -224,7 +259,15 @@ export async function invalidateCategoryCache(categorySlug: string): Promise<voi
  * 场景：用户添加/删除书架项
  */
 export async function invalidateUserLibraryCache(userId: string): Promise<void> {
-  await invalidatePattern(CacheKeys.PATTERN_USER_LIBRARY(userId));
+  console.log(`🗑️ [CACHE invalidateUserLibraryCache] Starting for user: ${userId}`);
+  const startTime = Date.now();
+
+  const pattern = CacheKeys.PATTERN_USER_LIBRARY(userId);
+  console.log(`🗑️ [CACHE invalidateUserLibraryCache] Invalidating pattern: ${pattern}`);
+  await invalidatePattern(pattern);
+
+  const duration = Date.now() - startTime;
+  console.log(`✅ [CACHE invalidateUserLibraryCache] Complete for user ${userId} (duration: ${duration}ms)`);
 }
 
 /**
