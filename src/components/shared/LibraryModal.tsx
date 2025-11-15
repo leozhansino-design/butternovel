@@ -99,6 +99,16 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
     }
   }, [isOpen])
 
+  // Shared handler for novel clicks - close modal first, then navigate
+  const handleNovelClick = (slug: string) => {
+    // Close modal first, then navigate
+    onClose()
+    // Small delay to allow modal close animation
+    setTimeout(() => {
+      window.location.href = `/novels/${slug}`
+    }, 100)
+  }
+
   if (!isOpen) return null
 
   // If viewing another user, show simplified version with only profile and reviews
@@ -124,15 +134,6 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
           </div>
         </div>
       )
-    }
-
-    const handleNovelClick = (slug: string) => {
-      // Close modal first, then navigate
-      onClose()
-      // Small delay to allow modal close animation
-      setTimeout(() => {
-        window.location.href = `/novels/${slug}`
-      }, 100)
     }
 
     return (
@@ -233,7 +234,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
             {activeTab === 'novels' && <WorksTab onClose={onClose} />}
             {activeTab === 'library' && <MyLibrary onClose={onClose} />}
             {activeTab === 'history' && <ReadingHistory onClose={onClose} />}
-            {activeTab === 'reviews' && <RatingsTab />}
+            {activeTab === 'reviews' && <RatingsTab onNovelClick={handleNovelClick} />}
           </div>
         </div>
       </div>
