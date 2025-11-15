@@ -1,31 +1,18 @@
 // src/app/page.tsx
 // ⚡ 优化：使用单个缓存键，减少 Redis commands 从 17 降到 1（节省94%）
 import { Suspense } from 'react'
-import { unstable_cache } from 'next/cache'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategorySection from '@/components/front/CategorySection'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 import { getHomePageData } from '@/lib/cache-optimized'
 
-// 🔧 FIX: 使用 unstable_cache 包装以确保页面可以被静态生成
-// Upstash Redis 默认使用 no-store fetch，会强制页面动态渲染
-// unstable_cache 告诉 Next.js 这个数据是可缓存的，允许静态生成
-const getCachedHomePageData = unstable_cache(
-  async () => getHomePageData(),
-  ['home-page-data'], // cache key
-  {
-    revalidate: 3600, // 1小时
-    tags: ['home-page']
-  }
-)
-
 async function HomeContent() {
   // ✅ 优化：使用单个缓存键获取所有首页数据
   // 优化前：17 Redis reads (1 featured + 1 categories + 15 category novels)
   // 优化后：1 Redis read (home:all-data)
   // 节省：94% Redis commands
-  const homeData = await getCachedHomePageData()
+  const homeData = await getHomePageData()
 
   const { featured, categories, categoryNovels } = homeData
 
