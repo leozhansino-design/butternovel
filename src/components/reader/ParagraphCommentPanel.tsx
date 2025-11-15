@@ -680,7 +680,7 @@ export default function ParagraphCommentPanel({
                   {showReplies[comment.id] && replies[comment.id] && (
                     <div className={`mt-3 pl-4 border-l-2 ${borderColor} space-y-3`}>
                       {replies[comment.id].map(reply => (
-                        <div key={reply.id} className={`${bgColor} rounded-lg p-3`}>
+                        <div key={reply.id} className={`${cardBg} rounded-lg p-3`}>
                           <div className="flex items-start gap-2">
                             <div
                               onClick={() => setSelectedUserId(reply.user.id)}
@@ -698,7 +698,7 @@ export default function ParagraphCommentPanel({
 
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm text-gray-900">
+                                <span className={`font-semibold text-sm ${textColor}`}>
                                   {reply.user.name || 'Anonymous'}
                                 </span>
                                 {reply.user.isOfficial && (
@@ -709,12 +709,12 @@ export default function ParagraphCommentPanel({
                                     Official
                                   </span>
                                 )}
-                                <span className="text-xs text-gray-500">
+                                <span className={`text-xs ${mutedText}`}>
                                   {new Date(reply.createdAt).toLocaleDateString()}
                                 </span>
                               </div>
 
-                              <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{reply.content}</p>
+                              <p className={`mt-1 text-sm ${textColor} whitespace-pre-wrap`}>{reply.content}</p>
 
                               {reply.imageUrl && (
                                 <div className="mt-2">
