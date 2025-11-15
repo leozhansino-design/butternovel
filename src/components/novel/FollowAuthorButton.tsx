@@ -93,25 +93,31 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
   }
 
   if (checkingStatus && session?.user?.id) {
-    console.log(`[FollowAuthorButton] Hiding button - checking status`)
-    return null // Or a small loading spinner
+    console.log(`[FollowAuthorButton] Showing button - checking status (loading state)`)
+    // Show a loading button while checking status
+    return (
+      <button
+        disabled
+        className="ml-3 px-4 py-1.5 rounded-full font-semibold text-sm transition-all shadow-md bg-gray-300 text-gray-500 cursor-not-allowed"
+      >
+        Loading...
+      </button>
+    )
   }
 
-  // 🔧 FIX: 已经follow的作者，完全隐藏按钮
-  if (isFollowing) {
-    console.log(`[FollowAuthorButton] Hiding button - already following`)
-    return null
-  }
-
-  console.log(`[FollowAuthorButton] Showing Follow button - isFollowing: ${isFollowing}, checkingStatus: ${checkingStatus}`)
+  console.log(`[FollowAuthorButton] Showing button - isFollowing: ${isFollowing}, loading: ${loading}`)
 
   return (
     <button
       onClick={handleFollowToggle}
       disabled={loading}
-      className="ml-3 px-4 py-1.5 rounded-full font-semibold text-sm transition-all shadow-md bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+      className={`ml-3 px-4 py-1.5 rounded-full font-semibold text-sm transition-all shadow-md ${
+        isFollowing
+          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 hover:scale-105'
+      } disabled:opacity-50 disabled:cursor-not-allowed`}
     >
-      {loading ? 'Loading...' : 'Follow'}
+      {loading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
     </button>
   )
 }

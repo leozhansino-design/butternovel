@@ -7,11 +7,11 @@ import { redirect } from 'next/navigation'
 import WriterProfileCard from '@/components/dashboard/WriterProfileCard'
 import RecentActivities from '@/components/dashboard/RecentActivities'
 
-async function getDashboardStats(userEmail: string) {
+async function getDashboardStats(userId: string) {
   try {
     const novels = await prisma.novel.findMany({
       where: {
-        authorId: userEmail,
+        authorId: userId,
       },
       include: {
         chapters: {
@@ -85,12 +85,12 @@ async function getDashboardStats(userEmail: string) {
 export default async function DashboardPage() {
   const session = await auth()
 
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     // ✅ 跳转到首页，用户可以在那里通过AuthModal登录
     redirect('/')
   }
 
-  const { stats, recentNovels } = await getDashboardStats(session.user.email)
+  const { stats, recentNovels } = await getDashboardStats(session.user.id)
 
   return (
     <div className="min-h-screen">

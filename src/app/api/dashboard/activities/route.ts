@@ -15,11 +15,11 @@ interface Activity {
 
 // 定义Prisma查询结果类型
 interface ChapterWithNovel {
-  id: string
+  id: number
   title: string
   createdAt: Date
   novel: {
-    id: string
+    id: number
     title: string
     slug: string
   }
@@ -29,18 +29,18 @@ interface NovelLikeWithNovel {
   id: string
   createdAt: Date
   novel: {
-    id: string
+    id: number
     title: string
     slug: string
   }
 }
 
-interface NovelRatingWithNovel {
+interface RatingWithNovel {
   id: string
   createdAt: Date
-  rating: number
+  score: number
   novel: {
-    id: string
+    id: number
     title: string
     slug: string
   }
@@ -61,9 +61,7 @@ export const GET = withErrorHandling(async (request: Request) => {
         novel: {
           authorId: session.user.id
         },
-        publishedAt: {
-          not: null
-        }
+        isPublished: true
       },
       include: {
         novel: {
@@ -103,7 +101,7 @@ export const GET = withErrorHandling(async (request: Request) => {
     }) as NovelLikeWithNovel[]
 
     // Get recent ratings
-    const recentRatings = await prisma.novelRating.findMany({
+    const recentRatings = await prisma.rating.findMany({
       where: {
         novel: {
           authorId: session.user.id
@@ -122,7 +120,7 @@ export const GET = withErrorHandling(async (request: Request) => {
         createdAt: 'desc'
       },
       take: 5
-    }) as NovelRatingWithNovel[]
+    }) as RatingWithNovel[]
 
     // Combine all activities
     const activities: Activity[] = []
@@ -156,12 +154,12 @@ export const GET = withErrorHandling(async (request: Request) => {
     })
 
     // Add ratings
-    recentRatings.forEach((rating: NovelRatingWithNovel) => {
+    recentRatings.forEach((rating: RatingWithNovel) => {
       activities.push({
         type: 'rating',
         timestamp: rating.createdAt,
         data: {
-          rating: rating.rating,
+          rating: rating.score / 2, // Convert 2-10 scale to 1-5 stars
           novelId: rating.novel.id,
           novelTitle: rating.novel.title,
           novelSlug: rating.novel.slug
