@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import WriterProfileCard from '@/components/dashboard/WriterProfileCard'
+import RecentActivities from '@/components/dashboard/RecentActivities'
 
 async function getDashboardStats(userEmail: string) {
   try {
@@ -171,82 +172,88 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        {/* Recent Stories */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Stories</h2>
-            <Link
-              href="/dashboard/novels"
-              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-            >
-              View All
-            </Link>
-          </div>
-
-          {recentNovels.length > 0 ? (
-            <div className="divide-y divide-gray-200">
-              {recentNovels.map((novel: any) => (
-                <Link
-                  key={novel.id}
-                  href={`/dashboard/novels/${novel.id}/chapters`}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
-                >
-                  {/* Cover Image */}
-                  <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-200">
-                    <Image
-                      src={novel.coverImage}
-                      alt={novel.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">{novel.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                      <span>{novel.totalChapters} chapters</span>
-                      <span>{novel.viewCount.toLocaleString()} views</span>
-                      {novel.averageRating && (
-                        <span className="flex items-center gap-1">
-                          <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                          {novel.averageRating.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Status */}
-                  <div className="flex flex-col items-end gap-2">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                        novel.isPublished
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}
-                    >
-                      {novel.isPublished ? 'Published' : 'Draft'}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(novel.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="px-6 py-12 text-center">
-              <BookOpen className="mx-auto mb-3 text-gray-300" size={48} />
-              <p className="text-gray-500 mb-4">No stories yet</p>
+        {/* Recent Stories and Activities - Two Column Layout */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Recent Stories */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Recent Stories</h2>
               <Link
-                href="/dashboard/upload"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                href="/dashboard/novels"
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
               >
-                <Plus size={18} />
-                Start Writing
+                View All
               </Link>
             </div>
-          )}
+
+            {recentNovels.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {recentNovels.map((novel: any) => (
+                  <Link
+                    key={novel.id}
+                    href={`/dashboard/novels/${novel.id}/chapters`}
+                    className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    {/* Cover Image */}
+                    <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-200">
+                      <Image
+                        src={novel.coverImage}
+                        alt={novel.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 truncate">{novel.title}</h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                        <span>{novel.totalChapters} chapters</span>
+                        <span>{novel.viewCount.toLocaleString()} views</span>
+                        {novel.averageRating && (
+                          <span className="flex items-center gap-1">
+                            <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                            {novel.averageRating.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                          novel.isPublished
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
+                        {novel.isPublished ? 'Published' : 'Draft'}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(novel.updatedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="px-6 py-12 text-center">
+                <BookOpen className="mx-auto mb-3 text-gray-300" size={48} />
+                <p className="text-gray-500 mb-4">No stories yet</p>
+                <Link
+                  href="/dashboard/upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                >
+                  <Plus size={18} />
+                  Start Writing
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Recent Activities */}
+          <RecentActivities />
         </div>
       </div>
     </div>

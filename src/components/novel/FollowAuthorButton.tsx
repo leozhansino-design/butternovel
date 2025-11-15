@@ -12,7 +12,7 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
   const { data: session, status } = useSession()
   const [isFollowing, setIsFollowing] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [checkingStatus, setCheckingStatus] = useState(true)
+  const [checkingStatus, setCheckingStatus] = useState(false)
 
   // Don't show if authorId is missing
   if (!authorId) {
@@ -21,29 +21,47 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
 
   const isOwnProfile = session?.user?.id === authorId
 
-  // 🔧 FIX: 使用 useCallback 防止无限循环
+  // 🔧 FIX: 使用 useCallback 防止无限循环，并添加详细日志
   const checkFollowStatus = useCallback(async () => {
+    if (!session?.user?.id || isOwnProfile) {
+      console.log('[FollowAuthorButton] Skipping check - no session or own profile')
+      return
+    }
+
+    setCheckingStatus(true)
     try {
+      console.log('[FollowAuthorButton] Checking follow status for author:', authorId, 'current user:', session.user.id)
       const res = await fetch(`/api/user/follow-status?userId=${authorId}`)
+
+      if (!res.ok) {
+        console.error('[FollowAuthorButton] API returned error:', res.status, res.statusText)
+        return
+      }
+
       const data = await res.json()
+      console.log('[FollowAuthorButton] Follow status response:', data)
+
       if (data.isFollowing !== undefined) {
         setIsFollowing(data.isFollowing)
+        console.log('[FollowAuthorButton] Updated isFollowing to:', data.isFollowing)
       }
     } catch (error) {
       console.error('[FollowAuthorButton] Failed to check follow status:', error)
     } finally {
       setCheckingStatus(false)
     }
-  }, [authorId])
+  }, [authorId, session?.user?.id, isOwnProfile])
 
-  // Check follow status
+  // Check follow status when component mounts or session changes
   useEffect(() => {
-    if (session?.user?.id && !isOwnProfile) {
+    // Only check if user is authenticated and it's not their own profile
+    if (status === 'authenticated' && session?.user?.id && !isOwnProfile) {
+      console.log('[FollowAuthorButton] useEffect triggered - checking follow status')
       checkFollowStatus()
     } else {
-      setCheckingStatus(false)
+      console.log('[FollowAuthorButton] useEffect - not checking. Status:', status, 'has session:', !!session?.user?.id, 'isOwnProfile:', isOwnProfile)
     }
-  }, [session?.user?.id, isOwnProfile, checkFollowStatus])
+  }, [status, session?.user?.id, isOwnProfile, checkFollowStatus])
 
   const handleFollowToggle = async () => {
     if (!session?.user?.id) {
