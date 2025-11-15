@@ -61,12 +61,12 @@ export default function ParagraphCommentPanel({
 
   // Dynamic styles based on background color
   const isDark = bgColor.includes('dark') || bgColor.includes('#1a1a1a')
-  const inputBg = isDark ? 'bg-gray-800' : 'bg-gray-50'
-  const inputBorder = isDark ? 'border-gray-600' : 'border-gray-300'
+  const inputBg = isDark ? 'bg-gray-800' : 'bg-black/5'
+  const inputBorder = isDark ? 'border-gray-600' : 'border-black/10'
   const inputText = isDark ? 'text-white' : 'text-gray-900'
-  const hoverBg = isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-  const cardBg = isDark ? 'bg-gray-800' : 'bg-gray-50'
-  const borderColor = isDark ? 'border-gray-700' : 'border-gray-200'
+  const hoverBg = isDark ? 'hover:bg-gray-700' : 'hover:bg-black/5'
+  const cardBg = isDark ? 'bg-gray-800' : 'bg-black/5'
+  const borderColor = isDark ? 'border-gray-700' : 'border-black/10'
   const mutedText = isDark ? 'text-gray-400' : 'text-gray-500'
   const dropdownBg = isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
 
