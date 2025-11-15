@@ -20,13 +20,17 @@ const databaseUrl = new URL(rawDatabaseUrl)
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
 // 🔧 FIX: Optimized connection pool settings to prevent "Max client connections reached"
-// - connection_limit: Reduced to 5 (conservative limit to prevent exhausting database connections)
-// - pool_timeout: Increased to 120 (wait longer for available connection)
+// - connection_limit: Reduced to 1 (ultra-conservative for serverless environment)
+//   Reason: In Vercel/serverless, each function instance gets its own Prisma Client
+//   With many concurrent requests, total connections = instances × connection_limit
+//   Setting to 1 prevents pool exhaustion while Prisma handles concurrency internally
+// - pool_timeout: 20 seconds (reasonable wait for connection)
 // - connect_timeout: 10 seconds (fail faster on connection issues)
-databaseUrl.searchParams.set('connection_limit', isBuildTime ? '2' : '5')
-databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '30' : '120')
+databaseUrl.searchParams.set('connection_limit', isBuildTime ? '1' : '1')
+databaseUrl.searchParams.set('pool_timeout', isBuildTime ? '20' : '20')
 databaseUrl.searchParams.set('connect_timeout', '10')
 databaseUrl.searchParams.set('socket_timeout', '60')
+databaseUrl.searchParams.set('pgbouncer', 'true') // Enable if using PgBouncer
 
 // 3. 🔧 CRITICAL FIX: Proper Prisma singleton pattern
 // This prevents creating multiple PrismaClient instances in development

@@ -63,40 +63,41 @@ export interface HomePageData {
  * 节省：94% Redis commands
  */
 export async function getHomePageData(): Promise<HomePageData> {
-  return await getOrSet(
-    'home:all-data', // 单个缓存键
-    async () => {
-      // 1. 获取精选小说
-      const featured = await withRetry(() =>
-        prisma.$queryRaw<Array<{
-          id: number;
-          title: string;
-          slug: string;
-          coverImage: string;
-          blurb: string;
-          categoryName: string;
-        }>>`
-          SELECT
-            n.id,
-            n.title,
-            n.slug,
-            n."coverImage",
-            n.blurb,
-            c.name as "categoryName"
-          FROM "Novel" n
-          INNER JOIN "Category" c ON n."categoryId" = c.id
-          WHERE n."isPublished" = true AND n."isBanned" = false
-          ORDER BY RANDOM()
-          LIMIT 24
-        `
-      ) as any[];
+  try {
+    return await getOrSet(
+      'home:all-data', // 单个缓存键
+      async () => {
+        // 1. 获取精选小说
+        const featured = await withRetry(() =>
+          prisma.$queryRaw<Array<{
+            id: number;
+            title: string;
+            slug: string;
+            coverImage: string;
+            blurb: string;
+            categoryName: string;
+          }>>`
+            SELECT
+              n.id,
+              n.title,
+              n.slug,
+              n."coverImage",
+              n.blurb,
+              c.name as "categoryName"
+            FROM "Novel" n
+            INNER JOIN "Category" c ON n."categoryId" = c.id
+            WHERE n."isPublished" = true AND n."isBanned" = false
+            ORDER BY RANDOM()
+            LIMIT 24
+          `
+        ) as any[];
 
-      // 2. 获取所有分类
-      const categories = await withRetry(() =>
-        prisma.category.findMany({
-          orderBy: { order: 'asc' }
-        })
-      ) as any[];
+        // 2. 获取所有分类
+        const categories = await withRetry(() =>
+          prisma.category.findMany({
+            orderBy: { order: 'asc' }
+          })
+        ) as any[];
 
       // 3. 为每个分类获取小说（并发控制）
       const categoryNovelsArray = await withConcurrency(
@@ -140,17 +141,28 @@ export async function getHomePageData(): Promise<HomePageData> {
         categoryNovels[category.slug] = categoryNovelsArray[index];
       });
 
-      const data: HomePageData = {
-        featured,
-        categories,
-        categoryNovels,
-        timestamp: Date.now()
-      };
+        const data: HomePageData = {
+          featured,
+          categories,
+          categoryNovels,
+          timestamp: Date.now()
+        };
 
-      return data;
-    },
-    CacheTTL.HOME_FEATURED // 使用 1 小时 TTL
-  );
+        return data;
+      },
+      CacheTTL.HOME_FEATURED // 使用 1 小时 TTL
+    );
+  } catch (error) {
+    console.error('[getHomePageData] Database error:', error);
+
+    // 返回空数据而不是抛出错误，避免整个页面崩溃
+    return {
+      featured: [],
+      categories: [],
+      categoryNovels: {},
+      timestamp: Date.now()
+    };
+  }
 }
 
 /**
