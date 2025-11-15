@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { uploadCommentImage } from '@/lib/cloudinary'
+import { Prisma } from '@prisma/client'
 
 // GET /api/paragraph-comments/[id]/replies - Get all replies for a comment
 export async function GET(
@@ -116,7 +117,7 @@ export async function POST(
     }
 
     // Create reply in transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Create the reply
       const reply = await tx.paragraphComment.create({
         data: {
