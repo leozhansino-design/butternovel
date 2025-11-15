@@ -54,10 +54,6 @@ export async function POST(request: NextRequest) {
           },
         },
       })
-
-      console.log(
-        `✓ Reading time updated: user=${session.user.id}, +${durationInMinutes} minutes`
-      )
     }
 
     return successResponse({

@@ -128,7 +128,6 @@ export const GET = withAdminAuth(async () => {
       },
     })
   } catch (error: any) {
-    console.error('Error fetching user stats:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to fetch user stats' },
       { status: 500 }

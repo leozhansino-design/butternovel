@@ -32,7 +32,6 @@ export const GET = withErrorHandling(async (request: Request) => {
     return successResponse({ isFollowing: !!follow })
   } catch (error) {
     // Follow table doesn't exist yet
-    console.log('Follow table does not exist yet. Run: npx prisma db push')
     return successResponse({ isFollowing: false })
   }
 })

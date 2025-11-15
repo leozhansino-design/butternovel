@@ -101,12 +101,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // 问题：预览环境的callbackUrl域名与生产环境不同，导致被拒绝
       // 解决：提取路径+查询+hash，拼接到当前baseUrl
 
-      console.log('[Auth] Redirect callback:', { url, baseUrl })
-
       // 1. 如果是相对路径，直接拼接baseUrl
       if (url.startsWith("/")) {
         const fullUrl = `${baseUrl}${url}`
-        console.log('[Auth] Redirecting to relative path:', fullUrl)
         return fullUrl
       }
 
@@ -117,7 +114,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // ✅ 同源：直接返回完整URL
         if (urlObj.origin === baseUrlObj.origin) {
-          console.log('[Auth] Same origin, redirecting to:', url)
           return url
         }
 
@@ -128,41 +124,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const path = urlObj.pathname + urlObj.search + urlObj.hash
         const redirectUrl = `${baseUrl}${path}`
 
-        console.log('[Auth] Different origin detected:')
-        console.log('  - Original URL:', url)
-        console.log('  - Extracted path:', path)
-        console.log('  - Redirecting to:', redirectUrl)
-
         return redirectUrl
       } catch (error) {
         // URL解析失败，回退到baseUrl
-        console.error(`[Auth] Invalid redirect URL: ${url}, error:`, error)
         return baseUrl
       }
     },
 
     async signIn({ user, account }) {
       if (!user.email) {
-        console.error('[Auth] No email provided')
         return false
       }
 
       try {
-        console.log('[Auth] Processing sign-in for:', user.email)
-
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
         })
 
         if (!existingUser) {
-          console.log('[Auth] Creating new user account')
-          console.log('[Auth] Google user data:', {
-            email: user.email,
-            name: user.name,
-            avatarUrl: user.image,
-            isGoogleProvider: account?.provider === 'google'
-          })
-
           // ⚠️ CRITICAL: Sanitize name - replace "butterpicks" (reserved for official accounts)
           let sanitizedName = user.name || "User"
           const normalizedName = sanitizedName.toLowerCase()
@@ -170,7 +149,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Extract email username or use "User" + random number
             const emailUsername = user.email.split('@')[0]
             sanitizedName = emailUsername.replace(/[^a-zA-Z0-9]/g, '_') || `User${Math.floor(Math.random() * 10000)}`
-            console.log('[Auth] Reserved name detected, replaced with:', sanitizedName)
           }
 
           await prisma.user.create({
@@ -181,10 +159,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               googleId: account?.providerAccountId || null,
             },
           })
-          console.log('[Auth] User account created successfully with avatar:', user.image)
         } else {
-          console.log('[Auth] Existing user found:', existingUser.id)
-
           // Update Google ID and avatar if signing in with Google
           if (account?.provider === 'google') {
             const updateData: any = {}
@@ -192,7 +167,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Link Google ID if not already linked
             if (!existingUser.googleId && account.providerAccountId) {
               updateData.googleId = account.providerAccountId
-              console.log('[Auth] Linking Google OAuth account')
             }
 
             // Update avatar from Google if user doesn't have a custom avatar
@@ -206,7 +180,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
               if (hasNoAvatar || isGoogleAvatar) {
                 updateData.avatar = user.image
-                console.log('[Auth] Updating Google avatar:', user.image)
               }
             }
 
@@ -216,19 +189,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 where: { email: user.email },
                 data: updateData,
               })
-              console.log('[Auth] Updated user with Google data:', updateData)
             }
           }
         }
 
         return true
       } catch (error) {
-        console.error('[Auth] Sign-in error:', error)
-        console.error('[Auth] Error details:', {
-          name: error instanceof Error ? error.name : 'Unknown',
-          message: error instanceof Error ? error.message : String(error),
-          code: (error as any)?.code,
-        })
         // Return false to prevent sign-in and show error page
         return false
       }
@@ -247,12 +213,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.email = dbUser.email
             token.name = dbUser.name
             token.picture = dbUser.avatar
-            console.log('[Auth] JWT token updated for user:', dbUser.id)
-          } else {
-            console.error('[Auth] User not found:', user?.email || token.email)
           }
         } catch (error) {
-          console.error('[Auth] JWT callback error:', error)
+          // Silent error handling
         }
       }
       return token
@@ -264,7 +227,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.email = token.email as string
         session.user.name = token.name as string
         session.user.image = token.picture as string
-        console.log('[Auth] Session created for:', session.user.id)
       }
       return session
     },

@@ -29,7 +29,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ isInLibrary: !!library })
   } catch (error) {
-    console.error('GET /api/library/check error:', error)
     return NextResponse.json({ isInLibrary: false })
   }
 }

@@ -57,7 +57,6 @@ export async function GET(
       rating,
     })
   } catch (error) {
-    console.error('Error fetching user rating:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

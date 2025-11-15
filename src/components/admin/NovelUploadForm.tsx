@@ -189,9 +189,7 @@ export default function NovelUploadForm() {
   // 提交表单
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    console.log('🚀 [Form] Starting submission...')
-    
+
     // 验证
     if (!formData.title.trim()) {
       alert('Please enter a title')
@@ -221,8 +219,6 @@ export default function NovelUploadForm() {
     setUploading(true)
 
     try {
-      console.log('📤 [Form] Sending request to API...')
-
       const response = await fetch('/api/admin/novels', {
         method: 'POST',
         headers: {
@@ -243,16 +239,11 @@ export default function NovelUploadForm() {
         }),
       })
 
-      console.log('📨 [Form] Response status:', response.status)
-
       const data = await response.json()
-      console.log('📨 [Form] Response data:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed')
       }
-
-      console.log('✅ [Form] Upload successful!')
 
       alert(`✅ Success!\n\nNovel "${data.novel.title}" has been uploaded!\n\nID: ${data.novel.id}\nChapters: ${data.novel.totalChapters}\nWords: ${data.novel.wordCount.toLocaleString()}`)
       
@@ -273,7 +264,6 @@ export default function NovelUploadForm() {
       router.push('/admin/novels')
 
     } catch (error: any) {
-      console.error('❌ [Form] Upload error:', error)
       alert('❌ Error: ' + error.message)
     } finally {
       setUploading(false)

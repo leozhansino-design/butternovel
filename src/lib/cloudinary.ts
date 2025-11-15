@@ -16,8 +16,6 @@ cloudinary.config({
  */
 export async function uploadNovelCover(base64Image: string, novelTitle: string) {
   try {
-    console.log(`📤 [Cloudinary] Uploading cover for: ${novelTitle}`)
-    
     const result = await cloudinary.uploader.upload(base64Image, {
       folder: 'butternovel/covers',
       public_id: `cover-${Date.now()}`,
@@ -33,9 +31,7 @@ export async function uploadNovelCover(base64Image: string, novelTitle: string) 
       overwrite: false,
       resource_type: 'image'
     })
-    
-    console.log(`✅ [Cloudinary] Cover uploaded: ${result.secure_url}`)
-    
+
     return {
       url: result.secure_url,
       publicId: result.public_id
@@ -54,8 +50,6 @@ export async function uploadNovelCover(base64Image: string, novelTitle: string) 
  */
 export async function uploadUserAvatar(base64Image: string, userId: string) {
   try {
-    console.log(`📤 [Cloudinary] Uploading avatar for user: ${userId}`)
-    
     const result = await cloudinary.uploader.upload(base64Image, {
       folder: 'butternovel/avatars',
       public_id: `avatar-${userId}`,
@@ -72,9 +66,7 @@ export async function uploadUserAvatar(base64Image: string, userId: string) {
       overwrite: true,  // 允许覆盖旧头像
       resource_type: 'image'
     })
-    
-    console.log(`✅ [Cloudinary] Avatar uploaded: ${result.secure_url}`)
-    
+
     return {
       url: result.secure_url,
       publicId: result.public_id
@@ -91,9 +83,7 @@ export async function uploadUserAvatar(base64Image: string, userId: string) {
  */
 export async function deleteImage(publicId: string) {
   try {
-    console.log(`🗑️ [Cloudinary] Deleting image: ${publicId}`)
     const result = await cloudinary.uploader.destroy(publicId)
-    console.log(`✅ [Cloudinary] Image deleted: ${publicId}`)
     return { success: true, result }
   } catch (error: any) {
     console.error(`❌ [Cloudinary] Delete error: ${publicId}`, error.message)

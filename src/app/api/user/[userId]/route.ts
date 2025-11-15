@@ -14,8 +14,11 @@ export const GET = withErrorHandling(async (
     return errorResponse('User ID is required', 400, 'VALIDATION_ERROR')
   }
 
+  // Support both User.id and email for backward compatibility with old novel records
+  // Old records may have email as authorId, new records use User.id
+  const isEmail = userId.includes('@')
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: isEmail ? { email: userId } : { id: userId },
     select: {
       id: true,
       name: true,
@@ -60,7 +63,7 @@ export const GET = withErrorHandling(async (
       where: { followingId: user.id }
     })
   } catch (error) {
-    console.log('Follow table does not exist yet. Run: npx prisma db push')
+    // Silent error handling for missing Follow table
   }
 
   const userData = {
@@ -73,12 +76,6 @@ export const GET = withErrorHandling(async (
       readingTime: user.totalReadingTime,
     },
   }
-
-  console.log('[API /api/user/[userId]] Returning user data:', {
-    userId: userId,
-    userName: user.name,
-    hasStats: !!userData.stats
-  })
 
   return NextResponse.json({
     success: true,

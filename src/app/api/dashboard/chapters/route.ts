@@ -17,13 +17,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    console.log('[Chapters API] Creating chapter:', {
-      novelId: body.novelId,
-      titleLength: body.title?.length,
-      contentLength: body.content?.length,
-      isPublished: body.isPublished
-    })
-
     // ✅ Validate using Zod schema (validates title, content length, etc.)
     const validation = validateWithSchema(chapterCreateSchema, {
       novelId: body.novelId,
@@ -34,10 +27,6 @@ export async function POST(request: NextRequest) {
     })
 
     if (!validation.success) {
-      console.error('[Chapters API] Validation failed:', {
-        error: validation.error,
-        details: validation.details
-      })
       return NextResponse.json(
         { error: validation.error, details: validation.details },
         { status: 400 }
@@ -116,7 +105,6 @@ export async function POST(request: NextRequest) {
       chapter,
     })
   } catch (error) {
-    console.error('[Dashboard Chapters API] Create error:', error)
     return NextResponse.json(
       { error: 'Failed to create chapter' },
       { status: 500 }

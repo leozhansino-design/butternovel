@@ -11,17 +11,12 @@ import { invalidateNovelRelatedCache } from '@/lib/cache'
 // POST /api/admin/novels - 创建小说
 export const POST = withAdminAuth(async (session, request: Request) => {
     try {
-        console.log('📝 [API] Received upload request')
-        console.log('✅ [API] Session verified:', session.email)
-
         // 2. 获取并验证表单数据
         const body = await request.json()
-        console.log('📦 [API] Request body:', JSON.stringify(body, null, 2))
 
         // ✅ 使用 Zod 验证
         const validation = validateWithSchema(novelCreateSchema, body)
         if (!validation.success) {
-            console.log('❌ [API] Validation failed:', validation.error)
             return NextResponse.json(
                 { error: validation.error, details: validation.details },
                 { status: 400 }
@@ -39,7 +34,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         } = validation.data
 
         // ⭐ 新增：获取 AdminProfile 的 displayName
-        console.log('👤 [API] Fetching admin profile...')
         // 🔄 添加数据库重试机制，解决连接超时问题
         const adminProfile = await withRetry(
             () => prisma.adminProfile.findUnique({
@@ -49,12 +43,10 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         )
 
         const authorName = adminProfile?.displayName || 'Admin'
-        console.log('✅ [API] Author name:', authorName)
 
         // 🔧 CRITICAL FIX: Get User.id from email
         // Problem: Previously used session.email as authorId, causing 404 and "user not found" errors
         // Solution: Query User table to get the actual user ID
-        console.log('👤 [API] Looking up user ID from email:', session.email)
         const user = await withRetry(
             () => prisma.user.findUnique({
                 where: { email: session.email },
@@ -64,23 +56,17 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         )
 
         if (!user) {
-            console.error('❌ [API] User not found for email:', session.email)
             return NextResponse.json(
                 { error: 'User account not found. Admin must have a user account to create novels.' },
                 { status: 404 }
             )
         }
 
-        console.log('✅ [API] Found user ID:', user.id)
-
         // 4. 上传封面到 Cloudinary
-        console.log('📤 [API] Uploading cover to Cloudinary...')
         let coverResult
         try {
             coverResult = await uploadNovelCover(coverImage, title)
-            console.log('✅ [API] Cover uploaded to Cloudinary:', coverResult.url)
         } catch (uploadError: any) {
-            console.error('❌ [API] Cloudinary upload failed:', uploadError)
             return NextResponse.json(
                 { error: `Failed to upload cover to Cloudinary: ${uploadError.message}` },
                 { status: 500 }
@@ -93,17 +79,12 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
             .replace(/(^-|-$)/g, '') + '-' + Date.now()
 
-        console.log('🔗 [API] Generated slug:', slug)
-
         // 6. 计算总字数（字符数）
         const wordCount = chapters?.reduce((total: number, ch: any) => {
             return total + (ch.content?.length || 0)
         }, 0) || 0
 
-        console.log('📊 [API] Total word count:', wordCount)
-
         // 7. 创建小说（包含章节）
-        console.log('💾 [API] Creating novel in database...')
 
         // 🔄 添加数据库重试机制，解决连接超时问题
         const novel = await withRetry(
@@ -143,12 +124,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             { operationName: 'Create novel in database' }
         )
 
-        console.log('✅ [API] Novel created successfully!')
-        console.log('📚 [API] Novel ID:', novel.id)
-
         // ⚡ 清除缓存：首页、分类页、小说详情
         await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
-        console.log('✓ Cache cleared for newly created novel')
 
         return NextResponse.json({
             success: true,
@@ -163,7 +140,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         })
 
     } catch (error: any) {
-        console.error('❌ [API] Error:', error)
         return NextResponse.json(
             { error: error.message || 'Internal server error' },
             { status: 500 }

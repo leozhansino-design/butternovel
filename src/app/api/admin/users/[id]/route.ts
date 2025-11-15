@@ -172,7 +172,6 @@ export const GET = withAdminAuth(
         user: userDetail,
       })
     } catch (error: any) {
-      console.error('Error fetching user detail:', error)
       return NextResponse.json(
         { error: error.message || 'Failed to fetch user detail' },
         { status: 500 }

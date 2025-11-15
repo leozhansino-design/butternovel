@@ -57,7 +57,6 @@ export const GET = withErrorHandling(async () => {
     })
   } catch (error) {
     // Follow 表不存在，使用默认值 0
-    console.log('Follow table does not exist yet. Run: npx prisma db push')
   }
 
   return successResponse({

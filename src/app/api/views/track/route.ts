@@ -37,7 +37,6 @@ export async function POST(request: Request) {
       viewCount: result.viewCount,
     })
   } catch (error) {
-    console.error('[Views Track API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to track view' },
       { status: 500 }

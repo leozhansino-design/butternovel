@@ -100,7 +100,6 @@ export async function POST(
       })
     }
   } catch (error) {
-    console.error('[Rating Like API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to toggle like' },
       { status: 500 }
@@ -136,7 +135,6 @@ export async function GET(
       liked: !!existingLike
     })
   } catch (error) {
-    console.error('[Rating Like Check API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to check like status' },
       { status: 500 }

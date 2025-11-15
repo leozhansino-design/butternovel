@@ -61,7 +61,6 @@ export async function POST(request: Request) {
       }
     })
 
-    console.log(`✅ Reading progress saved: user=${session.user.id}, novel=${novelId}, chapter=${chapter.chapterNumber} (${chapter.title})`)
     return successResponse({ success: true })
   } catch (error) {
     return handleApiError(error, 'Failed to save reading progress')

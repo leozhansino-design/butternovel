@@ -48,6 +48,31 @@ export default function FollowListModal({
     }
   }, [isOpen, userId, type])
 
+  // 防止背景滚动 - Prevent background scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // 保存原始的 overflow 值
+      const originalOverflow = document.body.style.overflow
+      const originalPaddingRight = document.body.style.paddingRight
+
+      // 计算滚动条宽度，防止内容抖动
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+
+      // 锁定滚动
+      document.body.style.overflow = 'hidden'
+      // 如果有滚动条，添加 padding 防止内容位移
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`
+      }
+
+      // 清理函数：modal 关闭时恢复滚动
+      return () => {
+        document.body.style.overflow = originalOverflow
+        document.body.style.paddingRight = originalPaddingRight
+      }
+    }
+  }, [isOpen])
+
   const fetchUsers = async () => {
     try {
       setLoading(true)
@@ -55,12 +80,10 @@ export default function FollowListModal({
         ? `/api/user/${userId}/following`
         : `/api/user/${userId}/followers`
 
-      console.log(`[FollowListModal] Fetching ${type} for userId:`, userId)
       const res = await fetch(endpoint)
       const data = await res.json()
 
       if (res.ok) {
-        console.log(`[FollowListModal] Loaded ${data[type]?.length || 0} users`)
         setUsers(data[type] || [])
       }
     } catch (error) {
@@ -71,7 +94,6 @@ export default function FollowListModal({
   }
 
   const handleUserClick = (clickedUserId: string) => {
-    console.log('[FollowListModal] User clicked, userId:', clickedUserId)
     setViewingUserId(clickedUserId)
     setShowLibraryModal(true)
   }
@@ -81,7 +103,6 @@ export default function FollowListModal({
 
     if (!isOwnList) return
 
-    console.log('[FollowListModal] Unfollowing user:', targetUserId)
     setUnfollowingUserId(targetUserId)
 
     try {
@@ -92,7 +113,6 @@ export default function FollowListModal({
       })
 
       if (res.ok) {
-        console.log('[FollowListModal] Successfully unfollowed user')
         // Remove user from list
         setUsers(prev => prev.filter(u => u.id !== targetUserId))
       } else {

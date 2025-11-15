@@ -28,11 +28,6 @@ export async function withRetry<T>(
     try {
       const result = await operation()
 
-      // 成功后如果之前有重试，记录一下
-      if (attempt > 1) {
-        console.log(`✅ [DB Retry] ${operationName} succeeded on attempt ${attempt}/${maxRetries}`)
-      }
-
       return result
     } catch (error: any) {
       lastError = error
@@ -60,7 +55,6 @@ export async function withRetry<T>(
       console.warn(
         `⚠️ [DB Retry] ${operationName} failed (attempt ${attempt}/${maxRetries}): ${error.message}`
       )
-      console.log(`🔄 [DB Retry] Retrying in ${delay}ms...`)
 
       // 等待后重试
       await new Promise(resolve => setTimeout(resolve, delay))

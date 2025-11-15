@@ -1,7 +1,7 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface LoginModalProps {
   isOpen: boolean
@@ -10,6 +10,31 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [loading, setLoading] = useState(false)
+
+  // 防止背景滚动 - Prevent background scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // 保存原始的 overflow 值
+      const originalOverflow = document.body.style.overflow
+      const originalPaddingRight = document.body.style.paddingRight
+
+      // 计算滚动条宽度，防止内容抖动
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+
+      // 锁定滚动
+      document.body.style.overflow = 'hidden'
+      // 如果有滚动条，添加 padding 防止内容位移
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`
+      }
+
+      // 清理函数：modal 关闭时恢复滚动
+      return () => {
+        document.body.style.overflow = originalOverflow
+        document.body.style.paddingRight = originalPaddingRight
+      }
+    }
+  }, [isOpen])
 
   const handleGoogleLogin = async () => {
     setLoading(true)

@@ -47,7 +47,6 @@ export async function GET(
 
     return NextResponse.json({ rating })
   } catch (error: any) {
-    console.error('[Rating Check] Error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to check rating' },
       { status: 500 }

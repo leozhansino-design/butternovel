@@ -12,8 +12,6 @@ import { withAdminAuth } from '@/lib/admin-middleware'
  */
 export const POST = withAdminAuth(async (session, request: Request) => {
   try {
-    console.log('🔄 Starting wordCount migration...')
-
     // 1. 获取所有章节
     const chapters = await withRetry(
       () => prisma.chapter.findMany({
@@ -26,8 +24,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
       }),
       { operationName: 'Get all chapters for migration' }
     )
-
-    console.log(`📊 Found ${chapters.length} chapters to process`)
 
     let updatedCount = 0
     let skippedCount = 0
@@ -52,22 +48,15 @@ export const POST = withAdminAuth(async (session, request: Request) => {
           )
 
           updatedCount++
-
-          if (updatedCount <= 10) {
-            console.log(`✓ Chapter ${chapter.id}: ${oldWordCount} → ${correctWordCount}`)
-          }
         } else {
           skippedCount++
         }
       } catch (error: any) {
-        console.error(`✗ Failed to update chapter ${chapter.id}:`, error.message)
         errors.push({ chapterId: chapter.id, error: error.message })
       }
     }
 
     // 3. 重新计算每个小说的总字符数
-    console.log('\n🔄 Recalculating novel word counts...')
-
     const novels = await withRetry(
       () => prisma.novel.findMany({
         select: { id: true }
@@ -100,7 +89,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
         novelsUpdated++
       } catch (error: any) {
-        console.error(`✗ Failed to update novel ${novel.id}:`, error.message)
         errors.push({ chapterId: novel.id, error: error.message })
       }
     }
@@ -114,14 +102,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
       errorDetails: errors,
     }
 
-    console.log('\n✅ Migration completed!')
-    console.log(`📊 Summary:`)
-    console.log(`   - Total chapters: ${chapters.length}`)
-    console.log(`   - Updated: ${updatedCount}`)
-    console.log(`   - Skipped (already correct): ${skippedCount}`)
-    console.log(`   - Novels updated: ${novelsUpdated}`)
-    console.log(`   - Errors: ${errors.length}`)
-
     return NextResponse.json({
       success: true,
       message: 'WordCount migration completed',
@@ -129,7 +109,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     })
 
   } catch (error: any) {
-    console.error('❌ Migration failed:', error)
     return NextResponse.json(
       { error: error.message || 'Migration failed' },
       { status: 500 }

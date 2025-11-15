@@ -116,11 +116,9 @@ export default function EditNovelForm({ novel, categories }: Props) {
       if (categoryId !== novel.categoryId.toString()) updates.categoryId = parseInt(categoryId)
       if (status !== novel.status) updates.status = status
       if (newCoverImage) updates.newCoverImage = newCoverImage
-      
+
       // ⭐ 根据按钮设置发布状态
       updates.isPublished = publish
-
-      console.log('📤 Sending updates:', Object.keys(updates), '| Publish:', publish)
 
       const response = await fetch(`/api/admin/novels/${novel.id}`, {
         method: 'PUT',

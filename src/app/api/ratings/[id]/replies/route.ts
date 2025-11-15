@@ -52,7 +52,6 @@ export async function GET(request: NextRequest, { params }: Params) {
       count: replies.length,
     })
   } catch (error: any) {
-    console.error('[Rating Replies API] GET error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch replies' },
       { status: 500 }
@@ -150,13 +149,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     // ⭐ 添加贡献度
     try {
       const contributionResult = await addRatingReplyContribution(session.user.id, reply.id)
-      console.log(`✓ Contribution added for user ${session.user.id}: +${contributionResult.user.contributionPoints} points`)
 
       if (contributionResult.levelUp) {
-        console.log(`🎉 User leveled up: ${contributionResult.oldLevel} -> ${contributionResult.newLevel}`)
       }
     } catch (error) {
-      console.error('Error adding contribution:', error)
       // 不影响主流程，只记录错误
     }
 
@@ -165,7 +161,6 @@ export async function POST(request: NextRequest, { params }: Params) {
       message: 'Reply posted successfully',
     })
   } catch (error: any) {
-    console.error('[Rating Replies API] POST error:', error)
     return NextResponse.json(
       { error: 'Failed to create reply' },
       { status: 500 }

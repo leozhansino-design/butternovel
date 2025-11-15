@@ -79,17 +79,10 @@ export async function POST(request: NextRequest) {
           session.user.id,
           chapterId.toString()
         )
-        console.log(
-          `✓ Contribution added for completing chapter ${chapterId}: +${contributionResult.user.contributionPoints} points`
-        )
 
         if (contributionResult.levelUp) {
-          console.log(
-            `🎉 User leveled up: ${contributionResult.oldLevel} -> ${contributionResult.newLevel}`
-          )
         }
       } catch (error) {
-        console.error('Error adding contribution for chapter completion:', error)
         // 不影响主流程
       }
     }
