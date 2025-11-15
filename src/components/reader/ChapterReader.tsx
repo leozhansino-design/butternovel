@@ -407,17 +407,17 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                 <div className="space-y-6">
                   {paragraphs.map((paragraph, index) => (
                     <div key={index} className="group relative">
-                      <div className="leading-loose whitespace-pre-wrap">
+                      <div className="leading-loose whitespace-pre-wrap inline">
                         {paragraph}
-                      </div>
-                      {/* 段落评论按钮 - 固定在段落右下角 */}
-                      <div className="flex justify-end mt-2">
-                        <ParagraphCommentButton
-                          chapterId={chapter.id}
-                          paragraphIndex={index}
-                          onClick={() => setActiveParagraphIndex(activeParagraphIndex === index ? null : index)}
-                          isActive={activeParagraphIndex === index}
-                        />
+                        {/* 段落评论按钮 - 内联显示在段落最后一个字符右侧 */}
+                        <span className="inline-block align-middle ml-2">
+                          <ParagraphCommentButton
+                            chapterId={chapter.id}
+                            paragraphIndex={index}
+                            onClick={() => setActiveParagraphIndex(activeParagraphIndex === index ? null : index)}
+                            isActive={activeParagraphIndex === index}
+                          />
+                        </span>
                       </div>
                     </div>
                   ))}

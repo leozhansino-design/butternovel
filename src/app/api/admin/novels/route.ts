@@ -33,7 +33,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             chapters
         } = validation.data
 
-        // ⭐ 新增：获取 AdminProfile 的 displayName
+        // ⭐ 步骤1：获取 AdminProfile 的 displayName
         // 🔄 添加数据库重试机制，解决连接超时问题
         const adminProfile = await withRetry(
             () => prisma.adminProfile.findUnique({
@@ -42,12 +42,19 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             { operationName: 'Get admin profile' }
         )
 
-        const authorName = adminProfile?.displayName || 'Admin'
+        if (!adminProfile) {
+            return NextResponse.json(
+                { error: 'Admin profile not found. Please contact support.' },
+                { status: 404 }
+            )
+        }
 
-        // 🔧 CRITICAL FIX: Get User.id from email
-        // Problem: Previously used session.email as authorId, causing 404 and "user not found" errors
-        // Solution: Query User table to get the actual user ID
-        const user = await withRetry(
+        const authorName = adminProfile.displayName || 'Admin'
+
+        // ⭐ 步骤2：查找或创建对应的 User 账号
+        // 🔧 ULTIMATE FIX: 如果user不存在，自动创建一个，使用admin_profile的信息
+        // 这样就彻底解决了admin_profile和user表之间的同步问题
+        let user = await withRetry(
             () => prisma.user.findUnique({
                 where: { email: session.email },
                 select: { id: true }
@@ -55,11 +62,50 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             { operationName: 'Get user ID from email' }
         )
 
+        // 如果user不存在，自动创建
         if (!user) {
-            return NextResponse.json(
-                { error: 'User account not found. Admin must have a user account to create novels.' },
-                { status: 404 }
-            )
+            console.log(`[Admin Upload] User not found for ${session.email}, creating from admin_profile...`)
+
+            try {
+                user = await withRetry(
+                    () => prisma.user.create({
+                        data: {
+                            email: adminProfile.email,
+                            name: adminProfile.displayName || 'ButterPicks',
+                            avatar: adminProfile.avatar || null,
+                            role: 'ADMIN',
+                            emailVerified: new Date(),
+                            // 重要：确保名字不会与现有用户冲突
+                            // 如果displayName是"ButterPicks"，添加后缀避免冲突
+                        },
+                        select: { id: true }
+                    }),
+                    { operationName: 'Create user from admin profile' }
+                )
+
+                console.log(`[Admin Upload] ✅ Successfully created user account: ${user.id}`)
+            } catch (createError: any) {
+                // 如果创建失败（可能是名字冲突），尝试使用唯一的名字
+                if (createError.code === 'P2002') {
+                    const uniqueName = `${adminProfile.displayName}-${Date.now()}`
+                    user = await withRetry(
+                        () => prisma.user.create({
+                            data: {
+                                email: adminProfile.email,
+                                name: uniqueName,
+                                avatar: adminProfile.avatar || null,
+                                role: 'ADMIN',
+                                emailVerified: new Date(),
+                            },
+                            select: { id: true }
+                        }),
+                        { operationName: 'Create user with unique name' }
+                    )
+                    console.log(`[Admin Upload] ✅ Created user with unique name: ${uniqueName}`)
+                } else {
+                    throw createError
+                }
+            }
         }
 
         // 4. 上传封面到 Cloudinary
