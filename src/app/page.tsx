@@ -90,13 +90,14 @@ async function HomeContent() {
 }
 
 // ✅ ISR: 1小时重新验证
+// 页面会被静态生成，然后在3600秒（1小时）后重新验证
+// 这样大部分请求都直接使用静态页面，不消耗任何Redis或数据库命令
 export const revalidate = 3600
 
-// ⚡ 动态渲染配置
-// 移除 fetchCache = 'force-cache' 以允许 Redis 缓存操作
-// Upstash Redis 使用 no-store，这样每次请求都会检查 Redis
-// getOrSet 内部会处理 Redis 缓存逻辑
-export const dynamic = 'force-dynamic'
+// ⚡ 使用默认的静态渲染 + ISR
+// 移除了 force-dynamic，让页面使用静态生成 + ISR
+// 这样只有在revalidate时间过期后才会重新生成页面
+// 大部分请求直接使用CDN缓存的静态页面，0 commands消耗
 
 export default function HomePage() {
   return (
