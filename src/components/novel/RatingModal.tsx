@@ -497,46 +497,46 @@ export default function RatingModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/50" onClick={onClose}>
         <div
-          className="bg-white rounded-xl shadow-2xl w-full max-w-[750px] max-h-[85vh] overflow-hidden flex flex-col"
+          className="bg-white sm:rounded-xl shadow-2xl w-full max-w-[750px] h-full sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-        {/* Header */}
-        <div className="p-8 border-b border-gray-200">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <span className="text-4xl font-bold text-gray-900">
+        {/* Header - 📱 优化移动端padding */}
+        <div className="p-4 sm:p-6 md:p-8 border-b border-gray-200">
+          <div className="flex items-start justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
                 {averageRating > 0 ? averageRating.toFixed(1) : '-'}
               </span>
               <div>
                 {averageRating > 0 && renderStars(averageRating, 'large')}
-                <p className="text-base text-gray-500 mt-2">
+                <p className="text-sm sm:text-base text-gray-500 mt-1 sm:mt-2">
                   {totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
             >
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-base font-medium text-gray-700">Your rating:</span>
-            <div className="flex gap-1">
+            <span className="text-sm sm:text-base font-medium text-gray-700">Your rating:</span>
+            <div className="flex gap-0.5 sm:gap-1">
               {renderInteractiveStars()}
             </div>
           </div>
         </div>
 
-        {/* Review Input */}
+        {/* Review Input - 📱 优化移动端padding */}
         {showReviewInput && !hasRated && (
-          <div className="p-6 border-b border-gray-200 animate-slideDown">
+          <div className="p-4 sm:p-6 border-b border-gray-200 animate-slideDown">
             <textarea
               value={review}
               onChange={(e) => setReview(e.target.value)}
@@ -560,8 +560,8 @@ export default function RatingModal({
           </div>
         )}
 
-        {/* Reviews List */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Reviews List - 📱 优化移动端padding */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-900">Reviews</h3>
 
