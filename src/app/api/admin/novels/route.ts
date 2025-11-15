@@ -44,9 +44,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
         const authorName = adminProfile?.displayName || 'Admin'
 
-        // 🔧 CRITICAL FIX: Get User.id from email
-        // Problem: Previously used session.email as authorId, causing 404 and "user not found" errors
-        // Solution: Query User table to get the actual user ID
+        // 🔧 Get User.id if exists, otherwise use email (for admin accounts)
+        // Admin accounts may not have User records, so we fall back to email for backward compatibility
         const user = await withRetry(
             () => prisma.user.findUnique({
                 where: { email: session.email },
@@ -55,12 +54,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             { operationName: 'Get user ID from email' }
         )
 
-        if (!user) {
-            return NextResponse.json(
-                { error: 'User account not found. Admin must have a user account to create novels.' },
-                { status: 404 }
-            )
-        }
+        // Use User.id if available, otherwise use email (for admin without User account)
+        const authorId = user?.id || session.email
 
         // 4. 上传封面到 Cloudinary
         let coverResult
@@ -99,9 +94,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                     status: status || 'ONGOING',
                     isPublished: isPublished || false,
                     isDraft: !isPublished,
-                    // ⭐ FIXED: Use User.id instead of email
                     authorName: authorName,
-                    authorId: user.id, // ✅ Use User.id (not email!) - Fixes 404 and follow errors
+                    authorId: authorId, // Use User.id if available, otherwise email
                     totalChapters: chapters?.length || 0,
                     wordCount,
 

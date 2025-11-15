@@ -24,16 +24,21 @@ interface PublicNovelsViewProps {
 export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
 
   useEffect(() => {
     const fetchNovels = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/public/user/${userId}/novels`)
+        const res = await fetch(`/api/public/user/${userId}/novels?page=${page}&limit=10`)
         const data = await res.json()
 
         if (res.ok) {
           setNovels(data.novels || [])
+          setTotalPages(data.pagination?.totalPages || 1)
+          setTotal(data.pagination?.total || 0)
         }
       } catch (error) {
         console.error('Failed to fetch novels:', error)
@@ -43,7 +48,7 @@ export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
     }
 
     fetchNovels()
-  }, [userId])
+  }, [userId, page])
 
   if (loading) {
     return (
@@ -78,9 +83,11 @@ export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {novels.map((novel) => (
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Novels Grid */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {novels.map((novel) => (
           <Link
             key={novel.id}
             href={`/novels/${novel.slug}`}
@@ -155,8 +162,51 @@ export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
               </div>
             </div>
           </Link>
-        ))}
+          ))}
+        </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex-shrink-0 border-t border-gray-200 bg-white/60 backdrop-blur-sm p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing {(page - 1) * 10 + 1}-{Math.min(page * 10, total)} of {total} novels
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-lg font-semibold text-sm bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                      page === pageNum
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 rounded-lg font-semibold text-sm bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
