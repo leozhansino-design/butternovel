@@ -37,7 +37,6 @@ export const POST = withAdminAuth(async (
 
     // ⚡ 清除缓存：封禁状态影响首页、分类页、小说详情的显示
     await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
-    console.log(`✓ Cache cleared after ${isBanned ? 'banning' : 'unbanning'} novel: ${novel.title}`)
 
     return NextResponse.json({
       success: true,
@@ -49,7 +48,6 @@ export const POST = withAdminAuth(async (
     })
 
   } catch (error: any) {
-    console.error('Ban/Unban error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to update ban status' },
       { status: 500 }

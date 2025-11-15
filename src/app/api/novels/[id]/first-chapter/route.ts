@@ -36,7 +36,6 @@ export async function GET(
       chapterId: firstChapter.id,
     })
   } catch (error) {
-    console.error('[First Chapter API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch first chapter' },
       { status: 500 }

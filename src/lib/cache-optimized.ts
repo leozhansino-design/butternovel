@@ -66,8 +66,6 @@ export async function getHomePageData(): Promise<HomePageData> {
   return await getOrSet(
     'home:all-data', // 单个缓存键
     async () => {
-      console.log('🔄 首页缓存未命中，查询数据库...');
-
       // 1. 获取精选小说
       const featured = await withRetry(() =>
         prisma.$queryRaw<Array<{
@@ -149,7 +147,6 @@ export async function getHomePageData(): Promise<HomePageData> {
         timestamp: Date.now()
       };
 
-      console.log(`✅ 首页数据已聚合：${featured.length} featured, ${categories.length} categories`);
       return data;
     },
     CacheTTL.HOME_FEATURED // 使用 1 小时 TTL
@@ -162,5 +159,4 @@ export async function getHomePageData(): Promise<HomePageData> {
 export async function invalidateHomePageCache(): Promise<void> {
   const { invalidate } = await import('@/lib/cache');
   await invalidate('home:all-data');
-  console.log('✓ 首页缓存已清除 (home:all-data)');
 }

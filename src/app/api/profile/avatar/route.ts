@@ -47,7 +47,6 @@ export async function POST(request: Request) {
       try {
         await cloudinary.uploader.destroy(currentUser.avatarPublicId)
       } catch (error) {
-        console.error('Failed to delete old avatar:', error)
         // 继续执行，不阻止上传新头像
       }
     }
@@ -90,7 +89,6 @@ export async function POST(request: Request) {
       message: 'Avatar uploaded successfully'
     })
   } catch (error) {
-    console.error('POST /api/profile/avatar error:', error)
     return NextResponse.json({ error: 'Failed to upload avatar' }, { status: 500 })
   }
 }

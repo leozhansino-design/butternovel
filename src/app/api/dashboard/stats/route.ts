@@ -88,7 +88,6 @@ export async function GET(request: NextRequest) {
       recentNovels,
     })
   } catch (error) {
-    console.error('[Dashboard Stats API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch dashboard stats' },
       { status: 500 }

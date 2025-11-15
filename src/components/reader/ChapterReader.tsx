@@ -176,7 +176,6 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
           isCompleted: true,
         })
       })
-      console.log('✓ Chapter marked as completed')
     } catch (error) {
       console.error('Failed to mark chapter as completed:', error)
     }

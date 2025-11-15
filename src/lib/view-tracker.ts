@@ -94,7 +94,6 @@ async function cleanupOldViews(): Promise<void> {
       }
     })
     
-    console.log(`✅ [ViewTracker] Cleaned up ${result.count} old view records`)
   } catch (error) {
     console.error('❌ [ViewTracker] Error cleaning up old views:', error)
   }

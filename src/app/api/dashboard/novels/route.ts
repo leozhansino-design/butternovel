@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ novels: formattedNovels })
   } catch (error) {
-    console.error('[Dashboard Novels API] Error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch novels' },
       { status: 500 }
@@ -163,14 +162,12 @@ export async function POST(request: NextRequest) {
 
     // ⚡ Clear cache: home page and category page
     await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
-    console.log('✓ Cache cleared for new novel')
 
     return NextResponse.json({
       message: 'Novel created successfully',
       novel,
     })
   } catch (error) {
-    console.error('[Dashboard Novels API] Create error:', error)
     return NextResponse.json(
       { error: 'Failed to create novel' },
       { status: 500 }

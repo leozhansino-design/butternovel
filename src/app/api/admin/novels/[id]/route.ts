@@ -15,8 +15,6 @@ export const PUT = withAdminAuth(async (
 ) => {
   try {
     const params = await props.params  // ⭐ await params
-    console.log('📝 [API] Received update request for novel:', params.id)
-
     const novelId = parseInt(params.id)
     const body = await request.json()
 
@@ -31,7 +29,6 @@ export const PUT = withAdminAuth(async (
     }
 
     const updates = { ...validation.data, newCoverImage }
-    console.log('📦 [API] Updates to apply:', Object.keys(updates))
 
     // 获取当前小说数据
     // 🔄 添加数据库重试机制，解决连接超时问题
@@ -62,37 +59,31 @@ export const PUT = withAdminAuth(async (
         .toLowerCase()
         .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
         .replace(/(^-|-$)/g, '') + '-' + Date.now()
-      console.log('📝 [API] Updating title and slug')
     }
 
     // 2. 更新简介
     if (updates.blurb !== undefined) {
       data.blurb = updates.blurb
-      console.log('📝 [API] Updating blurb')
     }
 
     // 3. 更新分类
     if (updates.categoryId !== undefined) {
       data.categoryId = updates.categoryId
-      console.log('📝 [API] Updating category')
     }
 
     // 4. 更新状态
     if (updates.status !== undefined) {
       data.status = updates.status
-      console.log('📝 [API] Updating status')
     }
 
     // 5. 更新发布状态
     if (updates.isPublished !== undefined) {
       data.isPublished = updates.isPublished
       data.isDraft = !updates.isPublished
-      console.log('📝 [API] Updating publish status')
     }
 
     // 6. 更新封面（如果有新图片）
     if (updates.newCoverImage) {
-      console.log('📤 [API] Uploading new cover to Cloudinary...')
 
       try {
         // 上传新封面
@@ -104,16 +95,12 @@ export const PUT = withAdminAuth(async (
         data.coverImage = coverResult.url
         data.coverImagePublicId = coverResult.publicId
 
-        console.log('✅ [API] New cover uploaded:', coverResult.url)
-
         // 删除旧封面（如果有 publicId）
         if (currentNovel.coverImagePublicId) {
-          console.log('🗑️ [API] Deleting old cover:', currentNovel.coverImagePublicId)
           await deleteImage(currentNovel.coverImagePublicId)
         }
 
       } catch (uploadError: any) {
-        console.error('❌ [API] Failed to upload new cover:', uploadError)
         return NextResponse.json(
           { error: `Failed to upload cover: ${uploadError.message}` },
           { status: 500 }
@@ -129,8 +116,6 @@ export const PUT = withAdminAuth(async (
       )
     }
 
-    console.log('💾 [API] Updating novel in database...')
-
     // 🔄 添加数据库重试机制，解决连接超时问题
     const updatedNovel = await withRetry(
       () => prisma.novel.update({
@@ -144,11 +129,8 @@ export const PUT = withAdminAuth(async (
       { operationName: 'Update novel in database' }
     )
 
-    console.log('✅ [API] Novel updated successfully!')
-
     // ⚡ 清除缓存：首页、分类页、小说详情
     await invalidateNovelRelatedCache(updatedNovel.slug, updatedNovel.category?.slug)
-    console.log('✓ Cache cleared for updated novel')
 
     return NextResponse.json({
       success: true,
@@ -157,7 +139,6 @@ export const PUT = withAdminAuth(async (
     })
 
   } catch (error: any) {
-    console.error('❌ [API] Update error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to update novel' },
       { status: 500 }
@@ -173,8 +154,6 @@ export const DELETE = withAdminAuth(async (
 ) => {
   try {
     const params = await props.params  // ⭐ await params
-    console.log('🗑️ [API] Received delete request for novel:', params.id)
-
     const novelId = parseInt(params.id)
 
     // 获取小说信息（包括 slug 和 category，用于清除缓存）
@@ -199,11 +178,8 @@ export const DELETE = withAdminAuth(async (
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
     }
 
-    console.log(`🗑️ [API] Deleting novel: ${novel.title}`)
-
     // 1. 删除 Cloudinary 封面（如果有）
     if (novel.coverImagePublicId) {
-      console.log('🗑️ [API] Deleting cover from Cloudinary:', novel.coverImagePublicId)
       await deleteImage(novel.coverImagePublicId)
     }
 
@@ -216,11 +192,8 @@ export const DELETE = withAdminAuth(async (
       { operationName: 'Delete novel from database' }
     )
 
-    console.log(`✅ [API] Novel deleted: ${novel.title}`)
-
     // ⚡ 清除缓存：首页、分类页、小说详情
     await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
-    console.log('✓ Cache cleared for deleted novel')
 
     return NextResponse.json({
       success: true,
@@ -228,7 +201,6 @@ export const DELETE = withAdminAuth(async (
     })
 
   } catch (error: any) {
-    console.error('❌ [API] Delete error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to delete novel' },
       { status: 500 }

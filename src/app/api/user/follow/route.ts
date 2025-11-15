@@ -57,7 +57,6 @@ export const POST = withErrorHandling(async (request: Request) => {
 
     return successResponse({ message: 'Successfully followed user' })
   } catch (error) {
-    console.log('Follow table does not exist yet. Run: npx prisma db push')
     return errorResponse('Follow system not available yet. Please contact administrator.', 503, 'SERVICE_UNAVAILABLE')
   }
 })
@@ -100,7 +99,6 @@ export const DELETE = withErrorHandling(async (request: Request) => {
 
     return successResponse({ message: 'Successfully unfollowed user' })
   } catch (error) {
-    console.log('Follow table does not exist yet. Run: npx prisma db push')
     return errorResponse('Follow system not available yet. Please contact administrator.', 503, 'SERVICE_UNAVAILABLE')
   }
 })

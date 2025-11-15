@@ -27,7 +27,6 @@ export async function GET(
 
     // If library is private, return empty list
     if (user.libraryPrivacy) {
-      console.log('[API /api/public/user/[userId]/library] Library is private for user:', userId)
       return NextResponse.json({ novels: [] })
     }
 
@@ -69,7 +68,6 @@ export async function GET(
 
     return NextResponse.json({ novels })
   } catch (error) {
-    console.error('[API /api/public/user/[userId]/library] Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

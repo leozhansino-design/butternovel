@@ -30,7 +30,6 @@ export const GET = withAdminAuth(async (session, request: Request) => {
     })
 
   } catch (error: any) {
-    console.error('Error fetching profile:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to fetch profile' },
       { status: 500 }
@@ -83,7 +82,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     })
 
   } catch (error: any) {
-    console.error('Error updating profile:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to update profile' },
       { status: 500 }

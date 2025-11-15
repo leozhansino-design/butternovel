@@ -147,8 +147,6 @@ export async function generateStaticParams() {
   // 所有章节页面都通过 dynamicParams = true 在访问时动态生成
   // 这样可以避免构建时的数据库连接超时问题
 
-  console.log('📝 [Build] Skipping chapter pages pre-rendering to avoid DB connection issues')
-
   // 返回空数组，不预渲染任何章节页面
   return []
 }

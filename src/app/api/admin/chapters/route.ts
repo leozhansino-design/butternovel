@@ -72,7 +72,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
     // ⚡ 清除该小说的缓存（新章节发布）
     await invalidateNovelCache(novel.slug)
-    console.log('✓ Cache cleared for novel after chapter creation')
 
     return NextResponse.json({
       success: true,
@@ -80,7 +79,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     })
 
   } catch (error: any) {
-    console.error('Error creating chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to create chapter' }, { status: 500 })
   }
 })

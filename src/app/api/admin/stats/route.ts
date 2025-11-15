@@ -103,7 +103,6 @@ export const GET = withAdminAuth(async (session, request: Request) => {
     })
 
   } catch (error: any) {
-    console.error('❌ [API] Stats error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch stats' },
       { status: 500 }
@@ -233,7 +232,6 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     })
 
   } catch (error: any) {
-    console.error('❌ [API] Chart data error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch chart data' },
       { status: 500 }

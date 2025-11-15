@@ -19,11 +19,6 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Invalid privacy setting' }, { status: 400 })
     }
 
-    console.log('[API /api/profile/privacy] Updating privacy:', {
-      userId: session.user.id,
-      libraryPrivacy
-    })
-
     // Update user privacy settings
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
@@ -36,14 +31,11 @@ export async function PATCH(request: Request) {
       }
     })
 
-    console.log('[API /api/profile/privacy] Privacy updated successfully')
-
     return NextResponse.json({
       message: 'Privacy settings updated successfully',
       libraryPrivacy: updatedUser.libraryPrivacy
     })
   } catch (error) {
-    console.error('[API /api/profile/privacy] Error:', error)
     return NextResponse.json({ error: 'Failed to update privacy settings' }, { status: 500 })
   }
 }

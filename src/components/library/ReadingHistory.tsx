@@ -29,27 +29,21 @@ export default function ReadingHistory({ onClose }: ReadingHistoryProps) {
     const fetchHistory = async () => {
       try {
         setLoading(true)
-        console.log('[ReadingHistory] Fetching history...')
         const res = await fetch('/api/reading-history')
-
-        console.log('[ReadingHistory] Response status:', res.status)
 
         // Handle unauthorized (not logged in)
         if (res.status === 401) {
-          console.log('[ReadingHistory] User not logged in')
           setNovels([])
           setLoading(false)
           return
         }
 
         const data = await res.json()
-        console.log('[ReadingHistory] Response data:', data)
 
         if (res.ok) {
           // Handle successResponse wrapper format: {success: true, data: {novels: [...]}}
           const novelsData = data.data?.novels || data.novels || []
           const novelsArray = Array.isArray(novelsData) ? novelsData : []
-          console.log('[ReadingHistory] Setting', novelsArray.length, 'novels')
           setNovels(novelsArray)
         } else {
           const errorMsg = data.error || data.message || `Failed to load (${res.status})`

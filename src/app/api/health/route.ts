@@ -21,8 +21,6 @@ export async function GET() {
       timestamp: new Date().toISOString()
     })
   } catch (error: any) {
-    console.error('❌ Health check failed:', error)
-
     const responseTime = Date.now() - startTime
 
     return NextResponse.json({

@@ -80,7 +80,6 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
 
     // ⚡ 清除该小说的缓存（章节更新）
     await invalidateNovelCache(currentChapter.novel.slug)
-    console.log('✓ Cache cleared for novel after chapter update')
 
     return NextResponse.json({
       success: true,
@@ -88,7 +87,6 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
     })
 
   } catch (error: any) {
-    console.error('Error updating chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to update' }, { status: 500 })
   }
 })
@@ -163,12 +161,10 @@ export const DELETE = withAdminAuth(async (session, request: Request, props: { p
 
     // ⚡ 清除该小说的缓存（章节删除）
     await invalidateNovelCache(chapter.novel.slug)
-    console.log('✓ Cache cleared for novel after chapter deletion')
 
     return NextResponse.json({ success: true, message: 'Chapter deleted' })
 
   } catch (error: any) {
-    console.error('Error deleting chapter:', error)
     return NextResponse.json({ error: error.message || 'Failed to delete' }, { status: 500 })
   }
 })

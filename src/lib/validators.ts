@@ -9,22 +9,22 @@ import { z } from 'zod'
 
 export const novelCreateSchema = z.object({
   title: z.string()
-    .min(1, '标题不能为空')
-    .max(120, '标题最多120字'),
+    .min(1, 'Title cannot be empty')
+    .max(120, 'Title must be 120 characters or less'),
 
   coverImage: z.string()
-    .min(1, '封面不能为空'),
+    .min(1, 'Cover image cannot be empty'),
 
   categoryId: z.coerce.number()
-    .int('分类ID必须是整数')
+    .int('Category ID must be an integer')
     .positive('Please select a valid genre/category'),
 
   blurb: z.string()
-    .min(1, '简介不能为空')
-    .max(3000, '简介最多3000字'),
+    .min(1, 'Description cannot be empty')
+    .max(3000, 'Description must be 3000 characters or less'),
 
   status: z.enum(['ONGOING', 'COMPLETED'], {
-    message: '状态必须是 ONGOING 或 COMPLETED'
+    message: 'Status must be ONGOING or COMPLETED'
   }),
 
   isPublished: z.boolean().optional(),
@@ -53,11 +53,11 @@ export const novelUpdateSchema = z.object({
 export const chapterCreateSchema = z.object({
   novelId: z.coerce.number().int().positive(),
   title: z.string()
-    .min(1, '标题不能为空')
-    .max(100, '标题最多100字'),
+    .min(1, 'Title cannot be empty')
+    .max(100, 'Title must be 100 characters or less'),
   content: z.string()
-    .min(1, '内容不能为空')
-    .max(30000, '内容最多30000字'),
+    .min(1, 'Content cannot be empty')
+    .max(30000, 'Content must be 30000 characters or less'),
   chapterNumber: z.coerce.number().int().min(0), // Allow 0 for auto-calculation
   isPublished: z.boolean().optional(),
 })
@@ -74,13 +74,13 @@ export const chapterUpdateSchema = z.object({
 
 export const ratingSchema = z.object({
   score: z.coerce.number()
-    .int('评分必须是整数')
+    .int('Rating must be an integer')
     .refine(
       (val) => [2, 4, 6, 8, 10].includes(val),
-      { message: '评分必须是 2, 4, 6, 8, 10 之一' }
+      { message: 'Rating must be one of: 2, 4, 6, 8, 10' }
     ),
   review: z.string()
-    .max(1000, '评论最多1000字')
+    .max(1000, 'Review must be 1000 characters or less')
     .optional(),
 })
 
@@ -90,10 +90,10 @@ export const ratingSchema = z.object({
 
 export const registerSchema = z.object({
   email: z.string()
-    .email('邮箱格式不正确'),
+    .email('Invalid email format'),
   password: z.string()
-    .min(6, '密码至少6位')
-    .max(50, '密码最多50位'),
+    .min(6, 'Password must be at least 6 characters')
+    .max(50, 'Password must be 50 characters or less'),
   name: z.string()
     .min(1)
     .max(50)
@@ -101,8 +101,8 @@ export const registerSchema = z.object({
 })
 
 export const loginSchema = z.object({
-  email: z.string().email('邮箱格式不正确'),
-  password: z.string().min(1, '密码不能为空'),
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(1, 'Password cannot be empty'),
 })
 
 // ============================================
@@ -111,11 +111,11 @@ export const loginSchema = z.object({
 
 export const profileUpdateSchema = z.object({
   name: z.string()
-    .min(1, '名字不能为空')
-    .max(50, '名字最多50字')
+    .min(1, 'Name cannot be empty')
+    .max(50, 'Name must be 50 characters or less')
     .optional(),
   bio: z.string()
-    .max(500, '个人简介最多500字')
+    .max(500, 'Bio must be 500 characters or less')
     .optional(),
 })
 
@@ -138,26 +138,26 @@ export function validateImage(
   type: 'cover' | 'avatar'
 ): Promise<{ valid: boolean; error?: string }> {
   return new Promise((resolve) => {
-    // 1. 类型检查
+    // 1. Type check
     if (!IMAGE_LIMITS.ALLOWED_TYPES.includes(file.type as any)) {
       resolve({
         valid: false,
-        error: '不支持的文件类型。请上传 JPG、PNG 或 WebP 格式'
+        error: 'Unsupported file type. Please upload JPG, PNG, or WebP format'
       })
       return
     }
 
-    // 2. 大小检查
+    // 2. Size check
     if (file.size > IMAGE_LIMITS.MAX_SIZE) {
       const maxMB = IMAGE_LIMITS.MAX_SIZE / 1024 / 1024
       resolve({
         valid: false,
-        error: `文件过大。最大允许 ${maxMB}MB`
+        error: `File too large. Maximum allowed: ${maxMB}MB`
       })
       return
     }
 
-    // 3. 尺寸检查
+    // 3. Dimension check
     const img = new window.Image()
     const url = URL.createObjectURL(file)
 
@@ -168,7 +168,7 @@ export function validateImage(
       if (img.width !== dimensions.width || img.height !== dimensions.height) {
         resolve({
           valid: false,
-          error: `图片尺寸必须为 ${dimensions.width}x${dimensions.height}px (当前: ${img.width}x${img.height}px)`
+          error: `Image dimensions must be ${dimensions.width}x${dimensions.height}px (current: ${img.width}x${img.height}px)`
         })
       } else {
         resolve({ valid: true })
@@ -177,7 +177,7 @@ export function validateImage(
 
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      resolve({ valid: false, error: '无法加载图片' })
+      resolve({ valid: false, error: 'Unable to load image' })
     }
 
     img.src = url
@@ -246,7 +246,7 @@ export function validateWordCount(
     valid: count <= maxWords,
     count,
     error: count > maxWords
-      ? `超出字数限制 ${maxWords} (当前: ${count})`
+      ? `Exceeds character limit of ${maxWords} (current: ${count})`
       : undefined
   }
 }

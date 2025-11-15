@@ -53,7 +53,6 @@ export async function GET(
 
     return NextResponse.json({ novels })
   } catch (error) {
-    console.error('[API /api/public/user/[userId]/novels] Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

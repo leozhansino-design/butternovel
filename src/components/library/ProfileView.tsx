@@ -59,7 +59,6 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
   const handlePrivacyToggle = async (newValue: boolean) => {
     setUpdatingPrivacy(true)
     try {
-      console.log('[ProfileView] Updating library privacy to:', newValue)
       const res = await fetch('/api/profile/privacy', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -68,7 +67,6 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
       if (res.ok) {
         setProfileData(prev => prev ? { ...prev, libraryPrivacy: newValue } : null)
-        console.log('[ProfileView] Privacy updated successfully')
       } else {
         const data = await res.json()
         console.error('[ProfileView] Failed to update privacy:', data)
@@ -91,12 +89,6 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
         const profileData = await profileRes.json()
 
         if (profileRes.ok) {
-          console.log('[ProfileView] Profile data loaded:', {
-            userId: profileData.user.id,
-            avatarFromDb: profileData.user.avatar,
-            sessionAvatar: user.image,
-            isGoogleAvatar: profileData.user.avatar?.includes('googleusercontent.com')
-          })
           setProfileData(profileData.user)
           setEditName(profileData.user.name || '')
           setEditBio(profileData.user.bio || '')
@@ -249,11 +241,6 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
       img.onload = () => {
         URL.revokeObjectURL(img.src)
         const isValid = img.width >= minWidth && img.height >= minHeight
-        console.log('[ProfileView] Image validation:', {
-          actual: { width: img.width, height: img.height },
-          required: { minWidth, minHeight },
-          isValid
-        })
         resolve(isValid)
       }
 

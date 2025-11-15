@@ -48,7 +48,6 @@ export async function GET(
 
     return NextResponse.json({ chapter })
   } catch (error) {
-    console.error('[Dashboard Chapter API] Get error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch chapter' },
       { status: 500 }
@@ -158,7 +157,6 @@ export async function PUT(
       chapter: updatedChapter,
     })
   } catch (error) {
-    console.error('[Dashboard Chapter API] Update error:', error)
     return NextResponse.json(
       { error: 'Failed to update chapter' },
       { status: 500 }
@@ -233,7 +231,6 @@ export async function DELETE(
       message: 'Chapter deleted successfully',
     })
   } catch (error) {
-    console.error('[Dashboard Chapter API] Delete error:', error)
     return NextResponse.json(
       { error: 'Failed to delete chapter' },
       { status: 500 }

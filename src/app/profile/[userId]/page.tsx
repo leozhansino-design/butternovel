@@ -71,7 +71,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
     })
   } catch (error) {
     // Follow table doesn't exist yet. Run: npx prisma db push
-    console.log('Follow table does not exist yet. Run: npx prisma db push')
   }
 
   return (

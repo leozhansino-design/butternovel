@@ -103,7 +103,6 @@ export function validateEnv() {
     throw new Error('Invalid DATABASE_URL configuration')
   }
 
-  console.log('✅ 所有环境变量验证通过')
 }
 
 /**
@@ -117,7 +116,6 @@ export async function testDatabaseConnection(): Promise<{ success: boolean; erro
     // 执行简单查询测试连接
     await prisma.$queryRaw`SELECT 1`
 
-    console.log('✅ 数据库连接测试成功')
     return { success: true }
   } catch (error: any) {
     const errorMessage = error.message || String(error)

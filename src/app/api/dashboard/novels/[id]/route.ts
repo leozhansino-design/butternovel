@@ -47,7 +47,6 @@ export async function GET(
 
     return NextResponse.json({ novel })
   } catch (error) {
-    console.error('[Dashboard Novel API] Get error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch novel' },
       { status: 500 }
@@ -109,7 +108,6 @@ export async function PUT(
         try {
           await cloudinary.uploader.destroy(existingNovel.coverImagePublicId)
         } catch (error) {
-          console.error('Failed to delete old cover image:', error)
         }
       }
 
@@ -156,14 +154,12 @@ export async function PUT(
 
     // ⚡ Clear cache: home page, category page, and novel detail page
     await invalidateNovelRelatedCache(updatedNovel.slug, updatedNovel.category?.slug)
-    console.log('✓ Cache cleared for updated novel')
 
     return NextResponse.json({
       message: 'Novel updated successfully',
       novel: updatedNovel,
     })
   } catch (error) {
-    console.error('[Dashboard Novel API] Update error:', error)
     return NextResponse.json(
       { error: 'Failed to update novel' },
       { status: 500 }
@@ -218,7 +214,6 @@ export async function DELETE(
       try {
         await cloudinary.uploader.destroy(existingNovel.coverImagePublicId)
       } catch (error) {
-        console.error('Failed to delete cover image:', error)
       }
     }
 
@@ -229,13 +224,11 @@ export async function DELETE(
 
     // ⚡ CRITICAL: Clear cache after deletion
     await invalidateNovelRelatedCache(novelSlug, categorySlug)
-    console.log('✓ Cache cleared for deleted novel:', novelSlug)
 
     return NextResponse.json({
       message: 'Novel deleted successfully',
     })
   } catch (error) {
-    console.error('[Dashboard Novel API] Delete error:', error)
     return NextResponse.json(
       { error: 'Failed to delete novel' },
       { status: 500 }

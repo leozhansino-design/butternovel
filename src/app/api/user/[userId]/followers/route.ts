@@ -45,7 +45,6 @@ export const GET = withErrorHandling(async (
       followers: followers.map(f => f.follower)
     })
   } catch (error) {
-    console.log('Follow table does not exist yet. Run: npx prisma db push')
     return successResponse({ followers: [] })
   }
 })

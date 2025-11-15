@@ -95,7 +95,6 @@ export async function getOrSet<T>(
       // 缓存命中
       try {
         const data = JSON.parse(cached);
-        console.log(`✓ 缓存命中: ${key}`);
         return data as T;
       } catch (parseError) {
         console.error(`✗ 缓存数据解析失败 (${key}):`, parseError);
@@ -105,7 +104,6 @@ export async function getOrSet<T>(
     }
 
     // 2. 缓存未命中或 Redis 不可用，从数据库获取
-    console.log(`✗ 缓存未命中，查询数据库: ${key}`);
     const data = await fetchFunction();
 
     // 3. 将数据写入缓存（如果 Redis 可用）
@@ -113,7 +111,6 @@ export async function getOrSet<T>(
       try {
         const serialized = safeStringify(data); // 🔧 使用 BigInt 安全序列化
         await safeRedisSet(key, serialized, ttl);
-        console.log(`✓ 数据已缓存: ${key} (TTL: ${ttl || '无限'}s)`);
       } catch (serializeError) {
         console.error(`✗ 数据序列化失败 (${key}):`, serializeError);
       }
@@ -132,10 +129,7 @@ export async function getOrSet<T>(
  */
 export async function invalidate(key: string): Promise<void> {
   try {
-    const deleted = await safeRedisDel(key);
-    if (deleted) {
-      console.log(`✓ 缓存已清除: ${key}`);
-    }
+    await safeRedisDel(key);
   } catch (error) {
     console.error(`✗ 缓存清除失败 (${key}):`, error);
   }
@@ -146,10 +140,7 @@ export async function invalidate(key: string): Promise<void> {
  */
 export async function invalidateMultiple(keys: string[]): Promise<void> {
   try {
-    const deleted = await safeRedisDel(keys);
-    if (deleted) {
-      console.log(`✓ 缓存已清除: ${keys.join(', ')}`);
-    }
+    await safeRedisDel(keys);
   } catch (error) {
     console.error(`✗ 批量缓存清除失败:`, error);
   }
@@ -161,10 +152,7 @@ export async function invalidateMultiple(keys: string[]): Promise<void> {
  */
 export async function invalidatePattern(pattern: string): Promise<void> {
   try {
-    const count = await safeRedisDelPattern(pattern);
-    if (count > 0) {
-      console.log(`✓ 缓存已清除 (模式: ${pattern}, 数量: ${count})`);
-    }
+    await safeRedisDelPattern(pattern);
   } catch (error) {
     console.error(`✗ 模式缓存清除失败 (${pattern}):`, error);
   }
@@ -181,7 +169,6 @@ export async function invalidatePattern(pattern: string): Promise<void> {
  * ⚡ 优化：现在只需清除单个缓存键 home:all-data
  */
 export async function invalidateHomeCache(): Promise<void> {
-  console.log('清除首页缓存...');
   // ✅ 优化：使用单个缓存键
   await invalidate('home:all-data');
   // 保留旧的模式删除以防万一
@@ -191,7 +178,6 @@ export async function invalidateHomeCache(): Promise<void> {
   try {
     const { revalidatePath } = await import('next/cache');
     revalidatePath('/', 'page');
-    console.log('✓ Next.js ISR cache cleared for home page');
   } catch (error) {
     console.error('✗ Failed to clear Next.js ISR cache:', error);
   }
@@ -202,14 +188,12 @@ export async function invalidateHomeCache(): Promise<void> {
  * 场景：更新小说信息、发布新章节、删除章节
  */
 export async function invalidateNovelCache(slug: string): Promise<void> {
-  console.log(`清除小说缓存: ${slug}`);
   await invalidatePattern(CacheKeys.PATTERN_NOVEL(slug));
 
   // ⚡ Clear Next.js ISR cache for novel detail page
   try {
     const { revalidatePath } = await import('next/cache');
     revalidatePath(`/novels/${slug}`, 'page');
-    console.log(`✓ Next.js ISR cache cleared for novel: ${slug}`);
   } catch (error) {
     console.error(`✗ Failed to clear Next.js ISR cache for novel ${slug}:`, error);
   }
@@ -220,7 +204,6 @@ export async function invalidateNovelCache(slug: string): Promise<void> {
  * 场景：该分类下有小说变动
  */
 export async function invalidateCategoryCache(categorySlug: string): Promise<void> {
-  console.log(`清除分类缓存: ${categorySlug}`);
   await Promise.all([
     invalidate(CacheKeys.HOME_CATEGORY(categorySlug)),
     invalidatePattern(CacheKeys.PATTERN_CATEGORY(categorySlug)),
@@ -230,7 +213,6 @@ export async function invalidateCategoryCache(categorySlug: string): Promise<voi
   try {
     const { revalidatePath } = await import('next/cache');
     revalidatePath(`/category/${categorySlug}`, 'page');
-    console.log(`✓ Next.js ISR cache cleared for category: ${categorySlug}`);
   } catch (error) {
     console.error(`✗ Failed to clear Next.js ISR cache for category ${categorySlug}:`, error);
   }
@@ -241,7 +223,6 @@ export async function invalidateCategoryCache(categorySlug: string): Promise<voi
  * 场景：用户添加/删除书架项
  */
 export async function invalidateUserLibraryCache(userId: string): Promise<void> {
-  console.log(`清除用户书架缓存: ${userId}`);
   await invalidatePattern(CacheKeys.PATTERN_USER_LIBRARY(userId));
 }
 
@@ -256,8 +237,6 @@ export async function invalidateNovelRelatedCache(
   novelSlug: string,
   categorySlug?: string
 ): Promise<void> {
-  console.log(`清除小说相关的所有缓存: ${novelSlug}`);
-
   const tasks = [
     invalidateHomeCache(), // 清除首页
     invalidateNovelCache(novelSlug), // 清除小说详情

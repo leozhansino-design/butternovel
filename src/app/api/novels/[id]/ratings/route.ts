@@ -82,7 +82,6 @@ export async function GET(
       })
     } catch (error) {
       // 如果likeCount字段不存在，只按时间排序
-      console.warn('[Ratings API] likeCount field not found, using fallback sorting')
       ratings = await prisma.rating.findMany({
         where: {
           novelId,
@@ -129,7 +128,6 @@ export async function GET(
           likeCount = (rating as any).likeCount || 0
         } catch (error) {
           // RatingLike表还不存在，返回默认值
-          console.warn('[Ratings API] RatingLike table not found, using defaults')
         }
 
         // ✅ Include replyCount from _count
@@ -164,7 +162,6 @@ export async function GET(
       pagination,
     })
   } catch (error) {
-    console.error('Failed to fetch ratings:', error)
     return errorResponse('Failed to fetch ratings', ErrorCode.INTERNAL_ERROR)
   }
 }
