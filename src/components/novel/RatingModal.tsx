@@ -237,17 +237,25 @@ export default function RatingModal({
 
       if (res.ok) {
         const data = await res.json()
-        // 更新ratings列表中的点赞状态
-        setRatings(prevRatings =>
-          prevRatings.map(r =>
-            r.id === ratingId
-              ? { ...r, likeCount: data.likeCount, userHasLiked: data.liked }
-              : r
+
+        // ✅ FIX: 验证 API 返回的数据结构，防止 undefined 错误
+        if (data && typeof data.likeCount === 'number' && typeof data.liked === 'boolean') {
+          // 更新ratings列表中的点赞状态
+          setRatings(prevRatings =>
+            prevRatings.map(r =>
+              r.id === ratingId
+                ? { ...r, likeCount: data.likeCount, userHasLiked: data.liked }
+                : r
+            )
           )
-        )
+        } else {
+          console.error('[handleLike] Invalid API response:', data)
+        }
+      } else {
+        console.error('[handleLike] API error:', res.status, res.statusText)
       }
     } catch (error) {
-      console.error('Error liking rating:', error)
+      console.error('[handleLike] Error:', error)
     }
   }
 
