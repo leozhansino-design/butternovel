@@ -72,10 +72,11 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const [isChapterCompleted, setIsChapterCompleted] = useState(false)
 
   // ⭐ 新增：进入章节时立即记录阅读进度
+  // 🔧 FIXED: 添加完整的错误处理和验证
   useEffect(() => {
     const saveProgress = async () => {
       try {
-        await fetch('/api/reading-progress', {
+        const res = await fetch('/api/reading-progress', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -83,7 +84,12 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
             chapterId: chapter.id
           })
         })
+
+        if (!res.ok) {
+          throw new Error(`Failed to save progress: ${res.status}`)
+        }
       } catch (error) {
+        // 阅读进度失败不影响用户体验，只记录日志
         console.error('Failed to save reading progress:', error)
       }
     }
@@ -95,6 +101,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   }, [novel.id, chapter.id])
 
   // ⭐ 阅读时长追踪 - 每分钟保存一次
+  // 🔧 FIXED: 添加完整的错误处理
   useEffect(() => {
     const saveReadingTime = async () => {
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000) // 秒
@@ -102,7 +109,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
       if (duration < 10) return // 忽略少于10秒的阅读
 
       try {
-        await fetch('/api/reading-time', {
+        const res = await fetch('/api/reading-time', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -111,10 +118,16 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
             duration,
           })
         })
+
+        if (!res.ok) {
+          throw new Error(`Failed to save reading time: ${res.status}`)
+        }
+
         // 重置计时器
         startTimeRef.current = Date.now()
       } catch (error) {
         console.error('Failed to save reading time:', error)
+        // 不重置计时器，下次会累积保存
       }
     }
 
@@ -169,13 +182,14 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   }, [readMode, currentPage, pages.length, isChapterCompleted])
 
   // ⭐ 标记章节为已完成
+  // 🔧 FIXED: 添加完整的错误处理
   const markChapterAsCompleted = async () => {
     if (isChapterCompleted) return
 
     setIsChapterCompleted(true)
 
     try {
-      await fetch('/api/chapter-progress', {
+      const res = await fetch('/api/chapter-progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,8 +197,14 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
           isCompleted: true,
         })
       })
+
+      if (!res.ok) {
+        throw new Error(`Failed to mark chapter complete: ${res.status}`)
+      }
     } catch (error) {
       console.error('Failed to mark chapter as completed:', error)
+      // 失败时重置状态，允许重试
+      setIsChapterCompleted(false)
     }
   }
 

@@ -74,8 +74,9 @@ export const GET = withAdminAuth(async (session, request: Request) => {
               name: true,
               avatar: true,
               role: true,
-              googleId: true,
-              facebookId: true,
+              // 🔧 SECURITY FIX: 移除googleId和facebookId，避免OAuth ID泄露
+              // googleId: true,      // ❌ 移除：不应返回敏感OAuth ID
+              // facebookId: true,    // ❌ 移除：不应返回敏感OAuth ID
               isWriter: true,
               isVerified: true,
               isActive: true,

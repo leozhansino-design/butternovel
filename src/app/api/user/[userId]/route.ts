@@ -83,9 +83,10 @@ export const GET = withErrorHandling(async (
           })
 
           console.log(`[User Profile API] ✅ Successfully created user account from admin_profile`)
-        } catch (createError: any) {
+        } catch (createError: unknown) {
+          // 🔧 TypeScript: 使用unknown代替any
           // 处理名字冲突
-          if (createError.code === 'P2002') {
+          if (createError && typeof createError === 'object' && 'code' in createError && createError.code === 'P2002') {
             const uniqueName = `${adminProfile.displayName}-${Date.now()}`
             user = await prisma.user.create({
               data: {

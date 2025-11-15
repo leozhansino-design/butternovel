@@ -84,9 +84,10 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                 )
 
                 console.log(`[Admin Upload] ✅ Successfully created user account: ${user.id}`)
-            } catch (createError: any) {
+            } catch (createError: unknown) {
+                // 🔧 TypeScript: 使用unknown代替any，更类型安全
                 // 如果创建失败（可能是名字冲突），尝试使用唯一的名字
-                if (createError.code === 'P2002') {
+                if (createError && typeof createError === 'object' && 'code' in createError && createError.code === 'P2002') {
                     const uniqueName = `${adminProfile.displayName}-${Date.now()}`
                     user = await withRetry(
                         () => prisma.user.create({

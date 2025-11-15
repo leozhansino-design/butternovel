@@ -113,35 +113,40 @@ export async function GET(
       })
     }
 
-    // 检查当前用户对每个评分的点赞状态
-    const ratingsWithLikeStatus = await Promise.all(
-      ratings.map(async (rating) => {
-        let userLike = null
-        let likeCount = 0
+    // 🔧 FIXED: 批量查询点赞状态，避免N+1查询问题
+    // 之前：每个rating单独查询一次 (N次查询)
+    // 现在：一次性批量查询所有点赞状态 (1次查询)
+    let userLikes: any[] = []
+    try {
+      if (ratings.length > 0) {
+        const ratingIds = ratings.map(r => r.id)
+        userLikes = await prisma.ratingLike.findMany({
+          where: userId
+            ? { userId, ratingId: { in: ratingIds } }
+            : { guestId, ratingId: { in: ratingIds } },
+          select: { ratingId: true }
+        })
+      }
+    } catch (error) {
+      // RatingLike表还不存在，返回空数组
+    }
 
-        try {
-          userLike = await prisma.ratingLike.findFirst({
-            where: userId
-              ? { userId, ratingId: rating.id }
-              : { guestId, ratingId: rating.id }
-          })
-          likeCount = (rating as any).likeCount || 0
-        } catch (error) {
-          // RatingLike表还不存在，返回默认值
-        }
+    // 创建点赞状态的Set，用于快速查找
+    const likedRatingIds = new Set(userLikes.map(like => like.ratingId))
 
-        // ✅ Include replyCount from _count
-        const replyCount = (rating as any)._count?.replies || 0
+    // 在内存中组合数据，不需要额外的数据库查询
+    const ratingsWithLikeStatus = ratings.map(rating => {
+      const likeCount = (rating as any).likeCount || 0
+      const replyCount = (rating as any)._count?.replies || 0
 
-        return {
-          ...rating,
-          likeCount,
-          userHasLiked: !!userLike,
-          replyCount,
-          _count: undefined, // Remove _count from response
-        }
-      })
-    )
+      return {
+        ...rating,
+        likeCount,
+        userHasLiked: likedRatingIds.has(rating.id),
+        replyCount,
+        _count: undefined, // Remove _count from response
+      }
+    })
 
     // Get total count
     const total = await prisma.rating.count({

@@ -47,8 +47,43 @@ export default function ParagraphCommentPanel({
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [showLoginModal, setShowLoginModal] = useState(false)
 
+  // 🔧 FIXED: 添加AbortController和cleanup避免竞态条件
   useEffect(() => {
+    let cancelled = false
+    const controller = new AbortController()
+
+    const fetchComments = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(
+          `/api/paragraph-comments?chapterId=${chapterId}&paragraphIndex=${paragraphIndex}`,
+          { signal: controller.signal }
+        )
+        const data = await res.json()
+
+        // 只在组件未卸载时更新状态
+        if (!cancelled && data.success) {
+          setComments(data.data || [])
+        }
+      } catch (error) {
+        // 忽略取消错误
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('Failed to fetch comments:', error)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
     fetchComments()
+
+    // Cleanup：取消请求并标记组件已卸载
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
   }, [chapterId, paragraphIndex])
 
   const fetchComments = async () => {
