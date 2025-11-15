@@ -23,7 +23,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         }
       }),
       { operationName: 'Get all chapters for migration' }
-    )
+    ) as any
 
     let updatedCount = 0
     let skippedCount = 0
@@ -62,7 +62,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         select: { id: true }
       }),
       { operationName: 'Get all novels' }
-    )
+    ) as any
 
     let novelsUpdated = 0
 
@@ -75,7 +75,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             _sum: { wordCount: true }
           }),
           { operationName: `Aggregate chapters for novel ${novel.id}` }
-        )
+        ) as any
 
         const totalWordCount = result._sum.wordCount || 0
 

@@ -70,13 +70,14 @@ export default async function PublicProfilePage({ params }: PageProps) {
       // 🔧 FIX: Limit reading history to prevent fetching thousands of records
       // Use count with distinct instead of findMany for better performance
       withRetry(
+        // @ts-ignore - Prisma groupBy type inference issue
         () => prisma.readingHistory.groupBy({
           by: ['novelId'],
           where: { userId },
           _count: { novelId: true },
         }),
         { operationName: 'Get books read count' }
-      ),
+      ) as Promise<any[]>,
 
       // Query 3: Get follow counts (with error handling)
       (async () => {

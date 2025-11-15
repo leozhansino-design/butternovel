@@ -43,7 +43,7 @@ export const PUT = withAdminAuth(async (
         }
       }),
       { operationName: 'Get current novel for update' }
-    )
+    ) as any
 
     if (!currentNovel) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })

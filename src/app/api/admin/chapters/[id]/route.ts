@@ -37,7 +37,7 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
         }
       }),
       { operationName: 'Get current chapter' }
-    )
+    ) as any
 
     if (!currentChapter) {
       return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
@@ -64,7 +64,7 @@ export const PUT = withAdminAuth(async (session, request: Request, props: { para
         data,
       }),
       { operationName: 'Update chapter' }
-    )
+    ) as any
 
     if (body.wordCount !== undefined && body.wordCount !== currentChapter.wordCount) {
       const wordCountDiff = body.wordCount - currentChapter.wordCount
@@ -112,7 +112,7 @@ export const DELETE = withAdminAuth(async (session, request: Request, props: { p
         }
       }),
       { operationName: 'Get chapter for deletion' }
-    )
+    ) as any
 
     if (!chapter) {
       return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
@@ -131,7 +131,7 @@ export const DELETE = withAdminAuth(async (session, request: Request, props: { p
         select: { totalChapters: true, wordCount: true }
       }),
       { operationName: 'Get novel after chapter deletion' }
-    )
+    ) as any
 
     if (novel) {
       // 🔄 添加数据库重试机制，解决连接超时问题

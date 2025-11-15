@@ -32,7 +32,7 @@ databaseUrl.searchParams.set('socket_timeout', '45')
 // This prevents creating multiple PrismaClient instances in development
 // which causes connection pool exhaustion due to Next.js hot module reloading
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+  prisma: any | undefined
 }
 
 // Query counter for monitoring excessive database queries

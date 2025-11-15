@@ -29,7 +29,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         select: { id: true, slug: true, totalChapters: true, wordCount: true }
       }),
       { operationName: 'Get novel for new chapter' }
-    )
+    ) as any
 
     if (!novel) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
@@ -56,7 +56,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         }
       }),
       { operationName: 'Create chapter' }
-    )
+    ) as any
 
     // 🔄 添加数据库重试机制，解决连接超时问题
     await withRetry(

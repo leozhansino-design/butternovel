@@ -28,14 +28,20 @@ export default async function EditChapterPage(props: Props) {
   const chapter = await withRetry(
     () => prisma.chapter.findUnique({
       where: { id: chapterId },
-      include: {
+      select: {
+        id: true,
+        novelId: true,
+        title: true,
+        content: true,
+        chapterNumber: true,
+        wordCount: true,
         novel: {
           select: { id: true, title: true }
         }
       }
     }),
     { operationName: 'Get chapter for edit page' }
-  )
+  ) as any
 
   if (!chapter || chapter.novelId !== novelId) {
     notFound()

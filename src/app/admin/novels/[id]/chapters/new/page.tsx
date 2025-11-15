@@ -38,7 +38,7 @@ export default async function AddChapterPage(props: Props) {
       }
     }),
     { operationName: 'Get novel for add chapter page' }
-  )
+  ) as any
 
   if (!novel) {
     notFound()

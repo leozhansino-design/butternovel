@@ -65,8 +65,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     results.diagnosis.totalNovels = novels.length
 
     // 4. Find novels with invalid author IDs
-    const invalidNovels = novels.filter(novel =>
-      !users.find(u => u.id === novel.authorId)
+    const invalidNovels = novels.filter((novel: any) =>
+      !users.find((u: any) => u.id === novel.authorId)
     )
 
     results.diagnosis.invalidNovels = invalidNovels.length
@@ -148,12 +148,12 @@ export const GET = withAdminAuth(async (session) => {
     })
 
     // 3. Find novels with invalid author IDs
-    const invalidNovels = novels.filter(novel =>
-      !users.find(u => u.id === novel.authorId)
+    const invalidNovels = novels.filter((novel: any) =>
+      !users.find((u: any) => u.id === novel.authorId)
     )
 
     // 4. Find admin/butterpicks user
-    const adminUser = users.find(u =>
+    const adminUser = users.find((u: any) =>
       u.email.includes('admin') ||
       u.writerName === 'ButterNovel Official' ||
       u.name?.toLowerCase().includes('butterpicks')
@@ -163,13 +163,13 @@ export const GET = withAdminAuth(async (session) => {
       totalUsers: users.length,
       totalNovels: novels.length,
       invalidNovels: invalidNovels.length,
-      users: users.map(u => ({
+      users: users.map((u: any) => ({
         id: u.id,
         email: u.email,
         name: u.name,
         writerName: u.writerName
       })),
-      invalidNovelsList: invalidNovels.map(n => ({
+      invalidNovelsList: invalidNovels.map((n: any) => ({
         id: n.id,
         title: n.title,
         authorId: n.authorId,
