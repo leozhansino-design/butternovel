@@ -236,15 +236,26 @@ export default function NovelsPage() {
 
                     {/* Status */}
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          novel.isPublished
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {novel.isPublished ? 'Published' : 'Draft'}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            novel.isPublished
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {novel.isPublished ? 'Published' : 'Draft'}
+                        </span>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            novel.status === 'COMPLETED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-purple-100 text-purple-800'
+                          }`}
+                        >
+                          {novel.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
+                        </span>
+                      </div>
                     </td>
 
                     {/* Chapters */}

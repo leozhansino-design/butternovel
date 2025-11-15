@@ -19,6 +19,19 @@ export async function POST(req: Request) {
 
     const { name, email, password } = validation.data
 
+    // ⚠️ CRITICAL: Reserve "butterpicks" name for admin/official accounts only
+    if (name) {
+      const normalizedName = name.trim().toLowerCase()
+      const isReservedName = normalizedName === 'butterpicks' || normalizedName.includes('butterpicks')
+
+      if (isReservedName) {
+        return NextResponse.json(
+          { error: 'This name is reserved for official accounts. Please choose a different name.' },
+          { status: 400 }
+        )
+      }
+    }
+
     // 检查邮箱是否已存在
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -37,7 +50,7 @@ export async function POST(req: Request) {
     // 创建用户
     const user = await prisma.user.create({
       data: {
-        name,
+        name: name ? name.trim() : 'User',
         email,
         password: hashedPassword,
       },

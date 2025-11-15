@@ -17,6 +17,7 @@ import TableOfContents from '@/components/novel/TableOfContents'
 import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
+import AuthorNameButton from '@/components/novel/AuthorNameButton'
 
 async function getNovel(slug: string) {
   // ⚡ 性能优化：Redis 缓存 + 移除content + 数据库重试
@@ -164,12 +165,7 @@ export default async function NovelDetailPage({
                         </h1>
                         <div className="flex items-center gap-2 text-lg flex-wrap">
                           <span className="text-gray-600">by</span>
-                          <Link
-                            href={`/profile/${novel.authorId}`}
-                            className="font-semibold text-gray-900 hover:text-amber-600 transition-colors cursor-pointer"
-                          >
-                            {novel.authorName}
-                          </Link>
+                          <AuthorNameButton authorId={novel.authorId} authorName={novel.authorName} />
                           <FollowAuthorButton authorId={novel.authorId} authorName={novel.authorName} />
                         </div>
                       </div>
