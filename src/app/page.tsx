@@ -89,21 +89,14 @@ async function HomeContent() {
   )
 }
 
-// ✅ 动态渲染配置
-// 移除 fetchCache = 'force-cache' 以允许 Redis 缓存操作
-// Upstash Redis 使用 no-store，这样每次请求都会检查 Redis
-// getOrSet 内部会处理 Redis 缓存逻辑
-// ✅ 使用 force-dynamic 确保 Redis 缓存层工作
-// 策略：每次请求都检查 Redis，只有 miss 时查数据库
-//
-// 缓存架构：
-// 1. Redis 缓存（home:all-data，TTL=1小时）
-// 2. 并发控制：防止缓存击穿
-//
-// 首次部署可能有多个并发请求（预热、health check、边缘节点）
-// 这是正常的，getOrSet 会处理并发，只有第一个请求查数据库
+// ✅ ISR: 1小时重新验证
+export const revalidate = 3600
+
+// ⚡ 动态渲染配置
+// 原因：静态生成时Redis会被跳过（redis.ts:30-36的isBuildTime检查）
+// 使用force-dynamic确保页面在运行时渲染，让Redis缓存正常工作
+// getOrSet内部会处理Redis缓存逻辑：缓存命中返回缓存，未命中查数据库并写入
 export const dynamic = 'force-dynamic'
-export const revalidate = 0 // 禁用 ISR，完全依赖 Redis
 
 export default function HomePage() {
   return (
