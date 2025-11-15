@@ -103,7 +103,7 @@ export async function POST(
 
     if (image) {
       try {
-        const uploadResult = await uploadCommentImage(image)
+        const uploadResult = await uploadCommentImage(image, session.user.id)
         imageUrl = uploadResult.url
         imagePublicId = uploadResult.publicId
       } catch (uploadError) {
