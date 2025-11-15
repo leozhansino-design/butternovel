@@ -85,7 +85,7 @@ export const revalidate = 3600
 // ⚡ CRITICAL: 强制缓存所有 fetch（包括 Upstash Redis），允许 ISR
 // Upstash Redis 默认使用 no-store → 导致页面无法静态生成
 // 使用 force-cache 强制覆盖，让页面可以进行 ISR
-export const fetchCache = 'force-cache'
+export const dynamic = 'force-dynamic'
 
 /**
  * ⚡ CRITICAL FIX: Removed server-side auth() call

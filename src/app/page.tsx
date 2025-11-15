@@ -92,10 +92,11 @@ async function HomeContent() {
 // ✅ ISR: 1小时重新验证
 export const revalidate = 3600
 
-// ⚡ CRITICAL: 强制缓存所有 fetch（包括 Upstash Redis），允许 ISR
-// Upstash Redis 默认使用 no-store → 导致页面无法静态生成
-// 使用 force-cache 强制覆盖，让页面可以进行 ISR
-export const fetchCache = 'force-cache'
+// ⚡ 动态渲染配置
+// 移除 fetchCache = 'force-cache' 以允许 Redis 缓存操作
+// Upstash Redis 使用 no-store，这样每次请求都会检查 Redis
+// getOrSet 内部会处理 Redis 缓存逻辑
+export const dynamic = 'force-dynamic'
 
 export default function HomePage() {
   return (
