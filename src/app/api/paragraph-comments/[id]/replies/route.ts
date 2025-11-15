@@ -169,7 +169,7 @@ export async function POST(
       await tx.contributionLog.create({
         data: {
           userId: session.user.id,
-          action: 'COMMENT',
+          type: 'COMMENT',
           points: 3,
           description: 'Replied to a comment',
         },
