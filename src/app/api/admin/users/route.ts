@@ -74,9 +74,9 @@ export const GET = withAdminAuth(async (session, request: Request) => {
               name: true,
               avatar: true,
               role: true,
-              // 🔧 SECURITY FIX: 移除googleId和facebookId，避免OAuth ID泄露
-              // googleId: true,      // ❌ 移除：不应返回敏感OAuth ID
-              // facebookId: true,    // ❌ 移除：不应返回敏感OAuth ID
+              // 🔧 SECURITY: 查询这些字段用于内部判断authMethod，但不直接返回给客户端
+              googleId: true,      // 内部使用，用于判断登录方式
+              facebookId: true,    // 内部使用，用于判断登录方式
               isWriter: true,
               isVerified: true,
               isActive: true,
@@ -104,12 +104,14 @@ export const GET = withAdminAuth(async (session, request: Request) => {
     ])
 
     // 格式化用户数据
+    // 🔧 SECURITY: 不返回原始的googleId/facebookId，只返回authMethod
     const formattedUsers = users.map((user) => ({
       id: user.id,
       email: user.email,
       name: user.name || 'Unnamed User',
       avatar: user.avatar,
       role: user.role,
+      // 只返回登录方式，不返回实际的OAuth ID
       authMethod: user.googleId
         ? 'google'
         : user.facebookId
@@ -129,6 +131,7 @@ export const GET = withAdminAuth(async (session, request: Request) => {
         readingHistory: user._count.readingHistory,
         replies: user._count.ratingReplies,
       },
+      // ❌ 不返回 googleId 和 facebookId
     }))
 
     return NextResponse.json({
