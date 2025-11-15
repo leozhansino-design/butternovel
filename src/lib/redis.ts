@@ -41,9 +41,16 @@ export function getRedisClient(): Redis | null {
   }
 
   try {
-    // 🔧 修复: 配置 Upstash Redis
-    // 注意：Upstash 使用 no-store fetch，可能与 ISR 冲突
-    // 解决方案：在页面级别设置 fetchCache = 'default-cache'
+    // ✅ 修复: 配置 Upstash Redis
+    //
+    // 问题：Upstash 默认使用 no-store fetch → 导致页面无法静态生成
+    //
+    // 解决方案：
+    // 1. 在每个使用 Redis 的页面设置 fetchCache = 'force-cache'
+    // 2. 使用 unstable_cache wrapper 包装 Redis 调用
+    //
+    // 注意：Upstash SDK 不支持直接覆盖 fetch 配置
+    // 必须在应用层面处理缓存策略
     redis = new Redis({
       url: restUrl,
       token: restToken,

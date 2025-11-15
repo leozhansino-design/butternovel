@@ -6,6 +6,7 @@
  * - 自动降级到数据库（Redis 不可用时）
  * - 统一缓存键命名规范
  * - 提供针对不同数据类型的缓存方法
+ * - 配合页面级 fetchCache = 'force-cache'，兼容 Next.js ISR
  */
 
 import { safeRedisGet, safeRedisSet, safeRedisDel, safeRedisDelPattern, isRedisConnected } from './redis';

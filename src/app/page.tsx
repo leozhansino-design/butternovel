@@ -92,9 +92,10 @@ async function HomeContent() {
 // ✅ ISR: 1小时重新验证
 export const revalidate = 3600
 
-// ⚡ CRITICAL: 覆盖 Upstash Redis 的 no-store，允许 ISR 缓存
-// 这告诉 Next.js 即使有 no-store fetch，也要使用默认缓存策略
-export const fetchCache = 'default-cache'
+// ⚡ CRITICAL: 强制缓存所有 fetch（包括 Upstash Redis），允许 ISR
+// Upstash Redis 默认使用 no-store → 导致页面无法静态生成
+// 使用 force-cache 强制覆盖，让页面可以进行 ISR
+export const fetchCache = 'force-cache'
 
 export default function HomePage() {
   return (
