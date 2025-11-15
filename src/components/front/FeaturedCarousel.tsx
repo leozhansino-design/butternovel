@@ -19,8 +19,32 @@ interface Book {
 export default function FeaturedCarousel({ books }: { books: Book[] }) {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  
-  const booksPerView = 8;
+  const [booksPerView, setBooksPerView] = useState(8);
+
+  // 📱 响应式：根据屏幕宽度自适应显示数量
+  useEffect(() => {
+    const updateBooksPerView = () => {
+      const width = window.innerWidth;
+      if (width < 640) {
+        // 移动端：显示3本
+        setBooksPerView(3);
+      } else if (width < 768) {
+        // 平板小屏：显示4本
+        setBooksPerView(4);
+      } else if (width < 1024) {
+        // 平板大屏：显示6本
+        setBooksPerView(6);
+      } else {
+        // 桌面端：显示8本
+        setBooksPerView(8);
+      }
+    };
+
+    updateBooksPerView();
+    window.addEventListener('resize', updateBooksPerView);
+    return () => window.removeEventListener('resize', updateBooksPerView);
+  }, []);
+
   const maxScroll = Math.max(0, books.length - booksPerView);
 
   useEffect(() => {
@@ -50,26 +74,26 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
           ✨ Featured Novels
         </h2>
       </div>
 
-      <div className="relative -mx-2">
+      <div className="relative -mx-1 sm:-mx-2">
         {scrollPosition > 0 && (
           <button
             onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
             aria-label="向左滚动"
           >
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         )}
 
-        <div className="overflow-hidden px-2">
+        <div className="overflow-hidden px-1 sm:px-2">
           <div 
             className="flex transition-transform duration-500 ease-out"
             style={{
@@ -77,9 +101,9 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
             }}
           >
             {books.map((book) => (
-              <div 
+              <div
                 key={book.id}
-                className="flex-shrink-0 px-2"
+                className="flex-shrink-0 px-1 sm:px-2"
                 style={{ width: `${100 / booksPerView}%` }}
               >
                 <Link
@@ -128,10 +152,10 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
         {scrollPosition < maxScroll && (
           <button
             onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
             aria-label="向右滚动"
           >
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -139,7 +163,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
       </div>
 
       {maxScroll > 0 && (
-        <div className="flex justify-center items-center gap-1.5 mt-3">
+        <div className="flex justify-center items-center gap-1 sm:gap-1.5 mt-2 sm:mt-3">
           {Array.from({ length: Math.ceil(books.length / booksPerView) }).map((_, index) => {
             const isActive = Math.floor(scrollPosition / booksPerView) === index;
             return (

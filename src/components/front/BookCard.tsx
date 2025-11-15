@@ -38,39 +38,39 @@ const BookCard = memo(function BookCard({
         alt={title}
       />
 
-      <div className="mt-3">
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mb-2">
-          <span className="px-2.5 py-0.5 bg-[#fffae6] text-[#b39320] rounded-full font-medium">
+      <div className="mt-2 sm:mt-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-[var(--text-muted)] mb-1.5 sm:mb-2">
+          <span className="px-1.5 sm:px-2.5 py-0.5 bg-[#fffae6] text-[#b39320] rounded-full font-medium truncate">
             {category}
           </span>
           <span className="text-gray-400">•</span>
-          <span>{chapters} chapters</span>
+          <span className="truncate">{chapters} ch</span>
         </div>
 
-        {/* ⭐ 关键修改：2行显示 + 省略号 */}
-        <h3 
-          className="font-semibold text-[var(--text-primary)] mb-2 group-hover:text-[#b39320] transition-colors"
+        {/* ⭐ 📱 优化移动端标题显示 */}
+        <h3
+          className="font-semibold text-[var(--text-primary)] mb-1.5 sm:mb-2 group-hover:text-[#b39320] transition-colors text-sm sm:text-base"
           style={{
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            lineHeight: '1.4rem',
-            height: '2.8rem',
+            lineHeight: '1.3rem',
+            height: '2.6rem',
           }}
         >
           {title}
         </h3>
 
-        <div className="flex items-center gap-3 text-sm">
-          <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-            <span className="text-base">👍</span>
+        <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+          <div className="flex items-center gap-1 sm:gap-1.5 text-[var(--text-secondary)]">
+            <span className="text-sm sm:text-base">👍</span>
             <span className="font-medium">{likes.toLocaleString()}</span>
           </div>
           {status === 'COMPLETED' ? (
-            <span className="text-emerald-600 text-xs font-medium">✓ Completed</span>
+            <span className="text-emerald-600 text-[10px] sm:text-xs font-medium">✓ Done</span>
           ) : (
-            <span className="text-blue-600 text-xs font-medium">📝 Ongoing</span>
+            <span className="text-blue-600 text-[10px] sm:text-xs font-medium">📝 On</span>
           )}
         </div>
       </div>

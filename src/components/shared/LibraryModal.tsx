@@ -105,7 +105,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
   if (isViewingOtherUser) {
     if (loadingUser) {
       return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-md" onClick={onClose} />
           <div className="relative bg-white rounded-3xl shadow-2xl p-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
@@ -116,7 +116,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
 
     if (!otherUserData) {
       return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-md" onClick={onClose} />
           <div className="relative bg-white rounded-3xl shadow-2xl p-12">
             <p>User not found</p>
@@ -136,9 +136,9 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
         <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-md" onClick={onClose} />
-        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-2xl w-[95vw] max-w-7xl h-[90vh] overflow-auto">
+        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 sm:rounded-3xl shadow-2xl w-full sm:w-[95vw] max-w-7xl h-full sm:h-[90vh] overflow-auto">
           <button
             onClick={onClose}
             className="absolute top-6 right-6 z-10 p-2.5 hover:bg-white/80 rounded-full transition-all bg-white/60 backdrop-blur-sm shadow-lg hover:shadow-xl"
@@ -155,7 +155,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
 
   // Otherwise, show normal library modal for current user
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
       {/* Backdrop - 模糊背景 */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
@@ -163,7 +163,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
       />
 
       {/* Modal - 全新布局 */}
-      <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-2xl w-[95vw] max-w-7xl h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 sm:rounded-3xl shadow-2xl w-full sm:w-[95vw] max-w-7xl h-full sm:h-[90vh] flex flex-col overflow-hidden">
         {/* Close Button */}
         <button
           onClick={onClose}
