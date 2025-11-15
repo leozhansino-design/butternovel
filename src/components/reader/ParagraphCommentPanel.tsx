@@ -85,6 +85,13 @@ export default function ParagraphCommentPanel({
   const [showReplyEmojiPicker, setShowReplyEmojiPicker] = useState(false)
 
   useEffect(() => {
+    // ⚠️ 防止无限循环：只在 paragraphIndex 不为 null 时获取评论
+    // 如果 paragraphIndex 是 null，说明评论面板未打开，不需要请求
+    if (paragraphIndex === null) {
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
     const controller = new AbortController()
 
@@ -102,7 +109,7 @@ export default function ParagraphCommentPanel({
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('Failed to fetch comments:', error)
+          console.error('[ParagraphCommentPanel] Failed to fetch comments:', error)
         }
       } finally {
         if (!cancelled) {
