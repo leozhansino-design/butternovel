@@ -27,20 +27,37 @@
   - ✅ Redis 缓存正常工作
   - ✅ 第一次访问写入缓存，第二次访问命中缓存
 
+### 4. Writer Dashboard - Recent Stories 更新不及时（已修复 ✅）
+- **问题**：已上传的小说在 Dashboard 不显示
+- **根本原因**：Dashboard 页面没有被 revalidate 当小说/章节 CRUD 操作发生时
+- **解决方案**：
+  1. 添加 `dynamic = 'force-dynamic'` 到 Dashboard 页面
+  2. 扩展 `invalidateNovelRelatedCache()` 函数添加 `/dashboard` revalidation
+  3. 在所有章节 CRUD endpoints 添加缓存 invalidation
+- **效果**：
+  - ✅ Dashboard 立即更新当小说被创建/更新/删除
+  - ✅ 章节操作也触发 Dashboard 刷新
+  - ✅ 统计数据（章节数、字数）实时更新
+
+### 5. 官方账号 (ButterPicks) 问题（已修复 ✅）
+- **问题**：官方账号缺少特殊标识和样式
+- **根本原因**：代码已支持但数据库 `isOfficial` flag 未设置
+- **解决方案**：
+  1. 创建 `scripts/set-official-account.ts` 脚本设置 flag
+  2. `AuthorNameButton` 组件添加 inline "Official" badge 显示
+  3. 文档化设置流程 (`OFFICIAL_ACCOUNT_SETUP.md`)
+- **效果**（需要在生产环境运行脚本）：
+  - ✅ 小说详情页作者名旁显示 "Official" badge（蓝色gradient）
+  - ✅ 点击作者名打开 modal 显示官方卡片
+  - ✅ Avatar 有蓝/金渐变边框和发光效果
+  - ✅ 头像下显示 "Official Account" 而不是等级名
+  - ✅ Modal 只显示 Followers 统计（隐藏 Following/Books Read）
+  - ✅ 只显示 Novels tab（隐藏 Library/History/Reviews）
+- **部署步骤**：运行 `npx tsx scripts/set-official-account.ts` 在生产环境
+
 ---
 
 ## 🔧 待修复
-
-### 4. Writer Dashboard - Recent Stories 更新不及时
-- [ ] 已上传的小说没有显示
-- [ ] 需要检查缓存失效机制
-
-### 5. 官方账号 (ButterPicks) 问题
-- [ ] 小说详情页点击官方账号没有显示官方卡片
-- [ ] Tags 还是4个（应该有官方标识）
-- [ ] 官方账号应该有官方头像边框
-- [ ] 头像下面显示 "Novice Reader" 而不是 "Official"
-- [ ] 官方账号 modal 只显示粉丝数，不显示 following/books read
 
 ### 6. 分页问题
 - [ ] Profile 相关的 library 应该分页
@@ -52,7 +69,7 @@
 
 1. **P0（严重）** - ✅ 已全部修复
 2. **P1（高）** - ✅ 已全部修复
-3. **P2（中）** - Writer dashboard、官方账号
+3. **P2（中）** - ✅ 已全部修复（Writer dashboard、官方账号）
 4. **P3（低）** - 分页
 
 ---
