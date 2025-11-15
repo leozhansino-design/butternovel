@@ -66,6 +66,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const [showParagraphComments, setShowParagraphComments] = useState(true)
   const [activeParagraphIndex, setActiveParagraphIndex] = useState<number | null>(null)
   const [paragraphs, setParagraphs] = useState<string[]>([])
+  const [commentCounts, setCommentCounts] = useState<Record<number, number>>({})
 
   // ⭐ 阅读时长追踪
   const startTimeRef = useRef<number>(Date.now())
@@ -230,6 +231,41 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
 
     setParagraphs(splitParagraphs)
   }, [chapter.content])
+
+  // ✅ 批量获取所有段落的评论数 - 解决40次并发请求导致连接池耗尽的问题
+  // 之前：每个 ParagraphCommentButton 独立请求 → 40个段落 = 40次请求 = 连接池爆炸
+  // 现在：一次批量请求获取所有段落的评论数 → 1次请求
+  useEffect(() => {
+    if (!showParagraphComments) return
+
+    let cancelled = false
+    const controller = new AbortController()
+
+    const fetchCommentCounts = async () => {
+      try {
+        const res = await fetch(
+          `/api/paragraph-comments/batch-count?chapterId=${chapter.id}`,
+          { signal: controller.signal }
+        )
+        const data = await res.json()
+
+        if (!cancelled && data.success) {
+          setCommentCounts(data.data || {})
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('[ChapterReader] Failed to fetch comment counts:', error)
+        }
+      }
+    }
+
+    fetchCommentCounts()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [chapter.id, showParagraphComments])
 
   // ✅ 新增：预加载下一章功能
   // ✅ router 是稳定引用，不需要包含在依赖中
@@ -432,10 +468,10 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                         {/* 段落评论按钮 - 内联显示在段落最后一个字符右侧 */}
                         <span className="inline-block align-middle ml-2">
                           <ParagraphCommentButton
-                            chapterId={chapter.id}
                             paragraphIndex={index}
                             onClick={() => setActiveParagraphIndex(activeParagraphIndex === index ? null : index)}
                             isActive={activeParagraphIndex === index}
+                            commentCount={commentCounts[index] || 0}
                           />
                         </span>
                       </div>
