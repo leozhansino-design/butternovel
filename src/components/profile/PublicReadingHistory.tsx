@@ -15,6 +15,14 @@ type Novel = {
   lastReadAt: string
 }
 
+type Pagination = {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasMore: boolean
+}
+
 interface PublicReadingHistoryProps {
   userId: string
 }
@@ -22,26 +30,51 @@ interface PublicReadingHistoryProps {
 export default function PublicReadingHistory({ userId }: PublicReadingHistoryProps) {
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasMore: false,
+  })
+  const [loadingMore, setLoadingMore] = useState(false)
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
+  const fetchHistory = async (page: number, append: boolean = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true)
+      } else {
         setLoading(true)
-        const res = await fetch(`/api/public/user/${userId}/history`)
-        const data = await res.json()
+      }
 
-        if (res.ok) {
+      const res = await fetch(`/api/public/user/${userId}/history?page=${page}&limit=20`)
+      const data = await res.json()
+
+      if (res.ok) {
+        if (append) {
+          setNovels(prev => [...prev, ...(data.novels || [])])
+        } else {
           setNovels(data.novels || [])
         }
-      } catch (error) {
-        console.error('Failed to fetch reading history:', error)
-      } finally {
-        setLoading(false)
+        setPagination(data.pagination || pagination)
       }
+    } catch (error) {
+      console.error('Failed to fetch reading history:', error)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
     }
+  }
 
-    fetchHistory()
+  useEffect(() => {
+    fetchHistory(1, false)
   }, [userId])
+
+  const handleLoadMore = () => {
+    if (pagination.hasMore && !loadingMore) {
+      fetchHistory(pagination.page + 1, true)
+    }
+  }
 
   if (loading) {
     return (
@@ -110,6 +143,33 @@ export default function PublicReadingHistory({ userId }: PublicReadingHistoryPro
           </Link>
         ))}
       </div>
+
+      {/* Load More Button */}
+      {pagination.hasMore && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+          >
+            {loadingMore ? (
+              <span className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Loading...
+              </span>
+            ) : (
+              `Load More (${pagination.total - novels.length} remaining)`
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {pagination.total > 0 && (
+        <div className="mt-4 text-center text-sm text-gray-500">
+          Showing {novels.length} of {pagination.total} novels
+        </div>
+      )}
     </div>
   )
 }
