@@ -21,7 +21,7 @@ export async function GET(
     const offset = (page - 1) * limit
 
     // 🔧 FIX: Use withRetry for database resilience
-    const [historyEntries, totalCount] = await Promise.all([
+    const [historyEntries, totalCount] = (await Promise.all([
       withRetry(
         () => prisma.readingHistory.findMany({
           where: { userId },
@@ -58,7 +58,7 @@ export async function GET(
         }),
         { operationName: 'Count reading history' }
       ),
-    ])
+    ])) as [any[], number]
 
     const novels = historyEntries.map(entry => ({
       id: entry.novel.id,

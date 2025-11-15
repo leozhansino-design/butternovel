@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         },
       },
       orderBy: { createdAt: 'asc' },
-    })
+    }) as any[]
 
     // Only return top-level replies (parentReplyId is null)
     // Child replies are included via the childReplies relation

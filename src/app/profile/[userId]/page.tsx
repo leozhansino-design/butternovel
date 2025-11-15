@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps) {
         select: { name: true },
       }),
       { operationName: 'Get user for metadata' }
-    )
+    ) as any
 
     return {
       title: `${user?.name || 'User'}'s Profile - ButterNovel`,
@@ -39,7 +39,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     // 🔧 FIX: Parallelize all database queries to reduce connection time
     // Previously: Sequential queries causing connection pool exhaustion
     // Now: All queries run in parallel, using only 4 connections simultaneously
-    const [user, booksReadRecords, followCounts] = await Promise.all([
+    const [user, booksReadRecords, followCounts] = (await Promise.all([
       // Query 1: Get user data
       withRetry(
         () => prisma.user.findUnique({
@@ -99,7 +99,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
           return { following: 0, followers: 0 }
         }
       })(),
-    ])
+    ])) as [any, any[], { following: number; followers: number }]
 
     if (!user) {
       notFound()

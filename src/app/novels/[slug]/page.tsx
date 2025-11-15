@@ -67,7 +67,7 @@ async function getNovel(slug: string) {
           },
         }),
         { operationName: 'Get novel details' }
-      )
+      ) as any
 
       if (!novel || !novel.isPublished || novel.isBanned) {
         return null

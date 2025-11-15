@@ -101,7 +101,7 @@ export async function validateNovelPublished(novelId: number) {
       }
     }),
     { operationName: 'Validate novel' }
-  )
+  ) as any
 
   if (!novel) {
     throw new Error('Novel not found')
@@ -139,7 +139,7 @@ export async function getChapterById(chapterId: number) {
       }
     }),
     { operationName: 'Get chapter by ID' }
-  )
+  ) as any
 }
 
 /**
@@ -278,7 +278,7 @@ export async function getUserById(userId: string) {
       }
     }),
     { operationName: 'Get user by ID' }
-  )
+  ) as any
 }
 
 /**

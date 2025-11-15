@@ -107,7 +107,7 @@ export const GET = withAdminAuth(
             },
           }),
         { operationName: 'Get user detail' }
-      )
+      ) as any
 
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })

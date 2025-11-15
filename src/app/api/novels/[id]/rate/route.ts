@@ -55,7 +55,7 @@ export async function POST(
           slug: true
         }
       })
-    )
+    ) as any
 
     if (!novel) {
       return NextResponse.json(

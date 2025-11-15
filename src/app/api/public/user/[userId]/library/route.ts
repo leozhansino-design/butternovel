@@ -53,7 +53,7 @@ export async function GET(
       orderBy: {
         addedAt: 'desc'
       }
-    })
+    }) as any[]
 
     const novels = libraryEntries.map(entry => ({
       id: entry.novel.id,

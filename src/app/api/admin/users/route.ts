@@ -62,7 +62,7 @@ export const GET = withAdminAuth(async (session, request: Request) => {
     orderBy[sortBy] = sortOrder
 
     // 获取总数和用户列表
-    const [total, users] = await Promise.all([
+    const [total, users] = (await Promise.all([
       withRetry(() => prisma.user.count({ where }), { operationName: 'Count users' }),
       withRetry(
         () =>
@@ -101,7 +101,7 @@ export const GET = withAdminAuth(async (session, request: Request) => {
           }),
         { operationName: 'Get users list' }
       ),
-    ])
+    ])) as [number, any[]]
 
     // 格式化用户数据
     // 🔧 SECURITY: 不返回原始的googleId/facebookId，只返回authMethod

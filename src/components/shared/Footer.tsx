@@ -9,7 +9,7 @@ async function getTopCategories() {
         slug: true,
         name: true,
       },
-    });
+    }) as any[];
     return categories;
   } catch (error) {
     console.error('Error fetching categories for footer:', error);

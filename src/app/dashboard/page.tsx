@@ -27,7 +27,7 @@ async function getDashboardStats(userEmail: string) {
       orderBy: {
         updatedAt: 'desc',
       },
-    })
+    }) as any[]
 
     const totalNovels = novels.length
     const totalChapters = novels.reduce((sum, novel) => sum + novel.chapters.length, 0)
@@ -36,8 +36,8 @@ async function getDashboardStats(userEmail: string) {
     let totalRatings = 0
     let ratingSum = 0
 
-    novels.forEach((novel) => {
-      novel.ratings.forEach((rating) => {
+    novels.forEach((novel: any) => {
+      novel.ratings.forEach((rating: any) => {
         totalRatings++
         ratingSum += rating.score
       })

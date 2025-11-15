@@ -16,7 +16,7 @@ interface PageProps {
 async function getChapterData(slug: string, chapterNumber: number) {
   // 🔄 添加数据库重试机制，解决连接超时问题
   try {
-    const [novel, chapter, chapters, nextChapterContent] = await Promise.all([
+    const [novel, chapter, chapters, nextChapterContent] = (await Promise.all([
       withRetry(
         () => prisma.novel.findUnique({
           where: { slug },
@@ -87,7 +87,7 @@ async function getChapterData(slug: string, chapterNumber: number) {
         }),
         { operationName: 'Get next chapter for prefetch' }
       )
-    ])
+    ])) as [any, any, any[], any]
 
     if (!novel || !chapter) return null
 

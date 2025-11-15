@@ -123,7 +123,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
     // ✅ 优化: 使用单次 GROUP BY 查询代替循环查询 (90次 → 3次)
     // 并行执行 3 个查询,按天分组统计
-    const [novelsData, usersData, viewsData] = await Promise.all([
+    const [novelsData, usersData, viewsData] = (await Promise.all([
       withRetry(
         () => prisma.$queryRaw<Array<{date: Date, count: bigint}>>`
           SELECT DATE_TRUNC('day', "createdAt") as date, COUNT(*) as count
@@ -157,7 +157,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
         `,
         { operationName: 'Get views chart data' }
       )
-    ])
+    ])) as Array<{date: Date, count: bigint}>[]
 
     // 构建数据 Map 用于快速查找
     const novelsMap = new Map<string, number>()
