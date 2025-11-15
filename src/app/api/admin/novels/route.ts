@@ -74,7 +74,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                             name: adminProfile.displayName || 'ButterPicks',
                             avatar: adminProfile.avatar || null,
                             role: 'ADMIN',
-                            emailVerified: new Date(),
+                            isVerified: true,
                             // 重要：确保名字不会与现有用户冲突
                             // 如果displayName是"ButterPicks"，添加后缀避免冲突
                         },
@@ -95,7 +95,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                                 name: uniqueName,
                                 avatar: adminProfile.avatar || null,
                                 role: 'ADMIN',
-                                emailVerified: new Date(),
+                                isVerified: true,
                             },
                             select: { id: true }
                         }),

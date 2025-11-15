@@ -61,7 +61,7 @@ export const GET = withErrorHandling(async (
               avatar: adminProfile.avatar || null,
               bio: adminProfile.bio || null,
               role: 'ADMIN',
-              emailVerified: new Date(),
+              isVerified: true,
             },
             select: {
               id: true,
@@ -94,7 +94,7 @@ export const GET = withErrorHandling(async (
                 avatar: adminProfile.avatar || null,
                 bio: adminProfile.bio || null,
                 role: 'ADMIN',
-                emailVerified: new Date(),
+                isVerified: true,
               },
               select: {
                 id: true,
