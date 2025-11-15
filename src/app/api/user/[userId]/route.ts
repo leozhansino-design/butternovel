@@ -17,7 +17,7 @@ export const GET = withErrorHandling(async (
   // Support both User.id and email for backward compatibility with old novel records
   // Old records may have email as authorId, new records use User.id
   const isEmail = userId.includes('@')
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: isEmail ? { email: userId } : { id: userId },
     select: {
       id: true,
@@ -37,6 +37,41 @@ export const GET = withErrorHandling(async (
       },
     },
   })
+
+  // If user not found and querying by email, check AdminProfile table
+  // This handles ButterPicks official account
+  if (!user && isEmail) {
+    const adminProfile = await prisma.adminProfile.findUnique({
+      where: { email: userId },
+    })
+
+    if (adminProfile) {
+      // Return special official account data structure
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: adminProfile.email, // Use email as ID for admin
+          name: adminProfile.displayName || 'ButterPicks',
+          avatar: adminProfile.avatar || null,
+          bio: adminProfile.bio || 'Official ButterNovel Account',
+          role: 'ADMIN',
+          contributionPoints: 0,
+          level: 99, // Special level for official account
+          totalReadingTime: 0,
+          createdAt: adminProfile.createdAt,
+          libraryPrivacy: 'PUBLIC',
+          isOfficialAccount: true, // Special flag for official accounts
+          stats: {
+            booksRead: 0,
+            following: 0,
+            followers: 0,
+            totalRatings: 0,
+            readingTime: 0,
+          },
+        },
+      }, { status: 200 })
+    }
+  }
 
   if (!user) {
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
