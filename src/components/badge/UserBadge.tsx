@@ -12,6 +12,7 @@ interface UserBadgeProps {
   size?: 'small' | 'medium' | 'large' | 'xlarge'
   showLevelName?: boolean
   className?: string
+  isOfficial?: boolean  // Official account flag
 }
 
 const sizeConfig = {
@@ -53,6 +54,7 @@ export default function UserBadge({
   size = 'medium',
   showLevelName = false,
   className = '',
+  isOfficial = false,
 }: UserBadgeProps) {
   const [mounted, setMounted] = useState(false)
   const [imageError, setImageError] = useState(false)
@@ -70,6 +72,14 @@ export default function UserBadge({
 
   // 生成边框样式
   const getBorderStyle = (): React.CSSProperties => {
+    // Official account gets special blue/gold gradient border
+    if (isOfficial) {
+      return {
+        background: `linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6, #d946ef)`,
+        padding: `${config.borderWidth}px`,
+      }
+    }
+
     const { badgeStyle } = levelData
 
     if (badgeStyle.gradient && badgeStyle.gradient.length > 1) {
@@ -89,6 +99,17 @@ export default function UserBadge({
 
   // 生成发光效果
   const getGlowStyle = (): React.CSSProperties => {
+    // Official account gets special blue glow
+    if (isOfficial) {
+      return {
+        boxShadow: `
+          0 0 20px #3b82f640,
+          0 0 40px #6366f130,
+          0 0 60px #8b5cf620
+        `,
+      }
+    }
+
     const { badgeStyle } = levelData
 
     if (!badgeStyle.glowColor || !badgeStyle.glowIntensity) {
@@ -163,17 +184,23 @@ export default function UserBadge({
           )}
         </div>
 
-        {/* 等级数字角标 */}
+        {/* 等级数字角标 or 认证标记 */}
         <div
           className="absolute bottom-0 right-0 rounded-full bg-white shadow-lg flex items-center justify-center font-bold"
           style={{
             width: `${config.container * 0.3}px`,
             height: `${config.container * 0.3}px`,
             fontSize: `${config.container * 0.15}px`,
-            color: levelData.badgeStyle.borderColor,
+            color: isOfficial ? '#3b82f6' : levelData.badgeStyle.borderColor,
           }}
         >
-          {level}
+          {isOfficial ? (
+            <svg className="w-full h-full p-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            level
+          )}
         </div>
       </div>
 

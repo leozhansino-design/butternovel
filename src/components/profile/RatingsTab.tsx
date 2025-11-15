@@ -6,6 +6,7 @@ import Image from 'next/image'
 
 interface RatingsTabProps {
   userId?: string // 可选：查询指定用户的评分
+  onNovelClick?: (slug: string) => void // 可选：点击小说时的回调
 }
 
 type Rating = {
@@ -26,7 +27,7 @@ type Rating = {
   }
 }
 
-export default function RatingsTab({ userId }: RatingsTabProps = {}) {
+export default function RatingsTab({ userId, onNovelClick }: RatingsTabProps = {}) {
   const [ratings, setRatings] = useState<Rating[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -135,27 +136,54 @@ export default function RatingsTab({ userId }: RatingsTabProps = {}) {
           >
             <div className="flex gap-4">
               {/* 小说封面 */}
-              <Link href={`/novels/${rating.novel.slug}`} className="flex-shrink-0 group">
-                <div className="relative w-24 h-32 rounded-lg overflow-hidden shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200 cursor-pointer">
-                  <Image
-                    src={rating.novel.coverImage}
-                    alt={rating.novel.title}
-                    fill
-                    className="object-cover group-hover:brightness-110 transition-all"
-                  />
-                  {/* Overlay on hover - pointer-events-none to allow clicks */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
+              {onNovelClick ? (
+                <div
+                  onClick={() => onNovelClick(rating.novel.slug)}
+                  className="flex-shrink-0 group cursor-pointer"
+                >
+                  <div className="relative w-24 h-32 rounded-lg overflow-hidden shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200">
+                    <Image
+                      src={rating.novel.coverImage}
+                      alt={rating.novel.title}
+                      fill
+                      className="object-cover group-hover:brightness-110 transition-all"
+                    />
+                    {/* Overlay on hover - pointer-events-none to allow clicks */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
+                  </div>
                 </div>
-              </Link>
+              ) : (
+                <Link href={`/novels/${rating.novel.slug}`} className="flex-shrink-0 group">
+                  <div className="relative w-24 h-32 rounded-lg overflow-hidden shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200 cursor-pointer">
+                    <Image
+                      src={rating.novel.coverImage}
+                      alt={rating.novel.title}
+                      fill
+                      className="object-cover group-hover:brightness-110 transition-all"
+                    />
+                    {/* Overlay on hover - pointer-events-none to allow clicks */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
+                  </div>
+                </Link>
+              )}
 
               {/* 评分信息 */}
               <div className="flex-1 min-w-0">
-                <Link
-                  href={`/novels/${rating.novel.slug}`}
-                  className="text-lg font-bold text-gray-900 hover:text-amber-600 transition-colors line-clamp-1 cursor-pointer"
-                >
-                  {rating.novel.title}
-                </Link>
+                {onNovelClick ? (
+                  <h3
+                    onClick={() => onNovelClick(rating.novel.slug)}
+                    className="text-lg font-bold text-gray-900 hover:text-amber-600 transition-colors line-clamp-1 cursor-pointer"
+                  >
+                    {rating.novel.title}
+                  </h3>
+                ) : (
+                  <Link
+                    href={`/novels/${rating.novel.slug}`}
+                    className="text-lg font-bold text-gray-900 hover:text-amber-600 transition-colors line-clamp-1 cursor-pointer"
+                  >
+                    {rating.novel.title}
+                  </Link>
+                )}
 
                 <div className="flex items-center gap-3 mt-1 text-sm text-gray-600">
                   <span>{rating.novel.authorName}</span>

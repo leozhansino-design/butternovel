@@ -52,6 +52,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
             role: true,
             contributionPoints: true,
             level: true,
+            isOfficial: true,
             totalReadingTime: true,
             libraryPrivacy: true,
             createdAt: true,

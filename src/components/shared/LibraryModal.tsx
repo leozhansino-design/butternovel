@@ -126,6 +126,15 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
       )
     }
 
+    const handleNovelClick = (slug: string) => {
+      // Close modal first, then navigate
+      onClose()
+      // Small delay to allow modal close animation
+      setTimeout(() => {
+        window.location.href = `/novels/${slug}`
+      }, 100)
+    }
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-md" onClick={onClose} />
@@ -138,7 +147,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <PublicUserProfile user={otherUserData} />
+          <PublicUserProfile user={otherUserData} onNovelClick={handleNovelClick} />
         </div>
       </div>
     )

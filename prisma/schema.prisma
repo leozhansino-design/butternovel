@@ -42,6 +42,7 @@ model User {
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
   isBanned   Boolean @default(false)
+  isOfficial Boolean @default(false) // 官方账号标识
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -584,10 +585,20 @@ model ParagraphComment {
   // 点赞列表
   likes ParagraphCommentLike[]
 
+  // 回复列表（自引用关系）
+  replies ParagraphComment[] @relation("CommentReplies")
+
+  // 回复关系（如果这是一个回复）
+  parentId String?
+  parent   ParagraphComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+
+  replyCount Int @default(0) // 回复数
+
   @@index([novelId, chapterId, paragraphIndex])
   @@index([chapterId, paragraphIndex])
   @@index([userId])
   @@index([createdAt])
+  @@index([parentId])
 }
 
 // 段落评论点赞

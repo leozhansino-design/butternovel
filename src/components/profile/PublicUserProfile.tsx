@@ -21,6 +21,7 @@ type UserData = {
   role: string
   contributionPoints: number
   level: number
+  isOfficial?: boolean  // Official account flag
   createdAt: Date
   libraryPrivacy?: boolean  // Privacy setting for library
   stats: {
@@ -34,9 +35,10 @@ type UserData = {
 
 interface PublicUserProfileProps {
   user: UserData
+  onNovelClick?: (slug: string) => void // Optional: callback when clicking on a novel in reviews
 }
 
-export default function PublicUserProfile({ user }: PublicUserProfileProps) {
+export default function PublicUserProfile({ user, onNovelClick }: PublicUserProfileProps) {
   const router = useRouter()
   const { data: session } = useSession()
   const [activeTab, setActiveTab] = useState<Tab>('novels')
@@ -48,7 +50,7 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
   const levelData = getUserLevel(user.contributionPoints)
 
   const isOwnProfile = session?.user?.id === user.id
-  const isAdmin = user.role !== 'USER' // Check if user is admin/moderator
+  const isOfficial = user.isOfficial || false // Check if this is an official account
 
   // Check if library is private and user is not the owner
   const isLibraryPrivate = user.libraryPrivacy && !isOwnProfile
@@ -117,10 +119,20 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
               contributionPoints={user.contributionPoints}
               size="large"
               showLevelName={false}
+              isOfficial={isOfficial}
             />
-            {/* Level name below avatar */}
+            {/* Level name or Official badge below avatar */}
             <div className="text-center">
-              <p className="text-xs font-semibold text-amber-600">{levelData.nameEn}</p>
+              {isOfficial ? (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg">
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-xs font-bold text-white">Official Account</p>
+                </div>
+              ) : (
+                <p className="text-xs font-semibold text-amber-600">{levelData.nameEn}</p>
+              )}
             </div>
           </div>
 
@@ -131,8 +143,8 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
                 {user.name || 'Anonymous Reader'}
               </h1>
 
-              {/* Follow button - only show if not own profile, user is logged in, and target is not admin */}
-              {!isOwnProfile && !isAdmin && session?.user?.id && (
+              {/* Follow button - show if not own profile and user is logged in */}
+              {!isOwnProfile && session?.user?.id && (
                 <button
                   onClick={handleFollowToggle}
                   disabled={loading}
@@ -154,10 +166,21 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
 
             <p className="text-gray-500 text-sm mb-4">Joined {joinDate}</p>
 
-            {/* Stats cards - Only show for regular users */}
-            {!isAdmin && (
+            {/* Stats cards */}
+            {isOfficial ? (
+              // Official account: only show Followers
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowFollowModal('followers')}
+                  className="w-full backdrop-blur-xl bg-gradient-to-r from-blue-500/20 to-indigo-600/20 border-2 border-blue-500/40 rounded-lg p-6 text-center shadow-lg hover:from-blue-500/30 hover:to-indigo-600/30 transition-all cursor-pointer"
+                >
+                  <div className="text-3xl font-bold text-gray-900">{followersCount}</div>
+                  <div className="text-sm text-gray-700 mt-2 font-semibold">Followers</div>
+                </button>
+              </div>
+            ) : (
+              // Regular user stats
               <>
-                {/* Regular user stats - 4 cards in a row with frosted glass effect */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   {/* Books Read */}
                   <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 text-center shadow-lg">
@@ -219,8 +242,8 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
             >
               Novels
             </button>
-            {/* Only show other tabs for regular users (not admin) */}
-            {!isAdmin && (
+            {/* Only show other tabs for regular users (not official accounts) */}
+            {!isOfficial && (
               <>
                 {/* Only show Library tab if not private or if viewing own profile */}
                 {!isLibraryPrivate && (
@@ -275,7 +298,7 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
           )}
           {activeTab === 'reviews' && (
             <div className="h-full overflow-y-auto p-6">
-              <RatingsTabComponent userId={user.id} />
+              <RatingsTabComponent userId={user.id} onNovelClick={onNovelClick} />
             </div>
           )}
         </div>
