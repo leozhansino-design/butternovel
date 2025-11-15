@@ -92,11 +92,7 @@ export default function AdminLoginForm() {
         </button>
       </form>
 
-      {/* Demo Info */}
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <p className="text-xs text-gray-500 mb-2">Demo Credentials:</p>
-        <p className="text-xs text-gray-600">admin@butternovel.com / mySecretPassword123</p>
-      </div>
+      {/* 🔧 SECURITY: Removed demo credentials display */}
     </div>
   )
 }

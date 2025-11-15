@@ -471,6 +471,7 @@ model Admin {
 model AdminProfile {
   id          Int       @id @default(autoincrement())
   email       String    @unique
+  password    String?   // 🔧 SECURITY: 密码hash (bcrypt)
   displayName String    @default("Admin")
   bio         String?   @db.Text
   avatar      String?   @db.Text  // Base64 编码的圆形头像
