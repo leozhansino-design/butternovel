@@ -31,8 +31,10 @@ interface Comment {
 interface ParagraphCommentPanelProps {
   novelId: number
   chapterId: number
-  paragraphIndex: number
+  paragraphIndex: number | null
   onClose: () => void
+  bgColor?: string
+  textColor?: string
 }
 
 // Common emojis for quick selection
@@ -42,7 +44,9 @@ export default function ParagraphCommentPanel({
   novelId,
   chapterId,
   paragraphIndex,
-  onClose
+  onClose,
+  bgColor = 'bg-white',
+  textColor = 'text-gray-900'
 }: ParagraphCommentPanelProps) {
   const { data: session } = useSession()
   const [comments, setComments] = useState<Comment[]>([])
@@ -54,6 +58,17 @@ export default function ParagraphCommentPanel({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [showLoginModal, setShowLoginModal] = useState(false)
+
+  // Dynamic styles based on background color
+  const isDark = bgColor.includes('dark') || bgColor.includes('#1a1a1a')
+  const inputBg = isDark ? 'bg-gray-800' : 'bg-gray-50'
+  const inputBorder = isDark ? 'border-gray-600' : 'border-gray-300'
+  const inputText = isDark ? 'text-white' : 'text-gray-900'
+  const hoverBg = isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+  const cardBg = isDark ? 'bg-gray-800' : 'bg-gray-50'
+  const borderColor = isDark ? 'border-gray-700' : 'border-gray-200'
+  const mutedText = isDark ? 'text-gray-400' : 'text-gray-500'
+  const dropdownBg = isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
 
   // Reply states
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
@@ -324,22 +339,22 @@ export default function ParagraphCommentPanel({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className={`flex items-center justify-center h-full ${bgColor}`}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className={`flex flex-col h-full ${bgColor} ${textColor}`}>
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900">
+      <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${borderColor}`}>
+        <h3 className="text-lg font-bold">
           Comments ({comments.length})
         </h3>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          className={`p-2 ${hoverBg} rounded-full transition-colors`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -348,12 +363,12 @@ export default function ParagraphCommentPanel({
       </div>
 
       {/* Comment Input */}
-      <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-gray-50">
+      <div className={`flex-shrink-0 p-4 border-b ${borderColor} ${inputBg}`}>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Share your thoughts..."
-          className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className={`w-full p-3 border ${inputBorder} ${inputBg} ${inputText} rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-gray-400`}
           rows={3}
         />
 
@@ -387,10 +402,10 @@ export default function ParagraphCommentPanel({
             {/* Image upload button - LARGER */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 hover:bg-gray-200 rounded-lg transition-colors"
+              className={`p-2.5 ${hoverBg} rounded-lg transition-colors`}
               title="Upload image"
             >
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-6 h-6 ${mutedText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </button>
@@ -406,23 +421,23 @@ export default function ParagraphCommentPanel({
             <div className="relative">
               <button
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-2.5 hover:bg-gray-200 rounded-lg transition-colors"
+                className={`p-2.5 ${hoverBg} rounded-lg transition-colors`}
                 title="Add emoji"
               >
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-6 h-6 ${mutedText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </button>
 
               {/* Emoji picker dropdown */}
               {showEmojiPicker && (
-                <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-10" style={{ width: '280px' }}>
+                <div className={`absolute bottom-full left-0 mb-2 ${dropdownBg} border rounded-lg shadow-lg p-3 z-10`} style={{ width: '280px' }}>
                   <div className="grid grid-cols-8 gap-1">
                     {commonEmojis.map((emoji, index) => (
                       <button
                         key={index}
                         onClick={() => addEmoji(emoji)}
-                        className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                        className={`text-2xl ${hoverBg} rounded p-1 transition-colors`}
                       >
                         {emoji}
                       </button>
@@ -446,12 +461,12 @@ export default function ParagraphCommentPanel({
       {/* Comments List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {comments.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className={`text-center py-12 ${mutedText}`}>
             <p>No comments yet. Be the first to comment!</p>
           </div>
         ) : (
           comments.map(comment => (
-            <div key={comment.id} className="bg-gray-50 rounded-lg p-4">
+            <div key={comment.id} className={`${cardBg} rounded-lg p-4`}>
               {/* Comment header */}
               <div className="flex items-start gap-3">
                 <div
@@ -470,7 +485,7 @@ export default function ParagraphCommentPanel({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">
+                    <span className="font-semibold">
                       {comment.user.name || 'Anonymous'}
                     </span>
                     {comment.user.isOfficial && (
@@ -481,12 +496,12 @@ export default function ParagraphCommentPanel({
                         Official
                       </span>
                     )}
-                    <span className="text-xs text-gray-500">
+                    <span className={`text-xs ${mutedText}`}>
                       {new Date(comment.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 
-                  <p className="mt-1 text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                  <p className="mt-1 whitespace-pre-wrap">{comment.content}</p>
 
                   {comment.imageUrl && (
                     <div className="mt-2">
@@ -504,7 +519,7 @@ export default function ParagraphCommentPanel({
                   <div className="flex items-center gap-4 mt-3">
                     <button
                       onClick={() => handleLike(comment.id)}
-                      className="flex items-center gap-1 text-sm text-gray-600 hover:text-amber-600 transition-colors"
+                      className={`flex items-center gap-1 text-sm ${mutedText} hover:text-amber-600 transition-colors`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
@@ -514,7 +529,7 @@ export default function ParagraphCommentPanel({
 
                     <button
                       onClick={() => setReplyingTo(comment.id)}
-                      className="flex items-center gap-1 text-sm text-gray-600 hover:text-amber-600 transition-colors"
+                      className={`flex items-center gap-1 text-sm ${mutedText} hover:text-amber-600 transition-colors`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -555,7 +570,7 @@ export default function ParagraphCommentPanel({
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
                         placeholder="Write a reply..."
-                        className="w-full p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className={`w-full p-2 border ${inputBorder} ${inputBg} ${inputText} rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-gray-400`}
                         rows={2}
                       />
 
@@ -586,10 +601,10 @@ export default function ParagraphCommentPanel({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => replyFileInputRef.current?.click()}
-                            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                            className={`p-2 ${hoverBg} rounded-lg transition-colors`}
                             title="Upload image"
                           >
-                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className={`w-5 h-5 ${mutedText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                           </button>
@@ -604,22 +619,22 @@ export default function ParagraphCommentPanel({
                           <div className="relative">
                             <button
                               onClick={() => setShowReplyEmojiPicker(!showReplyEmojiPicker)}
-                              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                              className={`p-2 ${hoverBg} rounded-lg transition-colors`}
                               title="Add emoji"
                             >
-                              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className={`w-5 h-5 ${mutedText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             </button>
 
                             {showReplyEmojiPicker && (
-                              <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-10" style={{ width: '280px' }}>
+                              <div className={`absolute bottom-full left-0 mb-2 ${dropdownBg} border rounded-lg shadow-lg p-3 z-10`} style={{ width: '280px' }}>
                                 <div className="grid grid-cols-8 gap-1">
                                   {commonEmojis.map((emoji, index) => (
                                     <button
                                       key={index}
                                       onClick={() => addEmoji(emoji)}
-                                      className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                                      className={`text-2xl ${hoverBg} rounded p-1 transition-colors`}
                                     >
                                       {emoji}
                                     </button>
@@ -638,7 +653,7 @@ export default function ParagraphCommentPanel({
                               setReplyImage(null)
                               setReplyImagePreview(null)
                             }}
-                            className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                            className={`px-3 py-1.5 text-sm ${mutedText} ${hoverBg} rounded-lg transition-colors`}
                           >
                             Cancel
                           </button>
@@ -656,9 +671,9 @@ export default function ParagraphCommentPanel({
 
                   {/* Replies list */}
                   {showReplies[comment.id] && replies[comment.id] && (
-                    <div className="mt-3 pl-4 border-l-2 border-gray-300 space-y-3">
+                    <div className={`mt-3 pl-4 border-l-2 ${borderColor} space-y-3`}>
                       {replies[comment.id].map(reply => (
-                        <div key={reply.id} className="bg-white rounded-lg p-3">
+                        <div key={reply.id} className={`${bgColor} rounded-lg p-3`}>
                           <div className="flex items-start gap-2">
                             <div
                               onClick={() => setSelectedUserId(reply.user.id)}
