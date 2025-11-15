@@ -680,7 +680,7 @@ export default function ParagraphCommentPanel({
                   {showReplies[comment.id] && replies[comment.id] && (
                     <div className={`mt-3 pl-4 border-l-2 ${borderColor} space-y-3`}>
                       {replies[comment.id].map(reply => (
-                        <div key={reply.id} className={`${bgColor} rounded-lg p-3`}>
+                        <div key={reply.id} className={`${cardBg} rounded-lg p-3`}>
                           <div className="flex items-start gap-2">
                             <div
                               onClick={() => setSelectedUserId(reply.user.id)}
