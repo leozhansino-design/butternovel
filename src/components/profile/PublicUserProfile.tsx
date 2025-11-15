@@ -154,8 +154,8 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
 
             <p className="text-gray-500 text-sm mb-4">Joined {joinDate}</p>
 
-            {/* Stats cards - Show different stats for admin vs regular users */}
-            {!isAdmin ? (
+            {/* Stats cards - Only show for regular users */}
+            {!isAdmin && (
               <>
                 {/* Regular user stats - 4 cards in a row with frosted glass effect */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -198,14 +198,6 @@ export default function PublicUserProfile({ user }: PublicUserProfileProps) {
                     </div>
                     <div className="text-xs text-gray-600 mt-1">Reading Time</div>
                   </div>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Admin badge */}
-                <div className="backdrop-blur-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/60 rounded-lg p-4 text-center shadow-lg">
-                  <div className="text-lg font-bold text-amber-700">Official Account</div>
-                  <div className="text-xs text-amber-600 mt-1">ButterNovel Team</div>
                 </div>
               </>
             )}
