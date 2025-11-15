@@ -9,6 +9,7 @@ interface Novel {
   slug: string
   coverImage: string | null
   isPublished: boolean
+  status: 'ONGOING' | 'COMPLETED'
   viewCount: number
   likeCount: number
   _count: {
@@ -132,8 +133,12 @@ export default function PublicNovelsView({ userId }: PublicNovelsViewProps) {
 
                 {/* Status Badge */}
                 <div className="absolute top-2 right-2">
-                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-500 text-white">
-                    Published
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${
+                    novel.status === 'COMPLETED'
+                      ? 'bg-green-500'
+                      : 'bg-amber-500'
+                  }`}>
+                    {novel.status === 'COMPLETED' ? 'Complete' : 'Ongoing'}
                   </span>
                 </div>
               </div>

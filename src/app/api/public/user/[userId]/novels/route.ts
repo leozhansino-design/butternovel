@@ -50,6 +50,7 @@ export async function GET(
           slug: true,
           coverImage: true,
           isPublished: true,
+          status: true,
           viewCount: true,
           likeCount: true,
           _count: {
