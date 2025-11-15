@@ -354,14 +354,20 @@ export default function ParagraphCommentPanel({
 
   return (
     <div className={`flex flex-col h-full ${bgColor} ${textColor}`}>
+      {/* 拖动手柄 - 只在桌面端显示 */}
+      <div className="hidden lg:flex flex-shrink-0 justify-center py-2 cursor-grab active:cursor-grabbing">
+        <div className={`w-12 h-1.5 rounded-full ${isDark ? 'bg-gray-600' : 'bg-gray-300'}`}></div>
+      </div>
+
       {/* Header */}
-      <div className={`flex-shrink-0 flex items-center justify-between p-4 border-b ${borderColor}`}>
+      <div className={`flex-shrink-0 flex items-center justify-between px-4 py-3 border-b ${borderColor}`}>
         <h3 className="text-lg font-bold">
-          Comments ({comments.length})
+          💬 Comments ({comments.length})
         </h3>
         <button
           onClick={onClose}
           className={`p-2 ${hoverBg} rounded-full transition-colors`}
+          aria-label="Close comments"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

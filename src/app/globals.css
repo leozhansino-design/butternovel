@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Tailwind CSS v4 主题配置 */
+@theme {
+  --z-45: 45;
+  --z-60: 60;
+  --z-70: 70;
+}
+
 /* 全局样式 */
 body {
   background-color: white;

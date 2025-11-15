@@ -445,14 +445,10 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </div>
       </div>
 
-      {/* ✅ 内容区域 - 支持分屏 */}
+      {/* ✅ 内容区域 */}
       <div className="relative">
-        {/* 正文区域 - 桌面端给评论留空间，移动端全宽 */}
-        <div
-          className={`container mx-auto px-4 py-8 max-w-4xl transition-all duration-300 ${
-            isCommentPanelOpen ? 'lg:mr-[30%]' : ''
-          }`}
-        >
+        {/* 正文区域 */}
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div
             ref={contentRef}
             className="w-full"
@@ -544,32 +540,41 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
           </div>
         </div>
 
-        {/* 评论面板 - 桌面：从Header下方开始，移动：全屏覆盖 */}
+        {/* 评论面板 - 从底部弹出，更符合移动端直觉 */}
         {isCommentPanelOpen && (
-          <div
-            className={`fixed z-50 shadow-2xl border-l border-gray-200 transition-transform duration-300 ease-in-out ${
-              isCommentPanelOpen ? 'translate-x-0' : 'translate-x-full'
-            } ${bgColors[bgColor].bg} ${bgColors[bgColor].text}
-            lg:top-16 lg:right-0 lg:w-[30%] lg:h-[calc(100vh-4rem)]
-            max-lg:inset-0 max-lg:w-full max-lg:h-screen max-lg:top-0`}
-          >
-            <ParagraphCommentPanel
-              novelId={novel.id}
-              chapterId={chapter.id}
-              paragraphIndex={activeParagraphIndex}
-              onClose={() => setActiveParagraphIndex(null)}
-              bgColor={bgColors[bgColor].bg}
-              textColor={bgColors[bgColor].text}
+          <>
+            {/* 暗淡遮罩 - z-45 */}
+            <div
+              className="fixed inset-0 bg-black/40 z-45 transition-opacity"
+              onClick={() => setActiveParagraphIndex(null)}
             />
-          </div>
+            {/* 评论面板 - 从底部弹出 - z-50 */}
+            <div
+              className={`fixed z-50 shadow-2xl border-t transition-all duration-300 ease-out ${
+                bgColors[bgColor].bg
+              } ${bgColors[bgColor].text}
+              ${isCommentPanelOpen ? 'translate-y-0' : 'translate-y-full'}
+              lg:bottom-0 lg:left-0 lg:right-0 lg:h-[60vh] lg:rounded-t-2xl lg:border-gray-200
+              max-lg:inset-0 max-lg:h-screen max-lg:rounded-none`}
+            >
+              <ParagraphCommentPanel
+                novelId={novel.id}
+                chapterId={chapter.id}
+                paragraphIndex={activeParagraphIndex}
+                onClose={() => setActiveParagraphIndex(null)}
+                bgColor={bgColors[bgColor].bg}
+                textColor={bgColors[bgColor].text}
+              />
+            </div>
+          </>
         )}
       </div>
 
       {/* Table of Contents */}
       {showToc && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowToc(false)} />
-          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
+          <div className="fixed inset-0 bg-black/50 z-60" onClick={() => setShowToc(false)} />
+          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-70 overflow-y-auto`}>
             <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
               <h3 className="font-bold text-lg">Table of Contents</h3>
               <button onClick={() => setShowToc(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -601,8 +606,8 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
       {/* Settings */}
       {showSettings && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSettings(false)} />
-          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-50 overflow-y-auto`}>
+          <div className="fixed inset-0 bg-black/50 z-60" onClick={() => setShowSettings(false)} />
+          <div className={`fixed top-0 right-0 h-full w-80 ${bgColors[bgColor].bg} shadow-2xl z-70 overflow-y-auto`}>
             <div className="sticky top-0 bg-inherit border-b border-gray-200 p-4 flex items-center justify-between">
               <h3 className="font-bold text-lg">Reader Settings</h3>
               <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
