@@ -51,7 +51,7 @@ export const CacheTTL = {
   CATEGORY_PAGE: 60 * 30, // 30 分钟
   NOVEL_DETAIL: 60 * 10, // 10 分钟
   NOVEL_STATS: 60 * 5, // 5 分钟
-  USER_LIBRARY: 0, // 实时（不过期，手动清除）
+  USER_LIBRARY: 60 * 60, // 🔧 FIXED: 1小时过期，避免内存泄漏（之前是0=永不过期）
   USER_LIBRARY_CHECK: 60 * 5, // 5 分钟
 } as const;
 

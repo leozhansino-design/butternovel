@@ -1,4 +1,6 @@
 // src/components/front/BookCard.tsx
+// 🔧 PERFORMANCE: 添加React.memo减少不必要的重渲染
+import { memo } from 'react'
 import Link from 'next/link'
 import NovelCover from '././NovelCover'
 
@@ -13,7 +15,7 @@ interface BookCardProps {
   slug?: string
 }
 
-export default function BookCard({
+const BookCard = memo(function BookCard({
   id,
   title,
   coverImage,
@@ -74,4 +76,6 @@ export default function BookCard({
       </div>
     </Link>
   )
-}
+})
+
+export default BookCard

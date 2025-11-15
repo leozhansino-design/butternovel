@@ -199,33 +199,33 @@ export async function DELETE(
       )
     }
 
-    // Delete chapter
-    await prisma.chapter.delete({
-      where: { id: chapterId },
-    })
-
-    // Update novel statistics
-    await prisma.novel.update({
-      where: { id: existingChapter.novelId },
-      data: {
-        totalChapters: { decrement: 1 },
-        wordCount: { decrement: existingChapter.wordCount },
-      },
-    })
-
-    // Renumber remaining chapters
-    const remainingChapters = await prisma.chapter.findMany({
-      where: { novelId: existingChapter.novelId },
-      orderBy: { chapterNumber: 'asc' },
-    })
-
-    // Update chapter numbers sequentially
-    for (let i = 0; i < remainingChapters.length; i++) {
-      await prisma.chapter.update({
-        where: { id: remainingChapters[i].id },
-        data: { chapterNumber: i + 1 },
+    // 🔧 FIXED: 使用事务和原生SQL批量更新，避免N+1查询
+    // 之前：删除1章可能需要100+次UPDATE查询
+    // 现在：使用单次原生SQL更新所有后续章节
+    await prisma.$transaction(async (tx) => {
+      // 1. 删除章节
+      await tx.chapter.delete({
+        where: { id: chapterId },
       })
-    }
+
+      // 2. 更新小说统计
+      await tx.novel.update({
+        where: { id: existingChapter.novelId },
+        data: {
+          totalChapters: { decrement: 1 },
+          wordCount: { decrement: existingChapter.wordCount },
+        },
+      })
+
+      // 3. 使用原生SQL批量更新后续章节编号（一次性完成）
+      // 将所有 chapterNumber > deletedChapterNumber 的章节减1
+      await tx.$executeRaw`
+        UPDATE "Chapter"
+        SET "chapterNumber" = "chapterNumber" - 1
+        WHERE "novelId" = ${existingChapter.novelId}
+          AND "chapterNumber" > ${existingChapter.chapterNumber}
+      `
+    })
 
     return NextResponse.json({
       message: 'Chapter deleted successfully',
