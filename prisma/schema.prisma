@@ -77,6 +77,10 @@ model User {
   following Follow[] @relation("UserFollowing")
   followers Follow[] @relation("UserFollowers")
 
+  // Paragraph comments
+  paragraphComments     ParagraphComment[]
+  paragraphCommentLikes ParagraphCommentLike[]
+
   @@index([email])
   @@index([isWriter])
   @@index([level, contributionPoints])
@@ -550,4 +554,61 @@ model ReadingSession {
 
   @@index([userId, startTime])
   @@index([novelId])
+}
+
+// ============================================
+// 段落评论系统
+// ============================================
+
+// 段落评论
+model ParagraphComment {
+  id             String  @id @default(cuid())
+  novelId        Int
+  chapterId      Int
+  paragraphIndex Int     // 段落索引（从0开始）
+  content        String  @db.Text
+  imageUrl       String? // 评论图片URL（可选）
+  imagePublicId  String? // Cloudinary public_id（用于删除）
+
+  // 用户
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 统计
+  likeCount Int @default(0) // 点赞数
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 点赞列表
+  likes ParagraphCommentLike[]
+
+  @@index([novelId, chapterId, paragraphIndex])
+  @@index([chapterId, paragraphIndex])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// 段落评论点赞
+model ParagraphCommentLike {
+  id String @id @default(cuid())
+
+  createdAt DateTime @default(now())
+
+  // 用户（登录用户或游客）
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestId  String? // 游客标识 (基于IP+UserAgent的hash)
+
+  // 元数据
+  ipAddress String?
+  userAgent String? @db.Text
+
+  // 评论
+  commentId String
+  comment   ParagraphComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId]) // 登录用户每个评论只能点赞一次
+  @@unique([guestId, commentId]) // 游客每个评论只能点赞一次
+  @@index([commentId])
 }

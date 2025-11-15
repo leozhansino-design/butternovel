@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import ParagraphCommentButton from './ParagraphCommentButton'
+import ParagraphCommentPanel from './ParagraphCommentPanel'
 
 interface Chapter {
   id: number
@@ -54,11 +56,16 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const [readMode, setReadMode] = useState<ReadMode>('scroll')
   const [bgColor, setBgColor] = useState<BgColor>('beige')
   const [fontSize, setFontSize] = useState<keyof typeof fontSizes>('medium')
-  
+
   const [showToc, setShowToc] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
   const [pages, setPages] = useState<string[]>([])
+
+  // ⭐ 段落评论功能
+  const [showParagraphComments, setShowParagraphComments] = useState(true)
+  const [activeParagraphIndex, setActiveParagraphIndex] = useState<number | null>(null)
+  const [paragraphs, setParagraphs] = useState<string[]>([])
 
   // ⭐ 阅读时长追踪
   const startTimeRef = useRef<number>(Date.now())
@@ -185,11 +192,24 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     const savedMode = localStorage.getItem('readMode') as ReadMode
     const savedBg = localStorage.getItem('bgColor') as BgColor
     const savedSize = localStorage.getItem('fontSize') as keyof typeof fontSizes
-    
+    const savedShowComments = localStorage.getItem('showParagraphComments')
+
     if (savedMode) setReadMode(savedMode)
     if (savedBg) setBgColor(savedBg)
     if (savedSize) setFontSize(savedSize)
+    if (savedShowComments !== null) setShowParagraphComments(savedShowComments === 'true')
   }, [])
+
+  // ⭐ 段落分割逻辑
+  useEffect(() => {
+    // 将章节内容按段落分割（使用双换行符）
+    const splitParagraphs = chapter.content
+      .split(/\n\n+/)
+      .map(p => p.trim())
+      .filter(p => p.length > 0)
+
+    setParagraphs(splitParagraphs)
+  }, [chapter.content])
 
   // ✅ 新增：预加载下一章功能
   // ✅ router 是稳定引用，不需要包含在依赖中
@@ -261,6 +281,16 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     localStorage.setItem('fontSize', size)
   }
 
+  const toggleParagraphComments = () => {
+    const newValue = !showParagraphComments
+    setShowParagraphComments(newValue)
+    localStorage.setItem('showParagraphComments', String(newValue))
+    // 关闭评论时，同时关闭评论面板
+    if (!newValue) {
+      setActiveParagraphIndex(null)
+    }
+  }
+
   const hasPrev = chapter.chapterNumber > 1
   const hasNext = chapter.chapterNumber < totalChapters
 
@@ -309,6 +339,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   }, [readMode, currentPage, pages.length, hasPrev, hasNext, goToPrevChapter, goToNextChapter])
 
   const currentContent = readMode === 'page' && pages.length > 0 ? pages[currentPage] : chapter.content
+  const isCommentPanelOpen = activeParagraphIndex !== null
 
   return (
     <div className={`min-h-screen ${bgColors[bgColor].bg} ${bgColors[bgColor].text} transition-colors`}>
@@ -358,16 +389,55 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
         </div>
       </div>
 
-      {/* ✅ 去掉大标题区域，直接显示内容 */}
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div 
-          ref={contentRef}
-          className={`prose prose-lg max-w-none ${fontSizes[fontSize].class}`}
-          style={{ lineHeight: fontSizes[fontSize].lineHeight }}
-        >
-          <div className="leading-loose whitespace-pre-wrap">
-            {currentContent}
+      {/* ✅ 内容区域 - 支持分屏 */}
+      <div className={`container mx-auto px-4 py-8 ${isCommentPanelOpen ? 'max-w-7xl' : 'max-w-4xl'} transition-all duration-300`}>
+        <div className={`flex gap-6 ${isCommentPanelOpen ? 'flex-row' : 'flex-col'}`}>
+          {/* 正文区域 */}
+          <div
+            ref={contentRef}
+            className={`${isCommentPanelOpen ? 'w-1/2' : 'w-full'} overflow-y-auto transition-all duration-300`}
+          >
+            <div className={`prose prose-lg max-w-none ${fontSizes[fontSize].class}`} style={{ lineHeight: fontSizes[fontSize].lineHeight }}>
+              {showParagraphComments && readMode === 'scroll' ? (
+                // 段落评论模式：显示分段内容和评论按钮
+                <div className="space-y-6">
+                  {paragraphs.map((paragraph, index) => (
+                    <div key={index} className="group relative">
+                      <div className="leading-loose whitespace-pre-wrap">
+                        {paragraph}
+                      </div>
+                      {/* 段落评论按钮 */}
+                      <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ParagraphCommentButton
+                          chapterId={chapter.id}
+                          paragraphIndex={index}
+                          onClick={() => setActiveParagraphIndex(activeParagraphIndex === index ? null : index)}
+                          isActive={activeParagraphIndex === index}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // 普通模式：显示完整内容
+                <div className="leading-loose whitespace-pre-wrap">
+                  {currentContent}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* 评论面板区域 */}
+          {isCommentPanelOpen && (
+            <div className="w-1/2 h-[80vh] sticky top-24 overflow-hidden rounded-lg border border-gray-200 shadow-xl">
+              <ParagraphCommentPanel
+                novelId={novel.id}
+                chapterId={chapter.id}
+                paragraphIndex={activeParagraphIndex}
+                onClose={() => setActiveParagraphIndex(null)}
+              />
+            </div>
+          )}
         </div>
 
         {readMode === 'page' && pages.length > 1 && (
@@ -549,6 +619,34 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* ⭐ 段落评论开关 */}
+              <div>
+                <h4 className="font-semibold mb-3">Paragraph Comments</h4>
+                <button
+                  onClick={toggleParagraphComments}
+                  className={`w-full p-4 rounded-lg border-2 transition-all ${
+                    showParagraphComments ? 'border-[#e8b923] bg-[#e8b923]/10' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm">Show Comment Buttons</span>
+                    </div>
+                    <div className={`w-12 h-6 rounded-full transition-colors ${showParagraphComments ? 'bg-[#e8b923]' : 'bg-gray-300'}`}>
+                      <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${showParagraphComments ? 'translate-x-6' : 'translate-x-1'} mt-0.5`}></div>
+                    </div>
+                  </div>
+                </button>
+                {!showParagraphComments && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Paragraph comments are hidden. Enable to see and post comments on specific paragraphs.
+                  </p>
+                )}
               </div>
             </div>
           </div>
