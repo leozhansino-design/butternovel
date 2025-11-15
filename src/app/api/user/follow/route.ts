@@ -11,24 +11,31 @@ export const POST = withErrorHandling(async (request: Request) => {
     return errorResponse('Unauthorized', 401, 'UNAUTHORIZED')
   }
 
-  const { userId } = await request.json()
+  const { userId: userIdOrEmail } = await request.json()
 
-  if (!userId || typeof userId !== 'string') {
+  if (!userIdOrEmail || typeof userIdOrEmail !== 'string') {
     return errorResponse('User ID is required', 400, 'VALIDATION_ERROR')
   }
 
-  // Can't follow yourself
-  if (userId === session.user.id) {
-    return errorResponse('You cannot follow yourself', 400, 'VALIDATION_ERROR')
-  }
+  // ⭐ CRITICAL FIX: Support both User.id and email for backward compatibility
+  // Old novel records may have email as authorId, new records use User.id
+  const isEmail = userIdOrEmail.includes('@')
 
-  // Check if target user exists
+  // Check if target user exists and get their User.id
   const targetUser = await prisma.user.findUnique({
-    where: { id: userId }
+    where: isEmail ? { email: userIdOrEmail } : { id: userIdOrEmail },
+    select: { id: true, email: true }
   })
 
   if (!targetUser) {
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
+  }
+
+  const targetUserId = targetUser.id
+
+  // Can't follow yourself
+  if (targetUserId === session.user.id) {
+    return errorResponse('You cannot follow yourself', 400, 'VALIDATION_ERROR')
   }
 
   // Return error if Follow table doesn't exist yet
@@ -38,7 +45,7 @@ export const POST = withErrorHandling(async (request: Request) => {
       where: {
         followerId_followingId: {
           followerId: session.user.id,
-          followingId: userId
+          followingId: targetUserId
         }
       }
     })
@@ -51,7 +58,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     await prisma.follow.create({
       data: {
         followerId: session.user.id,
-        followingId: userId
+        followingId: targetUserId
       }
     })
 
@@ -69,10 +76,30 @@ export const DELETE = withErrorHandling(async (request: Request) => {
     return errorResponse('Unauthorized', 401, 'UNAUTHORIZED')
   }
 
-  const { userId } = await request.json()
+  const { userId: userIdOrEmail } = await request.json()
 
-  if (!userId || typeof userId !== 'string') {
+  if (!userIdOrEmail || typeof userIdOrEmail !== 'string') {
     return errorResponse('User ID is required', 400, 'VALIDATION_ERROR')
+  }
+
+  // ⭐ CRITICAL FIX: Support both User.id and email for backward compatibility
+  // Old novel records may have email as authorId, new records use User.id
+  const isEmail = userIdOrEmail.includes('@')
+
+  let targetUserId = userIdOrEmail
+
+  // If email is provided, convert to User.id
+  if (isEmail) {
+    const user = await prisma.user.findUnique({
+      where: { email: userIdOrEmail },
+      select: { id: true }
+    })
+
+    if (!user) {
+      return errorResponse('User not found', 404, 'USER_NOT_FOUND')
+    }
+
+    targetUserId = user.id
   }
 
   // Return error if Follow table doesn't exist yet
@@ -82,7 +109,7 @@ export const DELETE = withErrorHandling(async (request: Request) => {
       where: {
         followerId_followingId: {
           followerId: session.user.id,
-          followingId: userId
+          followingId: targetUserId
         }
       }
     })

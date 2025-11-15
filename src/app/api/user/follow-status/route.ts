@@ -12,10 +12,31 @@ export const GET = withErrorHandling(async (request: Request) => {
   }
 
   const { searchParams } = new URL(request.url)
-  const userId = searchParams.get('userId')
+  const userIdOrEmail = searchParams.get('userId')
 
-  if (!userId) {
+  if (!userIdOrEmail) {
     return errorResponse('User ID is required', 400, 'VALIDATION_ERROR')
+  }
+
+  // ⭐ CRITICAL FIX: Support both User.id and email for backward compatibility
+  // Old novel records may have email as authorId, new records use User.id
+  const isEmail = userIdOrEmail.includes('@')
+
+  let targetUserId = userIdOrEmail
+
+  // If email is provided, convert to User.id
+  if (isEmail) {
+    const user = await prisma.user.findUnique({
+      where: { email: userIdOrEmail },
+      select: { id: true }
+    })
+
+    if (!user) {
+      // User doesn't exist, so definitely not following
+      return successResponse({ isFollowing: false })
+    }
+
+    targetUserId = user.id
   }
 
   // Return false if Follow table doesn't exist yet
@@ -24,7 +45,7 @@ export const GET = withErrorHandling(async (request: Request) => {
       where: {
         followerId_followingId: {
           followerId: session.user.id,
-          followingId: userId
+          followingId: targetUserId
         }
       }
     })
