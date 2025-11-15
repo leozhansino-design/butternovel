@@ -34,11 +34,19 @@ export async function DELETE(
     }
 
     // 验证是否是评论作者或管理员
-    if (comment.userId !== session.user.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden' },
-        { status: 403 }
-      )
+    // 如果不是评论作者，检查是否是管理员
+    if (comment.userId !== session.user.id) {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+      })
+
+      if (!currentUser || currentUser.role !== 'ADMIN') {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden' },
+          { status: 403 }
+        )
+      }
     }
 
     // 如果有图片，从Cloudinary删除
