@@ -80,12 +80,9 @@ async function getNovel(slug: string) {
 }
 
 // ✅ ISR: 1小时重新验证
+// Next.js 会缓存渲染后的页面，只在 revalidate 时间后重新获取数据
+// 这样可以避免每次请求都访问 Redis，大幅减少 Redis commands
 export const revalidate = 3600
-
-// ⚡ CRITICAL: 强制缓存所有 fetch（包括 Upstash Redis），允许 ISR
-// Upstash Redis 默认使用 no-store → 导致页面无法静态生成
-// 使用 force-cache 强制覆盖，让页面可以进行 ISR
-export const dynamic = 'force-dynamic'
 
 /**
  * ⚡ CRITICAL FIX: Removed server-side auth() call

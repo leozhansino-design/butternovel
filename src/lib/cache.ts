@@ -74,9 +74,19 @@ function safeStringify(data: any): string {
   });
 }
 
+// ========================
+// 并发控制：防止缓存击穿
+// ========================
+
+// 存储正在进行的请求，key -> Promise
+const pendingRequests = new Map<string, Promise<any>>();
+
 /**
- * 通用缓存获取方法
+ * 通用缓存获取方法（带并发控制）
  * 如果缓存命中，返回缓存数据；否则执行 fetchFunction 并缓存结果
+ *
+ * 并发控制：如果多个请求同时查询同一个key，只有第一个会执行fetchFunction，
+ * 其他请求会等待第一个请求完成，然后共享结果
  *
  * @param key 缓存键
  * @param fetchFunction 数据获取函数（从数据库）
@@ -111,32 +121,54 @@ export async function getOrSet<T>(
       }
     }
 
-    // 2. 缓存未命中或 Redis 不可用，从数据库获取
-    console.log(`💾 [CACHE getOrSet] Cache MISS, fetching from database (key: ${key})`);
-    const dbStartTime = Date.now();
-    const data = await fetchFunction();
-    const dbDuration = Date.now() - dbStartTime;
-    console.log(`✅ [CACHE getOrSet] Database fetch complete (key: ${key}, db duration: ${dbDuration}ms)`);
-
-    // 3. 将数据写入缓存（如果 Redis 可用）
-    if (isRedisConnected()) {
-      try {
-        console.log(`💾 [CACHE getOrSet] Writing to cache (key: ${key})`);
-        const serialized = safeStringify(data); // 🔧 使用 BigInt 安全序列化
-        await safeRedisSet(key, serialized, ttl);
-      } catch (serializeError) {
-        console.error(`🚨 [CACHE getOrSet] Data serialization failed (${key}):`, serializeError);
-      }
-    } else {
-      console.log(`⚠️ [CACHE getOrSet] Redis not connected, skipping cache write (key: ${key})`);
+    // 2. 缓存未命中，检查是否有正在进行的请求
+    const existingRequest = pendingRequests.get(key);
+    if (existingRequest) {
+      // 等待已有的请求完成，避免重复查询
+      console.log(`⏳ [CACHE getOrSet] Waiting for existing request (key: ${key})`);
+      return existingRequest;
     }
 
-    const totalDuration = Date.now() - operationStartTime;
-    console.log(`✅ [CACHE getOrSet] Complete (key: ${key}, total duration: ${totalDuration}ms, db: ${dbDuration}ms)`);
-    return data;
+    // 3. 创建新的数据获取请求
+    const fetchPromise = (async () => {
+      try {
+        // 从数据库获取
+        console.log(`💾 [CACHE getOrSet] Cache MISS, fetching from database (key: ${key})`);
+        const dbStartTime = Date.now();
+        const data = await fetchFunction();
+        const dbDuration = Date.now() - dbStartTime;
+        console.log(`✅ [CACHE getOrSet] Database fetch complete (key: ${key}, db duration: ${dbDuration}ms)`);
+
+        // 将数据写入缓存（如果 Redis 可用）
+        if (isRedisConnected()) {
+          try {
+            console.log(`💾 [CACHE getOrSet] Writing to cache (key: ${key})`);
+            const serialized = safeStringify(data); // 🔧 使用 BigInt 安全序列化
+            await safeRedisSet(key, serialized, ttl);
+          } catch (serializeError) {
+            console.error(`🚨 [CACHE getOrSet] Data serialization failed (${key}):`, serializeError);
+          }
+        } else {
+          console.log(`⚠️ [CACHE getOrSet] Redis not connected, skipping cache write (key: ${key})`);
+        }
+
+        const totalDuration = Date.now() - operationStartTime;
+        console.log(`✅ [CACHE getOrSet] Complete (key: ${key}, total duration: ${totalDuration}ms, db: ${dbDuration}ms)`);
+        return data;
+      } finally {
+        // 清除pending请求记录
+        pendingRequests.delete(key);
+      }
+    })();
+
+    // 4. 存储pending请求，让其他并发请求可以等待
+    pendingRequests.set(key, fetchPromise);
+
+    return fetchPromise;
   } catch (error) {
     // 如果任何步骤失败，回退到直接查询数据库
     console.error(`🚨 [CACHE getOrSet] Operation failed, falling back to database (${key}):`, error);
+    pendingRequests.delete(key); // 确保清理
     return fetchFunction();
   }
 }

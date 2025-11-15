@@ -89,15 +89,21 @@ async function HomeContent() {
   )
 }
 
-// ✅ ISR: 1小时重新验证
-// 页面会被静态生成，然后在3600秒（1小时）后重新验证
-// 这样大部分请求都直接使用静态页面，不消耗任何Redis或数据库命令
-export const revalidate = 3600
-
-// ⚡ 使用默认的静态渲染 + ISR
-// 移除了 force-dynamic，让页面使用静态生成 + ISR
-// 这样只有在revalidate时间过期后才会重新生成页面
-// 大部分请求直接使用CDN缓存的静态页面，0 commands消耗
+// ✅ 动态渲染配置
+// 移除 fetchCache = 'force-cache' 以允许 Redis 缓存操作
+// Upstash Redis 使用 no-store，这样每次请求都会检查 Redis
+// getOrSet 内部会处理 Redis 缓存逻辑
+// ✅ 使用 force-dynamic 确保 Redis 缓存层工作
+// 策略：每次请求都检查 Redis，只有 miss 时查数据库
+//
+// 缓存架构：
+// 1. Redis 缓存（home:all-data，TTL=1小时）
+// 2. 并发控制：防止缓存击穿
+//
+// 首次部署可能有多个并发请求（预热、health check、边缘节点）
+// 这是正常的，getOrSet 会处理并发，只有第一个请求查数据库
+export const dynamic = 'force-dynamic'
+export const revalidate = 0 // 禁用 ISR，完全依赖 Redis
 
 export default function HomePage() {
   return (
