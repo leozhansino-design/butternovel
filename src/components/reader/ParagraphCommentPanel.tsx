@@ -251,8 +251,8 @@ export default function ParagraphCommentPanel({
                       {new Date(comment.createdAt).toLocaleString()}
                     </p>
                   </div>
-                  {/* Delete button for own comments or admin */}
-                  {(session?.user?.id === comment.user.id || session?.user?.role === 'ADMIN') && (
+                  {/* Delete button for own comments */}
+                  {session?.user?.id === comment.user.id && (
                     <button
                       onClick={() => handleDelete(comment.id)}
                       className="text-red-500 hover:text-red-700 p-1"
