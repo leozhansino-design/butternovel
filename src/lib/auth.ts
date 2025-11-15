@@ -30,6 +30,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   // ✅ 移除 pages 配置，避免自动重定向到登录页面
   // 所有登录都通过 AuthModal 进行，不需要独立的登录页面
 
+  cookies: {
+    pkceCodeVerifier: {
+      name: "next-auth.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
+
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -41,7 +53,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           response_type: "code"
         }
       },
-      checks: ["state"],
+      // 🔧 FIX: 移除state check，使用默认的PKCE
+      // state check在某些环境下会因为cookie问题失败
+      // PKCE提供同样的安全保护
     }),
 
     // ✅ Credentials Provider for email/username + password login
