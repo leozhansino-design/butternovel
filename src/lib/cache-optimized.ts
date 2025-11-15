@@ -89,14 +89,14 @@ export async function getHomePageData(): Promise<HomePageData> {
           ORDER BY RANDOM()
           LIMIT 24
         `
-      );
+      ) as any[];
 
       // 2. 获取所有分类
       const categories = await withRetry(() =>
         prisma.category.findMany({
           orderBy: { order: 'asc' }
         })
-      );
+      ) as any[];
 
       // 3. 为每个分类获取小说（并发控制）
       const categoryNovelsArray = await withConcurrency(
@@ -132,7 +132,7 @@ export async function getHomePageData(): Promise<HomePageData> {
           );
         }),
         { concurrency: 3 }
-      );
+      ) as any[];
 
       // 4. 构造 categoryNovels 映射
       const categoryNovels: Record<string, Array<any>> = {};

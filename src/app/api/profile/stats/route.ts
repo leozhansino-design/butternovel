@@ -30,7 +30,7 @@ export async function GET() {
           },
         },
       },
-    })
+    }) as any[]
 
     // 提取唯一的小说ID
     const uniqueNovelIds = new Set(

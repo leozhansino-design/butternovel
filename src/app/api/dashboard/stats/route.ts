@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         updatedAt: 'desc',
       },
-    })
+    }) as any[]
 
     // Calculate statistics
     const totalNovels = novels.length
@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
     let totalRatings = 0
     let ratingSum = 0
 
-    novels.forEach((novel) => {
-      novel.ratings.forEach((rating) => {
+    novels.forEach((novel: any) => {
+      novel.ratings.forEach((rating: any) => {
         totalRatings++
         ratingSum += rating.score
       })

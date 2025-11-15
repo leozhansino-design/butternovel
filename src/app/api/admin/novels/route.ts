@@ -40,7 +40,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                 where: { email: session.email },
             }),
             { operationName: 'Get admin profile' }
-        )
+        ) as any
 
         if (!adminProfile) {
             return NextResponse.json(
@@ -60,7 +60,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                 select: { id: true }
             }),
             { operationName: 'Get user ID from email' }
-        )
+        ) as any
 
         // 如果user不存在，自动创建
         if (!user) {
@@ -169,7 +169,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                 }
             }),
             { operationName: 'Create novel in database' }
-        )
+        ) as any
 
         // ⚡ 清除缓存：首页、分类页、小说详情
         await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
@@ -236,7 +236,7 @@ export const GET = withAdminAuth(async (session, request: Request) => {
         const total = await withRetry(
             () => prisma.novel.count({ where }),
             { operationName: 'Count novels' }
-        )
+        ) as number
 
         const novels = await withRetry(
             () => prisma.novel.findMany({
@@ -247,7 +247,7 @@ export const GET = withAdminAuth(async (session, request: Request) => {
                 take: limit
             }),
             { operationName: 'Get novels list' }
-        )
+        ) as any
 
         // ✅ Create standardized pagination response
         const pagination = createPaginationResponse({ page, limit, offset }, total)

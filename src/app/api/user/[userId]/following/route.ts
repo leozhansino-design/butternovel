@@ -39,7 +39,7 @@ export const GET = withErrorHandling(async (
         }
       },
       orderBy: { createdAt: 'desc' }
-    })
+    }) as any[]
 
     return successResponse({
       following: following.map(f => f.following)

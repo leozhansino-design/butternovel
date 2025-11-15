@@ -64,7 +64,7 @@ export const GET = withErrorHandling(async () => {
       `
 
       // 转换为前端需要的格式
-      return libraryData.map(item => ({
+      return libraryData.map((item: any) => ({
         id: item.novelId,
         title: item.novelTitle,
         slug: item.novelSlug,

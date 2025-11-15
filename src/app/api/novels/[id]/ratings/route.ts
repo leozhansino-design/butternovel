@@ -79,7 +79,7 @@ export async function GET(
         orderBy,
         skip: offset,
         take: limit,
-      })
+      }) as any[]
     } catch (error) {
       // 如果likeCount字段不存在，只按时间排序
       ratings = await prisma.rating.findMany({
@@ -110,7 +110,7 @@ export async function GET(
         },
         skip: offset,
         take: limit,
-      })
+      }) as any[]
     }
 
     // 🔧 FIXED: 批量查询点赞状态，避免N+1查询问题

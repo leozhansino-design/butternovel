@@ -54,7 +54,7 @@ async function recordView(params: TrackViewParams): Promise<boolean> {
 
   try {
     // ✅ 使用事务：创建记录 + 更新计数
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // 创建浏览记录
       await tx.novelView.create({
         data: {

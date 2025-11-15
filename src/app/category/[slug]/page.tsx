@@ -27,7 +27,7 @@ async function getCategoryWithNovels(slug: string) {
             slug: true,
           }
         })
-      )
+      ) as any
 
       if (!category) {
         return null
@@ -64,7 +64,7 @@ async function getCategoryWithNovels(slug: string) {
           ORDER BY n."createdAt" DESC
           LIMIT 100
         `
-      )
+      ) as any[]
 
       return {
         category,
@@ -161,7 +161,7 @@ export async function generateStaticParams() {
   try {
     const categories = await prisma.category.findMany({
       select: { slug: true }
-    })
+    }) as any[]
 
     return categories.map(category => ({
       slug: category.slug

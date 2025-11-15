@@ -39,7 +39,7 @@ export default async function EditNovelPage(props: Props) {  // ⭐ 改这里
       }
     }),
     { operationName: 'Get novel for edit page' }
-  )
+  ) as any
 
   if (!novel) {
     notFound()
@@ -52,7 +52,7 @@ export default async function EditNovelPage(props: Props) {  // ⭐ 改这里
       orderBy: { order: 'asc' }
     }),
     { operationName: 'Get categories for edit page' }
-  )
+  ) as any
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

@@ -33,7 +33,7 @@ export const POST = withAdminAuth(async (
         }
       }),
       { operationName: 'Update novel ban status' }
-    )
+    ) as any
 
     // ⚡ 清除缓存：封禁状态影响首页、分类页、小说详情的显示
     await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)

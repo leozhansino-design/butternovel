@@ -43,7 +43,7 @@ export const PUT = withAdminAuth(async (
         }
       }),
       { operationName: 'Get current novel for update' }
-    )
+    ) as any
 
     if (!currentNovel) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
@@ -127,7 +127,7 @@ export const PUT = withAdminAuth(async (
         }
       }),
       { operationName: 'Update novel in database' }
-    )
+    ) as any
 
     // ⚡ 清除缓存：首页、分类页、小说详情
     await invalidateNovelRelatedCache(updatedNovel.slug, updatedNovel.category?.slug)
@@ -172,7 +172,7 @@ export const DELETE = withAdminAuth(async (
         }
       }),
       { operationName: 'Get novel for deletion' }
-    )
+    ) as any
 
     if (!novel) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })

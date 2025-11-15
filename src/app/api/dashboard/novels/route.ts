@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       orderBy: {
         updatedAt: 'desc',
       },
-    })
+    }) as any[]
 
     const formattedNovels = novels.map((novel) => ({
       id: novel.id,

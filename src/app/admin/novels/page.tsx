@@ -80,11 +80,11 @@ export default async function ManageNovelsPage(props: Props) {
         take: pageSize,
       }),
       { operationName: 'Get novels list for admin' }
-    ),
+    ) as any,
     withRetry(
       () => prisma.novel.count({ where }),
       { operationName: 'Count novels for admin' }
-    ),
+    ) as any,
   ])
 
   const totalPages = Math.ceil(total / pageSize)
@@ -95,7 +95,7 @@ export default async function ManageNovelsPage(props: Props) {
       orderBy: { order: 'asc' }
     }),
     { operationName: 'Get categories for admin novels page' }
-  )
+  ) as any
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -166,7 +166,7 @@ export default async function ManageNovelsPage(props: Props) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {novels.map((novel) => (
+              {novels.map((novel: any) => (
                 <tr key={novel.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 max-w-xs">
                     <div className="flex items-center gap-3">

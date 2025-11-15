@@ -80,10 +80,18 @@ export async function POST(request: NextRequest) {
           chapterId.toString()
         )
 
-        if (contributionResult.levelUp) {
+        // 🔧 FIX: Type-safe check for levelUp property
+        if (contributionResult && typeof contributionResult === 'object' && 'levelUp' in contributionResult && contributionResult.levelUp) {
+          // User leveled up - future: could trigger notification
+          console.log('[Chapter Progress] User leveled up:', {
+            userId: session.user.id,
+            oldLevel: 'oldLevel' in contributionResult ? contributionResult.oldLevel : 'unknown',
+            newLevel: 'newLevel' in contributionResult ? contributionResult.newLevel : 'unknown',
+          })
         }
       } catch (error) {
-        // 不影响主流程
+        // 不影响主流程 - 贡献度失败不应阻止进度保存
+        console.error('[Chapter Progress] Failed to add contribution:', error)
       }
     }
 

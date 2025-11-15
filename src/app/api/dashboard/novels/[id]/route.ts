@@ -159,7 +159,41 @@ export async function PUT(
       message: 'Novel updated successfully',
       novel: updatedNovel,
     })
-  } catch (error) {
+  } catch (error: unknown) {
+    // 🔧 FIX: Better error logging for debugging
+    console.error('[Novel Update API] Error updating novel:', error)
+
+    // Check for specific Prisma errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const prismaError = error as { code: string; meta?: unknown }
+
+      // P1001: Can't reach database server
+      if (prismaError.code === 'P1001') {
+        console.error('[Novel Update API] Database connection failed')
+        return NextResponse.json(
+          { error: 'Database connection error. Please try again.' },
+          { status: 503 }
+        )
+      }
+
+      // P1008: Operations timed out
+      if (prismaError.code === 'P1008') {
+        console.error('[Novel Update API] Database timeout')
+        return NextResponse.json(
+          { error: 'Request timed out. Please try again.' },
+          { status: 504 }
+        )
+      }
+
+      // P2025: Record not found
+      if (prismaError.code === 'P2025') {
+        return NextResponse.json(
+          { error: 'Novel not found' },
+          { status: 404 }
+        )
+      }
+    }
+
     return NextResponse.json(
       { error: 'Failed to update novel' },
       { status: 500 }

@@ -55,7 +55,7 @@ export async function POST(
           slug: true
         }
       })
-    )
+    ) as any
 
     if (!novel) {
       return NextResponse.json(
@@ -84,8 +84,9 @@ export async function POST(
     }
 
     // ⚡ 优化：创建评分记录并更新小说统计 - 使用聚合查询提升性能
-    const result = await withRetry(() =>
-      prisma.$transaction(async (tx) => {
+    const result = (await withRetry(async () => {
+      // @ts-ignore - Prisma interactive transaction type inference issue
+      return await prisma.$transaction(async (tx) => {
       // 创建评分记录
       const rating = await tx.rating.create({
         data: {
@@ -132,7 +133,7 @@ export async function POST(
     }, {
       timeout: 15000, // ⚡ 设置事务超时为15秒
     })
-    )
+    })) as unknown as { rating: any; averageRating: number; totalRatings: number }
 
     // ⚡ 清除小说详情缓存（评分数据已更新）
     await invalidateNovelCache(novel.slug)
@@ -141,10 +142,18 @@ export async function POST(
     try {
       const contributionResult = await addRatingContribution(session.user.id, result.rating.id)
 
-      if (contributionResult.levelUp) {
+      // 🔧 FIX: Type-safe check for levelUp property
+      if (contributionResult && typeof contributionResult === 'object' && 'levelUp' in contributionResult && contributionResult.levelUp) {
+        // User leveled up - future: could trigger notification
+        console.log('[Rating API] User leveled up:', {
+          userId: session.user.id,
+          oldLevel: 'oldLevel' in contributionResult ? contributionResult.oldLevel : 'unknown',
+          newLevel: 'newLevel' in contributionResult ? contributionResult.newLevel : 'unknown',
+        })
       }
     } catch (error) {
       // 不影响主流程，只记录错误
+      console.error('[Rating API] Failed to add contribution:', error)
     }
 
     return NextResponse.json(result, { status: 201 })

@@ -65,7 +65,41 @@ export async function POST(req: Request) {
       { message: 'User created successfully', user },
       { status: 201 }
     )
-  } catch (error) {
+  } catch (error: unknown) {
+    // 🔧 FIX: Better error logging for debugging
+    console.error('[Register API] Error creating user:', error)
+
+    // Check for specific Prisma errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const prismaError = error as { code: string; meta?: unknown }
+
+      // P2002: Unique constraint violation (duplicate email)
+      if (prismaError.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Email already registered' },
+          { status: 400 }
+        )
+      }
+
+      // P1001: Can't reach database server
+      if (prismaError.code === 'P1001') {
+        console.error('[Register API] Database connection failed')
+        return NextResponse.json(
+          { error: 'Database connection error. Please try again.' },
+          { status: 503 }
+        )
+      }
+
+      // P1008: Operations timed out
+      if (prismaError.code === 'P1008') {
+        console.error('[Register API] Database timeout')
+        return NextResponse.json(
+          { error: 'Request timed out. Please try again.' },
+          { status: 504 }
+        )
+      }
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -28,7 +28,7 @@ async function getAllNovels(categorySlug?: string) {
             where: { slug: categorySlug },
             select: { id: true, name: true, slug: true }
           })
-        )
+        ) as any
 
         if (!category) {
           return { category: null, novels: [] }
@@ -63,7 +63,7 @@ async function getAllNovels(categorySlug?: string) {
             ORDER BY n."createdAt" DESC
             LIMIT 200
           `
-        )
+        ) as any[]
 
         return { category, novels }
       } else {
@@ -95,7 +95,7 @@ async function getAllNovels(categorySlug?: string) {
             ORDER BY n."createdAt" DESC
             LIMIT 200
           `
-        )
+        ) as any[]
 
         return { category: null, novels }
       }

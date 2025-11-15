@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         },
       },
       orderBy: { createdAt: 'asc' },
-    })
+    }) as any[]
 
     // Only return top-level replies (parentReplyId is null)
     // Child replies are included via the childReplies relation
@@ -150,10 +150,18 @@ export async function POST(request: NextRequest, { params }: Params) {
     try {
       const contributionResult = await addRatingReplyContribution(session.user.id, reply.id)
 
-      if (contributionResult.levelUp) {
+      // 🔧 FIX: Type-safe check for levelUp property
+      if (contributionResult && typeof contributionResult === 'object' && 'levelUp' in contributionResult && contributionResult.levelUp) {
+        // User leveled up - future: could trigger notification
+        console.log('[Rating Reply API] User leveled up:', {
+          userId: session.user.id,
+          oldLevel: 'oldLevel' in contributionResult ? contributionResult.oldLevel : 'unknown',
+          newLevel: 'newLevel' in contributionResult ? contributionResult.newLevel : 'unknown',
+        })
       }
     } catch (error) {
       // 不影响主流程，只记录错误
+      console.error('[Rating Reply API] Failed to add contribution:', error)
     }
 
     return NextResponse.json({

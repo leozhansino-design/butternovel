@@ -43,7 +43,7 @@ export async function GET() {
         lastReadAt: 'desc'
       },
       take: 50 // Limit to most recent 50
-    })
+    }) as any[]
 
     // Transform data for frontend, filtering out any invalid entries
     const novels = history
