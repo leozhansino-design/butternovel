@@ -92,6 +92,39 @@ export async function deleteImage(publicId: string) {
 }
 
 /**
+ * 上传段落评论图片到 Cloudinary
+ * @param base64Image - Base64 格式的图片
+ * @param userId - 用户 ID
+ * @returns Cloudinary URL 和 public_id
+ */
+export async function uploadCommentImage(base64Image: string, userId: string) {
+  try {
+    const result = await cloudinary.uploader.upload(base64Image, {
+      folder: 'butternovel/comments',
+      public_id: `comment-${userId}-${Date.now()}`,
+      transformation: [
+        {
+          width: 800,  // 最大宽度800px
+          crop: 'limit',  // 保持比例，不超过指定尺寸
+          quality: 'auto:good',
+          fetch_format: 'auto'
+        }
+      ],
+      overwrite: false,
+      resource_type: 'image'
+    })
+
+    return {
+      url: result.secure_url,
+      publicId: result.public_id
+    }
+  } catch (error: any) {
+    console.error('❌ [Cloudinary] Upload error:', error.message)
+    throw new Error(`Failed to upload comment image: ${error.message}`)
+  }
+}
+
+/**
  * 获取优化后的图片 URL
  * @param publicId - Cloudinary public_id
  * @param options - 转换选项
