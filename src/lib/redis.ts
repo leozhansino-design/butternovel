@@ -82,17 +82,21 @@ export function isRedisConnected(): boolean {
 export async function safeRedisGet(key: string): Promise<string | null> {
   const client = getRedisClient();
   if (!client) {
+    console.log(`[Redis GET] Client not available (${key})`);
     return null;
   }
 
   try {
+    console.log(`[Redis GET] Fetching key: ${key}`);
     // 不指定类型参数，让 Upstash 返回原始数据
     const value = await client.get(key);
 
     if (value === null || value === undefined) {
+      console.log(`[Redis GET] Cache MISS (${key})`);
       return null;
     }
 
+    console.log(`[Redis GET] Cache HIT (${key})`);
     // 如果 Upstash 返回的是对象而不是字符串，重新序列化
     if (typeof value === 'string') {
       return value;
@@ -101,7 +105,7 @@ export async function safeRedisGet(key: string): Promise<string | null> {
       return serialized;
     }
   } catch (error) {
-    console.error(`Redis GET 失败 (${key}):`, error);
+    console.error(`[Redis GET] Failed (${key}):`, error);
     return null;
   }
 }
@@ -120,17 +124,19 @@ export async function safeRedisSet(
 ): Promise<boolean> {
   const client = getRedisClient();
   if (!client) {
+    console.log(`[Redis SET] Client not available (${key})`);
     return false;
   }
 
   try {
     // 🔍 调试：验证 value 是字符串
     if (typeof value !== 'string') {
-      console.error(`❌ Redis SET 错误：value 不是字符串！类型: ${typeof value}, 值:`, value);
+      console.error(`[Redis SET] Value is not string! Type: ${typeof value}, Key: ${key}`);
       // 强制转换为字符串
       value = String(value);
     }
 
+    console.log(`[Redis SET] Writing key: ${key}, TTL: ${ttlSeconds || 'none'}`);
     if (ttlSeconds) {
       // Upstash Redis 正确用法：使用选项对象
       await client.set(key, value, { ex: ttlSeconds });
@@ -138,9 +144,10 @@ export async function safeRedisSet(
       await client.set(key, value);
     }
 
+    console.log(`[Redis SET] Success (${key})`);
     return true;
   } catch (error) {
-    console.error(`Redis SET 失败 (${key}):`, error);
+    console.error(`[Redis SET] Failed (${key}):`, error);
     return false;
   }
 }

@@ -1,44 +1,21 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-
 interface ParagraphCommentButtonProps {
-  chapterId: number
   paragraphIndex: number
   onClick: () => void
   isActive: boolean
+  commentCount?: number  // ✅ 接受预加载的评论数，而不是自己请求
 }
 
 export default function ParagraphCommentButton({
-  chapterId,
   paragraphIndex,
   onClick,
-  isActive
+  isActive,
+  commentCount = 0  // ✅ 默认值为0
 }: ParagraphCommentButtonProps) {
-  const [commentCount, setCommentCount] = useState(0)
-  const [loading, setLoading] = useState(true)
-
-  // 🔧 FIX: 使用 useCallback 防止无限循环和不必要的重新渲染
-  const fetchCommentCount = useCallback(async () => {
-    try {
-      setLoading(true)
-      const res = await fetch(
-        `/api/paragraph-comments?chapterId=${chapterId}&paragraphIndex=${paragraphIndex}`
-      )
-      const data = await res.json()
-      if (data.success) {
-        setCommentCount(data.data?.length || 0)
-      }
-    } catch (error) {
-      console.error('[ParagraphCommentButton] Failed to fetch comment count:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [chapterId, paragraphIndex])
-
-  useEffect(() => {
-    fetchCommentCount()
-  }, [fetchCommentCount])
+  // ✅ FIX: 移除独立请求逻辑 - 改为接受预加载的 commentCount prop
+  // 之前：每个按钮独立请求 → 40个按钮 = 40次请求 = 连接池爆炸
+  // 现在：从父组件接收批量获取的数据 → 0次请求
 
   // 根据评论数量决定样式
   const getButtonStyle = () => {
@@ -58,17 +35,6 @@ export default function ParagraphCommentButton({
   }
 
   const displayCount = commentCount >= 100 ? '99+' : commentCount
-
-  if (loading) {
-    return (
-      <button className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs opacity-40 bg-gray-100">
-        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      </button>
-    )
-  }
 
   return (
     <button
