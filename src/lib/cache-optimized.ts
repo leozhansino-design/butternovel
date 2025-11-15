@@ -63,19 +63,11 @@ export interface HomePageData {
  * 节省：94% Redis commands
  */
 export async function getHomePageData(): Promise<HomePageData> {
-  console.log(`🏠 [HOMEPAGE] getHomePageData called`);
-  const totalStartTime = Date.now();
-
   try {
     return await getOrSet(
       'home:all-data', // 单个缓存键
       async () => {
-        console.log(`🏠 [HOMEPAGE] Fetching fresh data from database`);
-        const dbStartTime = Date.now();
-
         // 1. 获取精选小说
-        console.log(`🏠 [HOMEPAGE] Fetching featured novels...`);
-        const featuredStartTime = Date.now();
         const featured = await withRetry(() =>
           prisma.$queryRaw<Array<{
             id: number;
@@ -99,67 +91,55 @@ export async function getHomePageData(): Promise<HomePageData> {
             LIMIT 24
           `
         ) as any[];
-        const featuredDuration = Date.now() - featuredStartTime;
-        console.log(`✅ [HOMEPAGE] Featured novels fetched: ${featured.length} items (${featuredDuration}ms)`);
 
         // 2. 获取所有分类
-        console.log(`🏠 [HOMEPAGE] Fetching categories...`);
-        const categoriesStartTime = Date.now();
         const categories = await withRetry(() =>
           prisma.category.findMany({
             orderBy: { order: 'asc' }
           })
         ) as any[];
-        const categoriesDuration = Date.now() - categoriesStartTime;
-        console.log(`✅ [HOMEPAGE] Categories fetched: ${categories.length} items (${categoriesDuration}ms)`);
 
-      // 3. 为每个分类获取小说（并发控制）
-      console.log(`🏠 [HOMEPAGE] Fetching novels for ${categories.length} categories (concurrency: 3)...`);
-      const categoryNovelsStartTime = Date.now();
-      const categoryNovelsArray = await withConcurrency(
-        categories.map(category => async () => {
-          console.log(`🏠 [HOMEPAGE] Fetching novels for category: ${category.slug}`);
-          return await withRetry(() =>
-            prisma.$queryRaw<Array<{
-              id: number;
-              title: string;
-              slug: string;
-              coverImage: string;
-              categoryName: string;
-              status: string;
-              chaptersCount: number;
-              likesCount: number;
-            }>>`
-              SELECT
-                n.id,
-                n.title,
-                n.slug,
-                n."coverImage",
-                n.status,
-                c.name as "categoryName",
-                (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
-                (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
-              FROM "Novel" n
-              INNER JOIN "Category" c ON n."categoryId" = c.id
-              WHERE n."isPublished" = true
-                AND n."isBanned" = false
-                AND c.slug = ${category.slug}
-              ORDER BY RANDOM()
-              LIMIT 10
-            `
-          );
-        }),
-        { concurrency: 3 }
-      ) as any[];
-      const categoryNovelsDuration = Date.now() - categoryNovelsStartTime;
-      console.log(`✅ [HOMEPAGE] Category novels fetched (${categoryNovelsDuration}ms)`);
+        // 3. 为每个分类获取小说（并发控制）
+        const categoryNovelsArray = await withConcurrency(
+          categories.map(category => async () => {
+            return await withRetry(() =>
+              prisma.$queryRaw<Array<{
+                id: number;
+                title: string;
+                slug: string;
+                coverImage: string;
+                categoryName: string;
+                status: string;
+                chaptersCount: number;
+                likesCount: number;
+              }>>`
+                SELECT
+                  n.id,
+                  n.title,
+                  n.slug,
+                  n."coverImage",
+                  n.status,
+                  c.name as "categoryName",
+                  (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+                  (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
+                FROM "Novel" n
+                INNER JOIN "Category" c ON n."categoryId" = c.id
+                WHERE n."isPublished" = true
+                  AND n."isBanned" = false
+                  AND c.slug = ${category.slug}
+                ORDER BY RANDOM()
+                LIMIT 10
+              `
+            );
+          }),
+          { concurrency: 3 }
+        ) as any[];
 
-      // 4. 构造 categoryNovels 映射
-      const categoryNovels: Record<string, Array<any>> = {};
-      categories.forEach((category, index) => {
-        categoryNovels[category.slug] = categoryNovelsArray[index];
-        console.log(`📊 [HOMEPAGE] Category ${category.slug}: ${categoryNovelsArray[index].length} novels`);
-      });
+        // 4. 构造 categoryNovels 映射
+        const categoryNovels: Record<string, Array<any>> = {};
+        categories.forEach((category, index) => {
+          categoryNovels[category.slug] = categoryNovelsArray[index];
+        });
 
         const data: HomePageData = {
           featured,
@@ -168,15 +148,12 @@ export async function getHomePageData(): Promise<HomePageData> {
           timestamp: Date.now()
         };
 
-        const dbTotalDuration = Date.now() - dbStartTime;
-        console.log(`✅ [HOMEPAGE] All database queries complete (${dbTotalDuration}ms) - featured: ${featuredDuration}ms, categories: ${categoriesDuration}ms, category novels: ${categoryNovelsDuration}ms`);
-
         return data;
       },
       CacheTTL.HOME_FEATURED // 使用 1 小时 TTL
     );
   } catch (error) {
-    console.error('🚨 [HOMEPAGE] Database error:', error);
+    console.error('[Homepage] Database error:', error);
 
     // 返回空数据而不是抛出错误，避免整个页面崩溃
     return {
@@ -185,9 +162,6 @@ export async function getHomePageData(): Promise<HomePageData> {
       categoryNovels: {},
       timestamp: Date.now()
     };
-  } finally {
-    const totalDuration = Date.now() - totalStartTime;
-    console.log(`🏁 [HOMEPAGE] getHomePageData complete (total: ${totalDuration}ms)`);
   }
 }
 
@@ -195,8 +169,6 @@ export async function getHomePageData(): Promise<HomePageData> {
  * 清除首页缓存（当内容更新时）
  */
 export async function invalidateHomePageCache(): Promise<void> {
-  console.log(`🗑️ [HOMEPAGE] invalidateHomePageCache called`);
   const { invalidate } = await import('@/lib/cache');
   await invalidate('home:all-data');
-  console.log(`✅ [HOMEPAGE] invalidateHomePageCache complete`);
 }
