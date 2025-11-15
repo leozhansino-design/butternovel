@@ -23,11 +23,14 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
 
   // 🔧 FIX: 使用 useCallback 防止无限循环
   const checkFollowStatus = useCallback(async () => {
+    console.log(`[FollowAuthorButton] Checking follow status for author: ${authorId}`)
     try {
       const res = await fetch(`/api/user/follow-status?userId=${authorId}`)
       const data = await res.json()
+      console.log(`[FollowAuthorButton] Follow status response:`, data)
       if (data.isFollowing !== undefined) {
         setIsFollowing(data.isFollowing)
+        console.log(`[FollowAuthorButton] Updated isFollowing to: ${data.isFollowing}`)
       }
     } catch (error) {
       console.error('[FollowAuthorButton] Failed to check follow status:', error)
@@ -38,12 +41,16 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
 
   // Check follow status
   useEffect(() => {
-    if (session?.user?.id && !isOwnProfile) {
+    console.log(`[FollowAuthorButton] useEffect triggered - status: ${status}, isOwnProfile: ${isOwnProfile}, userId: ${session?.user?.id}`)
+
+    if (status === 'authenticated' && session?.user?.id && !isOwnProfile) {
+      console.log(`[FollowAuthorButton] Conditions met, calling checkFollowStatus`)
       checkFollowStatus()
     } else {
+      console.log(`[FollowAuthorButton] Conditions not met, skipping checkFollowStatus`)
       setCheckingStatus(false)
     }
-  }, [session?.user?.id, isOwnProfile, checkFollowStatus])
+  }, [status, session?.user?.id, isOwnProfile, checkFollowStatus])
 
   const handleFollowToggle = async () => {
     if (!session?.user?.id) {
@@ -76,21 +83,27 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
 
   // Don't show button if viewing own profile (wait for session to load first)
   if (status === 'loading') {
+    console.log(`[FollowAuthorButton] Hiding button - status is loading`)
     return null // Wait for session to load
   }
 
   if (isOwnProfile) {
+    console.log(`[FollowAuthorButton] Hiding button - viewing own profile`)
     return null
   }
 
   if (checkingStatus && session?.user?.id) {
+    console.log(`[FollowAuthorButton] Hiding button - checking status`)
     return null // Or a small loading spinner
   }
 
   // 🔧 FIX: 已经follow的作者，完全隐藏按钮
   if (isFollowing) {
+    console.log(`[FollowAuthorButton] Hiding button - already following`)
     return null
   }
+
+  console.log(`[FollowAuthorButton] Showing Follow button - isFollowing: ${isFollowing}, checkingStatus: ${checkingStatus}`)
 
   return (
     <button
