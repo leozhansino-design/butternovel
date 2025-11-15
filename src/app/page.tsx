@@ -90,13 +90,13 @@ async function HomeContent() {
 }
 
 // ✅ ISR: 1小时重新验证
+// 使用静态生成 + ISR，大幅减少服务器负载
 export const revalidate = 3600
 
-// ⚡ 动态渲染配置
-// 移除 fetchCache = 'force-cache' 以允许 Redis 缓存操作
-// Upstash Redis 使用 no-store，这样每次请求都会检查 Redis
-// getOrSet 内部会处理 Redis 缓存逻辑
-export const dynamic = 'force-dynamic'
+// ✅ 移除 force-dynamic，使用 ISR 缓存整个页面
+// Redis 层：getHomePageData() 使用 Redis 缓存数据（1小时TTL）
+// Next.js 层：页面使用 ISR 缓存（1小时revalidate）
+// 结果：首次部署只需1次数据库查询，后续访问直接返回静态页面
 
 export default function HomePage() {
   return (
