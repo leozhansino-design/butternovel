@@ -202,6 +202,7 @@ export async function DELETE(
     // 🔧 FIXED: 使用事务和原生SQL批量更新，避免N+1查询
     // 之前：删除1章可能需要100+次UPDATE查询
     // 现在：使用单次原生SQL更新所有后续章节
+    // @ts-expect-error - Prisma interactive transaction type inference issue
     await prisma.$transaction(async (tx) => {
       // 1. 删除章节
       await tx.chapter.delete({
