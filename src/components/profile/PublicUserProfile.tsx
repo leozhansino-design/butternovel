@@ -33,6 +33,17 @@ type UserData = {
   }
 }
 
+// Format numbers: 100+ shows as 1.1k, 20k, 1m, etc.
+function formatNumber(num: number): string {
+  if (num < 1000) return num.toString()
+  if (num < 1000000) {
+    const k = num / 1000
+    return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`
+  }
+  const m = num / 1000000
+  return m % 1 === 0 ? `${m}m` : `${m.toFixed(1)}m`
+}
+
 interface PublicUserProfileProps {
   user: UserData
   onNovelClick?: (slug: string) => void // Optional: callback when clicking on a novel in reviews
@@ -121,15 +132,16 @@ export default function PublicUserProfile({ user, onNovelClick }: PublicUserProf
               showLevelName={false}
               isOfficial={isOfficial}
             />
-            {/* Level name or Official badge below avatar */}
+            {/* Level name or Followers count below avatar */}
             <div className="text-center">
               {isOfficial ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-xs font-bold text-white">Official Account</p>
-                </div>
+                <button
+                  onClick={() => setShowFollowModal('followers')}
+                  className="text-center hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <div className="text-2xl font-bold text-gray-900">{formatNumber(followersCount)}</div>
+                  <div className="text-xs text-gray-600 mt-0.5">Followers</div>
+                </button>
               ) : (
                 <p className="text-xs font-semibold text-amber-600">{levelData.nameEn}</p>
               )}
@@ -142,6 +154,16 @@ export default function PublicUserProfile({ user, onNovelClick }: PublicUserProf
               <h1 className="text-3xl font-bold text-gray-900">
                 {user.name || 'Anonymous Reader'}
               </h1>
+
+              {/* Official Account badge for official users */}
+              {isOfficial && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg">
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-xs font-bold text-white">Official Account</p>
+                </div>
+              )}
 
               {/* Follow button - show if not own profile and user is logged in */}
               {!isOwnProfile && session?.user?.id && (
@@ -159,8 +181,8 @@ export default function PublicUserProfile({ user, onNovelClick }: PublicUserProf
               )}
             </div>
 
-            {/* Bio */}
-            {user.bio && (
+            {/* Bio - show for non-official accounts in original position */}
+            {!isOfficial && user.bio && (
               <p className="text-gray-700 text-sm leading-relaxed mb-4">{user.bio}</p>
             )}
 
@@ -168,16 +190,14 @@ export default function PublicUserProfile({ user, onNovelClick }: PublicUserProf
 
             {/* Stats cards */}
             {isOfficial ? (
-              // Official account: only show Followers
-              <div className="mt-4">
-                <button
-                  onClick={() => setShowFollowModal('followers')}
-                  className="w-full backdrop-blur-xl bg-gradient-to-r from-blue-500/20 to-indigo-600/20 border-2 border-blue-500/40 rounded-lg p-6 text-center shadow-lg hover:from-blue-500/30 hover:to-indigo-600/30 transition-all cursor-pointer"
-                >
-                  <div className="text-3xl font-bold text-gray-900">{followersCount}</div>
-                  <div className="text-sm text-gray-700 mt-2 font-semibold">Followers</div>
-                </button>
-              </div>
+              // Official account: show bio in a simple card
+              user.bio && (
+                <div className="mt-4">
+                  <div className="bg-white/40 backdrop-blur-sm border border-white/60 rounded-lg p-4 shadow-md">
+                    <p className="text-gray-700 text-sm leading-relaxed">{user.bio}</p>
+                  </div>
+                </div>
+              )
             ) : (
               // Regular user stats
               <>
