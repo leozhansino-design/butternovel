@@ -8,7 +8,7 @@ import {
 } from '@/lib/api-response'
 
 // GET - Get user's reading history
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth()
 
@@ -16,34 +16,48 @@ export async function GET() {
       return unauthorizedResponse()
     }
 
-    // Get reading history with novel details, ordered by last read time
-    const history = await prisma.readingHistory.findMany({
-      where: {
-        userId: session.user.id
-      },
-      include: {
-        novel: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            coverImage: true,
-            authorName: true,
-            status: true,
-            totalChapters: true,
-            category: {
-              select: {
-                name: true
+    // ⚡ OPTIMIZATION: Add pagination support
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100) // Max 100 per page
+    const skip = (page - 1) * limit
+
+    // ⚡ OPTIMIZATION: Fetch history and count in parallel
+    const [history, totalCount] = await Promise.all([
+      prisma.readingHistory.findMany({
+        where: {
+          userId: session.user.id
+        },
+        include: {
+          novel: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              coverImage: true,
+              authorName: true,
+              status: true,
+              totalChapters: true,
+              category: {
+                select: {
+                  name: true
+                }
               }
             }
           }
+        },
+        orderBy: {
+          lastReadAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.readingHistory.count({
+        where: {
+          userId: session.user.id
         }
-      },
-      orderBy: {
-        lastReadAt: 'desc'
-      },
-      take: 50 // Limit to most recent 50
-    }) as any[]
+      })
+    ]) as [any[], number]
 
     // Transform data for frontend, filtering out any invalid entries
     const novels = history
@@ -60,7 +74,16 @@ export async function GET() {
         lastReadAt: item.lastReadAt.toISOString()
       }))
 
-    return successResponse({ novels })
+    return successResponse({
+      novels,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + novels.length < totalCount
+      }
+    })
   } catch (error) {
     return handleApiError(error, 'Failed to fetch reading history')
   }

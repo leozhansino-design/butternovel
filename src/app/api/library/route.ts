@@ -98,24 +98,24 @@ export const POST = withErrorHandling(async (request: Request) => {
     return errorResponse('Novel ID required', 400, 'MISSING_NOVEL_ID')
   }
 
-  // 检查用户是否存在
-  const userExists = await prisma.user.findUnique({
-    where: { id: session.user.id }
-  })
+  // ⚡ OPTIMIZATION: Parallel queries instead of serial
+  const [userExists, existing] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id }
+    }),
+    prisma.library.findUnique({
+      where: {
+        userId_novelId: {
+          userId: session.user.id,
+          novelId: parseInt(novelId)
+        }
+      }
+    })
+  ])
 
   if (!userExists) {
     return errorResponse('User not found', 404, 'USER_NOT_FOUND')
   }
-
-  // 检查是否已存在
-  const existing = await prisma.library.findUnique({
-    where: {
-      userId_novelId: {
-        userId: session.user.id,
-        novelId: parseInt(novelId)
-      }
-    }
-  })
 
   if (existing) {
     return successResponse({ message: 'Already in library' })

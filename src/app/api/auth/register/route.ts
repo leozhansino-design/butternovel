@@ -1,6 +1,8 @@
 // src/app/api/auth/register/route.ts
+// 🔧 OPTIMIZED: User registration with best practices for serverless
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { handlePrismaError, retryOperation, successResponse, errorResponse } from '@/lib/api-utils'
 import bcrypt from 'bcryptjs'
 import { validateWithSchema, registerSchema } from '@/lib/validators'
 
@@ -8,13 +10,10 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    // ✅ 使用 Zod 验证
+    // ✅ Validate request with Zod
     const validation = validateWithSchema(registerSchema, body)
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error, details: validation.details },
-        { status: 400 }
-      )
+      return errorResponse(validation.error, 400, { details: validation.details })
     }
 
     const { name, email, password } = validation.data
@@ -25,84 +24,64 @@ export async function POST(req: Request) {
       const isReservedName = normalizedName === 'butterpicks' || normalizedName.includes('butterpicks')
 
       if (isReservedName) {
-        return NextResponse.json(
-          { error: 'This name is reserved for official accounts. Please choose a different name.' },
-          { status: 400 }
+        return errorResponse(
+          'This name is reserved for official accounts. Please choose a different name.',
+          400
         )
       }
     }
 
-    // 检查邮箱是否已存在
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 400 }
-      )
-    }
-
-    // 加密密码
+    // 🔧 BEST PRACTICE: Hash password BEFORE retry loop to avoid redundant work
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // 创建用户
-    const user = await prisma.user.create({
-      data: {
-        name: name ? name.trim() : 'User',
-        email,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    })
+    // 🔧 BEST PRACTICE: Use retry wrapper for transient connection errors
+    // This prevents registration failures due to temporary connection pool exhaustion
+    const user = await retryOperation(
+      async () => {
+        // Check if email already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+          select: { id: true },
+        })
 
-    return NextResponse.json(
-      { message: 'User created successfully', user },
-      { status: 201 }
+        if (existingUser) {
+          throw new Error('EMAIL_EXISTS')
+        }
+
+        // Create user
+        return await prisma.user.create({
+          data: {
+            name: name ? name.trim() : 'User',
+            email,
+            password: hashedPassword,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        })
+      },
+      'register user',
+      3 // Retry up to 3 times on connection errors
+    )
+
+    console.log(`[Register] User created successfully: ${user.email}`)
+
+    return successResponse(
+      { user },
+      'User created successfully',
+      201
     )
   } catch (error: unknown) {
-    // 🔧 FIX: Better error logging for debugging
-    console.error('[Register API] Error creating user:', error)
+    console.error('[Register] Error creating user:', error)
 
-    // Check for specific Prisma errors
-    if (error && typeof error === 'object' && 'code' in error) {
-      const prismaError = error as { code: string; meta?: unknown }
-
-      // P2002: Unique constraint violation (duplicate email)
-      if (prismaError.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'Email already registered' },
-          { status: 400 }
-        )
-      }
-
-      // P1001: Can't reach database server
-      if (prismaError.code === 'P1001') {
-        console.error('[Register API] Database connection failed')
-        return NextResponse.json(
-          { error: 'Database connection error. Please try again.' },
-          { status: 503 }
-        )
-      }
-
-      // P1008: Operations timed out
-      if (prismaError.code === 'P1008') {
-        console.error('[Register API] Database timeout')
-        return NextResponse.json(
-          { error: 'Request timed out. Please try again.' },
-          { status: 504 }
-        )
-      }
+    // Handle business logic errors
+    if (error instanceof Error && error.message === 'EMAIL_EXISTS') {
+      return errorResponse('Email already registered', 409)
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    // Handle Prisma errors with proper status codes and user-friendly messages
+    return handlePrismaError(error, 'Failed to create user')
   }
 }

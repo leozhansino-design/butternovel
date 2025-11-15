@@ -45,14 +45,14 @@ export const CacheKeys = {
 // ========================
 
 export const CacheTTL = {
-  HOME_FEATURED: 60 * 60, // 1 小时
-  HOME_CATEGORY: 60 * 30, // 30 分钟
-  CATEGORY_NOVELS: 60 * 30, // 30 分钟
-  CATEGORY_PAGE: 60 * 30, // 30 分钟
-  NOVEL_DETAIL: 60 * 10, // 10 分钟
-  NOVEL_STATS: 60 * 5, // 5 分钟
-  USER_LIBRARY: 60 * 60, // 🔧 FIXED: 1小时过期，避免内存泄漏（之前是0=永不过期）
-  USER_LIBRARY_CHECK: 60 * 5, // 5 分钟
+  HOME_FEATURED: 300, // 5 分钟 (300秒) - 频繁变化的数据
+  HOME_CATEGORY: 900, // 15 分钟 (900秒) - 适度变化的数据
+  CATEGORY_NOVELS: 900, // 15 分钟
+  CATEGORY_PAGE: 900, // 15 分钟
+  NOVEL_DETAIL: 600, // 10 分钟
+  NOVEL_STATS: 300, // 5 分钟
+  USER_LIBRARY: 3600, // 1 小时 - 避免内存泄漏
+  USER_LIBRARY_CHECK: 300, // 5 分钟
 } as const;
 
 // ========================

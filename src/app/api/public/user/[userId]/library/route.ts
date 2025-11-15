@@ -7,6 +7,12 @@ export async function GET(
 ) {
   try {
     const { userId } = await context.params
+    const { searchParams } = new URL(request.url)
+
+    // ⚡ OPTIMIZATION: Add pagination to prevent large queries
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const skip = (page - 1) * limit
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
@@ -27,33 +33,49 @@ export async function GET(
 
     // If library is private, return empty list
     if (user.libraryPrivacy) {
-      return NextResponse.json({ novels: [] })
+      return NextResponse.json({
+        novels: [],
+        pagination: {
+          page,
+          limit,
+          totalCount: 0,
+          totalPages: 0,
+          hasMore: false
+        }
+      })
     }
 
-    // Fetch user's library
-    const libraryEntries = await prisma.library.findMany({
-      where: { userId },
-      include: {
-        novel: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            coverImage: true,
-            status: true,
-            totalChapters: true,
-            category: {
-              select: {
-                name: true
+    // ⚡ OPTIMIZATION: Fetch library entries and total count in parallel
+    const [libraryEntries, totalCount] = await Promise.all([
+      prisma.library.findMany({
+        where: { userId },
+        include: {
+          novel: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              coverImage: true,
+              status: true,
+              totalChapters: true,
+              category: {
+                select: {
+                  name: true
+                }
               }
             }
           }
-        }
-      },
-      orderBy: {
-        addedAt: 'desc'
-      }
-    }) as any[]
+        },
+        orderBy: {
+          addedAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.library.count({
+        where: { userId }
+      })
+    ]) as any[]
 
     const novels = libraryEntries.map(entry => ({
       id: entry.novel.id,
@@ -66,7 +88,16 @@ export async function GET(
       addedAt: entry.addedAt.toISOString()
     }))
 
-    return NextResponse.json({ novels })
+    return NextResponse.json({
+      novels,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + novels.length < totalCount
+      }
+    })
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
