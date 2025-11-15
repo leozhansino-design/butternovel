@@ -78,8 +78,29 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
       })
 
       if (result?.error) {
-        // Show specific error message from NextAuth
-        setError(result.error)
+        // ✅ Parse and show user-friendly error messages
+        // NextAuth returns error types like "CredentialsSignin", but we want the actual message
+        let errorMessage = 'Login failed. Please check your credentials.'
+
+        // Check URL for error parameter (NextAuth adds it to callbackUrl)
+        const url = new URL(window.location.href)
+        const authError = url.searchParams.get('error')
+
+        if (authError) {
+          errorMessage = decodeURIComponent(authError)
+        } else if (result.error === 'CredentialsSignin') {
+          errorMessage = 'Invalid email/username or password. Please try again.'
+        } else if (result.error.includes('No account found')) {
+          errorMessage = 'No account found with this email or username.'
+        } else if (result.error.includes('Google sign-in')) {
+          errorMessage = 'This account uses Google sign-in. Please use "Continue with Google".'
+        } else if (result.error.includes('Incorrect password')) {
+          errorMessage = 'Incorrect password. Please try again.'
+        } else {
+          errorMessage = result.error
+        }
+
+        setError(errorMessage)
         setLoading(false)
       } else if (result?.ok) {
         // Login successful - refresh page to update session
@@ -87,7 +108,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
         onClose()
       }
     } catch (error) {
-      setError('Something went wrong. Please try again')
+      setError('Something went wrong. Please try again.')
       setLoading(false)
     }
   }
@@ -128,6 +149,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
         return
       }
 
+      // ✅ Wait briefly for database to commit before auto-login
+      // This prevents "No account found" error when database write is still in progress
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       // ✅ 注册成功后自动登录，留在当前页面
       const result = await signIn('credentials', {
         identifier: registerData.email,
@@ -136,15 +161,28 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
       })
 
       if (result?.error) {
-        setError(result.error)
+        // ✅ Parse error message for better UX
+        let errorMessage = 'Auto-login failed. Please try logging in manually.'
+
+        if (result.error === 'CredentialsSignin') {
+          errorMessage = 'Account created successfully! Please try logging in.'
+        } else if (result.error.includes('No account found')) {
+          errorMessage = 'Account created successfully! Please try logging in.'
+        } else {
+          errorMessage = result.error
+        }
+
+        setError(errorMessage)
         setLoading(false)
+        // Switch to login tab so user can login manually
+        setActiveTab('login')
       } else if (result?.ok) {
         // Registration and login successful - refresh page to update session
         router.refresh()
         onClose()
       }
     } catch (error) {
-      setError('Something went wrong')
+      setError('Something went wrong. Please try again.')
       setLoading(false)
     }
   }
