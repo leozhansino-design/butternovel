@@ -1,25 +1,26 @@
 import { NextResponse } from 'next/server'
 import { SignJWT } from 'jose'
 import bcrypt from 'bcryptjs'
+import { prisma } from '@/lib/prisma'
 
-// 管理员账号配置
-const ADMIN_ACCOUNTS = [
-  {
-    email: 'admin@butternovel.com',
-    // 你生成的密码哈希 - 密码: mySecretPassword123
-    password: '$2b$10$Uv8oQom7iY.ifYFiVY9i4eXwSiEUngoQa14jGWvMxyS2c/hpSyZ5C',
-    name: 'Admin',
-    role: 'super_admin'
-  },
-]
+// 🔧 SECURITY: Removed hardcoded admin accounts
+// Admin accounts now stored in database (admin_profile table)
 
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json()
 
-    // 查找管理员
-    const admin = ADMIN_ACCOUNTS.find(a => a.email === email)
-    
+    // 🔧 SECURITY: Query admin from database instead of hardcoded array
+    const admin = await prisma.adminProfile.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        displayName: true,
+      }
+    })
+
     if (!admin) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -27,9 +28,17 @@ export async function POST(request: Request) {
       )
     }
 
+    // 🔧 SECURITY: Check if password is set in database
+    if (!admin.password) {
+      return NextResponse.json(
+        { error: 'Password not configured. Please contact system administrator.' },
+        { status: 401 }
+      )
+    }
+
     // 验证密码
     const isValid = await bcrypt.compare(password, admin.password)
-    
+
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -37,15 +46,24 @@ export async function POST(request: Request) {
       )
     }
 
-    // 创建 JWT Token
+    // 🔧 SECURITY: Enforce JWT secret in production
+    const jwtSecret = process.env.ADMIN_JWT_SECRET
+    if (!jwtSecret && process.env.NODE_ENV === 'production') {
+      console.error('❌ CRITICAL: ADMIN_JWT_SECRET not set in production!')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
     const secret = new TextEncoder().encode(
-      process.env.ADMIN_JWT_SECRET || 'butternovel-super-secret-key-min-32-characters-long-change-in-production'
+      jwtSecret || 'butternovel-dev-secret-min-32-characters-long-DO-NOT-USE-IN-PRODUCTION'
     )
 
     const token = await new SignJWT({
       email: admin.email,
-      name: admin.name,
-      role: admin.role,
+      name: admin.displayName,
+      role: 'super_admin', // AdminProfile doesn't have role field, default to super_admin
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
@@ -53,12 +71,12 @@ export async function POST(request: Request) {
       .sign(secret)
 
     // 设置 Cookie
-    const response = NextResponse.json({ 
+    const response = NextResponse.json({
       success: true,
       admin: {
         email: admin.email,
-        name: admin.name,
-        role: admin.role
+        name: admin.displayName,
+        role: 'super_admin'
       }
     })
 
