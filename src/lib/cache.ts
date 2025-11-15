@@ -249,6 +249,14 @@ export async function invalidateNovelRelatedCache(
   }
 
   await Promise.all(tasks);
+
+  // ⚡ Clear Writer Dashboard cache
+  try {
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/dashboard', 'page');
+  } catch (error) {
+    console.error('✗ Failed to clear Writer Dashboard cache:', error);
+  }
 }
 
 // ========================

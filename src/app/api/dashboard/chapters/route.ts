@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { validateWithSchema, chapterCreateSchema, countWords, WORD_LIMITS } from '@/lib/validators'
+import { invalidateNovelRelatedCache } from '@/lib/cache'
 
 // POST - Create a new chapter
 export async function POST(request: NextRequest) {
@@ -98,6 +99,20 @@ export async function POST(request: NextRequest) {
         where: { id: novelId },
         data: { isPublished: true },
       })
+    }
+
+    // ⚡ Clear cache: Dashboard, home page, and novel detail page
+    const updatedNovel = await prisma.novel.findUnique({
+      where: { id: novelId },
+      include: {
+        category: {
+          select: { slug: true }
+        }
+      }
+    })
+
+    if (updatedNovel) {
+      await invalidateNovelRelatedCache(updatedNovel.slug, updatedNovel.category?.slug)
     }
 
     return NextResponse.json({

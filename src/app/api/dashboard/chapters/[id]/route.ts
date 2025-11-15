@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { validateWithSchema, chapterUpdateSchema } from '@/lib/validators'
+import { invalidateNovelRelatedCache } from '@/lib/cache'
 
 // GET - Get a single chapter
 export async function GET(
@@ -152,6 +153,20 @@ export async function PUT(
       }
     }
 
+    // ⚡ Clear cache: Dashboard, home page, and novel detail page
+    const novel = await prisma.novel.findUnique({
+      where: { id: existingChapter.novelId },
+      include: {
+        category: {
+          select: { slug: true }
+        }
+      }
+    })
+
+    if (novel) {
+      await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
+    }
+
     return NextResponse.json({
       message: 'Chapter updated successfully',
       chapter: updatedChapter,
@@ -227,6 +242,20 @@ export async function DELETE(
           AND "chapterNumber" > ${existingChapter.chapterNumber}
       `
     })
+
+    // ⚡ Clear cache: Dashboard, home page, and novel detail page
+    const novel = await prisma.novel.findUnique({
+      where: { id: existingChapter.novelId },
+      include: {
+        category: {
+          select: { slug: true }
+        }
+      }
+    })
+
+    if (novel) {
+      await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
+    }
 
     return NextResponse.json({
       message: 'Chapter deleted successfully',
