@@ -63,10 +63,14 @@ export interface HomePageData {
  * 节省：94% Redis commands
  */
 export async function getHomePageData(): Promise<HomePageData> {
+  console.log('[Homepage] 🏠 getHomePageData called');
+  const totalStartTime = Date.now();
+
   try {
     return await getOrSet(
       'home:all-data', // 单个缓存键
       async () => {
+        console.log('[Homepage] 📊 Fetching fresh data from database');
         // 1. 获取精选小说
         const featured = await withRetry(() =>
           prisma.$queryRaw<Array<{
@@ -148,12 +152,13 @@ export async function getHomePageData(): Promise<HomePageData> {
           timestamp: Date.now()
         };
 
+        console.log(`[Homepage] ✅ Data prepared: ${featured.length} featured, ${categories.length} categories`);
         return data;
       },
       CacheTTL.HOME_FEATURED // 使用 1 小时 TTL
     );
   } catch (error) {
-    console.error('[Homepage] Database error:', error);
+    console.error('[Homepage] 🚨 Database error:', error);
 
     // 返回空数据而不是抛出错误，避免整个页面崩溃
     return {
@@ -162,6 +167,9 @@ export async function getHomePageData(): Promise<HomePageData> {
       categoryNovels: {},
       timestamp: Date.now()
     };
+  } finally {
+    const totalDuration = Date.now() - totalStartTime;
+    console.log(`[Homepage] 🏁 getHomePageData complete (total: ${totalDuration}ms)`);
   }
 }
 
