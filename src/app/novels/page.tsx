@@ -3,7 +3,6 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
-import { getOrSet, CacheKeys, CacheTTL } from '@/lib/cache'
 import Footer from '@/components/shared/Footer'
 import BookCard from '@/components/front/BookCard'
 
@@ -14,94 +13,99 @@ interface NovelsPageProps {
 }
 
 async function getAllNovels(categorySlug?: string) {
-  const cacheKey = categorySlug
-    ? CacheKeys.CATEGORY_NOVELS(categorySlug)
-    : 'novels:all'
+  console.log(`[Novels] 📚 Fetching novels${categorySlug ? ` (category: ${categorySlug})` : ' (all)'}`)
+  const startTime = Date.now()
 
-  return await getOrSet(
-    cacheKey,
-    async () => {
-      if (categorySlug) {
-        // Verify category exists
-        const category = await withRetry(() =>
-          prisma.category.findUnique({
-            where: { slug: categorySlug },
-            select: { id: true, name: true, slug: true }
-          })
-        ) as any
+  // 🔧 OPTIMIZATION: Removed Redis caching for novels page
+  // Reason: Same as category pages - ISR already caches the HTML for 30 minutes
+  // This page has even LOWER traffic than individual category pages
+  // Eliminates unnecessary Redis calls while maintaining fast response via ISR
 
-        if (!category) {
-          return { category: null, novels: [] }
-        }
+  if (categorySlug) {
+    // Verify category exists
+    const category = await withRetry(() =>
+      prisma.category.findUnique({
+        where: { slug: categorySlug },
+        select: { id: true, name: true, slug: true }
+      })
+    ) as any
 
-        // Get novels in this category
-        const novels = await withRetry(() =>
-          prisma.$queryRaw<Array<{
-            id: number
-            title: string
-            slug: string
-            coverImage: string
-            status: string
-            chaptersCount: number
-            likesCount: number
-            categoryName: string
-          }>>`
-            SELECT
-              n.id,
-              n.title,
-              n.slug,
-              n."coverImage",
-              n.status,
-              c.name as "categoryName",
-              (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
-              (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
-            FROM "Novel" n
-            INNER JOIN "Category" c ON n."categoryId" = c.id
-            WHERE n."isPublished" = true
-              AND n."isBanned" = false
-              AND c.slug = ${categorySlug}
-            ORDER BY n."createdAt" DESC
-            LIMIT 200
-          `
-        ) as any[]
+    if (!category) {
+      console.log(`[Novels] ❌ Category not found: ${categorySlug}`)
+      return { category: null, novels: [] }
+    }
 
-        return { category, novels }
-      } else {
-        // Get all novels
-        const novels = await withRetry(() =>
-          prisma.$queryRaw<Array<{
-            id: number
-            title: string
-            slug: string
-            coverImage: string
-            status: string
-            chaptersCount: number
-            likesCount: number
-            categoryName: string
-          }>>`
-            SELECT
-              n.id,
-              n.title,
-              n.slug,
-              n."coverImage",
-              n.status,
-              c.name as "categoryName",
-              (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
-              (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
-            FROM "Novel" n
-            INNER JOIN "Category" c ON n."categoryId" = c.id
-            WHERE n."isPublished" = true
-              AND n."isBanned" = false
-            ORDER BY n."createdAt" DESC
-            LIMIT 200
-          `
-        ) as any[]
+    // Get novels in this category
+    const novels = await withRetry(() =>
+      prisma.$queryRaw<Array<{
+        id: number
+        title: string
+        slug: string
+        coverImage: string
+        status: string
+        chaptersCount: number
+        likesCount: number
+        categoryName: string
+      }>>`
+        SELECT
+          n.id,
+          n.title,
+          n.slug,
+          n."coverImage",
+          n.status,
+          c.name as "categoryName",
+          (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+          (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
+        FROM "Novel" n
+        INNER JOIN "Category" c ON n."categoryId" = c.id
+        WHERE n."isPublished" = true
+          AND n."isBanned" = false
+          AND c.slug = ${categorySlug}
+        ORDER BY n."createdAt" DESC
+        LIMIT 200
+      `
+    ) as any[]
 
-        return { category: null, novels }
-      }
-    },
-    CacheTTL.CATEGORY_NOVELS
-  )
+    const duration = Date.now() - startTime
+    console.log(`[Novels] ✅ Loaded ${category.name}: ${novels.length} novels (${duration}ms)`)
+
+    return { category, novels }
+  } else {
+    // Get all novels
+    const novels = await withRetry(() =>
+      prisma.$queryRaw<Array<{
+        id: number
+        title: string
+        slug: string
+        coverImage: string
+        status: string
+        chaptersCount: number
+        likesCount: number
+        categoryName: string
+      }>>`
+        SELECT
+          n.id,
+          n.title,
+          n.slug,
+          n."coverImage",
+          n.status,
+          c.name as "categoryName",
+          (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+          (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
+        FROM "Novel" n
+        INNER JOIN "Category" c ON n."categoryId" = c.id
+        WHERE n."isPublished" = true
+          AND n."isBanned" = false
+        ORDER BY n."createdAt" DESC
+        LIMIT 200
+      `
+    ) as any[]
+
+    const duration = Date.now() - startTime
+    console.log(`[Novels] ✅ Loaded all novels: ${novels.length} novels (${duration}ms)`)
+
+    return { category: null, novels }
+  }
 }
 
 async function NovelsContent({ categorySlug }: { categorySlug?: string }) {
