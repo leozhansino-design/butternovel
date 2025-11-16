@@ -24,6 +24,7 @@ async function getChapterData(slug: string, chapterNumber: number) {
             id: true,
             title: true,
             slug: true,
+            status: true,
             _count: {
               select: { chapters: true }
             }
