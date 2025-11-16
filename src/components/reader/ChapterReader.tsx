@@ -23,6 +23,7 @@ interface Novel {
   id: number
   title: string
   slug: string
+  status: 'ONGOING' | 'COMPLETED'
 }
 
 interface ChapterReaderProps {
@@ -485,6 +486,27 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                 </div>
               )}
             </div>
+
+            {/* 完结小说最后一章的结尾标记 */}
+            {!hasNext && novel.status === 'COMPLETED' && (
+              <div className="mt-20 mb-12 flex flex-col items-center">
+                {/* 顶部细线 */}
+                <div className="w-32 h-px bg-gray-300 mb-8"></div>
+
+                {/* END 文字 */}
+                <div className="text-center space-y-3">
+                  <div className="text-sm tracking-[0.3em] text-gray-400 uppercase font-light">
+                    End
+                  </div>
+                  <div className="text-xs text-gray-400 font-light italic">
+                    — Thank you for reading —
+                  </div>
+                </div>
+
+                {/* 底部细线 */}
+                <div className="w-32 h-px bg-gray-300 mt-8"></div>
+              </div>
+            )}
           </div>
 
           {readMode === 'page' && pages.length > 1 && (
