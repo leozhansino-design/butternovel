@@ -2,9 +2,9 @@
 
 > **快速参考**: 每次开发前必读,帮助 Claude 快速理解项目上下文
 
-**最后更新**: 2025-11-11
-**项目版本**: MVP v1.0
-**当前分支**: claude/create-claude-documentation-011CV2BhbHUKCFgL1PkoDhT9
+**最后更新**: 2025-11-16
+**项目版本**: MVP v2.0 (终极简化完成)
+**架构**: ISR + Supabase (完全移除Redis) ✨
 
 ---
 
@@ -17,9 +17,10 @@
 5. [开发规范](#5-开发规范)
 6. [API 路由](#6-api-路由)
 7. [核心功能模块](#7-核心功能模块)
-8. [常见任务参考](#8-常见任务参考)
-9. [环境变量](#9-环境变量)
-10. [已完成功能](#10-已完成功能)
+8. [缓存策略](#8-缓存策略) ⭐ NEW!
+9. [常见任务参考](#9-常见任务参考)
+10. [环境变量](#10-环境变量)
+11. [已完成功能](#11-已完成功能)
 
 ---
 
@@ -734,9 +735,156 @@ git commit -m "fix: 修复管理员登录 session 问题"
 
 ---
 
-## 8. 常见任务参考
+## 8. 缓存策略 ⭐ 重要!
 
-### 8.1 添加新的 API 路由
+### 8.1 核心原则
+
+**终极架构: ISR + Supabase (完全移除Redis)**
+
+项目经过三轮深度优化,采用极简架构:
+
+```
+┌────────────────────────────────────────────────────────┐
+│ 所有公共页面 (Homepage, Category, Novels, 小说详情)    │
+│ ✅ 使用: Next.js ISR (HTML缓存)                        │
+│ ❌ 不用: Redis                                         │
+│ 原因: ISR已缓存完整HTML,足够快速                       │
+└────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────┐
+│ 所有API endpoints (Library, Profile, etc)             │
+│ ✅ 使用: 直接查询Supabase                              │
+│ ❌ 不用: Redis                                         │
+│ 原因: Supabase查询无限制,性能完全够用                  │
+└────────────────────────────────────────────────────────┘
+```
+
+### 8.2 为什么完全移除Redis?
+
+**成本分析:**
+
+```
+Supabase (你的数据库):
+✅ 查询次数: 无限制
+✅ 成本: 几乎为0
+✅ 性能: ~100-200ms/查询
+✅ 有完善的索引优化
+→ 结论: 完全够用,不需要Redis!
+
+Redis (Upstash):
+⚠️ Commands有限制 (免费10,000/天)
+❌ 需要额外管理
+❌ 增加架构复杂度
+❌ ISR期间完全用不到
+→ 结论: 不值得使用!
+```
+
+**设计哲学: 极简架构 - ISR + Supabase = 完美组合!**
+
+### 8.3 实际应用
+
+#### ✅ 公共页面 - 只用ISR
+
+```typescript
+// src/app/category/[slug]/page.tsx
+export const revalidate = 1800  // 30分钟ISR
+
+async function getCategoryWithNovels(slug: string) {
+  // ✅ 直接查DB,让ISR缓存HTML
+  const category = await prisma.category.findUnique({ where: { slug } })
+  const novels = await prisma.$queryRaw`...`
+  return { category, novels }
+}
+
+// 工作原理:
+// 第1次访问 → 查DB → 渲染HTML → ISR缓存30分钟
+// 第2-N次 (30分钟内) → 直接返回缓存HTML (0 DB!)
+// 30分钟后 → 重复第1步
+```
+
+#### ✅ 首页数据 - 直接查DB + ISR
+
+```typescript
+// src/lib/cache-optimized.ts
+export async function getHomePageData(): Promise<HomePageData> {
+  // ✅ 直接查DB,ISR缓存HTML (1小时)
+  const [featured, categories] = await Promise.all([
+    prisma.novel.findMany({ where: { isFeatured: true } }),
+    prisma.category.findMany()
+  ])
+
+  // 聚合数据
+  return { featured, categories, categoryNovels }
+}
+
+// 工作原理:
+// - 每小时只查询DB一次
+// - ISR缓存HTML保护性能
+// - 无需Redis复杂度
+```
+
+#### ✅ API Endpoints - 直接查DB
+
+```typescript
+// src/app/api/library/route.ts
+export async function GET(request: NextRequest) {
+  const session = await auth()
+
+  // ✅ 直接查DB,性能完全够用 (~100ms)
+  const novels = await prisma.library.findMany({
+    where: { userId: session.user.id }
+  })
+
+  return NextResponse.json({ novels })
+}
+
+// 工作原理:
+// - 每次查询DB (~100ms)
+// - 使用频率低 (每用户每天3次)
+// - Supabase查询无限制
+// - 无需Redis缓存
+```
+
+### 8.4 性能数据
+
+**10,000 DAU场景预估:**
+
+| 类型 | 频率 | DB查询/天 |
+|------|------|----------|
+| 首页 ISR revalidate | 24次/天 | 24次 |
+| Category页面 | 48次/天 × 15个 | 720次 |
+| Novels详情 | 48次/天 × 20本 | 960次 |
+| Library API | 100用户 × 3次 | 300次 |
+| **总计** | - | **~2000次** |
+
+**Supabase完全够用:**
+- ✅ 查询次数: 无限制
+- ✅ 性能: 有索引优化
+- ✅ 成本: $0
+
+### 8.5 开发指南
+
+**添加新功能时:**
+
+1. **这是公共页面吗?**
+   - YES → 使用ISR,设置revalidate
+   - NO → 继续
+
+2. **这是API endpoint吗?**
+   - YES → 直接查DB,无需缓存
+   - NO → 根据具体情况
+
+**关键文件:**
+- `src/lib/cache-optimized.ts` - 首页数据获取
+- `src/app/api/library/route.ts` - Library API示例
+- ~~`src/lib/redis.ts`~~ - 已移除
+- ~~`src/lib/redis-monitor.ts`~~ - 已移除
+
+---
+
+## 9. 常见任务参考
+
+### 9.1 添加新的 API 路由
 
 ```typescript
 // src/app/api/my-route/route.ts
@@ -756,7 +904,7 @@ export async function GET(request: NextRequest) {
 }
 ```
 
-### 8.2 创建新页面
+### 9.2 创建新页面
 
 ```typescript
 // src/app/my-page/page.tsx
@@ -774,7 +922,7 @@ export default async function MyPage() {
 }
 ```
 
-### 8.3 添加管理员页面
+### 9.3 添加管理员页面
 
 需要包含认证检查:
 
@@ -793,7 +941,7 @@ export default async function AdminPage() {
 }
 ```
 
-### 8.4 数据库迁移
+### 9.4 数据库迁移
 
 ```bash
 # 1. 修改 prisma/schema.prisma
@@ -807,7 +955,7 @@ npm run db:push
 npm run db:studio
 ```
 
-### 8.5 上传图片到 Cloudinary
+### 9.5 上传图片到 Cloudinary
 
 ```typescript
 // src/lib/cloudinary.ts
@@ -829,7 +977,7 @@ export async function uploadImage(file: File, folder: string) {
 }
 ```
 
-### 8.6 创建管理员账户
+### 9.6 创建管理员账户
 
 ```bash
 # 使用脚本创建
@@ -842,9 +990,9 @@ npm run db:studio
 
 ---
 
-## 9. 环境变量
+## 10. 环境变量
 
-### 9.1 必需的环境变量
+### 10.1 必需的环境变量
 
 ```bash
 # .env.local
@@ -865,7 +1013,7 @@ CLOUDINARY_API_SECRET="your-api-secret"
 ADMIN_JWT_SECRET="your-admin-jwt-secret"  # openssl rand -base64 32
 ```
 
-### 9.2 可选的环境变量
+### 10.2 可选的环境变量
 
 ```bash
 # Google OAuth (如果使用)
@@ -878,9 +1026,9 @@ NODE_ENV="development"
 
 ---
 
-## 10. 已完成功能
+## 11. 已完成功能
 
-### 10.1 MVP 核心功能 ✅
+### 11.1 MVP 核心功能 ✅
 
 - [x] **用户系统**
   - [x] 注册/登录
@@ -915,7 +1063,7 @@ NODE_ENV="development"
   - [x] 组件代码分割
   - [x] 防抖搜索
 
-### 10.2 待开发功能 ⏳
+### 11.2 待开发功能 ⏳
 
 - [ ] **评论系统**
   - [ ] 发布评论

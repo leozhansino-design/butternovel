@@ -104,6 +104,12 @@ async function HomeContent() {
 // - force-dynamic 导致每次请求都渲染 = 每次都调用 Redis = 2500+ commands/天
 export const revalidate = 3600
 
+// 🔧 CRITICAL FIX: Override Upstash's default no-store fetch behavior
+// Upstash Redis SDK uses fetch with cache: 'no-store' by default
+// This conflicts with Next.js ISR and causes "dynamic server usage" errors
+// By setting fetchCache = 'force-cache', we allow ISR to work properly
+export const fetchCache = 'force-cache'
+
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">

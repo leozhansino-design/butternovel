@@ -88,6 +88,9 @@ export async function getOrSet<T>(
   fetchFunction: () => Promise<T>,
   ttl?: number
 ): Promise<T> {
+  console.log(`[Cache] 🔄 getOrSet called for key: ${key}, TTL: ${ttl || 'none'}`);
+  const startTime = Date.now();
+
   try {
     // 1. 尝试从缓存获取
     const cached = await safeRedisGet(key);
@@ -96,6 +99,8 @@ export async function getOrSet<T>(
       // 缓存命中
       try {
         const data = JSON.parse(cached);
+        const duration = Date.now() - startTime;
+        console.log(`[Cache] ✅ Cache HIT for ${key} (total: ${duration}ms)`);
         return data as T;
       } catch (parseError) {
         console.error(`[Cache] Parse failed (${key}):`, parseError);
@@ -105,7 +110,11 @@ export async function getOrSet<T>(
     }
 
     // 2. 缓存未命中或 Redis 不可用，从数据库获取
+    console.log(`[Cache] ❌ Cache MISS for ${key}, fetching from database...`);
+    const dbStartTime = Date.now();
     const data = await fetchFunction();
+    const dbDuration = Date.now() - dbStartTime;
+    console.log(`[Cache] 💾 Database fetch complete for ${key} (${dbDuration}ms)`);
 
     // 3. 将数据写入缓存（如果 Redis 可用）
     if (isRedisConnected()) {
@@ -115,8 +124,12 @@ export async function getOrSet<T>(
       } catch (serializeError) {
         console.error(`[Cache] Serialization failed (${key}):`, serializeError);
       }
+    } else {
+      console.log(`[Cache] ⚠️ Redis not available, skipping cache write for ${key}`);
     }
 
+    const totalDuration = Date.now() - startTime;
+    console.log(`[Cache] ✅ Complete for ${key} (total: ${totalDuration}ms, db: ${dbDuration}ms)`);
     return data;
   } catch (error) {
     // 如果任何步骤失败，回退到直接查询数据库
@@ -173,6 +186,9 @@ export async function invalidatePattern(pattern: string): Promise<void> {
  * - 减少 Redis commands：从 3+ 降到 1（67% reduction）
  */
 export async function invalidateHomeCache(): Promise<void> {
+  console.log('[Cache] 🗑️ invalidateHomeCache called');
+  const startTime = Date.now();
+
   // ✅ 优化：只删除单个缓存键（O(1)操作）
   await invalidate('home:all-data');
 
@@ -180,9 +196,13 @@ export async function invalidateHomeCache(): Promise<void> {
   try {
     const { revalidatePath } = await import('next/cache');
     revalidatePath('/', 'page');
+    console.log('[Cache] ✅ Homepage revalidated');
   } catch (error) {
-    console.error('Failed to revalidate homepage:', error);
+    console.error('[Cache] Failed to revalidate homepage:', error);
   }
+
+  const duration = Date.now() - startTime;
+  console.log(`[Cache] ✅ invalidateHomeCache complete (${duration}ms)`);
 }
 
 /**

@@ -3,7 +3,6 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
-import { getOrSet, CacheKeys, CacheTTL } from '@/lib/cache'
 import Footer from '@/components/shared/Footer'
 import BookCard from '@/components/front/BookCard'
 
@@ -14,65 +13,72 @@ interface CategoryPageProps {
 }
 
 async function getCategoryWithNovels(slug: string) {
-  return await getOrSet(
-    CacheKeys.CATEGORY_PAGE(slug),
-    async () => {
-      // Get category
-      const category = await withRetry(() =>
-        prisma.category.findUnique({
-          where: { slug },
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          }
-        })
-      ) as any
+  console.log(`[Category] 📂 Fetching category: ${slug}`)
+  const startTime = Date.now()
 
-      if (!category) {
-        return null
+  // 🔧 OPTIMIZATION: Removed Redis caching for category pages
+  // Reason: ISR already caches the rendered HTML for 30 minutes
+  // - 30 min内访问 → 直接返回缓存HTML → 0 Redis calls, 0 DB queries
+  // - 30 min后访问 → 查DB → 生成新HTML → 0 Redis calls, 1 DB query
+  // This eliminates ~1440 Redis calls/day (15 categories × 2 calls × 48 periods)
+
+  // Get category
+  const category = await withRetry(() =>
+    prisma.category.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
       }
+    })
+  ) as any
 
-      // Get novels in this category
-      const novels = await withRetry(() =>
-        prisma.$queryRaw<Array<{
-          id: number
-          title: string
-          slug: string
-          coverImage: string
-          blurb: string
-          status: string
-          chaptersCount: number
-          likesCount: number
-          categoryName: string
-        }>>`
-          SELECT
-            n.id,
-            n.title,
-            n.slug,
-            n."coverImage",
-            n.blurb,
-            n.status,
-            c.name as "categoryName",
-            (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
-            (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
-          FROM "Novel" n
-          INNER JOIN "Category" c ON n."categoryId" = c.id
-          WHERE n."isPublished" = true
-            AND n."isBanned" = false
-            AND c.slug = ${slug}
-          ORDER BY n."createdAt" DESC
-          LIMIT 100
-        `
-      ) as any[]
+  if (!category) {
+    console.log(`[Category] ❌ Category not found: ${slug}`)
+    return null
+  }
 
-      return {
-        category,
-        novels
-      }
-    },
-    CacheTTL.CATEGORY_PAGE
-  )
+  // Get novels in this category
+  const novels = await withRetry(() =>
+    prisma.$queryRaw<Array<{
+      id: number
+      title: string
+      slug: string
+      coverImage: string
+      blurb: string
+      status: string
+      chaptersCount: number
+      likesCount: number
+      categoryName: string
+    }>>`
+      SELECT
+        n.id,
+        n.title,
+        n.slug,
+        n."coverImage",
+        n.blurb,
+        n.status,
+        c.name as "categoryName",
+        (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+        (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
+      FROM "Novel" n
+      INNER JOIN "Category" c ON n."categoryId" = c.id
+      WHERE n."isPublished" = true
+        AND n."isBanned" = false
+        AND c.slug = ${slug}
+      ORDER BY n."createdAt" DESC
+      LIMIT 100
+    `
+  ) as any[]
+
+  const duration = Date.now() - startTime
+  console.log(`[Category] ✅ Loaded ${category.name}: ${novels.length} novels (${duration}ms)`)
+
+  return {
+    category,
+    novels
+  }
 }
 
 async function CategoryContent({ slug }: { slug: string }) {
@@ -134,6 +140,11 @@ async function CategoryContent({ slug }: { slug: string }) {
 // Next.js 会缓存渲染后的页面，只在 revalidate 时间后重新获取数据
 // 这样可以避免每次请求都访问 Redis，大幅减少 Redis commands
 export const revalidate = 1800
+
+// 🔧 CRITICAL FIX: Override Upstash's default no-store fetch behavior
+// Without this, Upstash Redis's no-store fetch causes "dynamic server usage" errors
+// and prevents ISR from working, resulting in Redis calls on EVERY request
+export const fetchCache = 'force-cache'
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params

@@ -1,10 +1,9 @@
 // src/app/novels/[slug]/page.tsx
-// ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容 + Redis 缓存
+// ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容 + ISR缓存
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
-import { getOrSet, CacheKeys, CacheTTL } from '@/lib/cache'
 import Image from 'next/image'
 import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
@@ -20,69 +19,79 @@ import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
 import AuthorNameButton from '@/components/novel/AuthorNameButton'
 
 async function getNovel(slug: string) {
-  // ⚡ 性能优化：Redis 缓存 + 移除content + 数据库重试
-  return await getOrSet(
-    CacheKeys.NOVEL(slug),
-    async () => {
-      const novel = await withRetry(
-        () => prisma.novel.findUnique({
-          where: { slug },
+  console.log(`[Novel] 📖 Fetching novel: ${slug}`)
+  const startTime = Date.now()
+
+  // 🔧 OPTIMIZATION: Removed Redis caching for novel detail pages
+  // Reason: ISR already caches the rendered HTML for 1 hour
+  // - Most novels have low traffic - ISR HTML cache sufficient for hot novels
+  // - Novel details rarely change (no need for dual caching)
+  // - Eliminates ~960 Redis calls/day for 20 popular novels
+
+  const novel = await withRetry(
+    () => prisma.novel.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        coverImage: true,
+        blurb: true,
+        authorId: true,  // ⭐ Added for follow functionality
+        authorName: true,
+        status: true,
+        isPublished: true,
+        isBanned: true,
+        viewCount: true,
+        likeCount: true,
+        wordCount: true,
+        averageRating: true,
+        totalRatings: true,
+        createdAt: true,
+        category: true,
+        chapters: {
+          where: { isPublished: true },
+          orderBy: { chapterNumber: 'asc' },
+          // ⚡ 获取所有章节元数据（用于目录显示）
           select: {
             id: true,
             title: true,
-            slug: true,
-            coverImage: true,
-            blurb: true,
-            authorId: true,  // ⭐ Added for follow functionality
-            authorName: true,
-            status: true,
-            isPublished: true,
-            isBanned: true,
-            viewCount: true,
-            likeCount: true,
+            chapterNumber: true,
             wordCount: true,
-            averageRating: true,
-            totalRatings: true,
             createdAt: true,
-            category: true,
-            chapters: {
-              where: { isPublished: true },
-              orderBy: { chapterNumber: 'asc' },
-              // ⚡ 获取所有章节元数据（用于目录显示）
-              select: {
-                id: true,
-                title: true,
-                chapterNumber: true,
-                wordCount: true,
-                createdAt: true,
-                // ⚡ content 移除，由 ChapterPreview 组件单独加载
-              },
-            },
-            _count: {
-              select: {
-                chapters: true,
-                likes: true,
-              },
-            },
+            // ⚡ content 移除，由 ChapterPreview 组件单独加载
           },
-        }),
-        { operationName: 'Get novel details' }
-      ) as any
+        },
+        _count: {
+          select: {
+            chapters: true,
+            likes: true,
+          },
+        },
+      },
+    }),
+    { operationName: 'Get novel details' }
+  ) as any
 
-      if (!novel || !novel.isPublished || novel.isBanned) {
-        return null
-      }
+  if (!novel || !novel.isPublished || novel.isBanned) {
+    console.log(`[Novel] ❌ Novel not found or not available: ${slug}`)
+    return null
+  }
 
-      return novel
-    },
-    CacheTTL.NOVEL_DETAIL
-  )
+  const duration = Date.now() - startTime
+  console.log(`[Novel] ✅ Loaded "${novel.title}": ${novel.chapters?.length || 0} chapters (${duration}ms)`)
+
+  return novel
 }
 
 // ✅ ISR: 1小时重新验证
 // Next.js 会缓存渲染后的页面，只在 revalidate 时间后重新获取数据
 // 这样可以避免每次请求都访问 Redis，大幅减少 Redis commands
 export const revalidate = 3600
+
+// 🔧 CRITICAL FIX: Override Upstash's default no-store fetch behavior
+// Without this, Upstash Redis's no-store fetch causes "dynamic server usage" errors
+export const fetchCache = 'force-cache'
 
 /**
  * ⚡ CRITICAL FIX: Removed server-side auth() call

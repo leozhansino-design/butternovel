@@ -8,6 +8,7 @@
  */
 
 import { Redis } from '@upstash/redis';
+import { logRedisCall, getCallStack } from './redis-monitor';
 
 let redis: Redis | null = null;
 let isRedisAvailable = false;
@@ -17,6 +18,8 @@ let isRedisAvailable = false;
  * 使用 Upstash REST API（不需要 TCP 连接）
  */
 export function getRedisClient(): Redis | null {
+  const startTime = Date.now();
+
   // 如果已经初始化，直接返回
   if (redis) {
     return redis;
@@ -28,6 +31,13 @@ export function getRedisClient(): Redis | null {
 
   if (isBuildTime) {
     isRedisAvailable = false;
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'INIT',
+      result: 'FAIL',
+      duration: Date.now() - startTime,
+      error: 'Build time - skipped',
+    });
     return null;
   }
 
@@ -36,8 +46,16 @@ export function getRedisClient(): Redis | null {
   const restToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!restUrl || !restToken) {
-    console.error('[Redis] Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN');
+    const error = '[Redis] Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN';
+    console.error(error);
     isRedisAvailable = false;
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'INIT',
+      result: 'FAIL',
+      duration: Date.now() - startTime,
+      error,
+    });
     return null;
   }
 
@@ -48,10 +66,25 @@ export function getRedisClient(): Redis | null {
     });
 
     isRedisAvailable = true;
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'INIT',
+      result: 'SUCCESS',
+      duration: Date.now() - startTime,
+    });
+    console.log('[Redis] ✅ Initialized successfully');
     return redis;
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('[Redis] Initialization failed:', error);
     isRedisAvailable = false;
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'INIT',
+      result: 'FAIL',
+      duration: Date.now() - startTime,
+      error: errorMsg,
+    });
     return null;
   }
 }
@@ -71,26 +104,70 @@ export function isRedisConnected(): boolean {
  * 解决方案：如果返回的不是字符串，手动转回 JSON 字符串
  */
 export async function safeRedisGet(key: string): Promise<string | null> {
+  const startTime = Date.now();
   const client = getRedisClient();
+
   if (!client) {
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'GET',
+      key,
+      result: 'FAIL',
+      duration: Date.now() - startTime,
+      error: 'Client not available',
+      stackTrace: getCallStack(),
+    });
     return null;
   }
 
   try {
     const value = await client.get(key);
+    const duration = Date.now() - startTime;
 
     if (value === null || value === undefined) {
+      logRedisCall({
+        timestamp: new Date().toISOString(),
+        operation: 'GET',
+        key,
+        result: 'MISS',
+        duration,
+        stackTrace: getCallStack(),
+      });
+      console.log(`[Redis] ❌ MISS: ${key} (${duration}ms)`);
       return null;
     }
 
     // 如果 Upstash 返回的是对象而不是字符串，重新序列化
+    let resultValue: string;
     if (typeof value === 'string') {
-      return value;
+      resultValue = value;
     } else {
-      return JSON.stringify(value);
+      resultValue = JSON.stringify(value);
     }
+
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'GET',
+      key,
+      result: 'HIT',
+      duration,
+      stackTrace: getCallStack(),
+    });
+    console.log(`[Redis] ✅ HIT: ${key} (${duration}ms, ${resultValue.length} bytes)`);
+    return resultValue;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`[Redis GET] Failed (${key}):`, error);
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'GET',
+      key,
+      result: 'FAIL',
+      duration,
+      error: errorMsg,
+      stackTrace: getCallStack(),
+    });
     return null;
   }
 }
@@ -107,8 +184,19 @@ export async function safeRedisSet(
   value: string,
   ttlSeconds?: number
 ): Promise<boolean> {
+  const startTime = Date.now();
   const client = getRedisClient();
+
   if (!client) {
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'SET',
+      key,
+      result: 'FAIL',
+      duration: Date.now() - startTime,
+      error: 'Client not available',
+      stackTrace: getCallStack(),
+    });
     return false;
   }
 
@@ -125,9 +213,30 @@ export async function safeRedisSet(
       await client.set(key, value);
     }
 
+    const duration = Date.now() - startTime;
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'SET',
+      key,
+      result: 'SUCCESS',
+      duration,
+      stackTrace: getCallStack(),
+    });
+    console.log(`[Redis] 💾 SET: ${key} (${duration}ms, ${value.length} bytes, TTL: ${ttlSeconds || 'none'})`);
     return true;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`[Redis SET] Failed (${key}):`, error);
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'SET',
+      key,
+      result: 'FAIL',
+      duration,
+      error: errorMsg,
+      stackTrace: getCallStack(),
+    });
     return false;
   }
 }
@@ -137,19 +246,53 @@ export async function safeRedisSet(
  * 支持删除单个或多个键
  */
 export async function safeRedisDel(key: string | string[]): Promise<boolean> {
+  const startTime = Date.now();
   const client = getRedisClient();
+  const keys = Array.isArray(key) ? key : [key];
+  const keyStr = keys.join(', ');
+
   if (!client) {
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'DEL',
+      key: keyStr,
+      result: 'FAIL',
+      duration: Date.now() - startTime,
+      error: 'Client not available',
+      stackTrace: getCallStack(),
+    });
     return false;
   }
 
   try {
-    const keys = Array.isArray(key) ? key : [key];
     if (keys.length > 0) {
       await client.del(...keys);
     }
+
+    const duration = Date.now() - startTime;
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'DEL',
+      key: keyStr,
+      result: 'SUCCESS',
+      duration,
+      stackTrace: getCallStack(),
+    });
+    console.log(`[Redis] 🗑️ DEL: ${keyStr} (${duration}ms, ${keys.length} key(s))`);
     return true;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('[Redis DEL] Failed:', error);
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'DEL',
+      key: keyStr,
+      result: 'FAIL',
+      duration,
+      error: errorMsg,
+      stackTrace: getCallStack(),
+    });
     return false;
   }
 }
@@ -159,24 +302,72 @@ export async function safeRedisDel(key: string | string[]): Promise<boolean> {
  * 注意：Upstash 不直接支持 KEYS 命令，这里使用简化版本
  */
 export async function safeRedisDelPattern(pattern: string): Promise<number> {
+  const startTime = Date.now();
   const client = getRedisClient();
+
   if (!client) {
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'KEYS',
+      pattern,
+      result: 'FAIL',
+      duration: Date.now() - startTime,
+      error: 'Client not available',
+      stackTrace: getCallStack(),
+    });
     return 0;
   }
 
   try {
     // Upstash REST API 支持 keys 命令
     const keys = await client.keys(pattern);
+    const keysDuration = Date.now() - startTime;
+
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'KEYS',
+      pattern,
+      result: 'SUCCESS',
+      duration: keysDuration,
+      stackTrace: getCallStack(),
+    });
 
     if (!keys || keys.length === 0) {
+      console.log(`[Redis] 🔍 KEYS: ${pattern} (${keysDuration}ms, 0 found)`);
       return 0;
     }
 
+    console.log(`[Redis] 🔍 KEYS: ${pattern} (${keysDuration}ms, ${keys.length} found: ${keys.join(', ')})`);
+
     // 删除所有匹配的键
+    const delStartTime = Date.now();
     await client.del(...keys);
+    const delDuration = Date.now() - delStartTime;
+
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'DEL',
+      key: keys.join(', '),
+      result: 'SUCCESS',
+      duration: delDuration,
+      stackTrace: getCallStack(),
+    });
+    console.log(`[Redis] 🗑️ DEL (pattern): ${keys.length} key(s) deleted (${delDuration}ms)`);
+
     return keys.length;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`[Redis DEL PATTERN] Failed (${pattern}):`, error);
+    logRedisCall({
+      timestamp: new Date().toISOString(),
+      operation: 'KEYS',
+      pattern,
+      result: 'FAIL',
+      duration,
+      error: errorMsg,
+      stackTrace: getCallStack(),
+    });
     return 0;
   }
 }
