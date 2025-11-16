@@ -3,8 +3,8 @@
 > **快速参考**: 每次开发前必读,帮助 Claude 快速理解项目上下文
 
 **最后更新**: 2025-11-16
-**项目版本**: MVP v1.1 (性能优化完成)
-**Redis优化**: 使用量降低91% ✅
+**项目版本**: MVP v2.0 (终极简化完成)
+**架构**: ISR + Supabase (完全移除Redis) ✨
 
 ---
 
@@ -739,51 +739,47 @@ git commit -m "fix: 修复管理员登录 session 问题"
 
 ### 8.1 核心原则
 
-**关键理解: ISR vs Redis**
+**终极架构: ISR + Supabase (完全移除Redis)**
 
-项目经过深度优化,确立了清晰的缓存策略:
+项目经过三轮深度优化,采用极简架构:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ 公共页面 (Homepage, Category, Novels, 小说详情)         │
-│ ✅ 使用: Next.js ISR (HTML缓存)                         │
-│ ❌ 不用: Redis数据缓存                                  │
-│ 原因: ISR已缓存完整HTML,双重缓存是冗余                  │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│ 所有公共页面 (Homepage, Category, Novels, 小说详情)    │
+│ ✅ 使用: Next.js ISR (HTML缓存)                        │
+│ ❌ 不用: Redis                                         │
+│ 原因: ISR已缓存完整HTML,足够快速                       │
+└────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────┐
-│ 用户特定数据 (Library, Profile, API)                    │
-│ ✅ 使用: Redis缓存                                      │
-│ ❌ 不用: ISR (每个用户数据不同,无法共享)                 │
-│ 原因: 快速响应,减少DB查询                               │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ 聚合数据 (Homepage首页数据)                              │
-│ ✅ 使用: Redis缓存 + ISR                                │
-│ 原因: 聚合多个数据源,减少DB压力                          │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│ 所有API endpoints (Library, Profile, etc)             │
+│ ✅ 使用: 直接查询Supabase                              │
+│ ❌ 不用: Redis                                         │
+│ 原因: Supabase查询无限制,性能完全够用                  │
+└────────────────────────────────────────────────────────┘
 ```
 
-### 8.2 成本分析
+### 8.2 为什么完全移除Redis?
 
-**为什么这样设计?**
+**成本分析:**
 
 ```
 Supabase (你的数据库):
 ✅ 查询次数: 无限制
 ✅ 成本: 几乎为0
+✅ 性能: ~100-200ms/查询
 ✅ 有完善的索引优化
-→ 结论: 多用DB,不怕查询
+→ 结论: 完全够用,不需要Redis!
 
-Upstash Redis:
+Redis (Upstash):
 ⚠️ Commands有限制 (免费10,000/天)
-❌ 每次GET/SET都计数
-❌ 这才是瓶颈所在
-→ 结论: 节约使用Redis
+❌ 需要额外管理
+❌ 增加架构复杂度
+❌ ISR期间完全用不到
+→ 结论: 不值得使用!
 ```
 
-**设计哲学: 让数据库多干活,让Redis少干活!**
+**设计哲学: 极简架构 - ISR + Supabase = 完美组合!**
 
 ### 8.3 实际应用
 
@@ -794,9 +790,6 @@ Upstash Redis:
 export const revalidate = 1800  // 30分钟ISR
 
 async function getCategoryWithNovels(slug: string) {
-  // ❌ 不要用Redis缓存!
-  // return await getOrSet('category:xxx', async () => { ... })
-
   // ✅ 直接查DB,让ISR缓存HTML
   const category = await prisma.category.findUnique({ where: { slug } })
   const novels = await prisma.$queryRaw`...`
@@ -805,104 +798,87 @@ async function getCategoryWithNovels(slug: string) {
 
 // 工作原理:
 // 第1次访问 → 查DB → 渲染HTML → ISR缓存30分钟
-// 第2-N次 (30分钟内) → 直接返回缓存HTML (0 Redis, 0 DB!)
+// 第2-N次 (30分钟内) → 直接返回缓存HTML (0 DB!)
 // 30分钟后 → 重复第1步
 ```
 
-#### ✅ 用户数据 - 用Redis
+#### ✅ 首页数据 - 直接查DB + ISR
+
+```typescript
+// src/lib/cache-optimized.ts
+export async function getHomePageData(): Promise<HomePageData> {
+  // ✅ 直接查DB,ISR缓存HTML (1小时)
+  const [featured, categories] = await Promise.all([
+    prisma.novel.findMany({ where: { isFeatured: true } }),
+    prisma.category.findMany()
+  ])
+
+  // 聚合数据
+  return { featured, categories, categoryNovels }
+}
+
+// 工作原理:
+// - 每小时只查询DB一次
+// - ISR缓存HTML保护性能
+// - 无需Redis复杂度
+```
+
+#### ✅ API Endpoints - 直接查DB
 
 ```typescript
 // src/app/api/library/route.ts
 export async function GET(request: NextRequest) {
   const session = await auth()
 
-  // ✅ 用户特定数据,用Redis缓存
-  const novels = await getOrSet(
-    CacheKeys.USER_LIBRARY(session.user.id),
-    async () => {
-      return await prisma.library.findMany({
-        where: { userId: session.user.id }
-      })
-    },
-    CacheTTL.USER_LIBRARY
-  )
+  // ✅ 直接查DB,性能完全够用 (~100ms)
+  const novels = await prisma.library.findMany({
+    where: { userId: session.user.id }
+  })
 
   return NextResponse.json({ novels })
 }
 
 // 工作原理:
-// - 每个用户数据不同,无法用ISR
-// - Redis 5分钟TTL,快速响应
+// - 每次查询DB (~100ms)
+// - 使用频率低 (每用户每天3次)
+// - Supabase查询无限制
+// - 无需Redis缓存
 ```
 
-#### ✅ 聚合数据 - Redis + ISR
+### 8.4 性能数据
 
-```typescript
-// src/lib/cache-optimized.ts
-export async function getHomePageData(): Promise<HomePageData> {
-  // ✅ 首页聚合多个数据源,用Redis减少DB压力
-  return await getOrSet(
-    'home:all-data',
-    async () => {
-      // 聚合: featured novels + all categories + stats
-      const [featured, categories, stats] = await Promise.all([
-        prisma.novel.findMany({ where: { isFeatured: true } }),
-        prisma.category.findMany(),
-        getStats()
-      ])
-      return { featured, categories, stats }
-    },
-    CacheTTL.HOME_FEATURED  // 1小时
-  )
-}
+**10,000 DAU场景预估:**
 
-// 工作原理:
-// - Redis缓存数据 (1小时)
-// - ISR缓存HTML (1小时)
-// - 双重缓存保护DB
-```
+| 类型 | 频率 | DB查询/天 |
+|------|------|----------|
+| 首页 ISR revalidate | 24次/天 | 24次 |
+| Category页面 | 48次/天 × 15个 | 720次 |
+| Novels详情 | 48次/天 × 20本 | 960次 |
+| Library API | 100用户 × 3次 | 300次 |
+| **总计** | - | **~2000次** |
 
-### 8.4 优化效果
+**Supabase完全够用:**
+- ✅ 查询次数: 无限制
+- ✅ 性能: 有索引优化
+- ✅ 成本: $0
 
-| 页面类型 | 之前 | 现在 | 降低 |
-|---------|------|------|------|
-| Category页面 | 1440次Redis/天 | 0次 | -100% |
-| Novels列表 | 96次/天 | 0次 | -100% |
-| 小说详情 | 960次/天 | 0次 | -100% |
-| 首页 | 50次/天 | 50次/天 | - |
-| Library API | 200次/天 | 200次/天 | - |
-| **总计** | **2746次/天** | **250次/天** | **-91%** |
+### 8.5 开发指南
 
-### 8.5 开发注意事项
+**添加新功能时:**
 
-**添加新页面时,问自己:**
+1. **这是公共页面吗?**
+   - YES → 使用ISR,设置revalidate
+   - NO → 继续
 
-1. **这是公共页面吗?** (所有用户看到相同内容)
-   - YES → 只用ISR,不用Redis
-   - NO → 继续下一步
-
-2. **这是用户特定数据吗?** (每个用户不同)
-   - YES → 用Redis缓存
-   - NO → 继续下一步
-
-3. **这是聚合多个数据源吗?**
-   - YES → Redis + ISR
-   - NO → 只用ISR
+2. **这是API endpoint吗?**
+   - YES → 直接查DB,无需缓存
+   - NO → 根据具体情况
 
 **关键文件:**
-- `src/lib/cache.ts` - Redis缓存工具
-- `src/lib/cache-optimized.ts` - 首页数据缓存
-- `src/lib/redis-monitor.ts` - Redis监控系统
-- `src/app/api/redis-monitor/route.ts` - 监控API
-
-**监控Redis使用:**
-```bash
-# 查看Redis统计
-GET /api/redis-monitor?action=stats
-
-# 查看调用日志
-GET /api/redis-monitor?action=logs&limit=100
-```
+- `src/lib/cache-optimized.ts` - 首页数据获取
+- `src/app/api/library/route.ts` - Library API示例
+- ~~`src/lib/redis.ts`~~ - 已移除
+- ~~`src/lib/redis-monitor.ts`~~ - 已移除
 
 ---
 
