@@ -90,13 +90,19 @@ async function HomeContent() {
 }
 
 // ✅ ISR: 1小时重新验证
+// Next.js 会在第一次请求时渲染页面，然后缓存HTML 1小时
+// 这样可以避免每次请求都访问 Redis，将 Redis 使用量从 2500+/天 减少到 ~50/天（98% reduction）
+//
+// 工作原理：
+// - 第一次请求：渲染 → Redis GET（可能miss）→ DB查询 → Redis SET → Next.js缓存HTML
+// - 后续请求（1小时内）：直接返回缓存的HTML（0 Redis调用，0 DB查询）
+// - 1小时后或revalidatePath触发：重新渲染一次，重复上述循环
+//
+// ⚠️ 移除了 force-dynamic：
+// - 之前错误地认为需要 force-dynamic 让 Redis 工作
+// - 实际上 ISR 在运行时渲染（非构建时），Redis 可以正常工作
+// - force-dynamic 导致每次请求都渲染 = 每次都调用 Redis = 2500+ commands/天
 export const revalidate = 3600
-
-// ⚡ 动态渲染配置
-// 原因：静态生成时Redis会被跳过（redis.ts:30-36的isBuildTime检查）
-// 使用force-dynamic确保页面在运行时渲染，让Redis缓存正常工作
-// getOrSet内部会处理Redis缓存逻辑：缓存命中返回缓存，未命中查数据库并写入
-export const dynamic = 'force-dynamic'
 
 export default function HomePage() {
   return (
