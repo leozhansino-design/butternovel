@@ -84,6 +84,10 @@ async function getNovel(slug: string) {
 // 这样可以避免每次请求都访问 Redis，大幅减少 Redis commands
 export const revalidate = 3600
 
+// 🔧 CRITICAL FIX: Override Upstash's default no-store fetch behavior
+// Without this, Upstash Redis's no-store fetch causes "dynamic server usage" errors
+export const fetchCache = 'force-cache'
+
 /**
  * ⚡ CRITICAL FIX: Removed server-side auth() call
  *

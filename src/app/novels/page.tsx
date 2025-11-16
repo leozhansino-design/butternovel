@@ -164,6 +164,9 @@ async function NovelsContent({ categorySlug }: { categorySlug?: string }) {
 // 这样可以避免每次请求都访问 Redis，大幅减少 Redis commands
 export const revalidate = 1800
 
+// 🔧 CRITICAL FIX: Override Upstash's default no-store fetch behavior
+export const fetchCache = 'force-cache'
+
 export default async function NovelsPage({ searchParams }: NovelsPageProps) {
   const params = await searchParams
   const categorySlug = params.category

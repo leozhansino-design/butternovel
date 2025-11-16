@@ -135,6 +135,11 @@ async function CategoryContent({ slug }: { slug: string }) {
 // 这样可以避免每次请求都访问 Redis，大幅减少 Redis commands
 export const revalidate = 1800
 
+// 🔧 CRITICAL FIX: Override Upstash's default no-store fetch behavior
+// Without this, Upstash Redis's no-store fetch causes "dynamic server usage" errors
+// and prevents ISR from working, resulting in Redis calls on EVERY request
+export const fetchCache = 'force-cache'
+
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params
 
