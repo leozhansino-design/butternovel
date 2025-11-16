@@ -1,19 +1,20 @@
 /**
- * 优化的缓存策略
- * 目标：减少 Redis commands 消耗
+ * 首页数据获取
  *
- * 问题：首页使用 17 个独立缓存键，每次渲染 = 17 reads
- * 解决：合并为 1 个缓存键，每次渲染 = 1 read
+ * 🔧 OPTIMIZATION: 完全移除Redis缓存
+ * 原因: Next.js ISR已经缓存了完整的HTML页面(1小时)
+ * - ISR期间，HTML直接返回，根本不会执行这个函数
+ * - Redis缓存数据在ISR期间完全用不到
+ * - 每小时只需查询DB一次，性能完全够用
  *
- * 优化效果：
- * - 第一次访问：1 read (miss) + 1 write = 2 commands
- * - 后续访问（缓存命中）：1 read = 1 command
- * - 节省：从 17 commands → 1 command（减少 94%）
+ * 架构: 完全依赖ISR + Supabase
+ * - 第1次访问: 查DB → 渲染HTML → ISR缓存1小时
+ * - 后续访问(1小时内): 直接返回缓存HTML (0 Redis, 0 DB!)
+ * - 1小时后: 重复第1步
  */
 
 import { prisma } from '@/lib/prisma';
 import { withRetry, withConcurrency } from '@/lib/db-utils';
-import { getOrSet, CacheKeys, CacheTTL } from '@/lib/cache';
 
 /**
  * 首页数据类型
@@ -48,115 +49,107 @@ export interface HomePageData {
 }
 
 /**
- * 获取所有首页数据（单个缓存键）
+ * 获取所有首页数据
  *
- * 优化前：
- * - home:featured (1 read)
- * - home:all-categories (1 read)
- * - home:category:{slug} (15 reads)
- * = 17 reads per 渲染
- *
- * 优化后：
- * - home:all-data (1 read)
- * = 1 read per 渲染
- *
- * 节省：94% Redis commands
+ * 🔧 OPTIMIZATION: 移除Redis缓存,完全依赖ISR
+ * - 直接查询数据库
+ * - ISR缓存HTML (1小时)
+ * - 每小时只查询1次DB
  */
 export async function getHomePageData(): Promise<HomePageData> {
   console.log('[Homepage] 🏠 getHomePageData called');
   const totalStartTime = Date.now();
 
   try {
-    return await getOrSet(
-      'home:all-data', // 单个缓存键
-      async () => {
-        console.log('[Homepage] 📊 Fetching fresh data from database');
-        // 1. 获取精选小说
-        const featured = await withRetry(() =>
+    console.log('[Homepage] 📊 Fetching fresh data from database');
+
+    // 1. 获取精选小说
+    const featured = await withRetry(() =>
+      prisma.$queryRaw<Array<{
+        id: number;
+        title: string;
+        slug: string;
+        coverImage: string;
+        blurb: string;
+        categoryName: string;
+      }>>`
+        SELECT
+          n.id,
+          n.title,
+          n.slug,
+          n."coverImage",
+          n.blurb,
+          c.name as "categoryName"
+        FROM "Novel" n
+        INNER JOIN "Category" c ON n."categoryId" = c.id
+        WHERE n."isPublished" = true AND n."isBanned" = false
+        ORDER BY RANDOM()
+        LIMIT 24
+      `
+    ) as any[];
+
+    // 2. 获取所有分类
+    const categories = await withRetry(() =>
+      prisma.category.findMany({
+        orderBy: { order: 'asc' }
+      })
+    ) as any[];
+
+    // 3. 为每个分类获取小说（并发控制）
+    const categoryNovelsArray = await withConcurrency(
+      categories.map(category => async () => {
+        return await withRetry(() =>
           prisma.$queryRaw<Array<{
             id: number;
             title: string;
             slug: string;
             coverImage: string;
-            blurb: string;
             categoryName: string;
+            status: string;
+            chaptersCount: number;
+            likesCount: number;
           }>>`
             SELECT
               n.id,
               n.title,
               n.slug,
               n."coverImage",
-              n.blurb,
-              c.name as "categoryName"
+              n.status,
+              c.name as "categoryName",
+              (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+              (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
             FROM "Novel" n
             INNER JOIN "Category" c ON n."categoryId" = c.id
-            WHERE n."isPublished" = true AND n."isBanned" = false
+            WHERE n."isPublished" = true
+              AND n."isBanned" = false
+              AND c.slug = ${category.slug}
             ORDER BY RANDOM()
-            LIMIT 24
+            LIMIT 10
           `
-        ) as any[];
+        );
+      }),
+      { concurrency: 3 }
+    ) as any[];
 
-        // 2. 获取所有分类
-        const categories = await withRetry(() =>
-          prisma.category.findMany({
-            orderBy: { order: 'asc' }
-          })
-        ) as any[];
+    // 4. 构造 categoryNovels 映射
+    const categoryNovels: Record<string, Array<any>> = {};
+    categories.forEach((category, index) => {
+      categoryNovels[category.slug] = categoryNovelsArray[index];
+    });
 
-        // 3. 为每个分类获取小说（并发控制）
-        const categoryNovelsArray = await withConcurrency(
-          categories.map(category => async () => {
-            return await withRetry(() =>
-              prisma.$queryRaw<Array<{
-                id: number;
-                title: string;
-                slug: string;
-                coverImage: string;
-                categoryName: string;
-                status: string;
-                chaptersCount: number;
-                likesCount: number;
-              }>>`
-                SELECT
-                  n.id,
-                  n.title,
-                  n.slug,
-                  n."coverImage",
-                  n.status,
-                  c.name as "categoryName",
-                  (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
-                  (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
-                FROM "Novel" n
-                INNER JOIN "Category" c ON n."categoryId" = c.id
-                WHERE n."isPublished" = true
-                  AND n."isBanned" = false
-                  AND c.slug = ${category.slug}
-                ORDER BY RANDOM()
-                LIMIT 10
-              `
-            );
-          }),
-          { concurrency: 3 }
-        ) as any[];
+    const data: HomePageData = {
+      featured,
+      categories,
+      categoryNovels,
+      timestamp: Date.now()
+    };
 
-        // 4. 构造 categoryNovels 映射
-        const categoryNovels: Record<string, Array<any>> = {};
-        categories.forEach((category, index) => {
-          categoryNovels[category.slug] = categoryNovelsArray[index];
-        });
+    console.log(`[Homepage] ✅ Data prepared: ${featured.length} featured, ${categories.length} categories`);
 
-        const data: HomePageData = {
-          featured,
-          categories,
-          categoryNovels,
-          timestamp: Date.now()
-        };
+    const totalDuration = Date.now() - totalStartTime;
+    console.log(`[Homepage] 🏁 getHomePageData complete (total: ${totalDuration}ms)`);
 
-        console.log(`[Homepage] ✅ Data prepared: ${featured.length} featured, ${categories.length} categories`);
-        return data;
-      },
-      CacheTTL.HOME_FEATURED // 使用 1 小时 TTL
-    );
+    return data;
   } catch (error) {
     console.error('[Homepage] 🚨 Database error:', error);
 
@@ -167,16 +160,17 @@ export async function getHomePageData(): Promise<HomePageData> {
       categoryNovels: {},
       timestamp: Date.now()
     };
-  } finally {
-    const totalDuration = Date.now() - totalStartTime;
-    console.log(`[Homepage] 🏁 getHomePageData complete (total: ${totalDuration}ms)`);
   }
 }
 
 /**
  * 清除首页缓存（当内容更新时）
+ *
+ * 🔧 OPTIMIZATION: 移除Redis缓存清理
+ * 现在只需要清除Next.js的ISR缓存
  */
 export async function invalidateHomePageCache(): Promise<void> {
-  const { invalidate } = await import('@/lib/cache');
-  await invalidate('home:all-data');
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/', 'page');
+  console.log('[Homepage] ✅ ISR cache invalidated for homepage');
 }
