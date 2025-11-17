@@ -5,7 +5,13 @@ export async function getAdminSession() {
   const cookieStore = await cookies()
   const token = cookieStore.get('admin-token')
 
+  console.log('[Auth Debug] Cookie check:', {
+    hasCookie: !!token,
+    tokenPreview: token ? `${token.value.substring(0, 20)}...` : 'none'
+  })
+
   if (!token) {
+    console.log('[Auth Debug] No admin-token cookie found')
     return null
   }
 
@@ -16,6 +22,18 @@ export async function getAdminSession() {
     )
 
     const { payload } = await jwtVerify(token.value, secret)
+
+    console.log('[Auth Debug] JWT verified successfully:', {
+      hasId: !!payload.id,
+      email: payload.email,
+      role: payload.role
+    })
+
+    // Check if token has the new id field
+    if (!payload.id) {
+      console.error('[Auth Debug] Token missing id field - user needs to re-login')
+      return null
+    }
 
     return {
       id: payload.id as string,        // ✅ FIX: Include id field

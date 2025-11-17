@@ -37,11 +37,17 @@ export function withAdminAuth<T extends any[]>(
     const session = await getAdminSession()
 
     if (!session) {
+      console.log('[Admin Middleware] Authentication failed - no valid session')
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        {
+          error: 'Unauthorized',
+          message: 'Please login to continue. If you were already logged in, please logout and login again to refresh your session.'
+        },
         { status: 401 }
       )
     }
+
+    console.log('[Admin Middleware] Auth success for user:', session.email)
 
     // 调用实际的处理函数
     return handler(session as AdminSession, ...args)

@@ -76,18 +76,27 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       success: true,
       admin: {
+        id: admin.id,                      // ✅ Include id in response
         email: admin.email,
         name: admin.displayName,
         role: 'super_admin'
-      }
+      },
+      message: 'Login successful'
     })
 
+    // ✅ Set cookie with explicit options to ensure it works across environments
     response.cookies.set('admin-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
+    })
+
+    console.log('[Login] Admin logged in successfully:', {
+      email: admin.email,
+      id: admin.id,
+      env: process.env.NODE_ENV
     })
 
     return response
