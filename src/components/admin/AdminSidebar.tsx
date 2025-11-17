@@ -8,6 +8,7 @@ import {
   BookOpen,
   Users,
   Plus,
+  Upload,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -23,6 +24,11 @@ const menuItems = [
     title: 'Upload Novel',
     href: '/admin/novels/new',
     icon: Plus,
+  },
+  {
+    title: 'Batch Upload',
+    href: '/admin/batch-upload',
+    icon: Upload,
   },
   {
     title: 'Manage Novels',
