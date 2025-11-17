@@ -3,18 +3,25 @@
 import './validate-env'
 import { PrismaClient } from '@prisma/client'
 
-// 1. Validate required environment variables
-const requiredEnvVars = ['DATABASE_URL']
-const missingVars = requiredEnvVars.filter(key => !process.env[key])
+// 🔧 CRITICAL FIX: Only run server-side validation in Node.js environment
+// This prevents "Missing environment variables" errors when accidentally included in client bundle
+if (typeof window === 'undefined') {
+  // 1. Validate required environment variables
+  const requiredEnvVars = ['DATABASE_URL']
+  const missingVars = requiredEnvVars.filter(key => !process.env[key])
 
-if (missingVars.length > 0) {
-  throw new Error(`Missing environment variables: ${missingVars.join(', ')}`)
+  if (missingVars.length > 0) {
+    throw new Error(`Missing environment variables: ${missingVars.join(', ')}`)
+  }
 }
 
 // 2. Configure database connection string with connection pooling
 // Remove potential quotes from environment variable
-const rawDatabaseUrl = (process.env.DATABASE_URL || '').replace(/^["']|["']$/g, '')
-const databaseUrl = new URL(rawDatabaseUrl)
+// 🔧 FIX: Only configure in Node.js environment (not in browser)
+const rawDatabaseUrl = typeof window === 'undefined'
+  ? (process.env.DATABASE_URL || '').replace(/^["']|["']$/g, '')
+  : ''
+const databaseUrl = rawDatabaseUrl ? new URL(rawDatabaseUrl) : null as any
 
 // Adjust connection pool parameters based on environment
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
@@ -45,11 +52,13 @@ const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 // ✅ Gives slow queries time to complete (not fast-fail)
 // ✅ Maintains statement cache for better performance
 // ✅ Supports 10,000+ DAU with excellent user experience
-databaseUrl.searchParams.set('connection_limit', '8')
-databaseUrl.searchParams.set('pool_timeout', '20')
-databaseUrl.searchParams.set('connect_timeout', '10')
-databaseUrl.searchParams.set('socket_timeout', '45')
-databaseUrl.searchParams.set('pgbouncer', 'true')
+if (databaseUrl) {
+  databaseUrl.searchParams.set('connection_limit', '8')
+  databaseUrl.searchParams.set('pool_timeout', '20')
+  databaseUrl.searchParams.set('connect_timeout', '10')
+  databaseUrl.searchParams.set('socket_timeout', '45')
+  databaseUrl.searchParams.set('pgbouncer', 'true')
+}
 
 // 3. 🔧 CRITICAL FIX: Proper Prisma singleton pattern
 // This prevents creating multiple PrismaClient instances in development
@@ -139,15 +148,18 @@ function createPrismaClient() {
 }
 
 // 🔧 FIX: Reuse existing instance in development, create new in production
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+// 🔧 CRITICAL: Only create Prisma client in Node.js environment (server-side)
+export const prisma = typeof window === 'undefined'
+  ? (globalForPrisma.prisma ?? createPrismaClient())
+  : null as any
 
 // 4. Keep singleton in development (prevents connection pool exhaustion)
-if (process.env.NODE_ENV !== 'production') {
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }
 
-// 5. Graceful shutdown
-if (process.env.NODE_ENV === 'production') {
+// 5. Graceful shutdown (server-side only)
+if (typeof window === 'undefined' && process.env.NODE_ENV === 'production') {
   process.on('beforeExit', async () => {
     await prisma.$disconnect()
   })
