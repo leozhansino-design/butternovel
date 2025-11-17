@@ -11,6 +11,12 @@ type ChapterPreviewProps = {
 }
 
 async function getChapterContent(chapterId: number) {
+  // 🔧 FIX: Only run database queries in Node.js environment
+  if (typeof window !== 'undefined' || !prisma) {
+    console.warn('ChapterPreview: Skipping database query (client-side or prisma unavailable)');
+    return null;
+  }
+
   const chapter = await prisma.chapter.findUnique({
     where: { id: chapterId },
     select: {

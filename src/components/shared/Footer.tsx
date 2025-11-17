@@ -2,6 +2,12 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 
 async function getTopCategories() {
+  // 🔧 FIX: Only run database queries in Node.js environment
+  if (typeof window !== 'undefined' || !prisma) {
+    console.warn('Footer: Skipping database query (client-side or prisma unavailable)');
+    return [];
+  }
+
   try {
     const categories = await prisma.category.findMany({
       orderBy: { order: 'asc' },
