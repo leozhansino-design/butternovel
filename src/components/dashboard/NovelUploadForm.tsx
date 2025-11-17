@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, X, Plus, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
+import TagsInput from '@/components/shared/TagsInput'
 
 // Category data (Genres)
 const genres = [
@@ -44,6 +45,7 @@ export default function NovelUploadForm() {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [coverPreview, setCoverPreview] = useState<string>('')
+  const [tags, setTags] = useState<string[]>([]) // ⭐ 标签状态
 
   const [formData, setFormData] = useState({
     title: '',
@@ -139,6 +141,25 @@ export default function NovelUploadForm() {
 
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed')
+      }
+
+      // ⭐ 如果有标签，更新标签
+      if (tags.length > 0) {
+        try {
+          const tagsResponse = await fetch(`/api/novels/${data.novel.id}/tags`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tags }),
+          })
+
+          if (!tagsResponse.ok) {
+            console.warn('Failed to update tags, but novel was created successfully')
+          }
+        } catch (tagError) {
+          console.error('Tags update error:', tagError)
+        }
       }
 
       alert(`Success! Novel "${data.novel.title}" has been created! Redirecting to add first chapter...`)
@@ -244,6 +265,18 @@ export default function NovelUploadForm() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tags
+              </label>
+              <TagsInput
+                value={tags}
+                onChange={setTags}
+                placeholder="添加标签 (按空格或回车)"
+              />
             </div>
 
             {/* Cover Image */}

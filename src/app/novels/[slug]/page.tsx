@@ -17,6 +17,7 @@ import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
 import AuthorNameButton from '@/components/novel/AuthorNameButton'
+import TagsDisplay from '@/components/shared/TagsDisplay'
 
 async function getNovel(slug: string) {
   console.log(`[Novel] 📖 Fetching novel: ${slug}`)
@@ -49,6 +50,16 @@ async function getNovel(slug: string) {
         totalRatings: true,
         createdAt: true,
         category: true,
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          },
+          orderBy: {
+            name: 'asc'
+          }
+        },
         chapters: {
           where: { isPublished: true },
           orderBy: { chapterNumber: 'asc' },
@@ -183,13 +194,21 @@ export default async function NovelDetailPage({
                           {novel.category.name}
                         </span>
                         <span className={`px-4 py-1.5 rounded-full font-medium text-sm ${
-                          novel.status === 'COMPLETED' 
+                          novel.status === 'COMPLETED'
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
                           {novel.status === 'COMPLETED' ? '✓ Completed' : '📝 Ongoing'}
                         </span>
                       </div>
+
+                      {/* Tags */}
+                      {novel.tags && novel.tags.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-600 mb-2">Tags</h3>
+                          <TagsDisplay tags={novel.tags} clickable={true} />
+                        </div>
+                      )}
 
                       <div className="flex flex-wrap items-center gap-6 text-gray-600">
                         <div className="flex items-center gap-2">

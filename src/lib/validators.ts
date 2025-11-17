@@ -46,6 +46,18 @@ export const novelUpdateSchema = z.object({
   isDraft: z.boolean().optional(),
 })
 
+// Tags update schema
+export const tagsUpdateSchema = z.object({
+  tags: z.array(
+    z.string()
+      .min(1, 'Tag cannot be empty')
+      .max(30, 'Tag must be 30 characters or less')
+      .regex(/^[a-z0-9-]+$/, 'Tag must contain only lowercase letters, numbers, and hyphens')
+  )
+  .max(20, 'Maximum 20 tags allowed')
+  .default([])
+})
+
 // ============================================
 // 章节 (Chapter) Schemas
 // ============================================
@@ -79,9 +91,17 @@ export const ratingSchema = z.object({
       (val) => [2, 4, 6, 8, 10].includes(val),
       { message: 'Rating must be one of: 2, 4, 6, 8, 10' }
     ),
-  review: z.string()
-    .max(1000, 'Review must be 1000 characters or less')
-    .optional(),
+  review: z.union([
+    z.string().max(1000, 'Review must be 1000 characters or less'),
+    z.null(),
+    z.undefined()
+  ])
+  .transform(val => {
+    // 将空字符串、null、undefined统一转为undefined
+    if (!val || val.trim() === '') return undefined
+    return val
+  })
+  .optional(),
 })
 
 // ============================================

@@ -8,7 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")  // 添加这一行!
+  // directUrl = env("DIRECT_URL")  // 可选：用于连接池环境
 }
 
 // ============================================
@@ -167,9 +167,15 @@ model Novel {
   averageRating Float? // 平均评分 (2.0-10.0)
   totalRatings  Int    @default(0) // 总评分数
 
-  // 标签
-  tags String[] @default([]) // 小说标签（最多10个）
-  
+  // 标签（多对多关系）
+  tags Tag[] @relation("NovelTags")
+
+  // 热度分数（用于Hot排序）
+  hotScore Float @default(0)
+
+  // 书签计数（缓存library关系的计数）
+  bookmarkCount Int @default(0)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
@@ -623,4 +629,23 @@ model ParagraphCommentLike {
   @@unique([userId, commentId]) // 登录用户每个评论只能点赞一次
   @@unique([guestId, commentId]) // 游客每个评论只能点赞一次
   @@index([commentId])
+}
+
+// ============================================
+// 标签系统
+// ============================================
+
+// 标签表
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique       // 标签名称（小写）
+  slug      String   @unique       // URL slug
+  count     Int      @default(0)   // 使用次数
+  createdAt DateTime @default(now())
+
+  // 关联的小说（多对多）
+  novels Novel[] @relation("NovelTags")
+
+  @@index([slug])
+  @@index([count])  // 用于按热度排序
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, BookOpen, Plus, X, Edit2, Trash2 } from 'lucide-react'
 import Image from 'next/image'
+import TagsInput from '@/components/shared/TagsInput'
 
 // 分类数据（Genres）- 匹配数据库种子数据
 const genres = [
@@ -54,7 +55,7 @@ export default function NovelUploadForm() {
   const [coverPreview, setCoverPreview] = useState<string>('')
   const [showChapterForm, setShowChapterForm] = useState(false)
   const [editingChapterId, setEditingChapterId] = useState<string | null>(null) // ⭐ 编辑状态
-  
+
   const [formData, setFormData] = useState({
     title: '',
     coverImage: '',
@@ -64,9 +65,10 @@ export default function NovelUploadForm() {
     isPublished: false,
     chapters: [] as any[],
   })
-  
+
   const [chapters, setChapters] = useState<Chapter[]>([])
-  
+  const [tags, setTags] = useState<string[]>([]) // ⭐ 标签状态
+
   const [currentChapter, setCurrentChapter] = useState({
     title: '',
     content: '',
@@ -245,8 +247,30 @@ export default function NovelUploadForm() {
         throw new Error(data.error || 'Upload failed')
       }
 
+      // ⭐ 如果有标签，更新标签
+      if (tags.length > 0) {
+        try {
+          const tagsResponse = await fetch(`/api/novels/${data.novel.id}/tags`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ tags }),
+          })
+
+          if (!tagsResponse.ok) {
+            console.warn('Failed to update tags, but novel was created successfully')
+            alert(`⚠️ Warning: Novel created successfully, but tags update failed.\n\nNovel ID: ${data.novel.id}`)
+          }
+        } catch (tagError) {
+          console.error('Tags update error:', tagError)
+          alert(`⚠️ Warning: Novel created successfully, but tags update failed.\n\nNovel ID: ${data.novel.id}`)
+        }
+      }
+
       alert(`✅ Success!\n\nNovel "${data.novel.title}" has been uploaded!\n\nID: ${data.novel.id}\nChapters: ${data.novel.totalChapters}\nWords: ${data.novel.wordCount.toLocaleString()}`)
-      
+
       // 重置表单
       setFormData({
         title: '',
@@ -258,6 +282,7 @@ export default function NovelUploadForm() {
         chapters: [],
       })
       setChapters([])
+      setTags([]) // ⭐ 重置标签
       setCoverPreview('')
 
       // ⭐ 重定向到管理页面
@@ -372,6 +397,18 @@ export default function NovelUploadForm() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 标签 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags
+            </label>
+            <TagsInput
+              value={tags}
+              onChange={setTags}
+              placeholder="添加标签 (按空格或回车)"
+            />
           </div>
 
           {/* 简介 */}

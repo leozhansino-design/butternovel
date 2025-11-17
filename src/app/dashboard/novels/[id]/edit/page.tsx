@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, BookOpen, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import TagsInput from '@/components/shared/TagsInput'
 
 const genres = [
   { id: 1, name: 'Fantasy' },
@@ -46,6 +47,7 @@ export default function EditNovelPage() {
   const [novel, setNovel] = useState<any>(null)
   const [coverPreview, setCoverPreview] = useState<string>('')
   const [newCoverImage, setNewCoverImage] = useState<string>('')
+  const [tags, setTags] = useState<string[]>([]) // ⭐ 标签状态
 
   const [formData, setFormData] = useState({
     title: '',
@@ -73,6 +75,8 @@ export default function EditNovelPage() {
           isPublished: data.novel.isPublished,
         })
         setCoverPreview(data.novel.coverImage)
+        // ⭐ 加载标签
+        setTags(data.novel.tags?.map((t: any) => t.name) || [])
       } else {
         alert('Failed to load novel')
         router.push('/dashboard/novels')
@@ -167,6 +171,36 @@ export default function EditNovelPage() {
 
       if (!response.ok) {
         throw new Error(data.error || 'Update failed')
+      }
+
+      // ⭐ 更新标签
+      const originalTags = novel.tags?.map((t: any) => t.name) || []
+      const tagsChanged =
+        tags.length !== originalTags.length ||
+        tags.some((tag, index) => tag !== originalTags[index])
+
+      if (tagsChanged) {
+        try {
+          const tagsResponse = await fetch(`/api/novels/${novelId}/tags`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tags }),
+          })
+
+          if (!tagsResponse.ok) {
+            console.warn('Failed to update tags, but novel was updated successfully')
+            alert('Novel updated successfully! Warning: Tags update failed.')
+            router.push('/dashboard/novels')
+            return
+          }
+        } catch (tagError) {
+          console.error('Tags update error:', tagError)
+          alert('Novel updated successfully! Warning: Tags update failed.')
+          router.push('/dashboard/novels')
+          return
+        }
       }
 
       alert('Novel updated successfully!')
@@ -297,6 +331,18 @@ export default function EditNovelPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tags
+              </label>
+              <TagsInput
+                value={tags}
+                onChange={setTags}
+                placeholder="添加标签 (按空格或回车)"
+              />
             </div>
 
             {/* Blurb */}
