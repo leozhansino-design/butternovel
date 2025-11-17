@@ -216,7 +216,7 @@ export async function GET(
         take: 20
       })
 
-      return tags.map(tag => ({
+      return tags.map((tag: { id: string; name: string; slug: string; novels: Array<{ id: number }> }) => ({
         id: tag.id,
         name: tag.name,
         slug: tag.slug,
