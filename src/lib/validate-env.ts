@@ -1,7 +1,8 @@
 // src/lib/validate-env.ts
 // 🔧 增强版环境变量验证 - 检查存在性、格式和连接
 
-const requiredEnvVars = {
+// 🔧 FIX: Only access process.env in Node.js environment
+const requiredEnvVars = typeof window === 'undefined' ? {
   // 数据库
   DATABASE_URL: process.env.DATABASE_URL,
 
@@ -20,7 +21,7 @@ const requiredEnvVars = {
 
   // Admin
   ADMIN_JWT_SECRET: process.env.ADMIN_JWT_SECRET,
-}
+} : {}
 
 /**
  * 验证 DATABASE_URL 格式是否正确
