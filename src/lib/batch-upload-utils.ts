@@ -53,9 +53,11 @@ export interface NovelUploadData {
  *
  * 格式：
  * Tags: tag1, tag2, tag3
+ *       tag4, tag5  (可以多行)
  * Title: 小说标题
  * Genre: Romance
  * Blurb: 小说简介...
+ *        可以多行
  *
  * Chapter 1: 章节标题
  * 章节正文内容...
@@ -71,48 +73,96 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
 
   console.log(`📄 [批量上传] 文件总行数: ${lines.length}`)
 
-  // 解析元数据（前4行）
-  const tagsLine = lines[0]?.trim() || ''
-  const titleLine = lines[1]?.trim() || ''
-  const genreLine = lines[2]?.trim() || ''
-  const blurbLine = lines[3]?.trim() || ''
+  // 查找各个字段的起始位置
+  let tagsStartIdx = -1
+  let titleIdx = -1
+  let genreIdx = -1
+  let blurbStartIdx = -1
+  let firstChapterIdx = -1
 
-  console.log('📝 [批量上传] 前4行内容:')
-  console.log(`  第1行: ${tagsLine}`)
-  console.log(`  第2行: ${titleLine}`)
-  console.log(`  第3行: ${genreLine}`)
-  console.log(`  第4行: ${blurbLine.substring(0, 50)}...`)
+  const chapterRegex = /^Chapter\s+\d+[：:]/i
 
-  if (!tagsLine.startsWith('Tags:')) {
-    console.error('❌ [批量上传] 第1行格式错误')
-    throw new Error('第1行必须是 "Tags: tag1, tag2, tag3"')
-  }
-  if (!titleLine.startsWith('Title:')) {
-    console.error('❌ [批量上传] 第2行格式错误')
-    throw new Error('第2行必须是 "Title: 小说标题"')
-  }
-  if (!genreLine.startsWith('Genre:')) {
-    console.error('❌ [批量上传] 第3行格式错误')
-    throw new Error('第3行必须是 "Genre: Romance"')
-  }
-  if (!blurbLine.startsWith('Blurb:')) {
-    console.error('❌ [批量上传] 第4行格式错误')
-    throw new Error('第4行必须是 "Blurb: 小说简介"')
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+
+    if (tagsStartIdx === -1 && trimmed.startsWith('Tags:')) {
+      tagsStartIdx = i
+    } else if (titleIdx === -1 && trimmed.startsWith('Title:')) {
+      titleIdx = i
+    } else if (genreIdx === -1 && trimmed.startsWith('Genre:')) {
+      genreIdx = i
+    } else if (blurbStartIdx === -1 && trimmed.startsWith('Blurb:')) {
+      blurbStartIdx = i
+    } else if (firstChapterIdx === -1 && chapterRegex.test(trimmed)) {
+      firstChapterIdx = i
+      break // 找到第一个章节就停止
+    }
   }
 
-  console.log('✅ [批量上传] 前4行格式检查通过')
+  console.log('📝 [批量上传] 字段位置:')
+  console.log(`  Tags 起始行: ${tagsStartIdx}`)
+  console.log(`  Title 行: ${titleIdx}`)
+  console.log(`  Genre 行: ${genreIdx}`)
+  console.log(`  Blurb 起始行: ${blurbStartIdx}`)
+  console.log(`  首章节行: ${firstChapterIdx}`)
 
-  // 提取元数据
-  const tagsRaw = tagsLine.substring(5).trim()
+  // 验证必需字段存在
+  if (tagsStartIdx === -1) {
+    console.error('❌ [批量上传] 缺少 Tags 字段')
+    throw new Error('文件必须包含 "Tags:" 字段')
+  }
+  if (titleIdx === -1) {
+    console.error('❌ [批量上传] 缺少 Title 字段')
+    throw new Error('文件必须包含 "Title:" 字段')
+  }
+  if (genreIdx === -1) {
+    console.error('❌ [批量上传] 缺少 Genre 字段')
+    throw new Error('文件必须包含 "Genre:" 字段')
+  }
+  if (blurbStartIdx === -1) {
+    console.error('❌ [批量上传] 缺少 Blurb 字段')
+    throw new Error('文件必须包含 "Blurb:" 字段')
+  }
+
+  // 验证字段顺序
+  if (!(tagsStartIdx < titleIdx && titleIdx < genreIdx && genreIdx < blurbStartIdx)) {
+    console.error('❌ [批量上传] 字段顺序错误')
+    throw new Error('字段必须按顺序出现：Tags -> Title -> Genre -> Blurb')
+  }
+
+  console.log('✅ [批量上传] 字段格式和顺序检查通过')
+
+  // 提取 Tags（可能跨多行，直到 Title 为止）
+  let tagsRaw = lines[tagsStartIdx].substring(5).trim()
+  for (let i = tagsStartIdx + 1; i < titleIdx; i++) {
+    const line = lines[i].trim()
+    if (line) {
+      tagsRaw += ', ' + line
+    }
+  }
+
   const tags = tagsRaw
     .split(',')
     .map(t => normalizeTag(t.trim()))
     .filter(t => t.length > 0)
     .slice(0, 20) // 最多20个tags
 
-  const title = titleLine.substring(6).trim()
-  const genre = genreLine.substring(6).trim()
-  const blurb = blurbLine.substring(6).trim()
+  // 提取 Title（单行）
+  const title = lines[titleIdx].substring(6).trim()
+
+  // 提取 Genre（单行）
+  const genre = lines[genreIdx].substring(6).trim()
+
+  // 提取 Blurb（可能跨多行，直到第一个章节为止）
+  let blurb = lines[blurbStartIdx].substring(6).trim()
+  const blurbEndIdx = firstChapterIdx !== -1 ? firstChapterIdx : lines.length
+  for (let i = blurbStartIdx + 1; i < blurbEndIdx; i++) {
+    const line = lines[i].trim()
+    if (line && !chapterRegex.test(line)) {
+      blurb += '\n' + line
+    }
+  }
+  blurb = blurb.trim()
 
   console.log('📋 [批量上传] 提取的元数据:')
   console.log(`  标题: ${title}`)
@@ -124,24 +174,20 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
   if (!genre) throw new Error('分类不能为空')
   if (!blurb) throw new Error('简介不能为空')
 
-  // 解析章节（从第5行开始，跳过空行）
+  // 解析章节（从第一个章节开始）
   const chapters: ParsedNovel['chapters'] = []
   let currentChapter: { number: number; title: string; content: string } | null = null
 
-  // 正则匹配：Chapter 1: 标题 或 Chapter 1：标题
-  const chapterRegex = /^Chapter\s+(\d+)[：:]\s*(.+)$/i
+  const chapterTitleRegex = /^Chapter\s+(\d+)[：:]\s*(.+)$/i
 
-  for (let i = 4; i < lines.length; i++) {
+  const startIdx = firstChapterIdx !== -1 ? firstChapterIdx : lines.length
+
+  for (let i = startIdx; i < lines.length; i++) {
     const line = lines[i]
     const trimmedLine = line.trim()
 
-    // 跳过空行（除非在章节内容中）
-    if (!trimmedLine && !currentChapter) {
-      continue
-    }
-
     // 检测章节标题
-    const match = trimmedLine.match(chapterRegex)
+    const match = trimmedLine.match(chapterTitleRegex)
     if (match) {
       // 保存上一个章节
       if (currentChapter) {
@@ -158,7 +204,7 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
         content: ''
       }
     } else if (currentChapter) {
-      // 添加到当前章节内容
+      // 添加到当前章节内容（保留原始格式，包括空行）
       currentChapter.content += line + '\n'
     }
   }
@@ -174,6 +220,8 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
   if (chapters.length === 0) {
     throw new Error('至少需要1个章节')
   }
+
+  console.log(`📚 [批量上传] 解析到 ${chapters.length} 个章节`)
 
   // 验证章节编号连续
   for (let i = 0; i < chapters.length; i++) {
