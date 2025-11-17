@@ -1,24 +1,20 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
 
-async function getTopCategories() {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { order: 'asc' },
-      select: {
-        slug: true,
-        name: true,
-      },
-    }) as any[];
-    return categories;
-  } catch (error) {
-    console.error('Error fetching categories for footer:', error);
-    return [];
-  }
-}
+// 🔧 FIX: Use static categories to avoid hydration mismatch
+// Footer can be imported by client components, so we use static data
+const FOOTER_CATEGORIES = [
+  { slug: 'fantasy', name: 'Fantasy' },
+  { slug: 'romance', name: 'Romance' },
+  { slug: 'mystery', name: 'Mystery' },
+  { slug: 'sci-fi', name: 'Sci-Fi' },
+  { slug: 'thriller', name: 'Thriller' },
+  { slug: 'horror', name: 'Horror' },
+  { slug: 'adventure', name: 'Adventure' },
+  { slug: 'historical', name: 'Historical' },
+];
 
-export default async function Footer() {
-  const categories = await getTopCategories();
+export default function Footer() {
+  const categories = FOOTER_CATEGORIES;
 
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto">
@@ -67,36 +63,16 @@ export default async function Footer() {
           <div className="md:col-span-2">
             <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
-              {categories.length > 0 ? (
-                categories.map((category) => (
-                  <li key={category.slug}>
-                    <Link
-                      href={`/category/${category.slug}`}
-                      className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      {category.name}
-                    </Link>
-                  </li>
-                ))
-              ) : (
-                <>
-                  <li>
-                    <Link href="/category/fantasy" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                      Fantasy
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/category/romance" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                      Romance
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/category/action" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                      Action
-                    </Link>
-                  </li>
-                </>
-              )}
+              {categories.map((category) => (
+                <li key={category.slug}>
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
