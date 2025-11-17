@@ -67,7 +67,7 @@ export async function GET(
           count: true
         }
       })
-    )
+    ) as Array<{ id: string; name: string; slug: string; count: number }>
 
     // 验证所有tags都存在
     if (tagRecords.length !== allTagSlugs.length) {
@@ -152,7 +152,7 @@ export async function GET(
           skip: (page - 1) * PAGE_SIZE,
           take: PAGE_SIZE
         })
-      ),
+      ) as Promise<Array<any>>,
       // 获取总数
       withRetry(() =>
         prisma.novel.count({
@@ -170,7 +170,7 @@ export async function GET(
             ]
           }
         })
-      )
+      ) as Promise<number>
     ])
 
     // 计算相关tags（Refine by tag）
