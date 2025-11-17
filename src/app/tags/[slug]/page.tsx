@@ -191,7 +191,7 @@ export default function TagSearchPage({ params }: { params: Promise<{ slug: stri
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2 capitalize">
-            {mainTag?.name || params.slug} Stories
+            {mainTag?.name || slug} Stories
           </h1>
 
           {/* Selected Tags */}
