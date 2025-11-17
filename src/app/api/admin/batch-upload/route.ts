@@ -1,9 +1,8 @@
 // app/api/admin/batch-upload/route.ts
 // 批量上传小说API
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { NextResponse } from 'next/server'
+import { withAdminAuth } from '@/lib/admin-middleware'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
 import { v2 as cloudinary } from 'cloudinary'
@@ -33,18 +32,9 @@ cloudinary.config({
  * - tags: string (JSON array)
  * - chapters: string (JSON array of {number, title, content})
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdminAuth(async (session, request: Request) => {
   try {
-    // 1. 验证管理员权限
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // 2. 解析FormData
+    // 解析FormData
     const formData = await request.formData()
     const coverImage = formData.get('coverImage') as File
     const title = formData.get('title') as string
@@ -135,8 +125,8 @@ export async function POST(request: NextRequest) {
             blurb,
             coverImage: coverImageUrl,
             categoryId: category.id,
-            authorId: (session.user as any).id,
-            authorName: session.user.name || 'Admin',
+            authorId: session.id,
+            authorName: session.name || 'Admin',
             status: 'COMPLETED', // 批量上传的小说默认已完结
             isPublished: true,
             totalChapters,
@@ -144,10 +134,11 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        // 创建所有章节
+        // 创建所有章节（需要添加slug字段）
         await tx.chapter.createMany({
           data: chapters.map(chapter => ({
             title: chapter.title,
+            slug: `${slug}-chapter-${chapter.number}`,
             content: chapter.content,
             chapterNumber: chapter.number,
             novelId: createdNovel.id,
@@ -208,7 +199,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
 /**
  * 上传封面到Cloudinary
