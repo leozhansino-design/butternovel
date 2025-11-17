@@ -35,11 +35,31 @@ export async function POST(
 
     const body = await request.json()
 
+    // 🔍 记录请求数据用于调试
+    console.log('[Rating API] Request data:', {
+      novelId,
+      userId: session.user.id,
+      body
+    })
+
     // ✅ 使用 Zod 验证
     const validation = validateWithSchema(ratingSchema, body)
     if (!validation.success) {
+      // 🔍 详细记录验证失败的原因
+      console.error('[Rating API] Validation failed:', {
+        novelId,
+        userId: session.user.id,
+        body,
+        error: validation.error,
+        details: validation.details
+      })
+
       return NextResponse.json(
-        { error: validation.error, details: validation.details },
+        {
+          error: validation.error,
+          details: validation.details,
+          received: body // 返回接收到的数据帮助调试
+        },
         { status: 400 }
       )
     }
