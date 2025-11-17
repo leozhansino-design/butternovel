@@ -8,6 +8,7 @@ import { withRetry } from '@/lib/db-utils'
 import { normalizeTags, validateTags, TAG_LIMITS } from '@/lib/tags'
 import { invalidateNovelCache } from '@/lib/cache'
 import { getAdminSession } from '@/lib/admin-auth'
+import { Prisma } from '@prisma/client'
 
 /**
  * PUT /api/novels/[id]/tags
@@ -122,7 +123,7 @@ export async function PUT(
 
     // 执行数据库事务
     await withRetry(() =>
-      prisma.$transaction(async (tx) => {
+      prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // 为要添加的tags创建或查找Tag记录
         const tagRecords = await Promise.all(
           normalizedTags.map(async (tagName) => {
