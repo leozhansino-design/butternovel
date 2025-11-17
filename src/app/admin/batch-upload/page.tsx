@@ -76,14 +76,17 @@ export default function BatchUploadPage() {
     }
 
     // 验证所有文件
-    await validateNovels(novelData)
-    setNovels(novelData)
+    const validatedNovels = await validateNovels(novelData)
+    setNovels(validatedNovels)
   }
 
   // 验证所有小说
   const validateNovels = async (novelData: NovelUploadData[]) => {
+    console.log('🚀 [批量上传] 开始验证', novelData.length, '本小说')
+
     const validatedNovels = await Promise.all(
       novelData.map(async (novel) => {
+        console.log('📚 [批量上传] ========== 验证小说:', novel.folderName, '==========')
         try {
           // 验证封面
           const coverValidation = await validateCoverImage(novel.coverFile)

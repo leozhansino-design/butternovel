@@ -125,7 +125,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             blurb,
             coverImage: coverImageUrl,
             categoryId: category.id,
-            authorId: session.id,
+            authorId: session.id.toString(), // 转换为字符串
             authorName: session.name || 'Admin',
             status: 'COMPLETED', // 批量上传的小说默认已完结
             isPublished: true,
