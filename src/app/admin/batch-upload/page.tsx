@@ -76,8 +76,8 @@ export default function BatchUploadPage() {
     }
 
     // 验证所有文件
-    await validateNovels(novelData)
-    setNovels(novelData)
+    const validatedNovels = await validateNovels(novelData)
+    setNovels(validatedNovels)
   }
 
   // 验证所有小说
