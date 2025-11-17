@@ -60,7 +60,9 @@ export async function POST(request: Request) {
       jwtSecret || 'butternovel-dev-secret-min-32-characters-long-DO-NOT-USE-IN-PRODUCTION'
     )
 
+    // ✅ FIX: Include id in JWT payload to match AdminSession interface
     const token = await new SignJWT({
+      id: admin.id,                    // ✅ FIX: Add id field
       email: admin.email,
       name: admin.displayName,
       role: 'super_admin', // AdminProfile doesn't have role field, default to super_admin
