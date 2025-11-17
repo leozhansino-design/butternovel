@@ -64,8 +64,12 @@ export interface NovelUploadData {
  * 章节正文内容...
  */
 export async function parseContentFile(file: File): Promise<ParsedNovel> {
+  console.log('📖 [批量上传] 开始解析content.txt:', file.name)
+
   const text = await file.text()
   const lines = text.split('\n')
+
+  console.log(`📄 [批量上传] 文件总行数: ${lines.length}`)
 
   // 解析元数据（前4行）
   const tagsLine = lines[0]?.trim() || ''
@@ -73,18 +77,30 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
   const genreLine = lines[2]?.trim() || ''
   const blurbLine = lines[3]?.trim() || ''
 
+  console.log('📝 [批量上传] 前4行内容:')
+  console.log(`  第1行: ${tagsLine}`)
+  console.log(`  第2行: ${titleLine}`)
+  console.log(`  第3行: ${genreLine}`)
+  console.log(`  第4行: ${blurbLine.substring(0, 50)}...`)
+
   if (!tagsLine.startsWith('Tags:')) {
+    console.error('❌ [批量上传] 第1行格式错误')
     throw new Error('第1行必须是 "Tags: tag1, tag2, tag3"')
   }
   if (!titleLine.startsWith('Title:')) {
+    console.error('❌ [批量上传] 第2行格式错误')
     throw new Error('第2行必须是 "Title: 小说标题"')
   }
   if (!genreLine.startsWith('Genre:')) {
+    console.error('❌ [批量上传] 第3行格式错误')
     throw new Error('第3行必须是 "Genre: Romance"')
   }
   if (!blurbLine.startsWith('Blurb:')) {
+    console.error('❌ [批量上传] 第4行格式错误')
     throw new Error('第4行必须是 "Blurb: 小说简介"')
   }
+
+  console.log('✅ [批量上传] 前4行格式检查通过')
 
   // 提取元数据
   const tagsRaw = tagsLine.substring(5).trim()
@@ -97,6 +113,12 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
   const title = titleLine.substring(6).trim()
   const genre = genreLine.substring(6).trim()
   const blurb = blurbLine.substring(6).trim()
+
+  console.log('📋 [批量上传] 提取的元数据:')
+  console.log(`  标题: ${title}`)
+  console.log(`  分类: ${genre}`)
+  console.log(`  标签: ${tags.join(', ')}`)
+  console.log(`  简介长度: ${blurb.length}字符`)
 
   if (!title) throw new Error('标题不能为空')
   if (!genre) throw new Error('分类不能为空')
@@ -176,36 +198,52 @@ export async function validateCoverImage(file: File): Promise<ValidationResult> 
   const errors: string[] = []
   const warnings: string[] = []
 
+  console.log('🔍 [批量上传] 验证封面图片:', file.name)
+
   // 检查文件类型
+  console.log(`📁 [批量上传] 文件类型: ${file.type}`)
   if (!file.type.startsWith('image/')) {
+    console.error('❌ [批量上传] 不是图片文件')
     errors.push('封面必须是图片文件')
     return { valid: false, errors, warnings }
   }
 
   // 检查文件大小
+  console.log(`📊 [批量上传] 文件大小: ${(file.size / 1024).toFixed(2)} KB`)
   if (file.size > BATCH_UPLOAD_LIMITS.MAX_COVER_SIZE) {
+    console.error('❌ [批量上传] 文件过大')
     errors.push(`封面大小超过限制（最大${BATCH_UPLOAD_LIMITS.MAX_COVER_SIZE / 1024 / 1024}MB）`)
   }
 
   // 检查图片尺寸
   try {
     const dimensions = await getImageDimensions(file)
+    console.log(`📐 [批量上传] 实际尺寸: ${dimensions.width}x${dimensions.height}`)
+    console.log(`📐 [批量上传] 要求尺寸: ${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}`)
+
     if (dimensions.width !== BATCH_UPLOAD_LIMITS.COVER_WIDTH ||
         dimensions.height !== BATCH_UPLOAD_LIMITS.COVER_HEIGHT) {
+      console.error('❌ [批量上传] 图片尺寸不符合要求')
       errors.push(
         `封面尺寸必须是${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}，` +
         `当前为${dimensions.width}x${dimensions.height}`
       )
+    } else {
+      console.log('✅ [批量上传] 图片尺寸检查通过')
     }
   } catch (error) {
+    console.error('❌ [批量上传] 无法读取图片尺寸:', error)
     errors.push('无法读取图片尺寸')
   }
 
-  return {
+  const result = {
     valid: errors.length === 0,
     errors,
     warnings
   }
+
+  console.log(result.valid ? '✅ [批量上传] 封面验证通过' : '❌ [批量上传] 封面验证失败', result)
+  return result
 }
 
 /**
@@ -240,27 +278,37 @@ export function validateContentFile(file: File): ValidationResult {
  * 验证解析后的小说数据
  */
 export function validateParsedNovel(novel: ParsedNovel): ValidationResult {
+  console.log('✔️ [批量上传] 验证解析后的数据:', novel.title)
+
   const errors: string[] = []
   const warnings: string[] = []
 
   // 标题
+  console.log(`📌 [批量上传] 标题长度: ${novel.title?.length || 0}`)
   if (!novel.title || novel.title.length < 2) {
+    console.error('❌ [批量上传] 标题太短')
     errors.push('标题长度至少2个字符')
   }
   if (novel.title.length > 200) {
+    console.error('❌ [批量上传] 标题太长')
     errors.push('标题长度不能超过200个字符')
   }
 
   // 简介
+  console.log(`📌 [批量上传] 简介长度: ${novel.blurb?.length || 0}`)
   if (!novel.blurb || novel.blurb.length < 10) {
+    console.error('❌ [批量上传] 简介太短')
     errors.push('简介长度至少10个字符')
   }
   if (novel.blurb.length > 1000) {
+    console.error('❌ [批量上传] 简介太长')
     errors.push('简介长度不能超过1000个字符')
   }
 
   // Tags
+  console.log(`📌 [批量上传] 标签数量: ${novel.tags.length}`)
   if (novel.tags.length === 0) {
+    console.warn('⚠️ [批量上传] 没有标签')
     warnings.push('建议至少添加1个标签')
   }
   if (novel.tags.length > 20) {
@@ -268,31 +316,40 @@ export function validateParsedNovel(novel: ParsedNovel): ValidationResult {
   }
 
   // 章节
+  console.log(`📌 [批量上传] 章节数量: ${novel.chapters.length}`)
   if (novel.chapters.length < BATCH_UPLOAD_LIMITS.MIN_CHAPTERS) {
+    console.error('❌ [批量上传] 章节太少')
     errors.push(`至少需要${BATCH_UPLOAD_LIMITS.MIN_CHAPTERS}个章节`)
   }
   if (novel.chapters.length > BATCH_UPLOAD_LIMITS.MAX_CHAPTERS) {
+    console.error('❌ [批量上传] 章节太多')
     errors.push(`章节数量不能超过${BATCH_UPLOAD_LIMITS.MAX_CHAPTERS}个`)
   }
 
   // 验证每个章节
   novel.chapters.forEach((chapter, index) => {
     if (!chapter.title || chapter.title.trim().length === 0) {
+      console.error(`❌ [批量上传] 第${index + 1}章标题为空`)
       errors.push(`第${index + 1}章标题不能为空`)
     }
     if (!chapter.content || chapter.content.trim().length < 10) {
+      console.error(`❌ [批量上传] 第${index + 1}章内容太短`)
       errors.push(`第${index + 1}章内容太短（至少10个字符）`)
     }
     if (chapter.content.length > 50000) {
+      console.warn(`⚠️ [批量上传] 第${index + 1}章内容较长`)
       warnings.push(`第${index + 1}章内容较长（${chapter.content.length}字符），可能影响加载速度`)
     }
   })
 
-  return {
+  const result = {
     valid: errors.length === 0,
     errors,
     warnings
   }
+
+  console.log(result.valid ? '✅ [批量上传] 小说数据验证通过' : '❌ [批量上传] 小说数据验证失败', result)
+  return result
 }
 
 /**

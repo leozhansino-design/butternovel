@@ -6,7 +6,8 @@
  * - 转换为小写
  * - 移除首尾空格
  * - 将多个空格替换为单个连字符
- * - 移除特殊字符（只保留字母、数字、连字符）
+ * - 移除特殊字符（只保留字母、数字、连字符、井号#）
+ * - 支持开头的#符号（如 #romance）
  *
  * @param input - 原始标签输入
  * @returns 标准化后的标签名称
@@ -14,16 +15,25 @@
  * @example
  * normalizeTag("  High School  ") // "high-school"
  * normalizeTag("Romance!") // "romance"
+ * normalizeTag("#romance") // "#romance"
  * normalizeTag("love") // "love"
  */
 export function normalizeTag(input: string): string {
-  return input
-    .trim()                           // 移除首尾空格
-    .toLowerCase()                    // 转小写
+  const trimmed = input.trim().toLowerCase();
+
+  // 检测是否以#开头
+  const hasHashtag = trimmed.startsWith('#');
+  const withoutHash = hasHashtag ? trimmed.slice(1) : trimmed;
+
+  // 标准化主体部分
+  const normalized = withoutHash
     .replace(/\s+/g, '-')            // 空格转连字符
     .replace(/[^a-z0-9-]/g, '')      // 移除特殊字符
     .replace(/-+/g, '-')             // 多个连字符合并为一个
     .replace(/^-|-$/g, '');          // 移除首尾连字符
+
+  // 如果原始输入有#，则恢复#
+  return hasHashtag && normalized ? `#${normalized}` : normalized;
 }
 
 /**
@@ -41,7 +51,7 @@ export function generateTagSlug(name: string): string {
  * 验证标签名称是否有效
  * - 长度在1-30字符之间
  * - 不能包含空格（应该使用连字符）
- * - 只能包含字母、数字和连字符
+ * - 只能包含字母、数字、连字符和开头的#
  *
  * @param tag - 标签名称
  * @returns 是否有效
@@ -56,8 +66,8 @@ export function isValidTag(tag: string): boolean {
     return false;
   }
 
-  // 只允许字母、数字和连字符
-  const validPattern = /^[a-z0-9-]+$/;
+  // 允许字母、数字、连字符，以及开头的#符号
+  const validPattern = /^#?[a-z0-9-]+$/;
   return validPattern.test(tag);
 }
 
