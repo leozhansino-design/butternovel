@@ -87,7 +87,12 @@ export async function PUT(
           }
         }
       })
-    )
+    ) as {
+      id: number
+      slug: string
+      authorId: string
+      tags: Array<{ id: string; name: string; slug: string }>
+    } | null
 
     if (!novel) {
       return NextResponse.json(
@@ -181,7 +186,9 @@ export async function PUT(
           }
         }
       })
-    )
+    ) as {
+      tags: Array<{ id: string; name: string; slug: string; count: number }>
+    } | null
 
     return NextResponse.json({
       success: true,
@@ -229,7 +236,9 @@ export async function GET(
           }
         }
       })
-    )
+    ) as {
+      tags: Array<{ id: string; name: string; slug: string; count: number }>
+    } | null
 
     if (!novel) {
       return NextResponse.json(
