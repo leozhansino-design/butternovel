@@ -46,6 +46,18 @@ export const novelUpdateSchema = z.object({
   isDraft: z.boolean().optional(),
 })
 
+// Tags update schema
+export const tagsUpdateSchema = z.object({
+  tags: z.array(
+    z.string()
+      .min(1, 'Tag cannot be empty')
+      .max(30, 'Tag must be 30 characters or less')
+      .regex(/^[a-z0-9-]+$/, 'Tag must contain only lowercase letters, numbers, and hyphens')
+  )
+  .max(20, 'Maximum 20 tags allowed')
+  .default([])
+})
+
 // ============================================
 // 章节 (Chapter) Schemas
 // ============================================

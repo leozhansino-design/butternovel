@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import TagsInput from '@/components/shared/TagsInput'
 
 type Category = {
   id: number
@@ -33,6 +34,7 @@ type Novel = {
   categoryId: number
   category: Category
   chapters: Chapter[]
+  tags?: { name: string }[]
 }
 
 type Props = {
@@ -56,6 +58,9 @@ export default function EditNovelForm({ novel, categories }: Props) {
   const [coverPreview, setCoverPreview] = useState(novel.coverImage)
   const [newCoverImage, setNewCoverImage] = useState<string | null>(null)
 
+  // 标签状态
+  const [tags, setTags] = useState<string[]>(novel.tags?.map(t => t.name) || [])
+
   // 追踪改动
   const [hasChanges, setHasChanges] = useState(false)
 
@@ -76,16 +81,22 @@ export default function EditNovelForm({ novel, categories }: Props) {
 
   // ✅ Auto-detect changes whenever any field changes (fixes async state update issue)
   useEffect(() => {
+    const originalTags = novel.tags?.map(t => t.name) || []
+    const tagsChanged =
+      tags.length !== originalTags.length ||
+      tags.some((tag, index) => tag !== originalTags[index])
+
     const changed =
       title !== novel.title ||
       blurb !== novel.blurb ||
       categoryId !== novel.categoryId.toString() ||
       status !== novel.status ||
       isPublished !== novel.isPublished ||
-      newCoverImage !== null
+      newCoverImage !== null ||
+      tagsChanged
 
     setHasChanges(changed)
-  }, [title, blurb, categoryId, status, isPublished, newCoverImage, novel])
+  }, [title, blurb, categoryId, status, isPublished, newCoverImage, tags, novel])
 
   // ⭐ 保存为草稿 (不发布)
   async function handleSaveDraft() {
@@ -133,10 +144,53 @@ export default function EditNovelForm({ novel, categories }: Props) {
         throw new Error(data.error || 'Failed to update novel')
       }
 
-      setMessage({ 
-        type: 'success', 
-        text: publish ? '✅ Novel published successfully!' : '✅ Draft saved successfully!' 
-      })
+      // ⭐ 更新标签
+      const originalTags = novel.tags?.map(t => t.name) || []
+      const tagsChanged =
+        tags.length !== originalTags.length ||
+        tags.some((tag, index) => tag !== originalTags[index])
+
+      if (tagsChanged) {
+        try {
+          const tagsResponse = await fetch(`/api/novels/${novel.id}/tags`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ tags }),
+          })
+
+          if (!tagsResponse.ok) {
+            console.warn('Failed to update tags, but novel was updated successfully')
+            setMessage({
+              type: 'success',
+              text: publish
+                ? '✅ Novel published successfully! ⚠️ Warning: Tags update failed.'
+                : '✅ Draft saved successfully! ⚠️ Warning: Tags update failed.'
+            })
+          } else {
+            setMessage({
+              type: 'success',
+              text: publish ? '✅ Novel published successfully!' : '✅ Draft saved successfully!'
+            })
+          }
+        } catch (tagError) {
+          console.error('Tags update error:', tagError)
+          setMessage({
+            type: 'success',
+            text: publish
+              ? '✅ Novel published successfully! ⚠️ Warning: Tags update failed.'
+              : '✅ Draft saved successfully! ⚠️ Warning: Tags update failed.'
+          })
+        }
+      } else {
+        setMessage({
+          type: 'success',
+          text: publish ? '✅ Novel published successfully!' : '✅ Draft saved successfully!'
+        })
+      }
+
       setHasChanges(false)
       setNewCoverImage(null)
       setIsPublished(publish) // 更新本地状态
@@ -332,6 +386,18 @@ export default function EditNovelForm({ novel, categories }: Props) {
                 <option value="COMPLETED">Completed</option>
               </select>
             </div>
+          </div>
+
+          {/* 标签 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags
+            </label>
+            <TagsInput
+              value={tags}
+              onChange={setTags}
+              placeholder="添加标签 (按空格或回车)"
+            />
           </div>
         </div>
       </div>
