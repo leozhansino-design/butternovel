@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
 import { calculateHotScore } from '@/lib/tags'
+import { Prisma } from '@prisma/client'
 
 const PAGE_SIZE = 24 // 每页24本小说
 
@@ -82,7 +83,7 @@ export async function GET(
     const tagIds = tagRecords.map(t => t.id)
 
     // 构建排序条件
-    let orderBy: any
+    let orderBy: Prisma.NovelOrderByWithRelationInput
     switch (sort) {
       case 'hot':
         orderBy = { hotScore: 'desc' }

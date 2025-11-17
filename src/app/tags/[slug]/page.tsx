@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -46,7 +46,8 @@ interface TagSearchData {
   sort: string
 }
 
-export default function TagSearchPage({ params }: { params: { slug: string } }) {
+export default function TagSearchPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
   const router = useRouter()
   const searchParams = useSearchParams()
   const [data, setData] = useState<TagSearchData | null>(null)
@@ -68,7 +69,7 @@ export default function TagSearchPage({ params }: { params: { slug: string } }) 
         queryParams.set('sort', sort)
         queryParams.set('page', page.toString())
 
-        const response = await fetch(`/api/tags/${params.slug}?${queryParams}`)
+        const response = await fetch(`/api/tags/${slug}?${queryParams}`)
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -85,19 +86,19 @@ export default function TagSearchPage({ params }: { params: { slug: string } }) 
     }
 
     fetchData()
-  }, [params.slug, sort, page, additionalTags])
+  }, [slug, sort, page, additionalTags])
 
   const handleSortChange = (newSort: string) => {
     const newParams = new URLSearchParams(searchParams.toString())
     newParams.set('sort', newSort)
     newParams.delete('page') // Reset to page 1 when sorting changes
-    router.push(`/tags/${params.slug}?${newParams}`)
+    router.push(`/tags/${slug}?${newParams}`)
   }
 
   const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams.toString())
     newParams.set('page', newPage.toString())
-    router.push(`/tags/${params.slug}?${newParams}`)
+    router.push(`/tags/${slug}?${newParams}`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -116,7 +117,7 @@ export default function TagSearchPage({ params }: { params: { slug: string } }) 
       }
       newParams.delete('page') // Reset to page 1
 
-      router.push(`/tags/${params.slug}?${newParams}`)
+      router.push(`/tags/${slug}?${newParams}`)
     } else {
       // Add tag
       const newTags = [...currentTags, tag.slug]
@@ -124,7 +125,7 @@ export default function TagSearchPage({ params }: { params: { slug: string } }) 
       newParams.set('tags', newTags.join(','))
       newParams.delete('page') // Reset to page 1
 
-      router.push(`/tags/${params.slug}?${newParams}`)
+      router.push(`/tags/${slug}?${newParams}`)
     }
   }
 
@@ -140,7 +141,7 @@ export default function TagSearchPage({ params }: { params: { slug: string } }) 
     }
     newParams.delete('page')
 
-    router.push(`/tags/${params.slug}?${newParams}`)
+    router.push(`/tags/${slug}?${newParams}`)
   }
 
   if (isLoading) {
