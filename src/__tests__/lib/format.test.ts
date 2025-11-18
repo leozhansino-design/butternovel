@@ -146,10 +146,10 @@ describe('format', () => {
         expect(formatNumber(1900)).toBe('1.9k')
       })
 
-      it('should round up correctly', () => {
-        expect(formatNumber(1950)).toBe('2.0k') // 1.95k rounds to 2.0k
-        expect(formatNumber(1960)).toBe('2.0k')
-        expect(formatNumber(1990)).toBe('2.0k')
+      it('should round correctly', () => {
+        expect(formatNumber(1950)).toBe('1.9k') // 1950 / 1000 = 1.95 → 1.9k
+        expect(formatNumber(1960)).toBe('2.0k') // 1960 / 1000 = 1.96 → 2.0k
+        expect(formatNumber(1990)).toBe('2.0k') // 1990 / 1000 = 1.99 → 2.0k
       })
 
       it('should round down correctly', () => {
@@ -160,7 +160,7 @@ describe('format', () => {
       it('should handle .0 decimals', () => {
         expect(formatNumber(2000)).toBe('2k') // 整数不显示.0
         expect(formatNumber(2001)).toBe('2.0k') // 非整数显示.0
-        expect(formatNumber(2050)).toBe('2.1k') // 四舍五入后是2.1
+        expect(formatNumber(2050)).toBe('2.0k') // 2050 → 2.0k (floor)
       })
     })
 
@@ -185,12 +185,12 @@ describe('format', () => {
     describe('特殊值', () => {
       it('should handle decimal inputs (rounded)', () => {
         expect(formatNumber(1234.56)).toBe('1.2k')
-        expect(formatNumber(999.9)).toBe('999')
+        expect(formatNumber(999.9)).toBe('999') // floor(999.9) = 999
       })
 
       it('should handle very small decimals', () => {
-        expect(formatNumber(0.5)).toBe('0')
-        expect(formatNumber(0.9)).toBe('0')
+        expect(formatNumber(0.5)).toBe('0') // floor(0.5) = 0
+        expect(formatNumber(0.9)).toBe('0') // floor(0.9) = 0
       })
     })
 

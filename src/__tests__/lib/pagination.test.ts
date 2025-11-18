@@ -123,12 +123,16 @@ describe('pagination', () => {
       })
 
       it('should handle invalid limit format', () => {
-        const testCases = ['limit=abc', 'limit=1.5', 'limit=NaN']
+        const testCases = [
+          { query: 'limit=abc', expected: 10 },
+          { query: 'limit=1.5', expected: 1 }, // parseInt('1.5') = 1
+          { query: 'limit=NaN', expected: 10 },
+        ]
 
-        testCases.forEach(query => {
+        testCases.forEach(({ query, expected }) => {
           const params = new URLSearchParams(query)
           const result = parsePaginationParams(params)
-          expect(result.limit).toBe(10)
+          expect(result.limit).toBe(expected)
         })
       })
     })

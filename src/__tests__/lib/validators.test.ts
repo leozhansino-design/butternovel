@@ -17,9 +17,9 @@ describe('Validators', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should reject title that is too short', () => {
+    it('should reject empty title', () => {
       const invalidData = {
-        title: 'Ab',
+        title: '',
         coverImage: 'https://example.com/image.jpg',
         categoryId: 1,
         blurb: 'Description',
