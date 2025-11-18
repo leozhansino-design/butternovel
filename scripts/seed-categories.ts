@@ -11,7 +11,7 @@ async function main() {
     { name: 'Romance', slug: 'romance', order: 3 },
     { name: 'Sci-Fi', slug: 'sci-fi', order: 4 },
     { name: 'Mystery', slug: 'mystery', order: 5 },
-    { name: 'Action', slug: 'action', order: 6 },
+    { name: 'Historical', slug: 'historical', order: 6 },
     { name: 'Adventure', slug: 'adventure', order: 7 },
     { name: 'Horror', slug: 'horror', order: 8 },
     { name: 'Crime', slug: 'crime', order: 9 },
