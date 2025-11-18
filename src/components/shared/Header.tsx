@@ -7,6 +7,7 @@ import { signOut, useSession } from 'next-auth/react';
 import AuthModal from '@/components/auth/AuthModal';
 import UserMenu from '@/components/shared/UserMenu';
 import LibraryModal from '@/components/shared/LibraryModal';
+import SearchInput from '@/components/search/SearchInput';
 
 export default function Header() {
   // ✅ Use useSession to get real-time session updates
@@ -14,7 +15,6 @@ export default function Header() {
   const user = session?.user;
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [authModal, setAuthModal] = useState<{ isOpen: boolean; tab: 'login' | 'register' }>({
     isOpen: false,
     tab: 'login',
@@ -24,13 +24,6 @@ export default function Header() {
     defaultView: 'library'
   });
   const router = useRouter();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: pathname });
@@ -155,26 +148,10 @@ export default function Header() {
               )}
             </nav>
 
-            {/* Search Bar - Desktop */}
-            <form onSubmit={handleSearch} className="hidden md:block">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                />
-                <svg 
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </form>
+            {/* Search Bar - Desktop (with autocomplete) */}
+            <div className="hidden md:block w-64">
+              <SearchInput placeholder="Search novels..." />
+            </div>
 
             {/* User Menu - Desktop */}
             <div className="hidden md:flex items-center gap-4">
@@ -219,25 +196,10 @@ export default function Header() {
           {/* Mobile Menu - 📱 优化移动端样式 */}
           {isMenuOpen && (
             <div className="md:hidden py-3 border-t border-gray-200">
-              <form onSubmit={handleSearch} className="mb-3">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search novels..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                  />
-                  <svg
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </form>
+              {/* Mobile Search (with autocomplete) */}
+              <div className="mb-3">
+                <SearchInput placeholder="Search novels..." />
+              </div>
 
               <nav className="space-y-0.5">
                 <Link

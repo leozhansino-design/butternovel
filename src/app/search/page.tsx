@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
 import BookCard from '@/components/front/BookCard'
+import SearchInput from '@/components/search/SearchInput'
 
 interface Novel {
   id: number
@@ -110,9 +111,9 @@ function SearchContent() {
   }, [queryParam, categoryParam, pageParam])
 
   // 处理搜索表单提交
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    updateSearchParams({ q: searchQuery, page: '1' })
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+    updateSearchParams({ q: query, page: '1' })
   }
 
   // 处理分类筛选
@@ -157,24 +158,14 @@ function SearchContent() {
               Search Novels
             </h1>
 
-            {/* 搜索框 */}
-            <form onSubmit={handleSearch} className="mb-6">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by title, author, or description..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium rounded-lg transition-colors"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
+            {/* 搜索框（带自动补全） */}
+            <div className="mb-6">
+              <SearchInput
+                initialValue={searchQuery}
+                onSearch={handleSearch}
+                placeholder="Search by title, author, or description..."
+              />
+            </div>
 
             {/* 筛选器 */}
             <div className="flex flex-wrap items-center gap-3">
