@@ -69,11 +69,11 @@ export async function GET(request: Request) {
           take: limit,
         }),
         { operationName: 'Search novels' }
-      ),
+      ) as Promise<any[]>,
       withRetry(
         () => prisma.novel.count({ where }),
         { operationName: 'Count search results' }
-      ),
+      ) as Promise<number>,
     ])
 
     // 格式化结果
