@@ -3,8 +3,56 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 
 /**
+ * 计算质量分数（贝叶斯平均）
+ * 参考IMDb和豆瓣的算法，考虑评分数量的可信度
+ */
+function calculateQualityScore(averageRating: number | null, totalRatings: number): number {
+  if (!averageRating || totalRatings === 0) return 0
+
+  // 最小评分数阈值（低于此数量的评分可信度降低）
+  const minRatings = 10
+
+  // 假设的全站平均评分（可以从数据库统计，这里使用经验值）
+  const globalAverage = 7.0
+
+  // 贝叶斯加权评分：(v / (v + m)) * R + (m / (v + m)) * C
+  // v = 该小说的评分数, m = 最小评分阈值, R = 该小说平均分, C = 全站平均分
+  const weightedRating =
+    (totalRatings / (totalRatings + minRatings)) * averageRating +
+    (minRatings / (totalRatings + minRatings)) * globalAverage
+
+  // 归一化到0-100分
+  return (weightedRating / 10) * 100
+}
+
+/**
+ * 计算热度分数
+ * 综合考虑浏览量、收藏数、点赞数、评论数
+ */
+function calculateHotScore(novel: any): number {
+  // 各指标权重（基于行业经验）
+  const viewWeight = 0.3       // 浏览量权重30%
+  const bookmarkWeight = 2.5   // 收藏权重最高（强意愿指标）
+  const likeWeight = 1.0       // 点赞权重
+  const commentWeight = 1.5    // 评论权重（互动指标）
+
+  const viewCount = novel.viewCount || 0
+  const bookmarkCount = novel.bookmarkCount || 0
+  const likeCount = novel.likeCount || 0
+  const commentCount = novel.commentCount || 0
+
+  // 使用对数缩放避免大数字主导（Reddit/HN常用技巧）
+  const viewScore = Math.log10(viewCount + 1) * viewWeight
+  const bookmarkScore = Math.log10(bookmarkCount + 1) * bookmarkWeight
+  const likeScore = Math.log10(likeCount + 1) * likeWeight
+  const commentScore = Math.log10(commentCount + 1) * commentWeight
+
+  return viewScore + bookmarkScore + likeScore + commentScore
+}
+
+/**
  * 计算搜索相关性分数
- * 优先级：标题精确匹配 > 标题前缀匹配 > 标题包含 > 作者匹配 > 简介匹配
+ * 综合考虑：文本匹配度 + 内容质量 + 热度
  */
 function calculateRelevanceScore(novel: any, query: string): number {
   const normalizedQuery = query.toLowerCase().trim()
@@ -16,50 +64,60 @@ function calculateRelevanceScore(novel: any, query: string): number {
   const titleNoSpaces = title.replace(/\s+/g, '')
   const queryNoSpaces = normalizedQuery.replace(/\s+/g, '')
 
-  let score = 0
+  let matchScore = 0
 
+  // === 1. 文本匹配分数（1000分制） ===
   // 标题精确匹配（最高优先级）
   if (title === normalizedQuery) {
-    score += 1000
+    matchScore += 1000
   }
   // 标题以查询开头（高优先级）
   else if (title.startsWith(normalizedQuery)) {
-    score += 800
+    matchScore += 800
   }
   // 无空格版本精确匹配
   else if (titleNoSpaces === queryNoSpaces) {
-    score += 700
+    matchScore += 700
   }
   // 无空格版本前缀匹配
   else if (titleNoSpaces.startsWith(queryNoSpaces)) {
-    score += 600
+    matchScore += 600
   }
   // 标题包含查询
   else if (title.includes(normalizedQuery)) {
-    score += 500
+    matchScore += 500
     // 如果匹配在词首，额外加分
     const words = title.split(/\s+/)
     if (words.some((word: string) => word.startsWith(normalizedQuery))) {
-      score += 200
+      matchScore += 200
     }
   }
   // 作者名匹配
   else if (authorName.includes(normalizedQuery)) {
-    score += 100
+    matchScore += 100
   }
   // 简介匹配
   else if (blurb.includes(normalizedQuery)) {
-    score += 50
+    matchScore += 50
   }
 
-  // 额外因素：标题越短，相关性可能越高
-  score -= title.length * 0.1
+  // 标题越短，相关性越高（同等匹配下）
+  matchScore -= title.length * 0.1
 
-  // 热度因素：点赞数和章节数
-  score += (novel._count?.likes || 0) * 0.5
-  score += (novel._count?.chapters || 0) * 0.2
+  // === 2. 质量分数（0-100分） ===
+  const qualityScore = calculateQualityScore(
+    novel.averageRating,
+    novel.totalRatings
+  )
 
-  return score
+  // === 3. 热度分数（动态范围） ===
+  const hotScore = calculateHotScore(novel)
+
+  // === 4. 综合评分 ===
+  // 匹配度占主导（70%），质量和热度作为加成（30%）
+  const finalScore = matchScore * 0.7 + qualityScore * 0.2 + hotScore * 0.1
+
+  return finalScore
 }
 
 // GET /api/search?q=keyword&category=1&page=1&limit=20
@@ -113,6 +171,13 @@ export async function GET(request: Request) {
             status: true,
             createdAt: true,
             updatedAt: true,
+            // 热度相关字段
+            viewCount: true,
+            likeCount: true,
+            bookmarkCount: true,
+            commentCount: true,
+            averageRating: true,
+            totalRatings: true,
             category: {
               select: {
                 id: true,
@@ -163,6 +228,13 @@ export async function GET(request: Request) {
               status: true,
               createdAt: true,
               updatedAt: true,
+              // 热度相关字段
+              viewCount: true,
+              likeCount: true,
+              bookmarkCount: true,
+              commentCount: true,
+              averageRating: true,
+              totalRatings: true,
               category: {
                 select: {
                   id: true,
