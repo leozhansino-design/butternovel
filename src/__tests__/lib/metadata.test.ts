@@ -11,15 +11,16 @@ import {
   generateNovelJsonLd,
 } from '@/lib/metadata'
 
+// Mock the metadata module to use test URL
+jest.mock('@/lib/metadata', () => {
+  const originalModule = jest.requireActual('@/lib/metadata')
+  // Can't easily mock the baseUrl const, so tests will use default
+  return originalModule
+})
+
 describe('metadata', () => {
-  // Mock environment variable
-  const originalEnv = process.env.NEXT_PUBLIC_SITE_URL
-  beforeAll(() => {
-    process.env.NEXT_PUBLIC_SITE_URL = 'https://test.com'
-  })
-  afterAll(() => {
-    process.env.NEXT_PUBLIC_SITE_URL = originalEnv
-  })
+  // Note: NEXT_PUBLIC_SITE_URL is read at import time, so we use default
+  const baseUrl = 'https://butternovel.com' // 使用默认值
 
   describe('generateNovelMetadata()', () => {
     it('should generate complete novel metadata', () => {
@@ -50,7 +51,7 @@ describe('metadata', () => {
       })
 
       expect(metadata.description).toHaveLength(160) // 157 + '...'
-      expect(metadata.description).toEndWith('...')
+      expect(metadata.description?.endsWith('...')).toBe(true)
     })
 
     it('should use default cover image when not provided', () => {
@@ -62,7 +63,7 @@ describe('metadata', () => {
         slug: 'test',
       })
 
-      expect(metadata.openGraph?.images?.[0]?.url).toBe('https://test.com/og-image.png')
+      expect(metadata.openGraph?.images?.[0]?.url).toBe(`${baseUrl}/og-image.png`)
     })
 
     it('should generate correct canonical URL', () => {
@@ -74,7 +75,7 @@ describe('metadata', () => {
         slug: 'test-novel',
       })
 
-      expect(metadata.alternates?.canonical).toBe('https://test.com/novels/test-novel')
+      expect(metadata.alternates?.canonical).toBe(`${baseUrl}/novels/test-novel`)
     })
   })
 

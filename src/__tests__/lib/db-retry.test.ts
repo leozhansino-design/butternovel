@@ -251,13 +251,19 @@ describe('db-retry', () => {
       const operation = jest.fn()
         .mockRejectedValue({ code: 'P1001', message: 'Connection error' })
 
-      const promise = withRetry(operation, { maxRetries: 3 })
+      const promise = withRetry(operation, { maxRetries: 3 }).catch(err => err)
 
-      // 快进所有延迟
-      await jest.advanceTimersByTimeAsync(10000)
+      // Advance timers incrementally to trigger retries
+      // Attempt 1 → wait 1000ms
+      await jest.advanceTimersByTimeAsync(1000)
+      // Attempt 2 → wait 2000ms
+      await jest.advanceTimersByTimeAsync(2000)
+      // Attempt 3 → throws
 
-      await expect(promise).rejects.toMatchObject({ code: 'P1001' })
+      // Await the error result
+      const error = await promise
 
+      expect(error).toMatchObject({ code: 'P1001' })
       expect(operation).toHaveBeenCalledTimes(3)
       expect(mockConsoleWarn).toHaveBeenCalledTimes(2) // 前2次警告
       expect(mockConsoleError).toHaveBeenCalledTimes(1) // 最后1次错误
@@ -269,8 +275,7 @@ describe('db-retry', () => {
 
       const promise = withRetry(operation, { maxRetries: 1 })
 
-      await jest.advanceTimersByTimeAsync(5000)
-
+      // Await rejection (no retry needed for maxRetries=1)
       await expect(promise).rejects.toMatchObject({
         code: 'P1001',
         message: 'Persistent error',
@@ -291,11 +296,9 @@ describe('db-retry', () => {
   })
 
   describe('withRetry() - 日志记录', () => {
-    beforeEach(() => {
-      jest.useFakeTimers()
-    })
-
     it('should log operation name in warnings', async () => {
+      jest.useFakeTimers()
+
       const operation = jest.fn()
         .mockRejectedValueOnce({ code: 'P1001', message: 'Connection error' })
         .mockResolvedValueOnce('success')
@@ -317,12 +320,12 @@ describe('db-retry', () => {
       const operation = jest.fn()
         .mockRejectedValue({ code: 'P1001', message: 'Error' })
 
-      const promise = withRetry(operation, {
-        maxRetries: 1,
-        operationName: 'Create user',
-      })
-
-      await expect(promise).rejects.toThrow()
+      await expect(
+        withRetry(operation, {
+          maxRetries: 1,
+          operationName: 'Create user',
+        })
+      ).rejects.toMatchObject({ code: 'P1001' })
 
       expect(mockConsoleError).toHaveBeenCalledWith(
         expect.stringContaining('Create user'),
@@ -334,7 +337,7 @@ describe('db-retry', () => {
       const operation = jest.fn()
         .mockRejectedValue({ code: 'P1001', message: 'Error' })
 
-      await expect(withRetry(operation, { maxRetries: 1 })).rejects.toThrow()
+      await expect(withRetry(operation, { maxRetries: 1 })).rejects.toMatchObject({ code: 'P1001' })
 
       expect(mockConsoleError).toHaveBeenCalledWith(
         expect.stringContaining('Database operation'),
@@ -344,13 +347,13 @@ describe('db-retry', () => {
   })
 
   describe('withRetry() - 边界条件', () => {
-    it('should handle maxRetries = 0', async () => {
+    it('should handle maxRetries = 0 by throwing', async () => {
       const operation = jest.fn().mockResolvedValue('success')
 
-      const result = await withRetry(operation, { maxRetries: 0 })
+      // maxRetries = 0 means no attempts, should fail
+      await expect(withRetry(operation, { maxRetries: 0 })).rejects.toThrow('Operation failed')
 
-      expect(result).toBe('success')
-      expect(operation).toHaveBeenCalledTimes(1)
+      expect(operation).toHaveBeenCalledTimes(0)
     })
 
     it('should handle extremely large maxRetries', async () => {

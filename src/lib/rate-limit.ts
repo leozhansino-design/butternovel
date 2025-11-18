@@ -45,7 +45,6 @@ class MemoryRateLimiter {
       (timestamp) => now - timestamp < config.interval
     )
 
-    const remaining = Math.max(0, config.limit - entry.timestamps.length)
     const success = entry.timestamps.length < config.limit
 
     if (success) {
@@ -53,6 +52,9 @@ class MemoryRateLimiter {
       entry.timestamps.push(now)
       this.store.set(key, entry)
     }
+
+    // remaining 表示"这次请求后还能发多少个"
+    const remaining = Math.max(0, config.limit - entry.timestamps.length)
 
     // 计算重置时间（最早的时间戳 + 窗口时间）
     const oldestTimestamp = entry.timestamps[0] || now
