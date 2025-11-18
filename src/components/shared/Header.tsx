@@ -149,7 +149,7 @@ export default function Header() {
             </nav>
 
             {/* Search Bar - Desktop (with autocomplete) */}
-            <div className="hidden md:block w-64">
+            <div className="hidden md:block w-80 lg:w-96">
               <SearchInput placeholder="Search novels..." />
             </div>
 

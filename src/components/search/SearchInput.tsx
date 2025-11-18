@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 
 interface Suggestion {
   id: number
@@ -199,7 +198,7 @@ export default function SearchInput({
         </div>
       </form>
 
-      {/* 建议下拉框 */}
+      {/* 建议下拉框 - 无封面，更快速 */}
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
@@ -209,24 +208,19 @@ export default function SearchInput({
             <button
               key={suggestion.id}
               onClick={() => handleSuggestionClick(suggestion)}
-              className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors ${
+              className={`w-full px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
                 index === selectedIndex ? 'bg-yellow-50' : ''
               }`}
             >
-              <div className="flex-shrink-0 w-12 h-16 bg-gray-200 rounded overflow-hidden">
-                <Image
-                  src={suggestion.coverImage}
-                  alt={suggestion.title}
-                  width={48}
-                  height={64}
-                  className="w-full h-full object-cover"
-                />
-              </div>
               <div className="flex-1 text-left">
-                <div className="font-medium text-gray-900 line-clamp-1">
+                <div className="font-medium text-gray-900 truncate">
                   {suggestion.title}
                 </div>
-                <div className="text-sm text-gray-500">{suggestion.category}</div>
+              </div>
+              <div className="flex-shrink-0">
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {suggestion.category}
+                </span>
               </div>
             </button>
           ))}
