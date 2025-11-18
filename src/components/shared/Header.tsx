@@ -104,8 +104,8 @@ export default function Header() {
                     <Link href="/category/mystery" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
                       Mystery
                     </Link>
-                    <Link href="/category/action" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Action
+                    <Link href="/category/historical" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                      Historical
                     </Link>
                     <Link href="/category/adventure" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
                       Adventure
@@ -293,11 +293,11 @@ export default function Header() {
                   Mystery
                 </Link>
                 <Link
-                  href="/category/action"
+                  href="/category/historical"
                   className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Action
+                  Historical
                 </Link>
                 <Link
                   href="/category/adventure"
