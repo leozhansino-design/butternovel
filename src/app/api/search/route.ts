@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
+import { rateLimit, getIdentifier } from '@/lib/rate-limit'
 
 /**
  * 计算质量分数（贝叶斯平均）
@@ -123,6 +124,28 @@ function calculateRelevanceScore(novel: any, query: string): number {
 // GET /api/search?q=keyword&category=1&page=1&limit=20
 export async function GET(request: Request) {
   try {
+    // 速率限制：防止滥用搜索功能
+    const identifier = getIdentifier(request)
+    const { success, limit: rateLimitMax, remaining, reset } = rateLimit(identifier, 'search')
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Too many requests. Please try again later.',
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitMax.toString(),
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': new Date(reset).toISOString(),
+            'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
+          },
+        }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''
     const category = searchParams.get('category')
