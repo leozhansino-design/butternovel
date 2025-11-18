@@ -8,6 +8,7 @@ import AuthModal from '@/components/auth/AuthModal';
 import UserMenu from '@/components/shared/UserMenu';
 import LibraryModal from '@/components/shared/LibraryModal';
 import SearchInput from '@/components/search/SearchInput';
+import { CATEGORIES } from '@/lib/constants';
 
 export default function Header() {
   // ✅ Use useSession to get real-time session updates
@@ -82,51 +83,15 @@ export default function Header() {
                 {/* Dropdown Menu */}
                 <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="py-2">
-                    <Link href="/category/fantasy" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Fantasy
-                    </Link>
-                    <Link href="/category/urban" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Urban
-                    </Link>
-                    <Link href="/category/romance" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Romance
-                    </Link>
-                    <Link href="/category/sci-fi" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Sci-Fi
-                    </Link>
-                    <Link href="/category/mystery" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Mystery
-                    </Link>
-                    <Link href="/category/historical" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Historical
-                    </Link>
-                    <Link href="/category/adventure" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Adventure
-                    </Link>
-                    <Link href="/category/horror" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Horror
-                    </Link>
-                    <Link href="/category/crime" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Crime
-                    </Link>
-                    <Link href="/category/lgbtq" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      LGBTQ+
-                    </Link>
-                    <Link href="/category/paranormal" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Paranormal
-                    </Link>
-                    <Link href="/category/system" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      System
-                    </Link>
-                    <Link href="/category/reborn" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Reborn
-                    </Link>
-                    <Link href="/category/revenge" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Revenge
-                    </Link>
-                    <Link href="/category/fanfiction" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
-                      Fanfiction
-                    </Link>
+                    {CATEGORIES.map((category) => (
+                      <Link
+                        key={category.slug}
+                        href={`/category/${category.slug}`}
+                        className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -219,111 +184,16 @@ export default function Header() {
                 <div className="px-3 py-2 text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">
                   Categories
                 </div>
-                <Link
-                  href="/category/fantasy"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Fantasy
-                </Link>
-                <Link
-                  href="/category/urban"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Urban
-                </Link>
-                <Link
-                  href="/category/romance"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Romance
-                </Link>
-                <Link
-                  href="/category/sci-fi"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sci-Fi
-                </Link>
-                <Link
-                  href="/category/mystery"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Mystery
-                </Link>
-                <Link
-                  href="/category/historical"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Historical
-                </Link>
-                <Link
-                  href="/category/adventure"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Adventure
-                </Link>
-                <Link
-                  href="/category/horror"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Horror
-                </Link>
-                <Link
-                  href="/category/crime"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Crime
-                </Link>
-                <Link
-                  href="/category/lgbtq"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  LGBTQ+
-                </Link>
-                <Link
-                  href="/category/paranormal"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Paranormal
-                </Link>
-                <Link
-                  href="/category/system"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  System
-                </Link>
-                <Link
-                  href="/category/reborn"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Reborn
-                </Link>
-                <Link
-                  href="/category/revenge"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Revenge
-                </Link>
-                <Link
-                  href="/category/fanfiction"
-                  className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Fanfiction
-                </Link>
+                {CATEGORIES.map((category) => (
+                  <Link
+                    key={category.slug}
+                    href={`/category/${category.slug}`}
+                    className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {category.name}
+                  </Link>
+                ))}
 
                 {user ? (
                   <Link
