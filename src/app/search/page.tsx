@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
@@ -40,7 +40,7 @@ interface SearchResponse {
   error?: string
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('q') || ''
@@ -149,9 +149,8 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <main className="flex-1">
-        <div className="container mx-auto px-4 max-w-7xl py-8 sm:py-12">
+    <main className="flex-1">
+      <div className="container mx-auto px-4 max-w-7xl py-8 sm:py-12">
           {/* 搜索头部 */}
           <div className="mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -325,8 +324,24 @@ export default function SearchPage() {
               </p>
             </div>
           )}
+      </div>
+    </main>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      <Suspense fallback={
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-4xl mb-4">⏳</div>
+            <p className="text-gray-600">Loading search...</p>
+          </div>
         </div>
-      </main>
+      }>
+        <SearchContent />
+      </Suspense>
       <Footer />
     </div>
   )
