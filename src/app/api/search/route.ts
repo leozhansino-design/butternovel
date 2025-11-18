@@ -39,7 +39,7 @@ function calculateRelevanceScore(novel: any, query: string): number {
     score += 500
     // 如果匹配在词首，额外加分
     const words = title.split(/\s+/)
-    if (words.some(word => word.startsWith(normalizedQuery))) {
+    if (words.some((word: string) => word.startsWith(normalizedQuery))) {
       score += 200
     }
   }
