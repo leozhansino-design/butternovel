@@ -109,16 +109,6 @@ export async function POST(
         chapterId: true,
         paragraphIndex: true,
         userId: true,
-        novel: {
-          select: {
-            slug: true,
-          },
-        },
-        chapter: {
-          select: {
-            chapterNumber: true,
-          },
-        },
       },
     })
 
@@ -128,6 +118,13 @@ export async function POST(
         { status: 404 }
       )
     }
+
+    console.log('[Comment Reply API] Parent comment found:', {
+      id: parentComment.id,
+      novelId: parentComment.novelId,
+      chapterId: parentComment.chapterId,
+      paragraphIndex: parentComment.paragraphIndex,
+    })
 
     // 🔧 FIX: 验证参数一致性 - 确保请求参数与父评论匹配
     // Convert to numbers safely (handles both string and number inputs)
@@ -293,8 +290,20 @@ export async function POST(
     // 发送通知给评论作者
     if (parentComment.userId !== session.user.id) {
       try {
+        // 查询 novel 和 chapter 信息用于通知
+        const [novel, chapter] = await Promise.all([
+          prisma.novel.findUnique({
+            where: { id: parentComment.novelId },
+            select: { slug: true },
+          }),
+          prisma.chapter.findUnique({
+            where: { id: parentComment.chapterId },
+            select: { chapterNumber: true },
+          }),
+        ])
+
         // 🔧 FIX: 添加null检查，防止访问已删除的novel/chapter
-        if (parentComment.novel && parentComment.chapter) {
+        if (novel && chapter) {
           await createNotification({
             userId: parentComment.userId,
             type: 'COMMENT_REPLY',
@@ -302,17 +311,17 @@ export async function POST(
             data: {
               commentId: parentComment.id,
               novelId: parentComment.novelId,
-              novelSlug: parentComment.novel.slug,
+              novelSlug: novel.slug,
               chapterId: parentComment.chapterId,
-              chapterNumber: parentComment.chapter.chapterNumber,
+              chapterNumber: chapter.chapterNumber,
               replyContent: content.trim(),
             },
           });
         } else {
           console.warn('[Comment Reply API] Skipping notification - novel or chapter not found:', {
             parentCommentId: parentComment.id,
-            novelExists: !!parentComment.novel,
-            chapterExists: !!parentComment.chapter,
+            novelExists: !!novel,
+            chapterExists: !!chapter,
           });
         }
       } catch (error) {
