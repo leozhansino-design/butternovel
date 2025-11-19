@@ -7,22 +7,22 @@
   --z-60: 60;
   --z-70: 70;
 
-  /* 🔵 品牌色彩 - 质感蓝色系 */
-  --color-brand-primary: #0066CC;    /* 深邃蓝 - Apple Blue */
-  --color-brand-secondary: #0077ED;  /* 明亮蓝 */
-  --color-brand-accent: #0052A3;     /* 深蓝强调 */
-  --color-brand-light: #E6F2FF;      /* 浅蓝背景 */
+  /* 🔵 品牌色彩 - 低饱和质感蓝色系 (纪念碑谷风格) */
+  --color-brand-primary: #5B8FB9;    /* 柔和蓝 - 低饱和度 */
+  --color-brand-secondary: #7BA3C2;  /* 明亮蓝 - 低饱和度 */
+  --color-brand-accent: #4A7BA7;     /* 深蓝强调 - 低饱和度 */
+  --color-brand-light: #E8F1F8;      /* 浅蓝背景 - 非常淡 */
 
-  /* 渐变效果 - 蓝色系 */
-  --gradient-primary: linear-gradient(135deg, #0066CC 0%, #0088FF 100%);
-  --gradient-secondary: linear-gradient(135deg, #0052A3 0%, #0066CC 100%);
-  --gradient-light: linear-gradient(180deg, #F0F7FF 0%, #FFFFFF 100%);
-  --gradient-blue-glow: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 136, 255, 0.05) 100%);
+  /* 渐变效果 - 低饱和蓝色系 */
+  --gradient-primary: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
+  --gradient-secondary: linear-gradient(135deg, #4A7BA7 0%, #5B8FB9 100%);
+  --gradient-light: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 100%);
+  --gradient-blue-glow: linear-gradient(135deg, rgba(91, 143, 185, 0.08) 0%, rgba(123, 163, 194, 0.04) 100%);
 }
 
 /* 🌐 全局样式 */
 body {
-  background: linear-gradient(180deg, #F0F7FF 0%, #FFFFFF 50%, #FAFBFF 100%);
+  background: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 50%, #FAFBFD 100%);
   background-attachment: fixed;
   color: #1a1a1a;
   font-feature-settings: 'kern' 1, 'liga' 1;
@@ -38,19 +38,19 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 102, 204, 0.03);
+  background: rgba(91, 143, 185, 0.04);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #0077ED 0%, #0066CC 100%);
+  background: linear-gradient(180deg, #7BA3C2 0%, #5B8FB9 100%);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #0088FF 0%, #0077ED 100%);
+  background: linear-gradient(180deg, #8CB3CD 0%, #6B9FC4 100%);
   background-clip: padding-box;
 }
 
@@ -124,29 +124,29 @@ body {
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, rgba(0, 102, 204, 0) 0%, rgba(0, 102, 204, 0.1) 50%, rgba(0, 102, 204, 0) 100%);
+  background: linear-gradient(90deg, rgba(91, 143, 185, 0) 0%, rgba(91, 143, 185, 0.08) 50%, rgba(91, 143, 185, 0) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
 
-/* 🎨 玻璃态效果 - 蓝色调 */
+/* 🎨 玻璃态效果 - 低饱和蓝色调 */
 .glass-effect {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(0, 102, 204, 0.08);
+  border: 1px solid rgba(91, 143, 185, 0.08);
   box-shadow:
-    0 1px 3px rgba(0, 102, 204, 0.06),
+    0 1px 3px rgba(91, 143, 185, 0.06),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
 }
 
 .glass-effect-blue {
-  background: rgba(230, 242, 255, 0.6);
+  background: rgba(232, 241, 248, 0.6);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(0, 102, 204, 0.15);
+  border: 1px solid rgba(91, 143, 185, 0.12);
   box-shadow:
-    0 2px 8px rgba(0, 102, 204, 0.08),
+    0 2px 8px rgba(91, 143, 185, 0.08),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
 }
 
@@ -154,54 +154,54 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(32px) saturate(200%);
   -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid rgba(0, 102, 204, 0.12);
+  border: 1px solid rgba(91, 143, 185, 0.1);
   box-shadow:
-    0 4px 12px rgba(0, 102, 204, 0.08),
-    0 1px 3px rgba(0, 102, 204, 0.04),
+    0 4px 12px rgba(91, 143, 185, 0.08),
+    0 1px 3px rgba(91, 143, 185, 0.04),
     inset 0 1px 0 0 rgba(255, 255, 255, 1);
 }
 
-/* 🌟 卡片阴影 - 蓝色调立体感 */
+/* 🌟 卡片阴影 - 低饱和蓝色调 */
 .card-shadow {
-  box-shadow: 0 1px 3px 0 rgba(0, 102, 204, 0.08);
+  box-shadow: 0 1px 3px 0 rgba(91, 143, 185, 0.08);
 }
 
 .card-shadow-md {
   box-shadow:
-    0 2px 4px -1px rgba(0, 102, 204, 0.1),
-    0 4px 8px -1px rgba(0, 102, 204, 0.06);
+    0 2px 4px -1px rgba(91, 143, 185, 0.1),
+    0 4px 8px -1px rgba(91, 143, 185, 0.06);
 }
 
 .card-shadow-lg {
   box-shadow:
-    0 4px 8px -2px rgba(0, 102, 204, 0.12),
-    0 10px 20px -3px rgba(0, 102, 204, 0.08),
-    0 0 0 1px rgba(0, 102, 204, 0.04);
+    0 4px 8px -2px rgba(91, 143, 185, 0.12),
+    0 10px 20px -3px rgba(91, 143, 185, 0.08),
+    0 0 0 1px rgba(91, 143, 185, 0.04);
 }
 
 .card-shadow-xl {
   box-shadow:
-    0 10px 20px -5px rgba(0, 102, 204, 0.15),
-    0 20px 40px -8px rgba(0, 102, 204, 0.1),
-    0 0 0 1px rgba(0, 102, 204, 0.06);
+    0 10px 20px -5px rgba(91, 143, 185, 0.15),
+    0 20px 40px -8px rgba(91, 143, 185, 0.1),
+    0 0 0 1px rgba(91, 143, 185, 0.06);
 }
 
-/* 🔷 按钮样式 - 蓝色系 */
+/* 🔷 按钮样式 - 低饱和蓝色系 */
 .btn-primary {
-  background: linear-gradient(135deg, #0066CC 0%, #0077ED 100%);
+  background: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
   color: #ffffff;
   border: none;
   box-shadow:
-    0 2px 8px rgba(0, 102, 204, 0.25),
+    0 2px 8px rgba(91, 143, 185, 0.2),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #0077ED 0%, #0088FF 100%);
+  background: linear-gradient(135deg, #6B9FC4 0%, #8CB3CD 100%);
   box-shadow:
-    0 4px 12px rgba(0, 102, 204, 0.35),
-    0 2px 6px rgba(0, 102, 204, 0.2),
+    0 4px 12px rgba(91, 143, 185, 0.28),
+    0 2px 6px rgba(91, 143, 185, 0.15),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
@@ -209,22 +209,22 @@ body {
 .btn-primary:active {
   transform: translateY(0);
   box-shadow:
-    0 2px 4px rgba(0, 102, 204, 0.2),
+    0 2px 4px rgba(91, 143, 185, 0.15),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
 }
 
 .btn-secondary {
-  background: rgba(0, 102, 204, 0.08);
-  color: #0066CC;
-  border: 1px solid rgba(0, 102, 204, 0.15);
+  background: rgba(91, 143, 185, 0.08);
+  color: #5B8FB9;
+  border: 1px solid rgba(91, 143, 185, 0.15);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary:hover {
-  background: rgba(0, 102, 204, 0.12);
-  border-color: rgba(0, 102, 204, 0.2);
+  background: rgba(91, 143, 185, 0.12);
+  border-color: rgba(91, 143, 185, 0.2);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.12);
+  box-shadow: 0 2px 8px rgba(91, 143, 185, 0.12);
 }
 
 .btn-ghost {
@@ -235,61 +235,61 @@ body {
 }
 
 .btn-ghost:hover {
-  background: rgba(0, 102, 204, 0.06);
-  color: #0066CC;
+  background: rgba(91, 143, 185, 0.06);
+  color: #5B8FB9;
 }
 
-/* 🎯 焦点样式 - 蓝色光圈 */
+/* 🎯 焦点样式 - 低饱和蓝色光圈 */
 .focus-ring {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+  box-shadow: 0 0 0 3px rgba(91, 143, 185, 0.15);
 }
 
 .focus-ring-inset {
   outline: none;
-  box-shadow: inset 0 0 0 2px rgba(0, 102, 204, 0.3);
+  box-shadow: inset 0 0 0 2px rgba(91, 143, 185, 0.3);
 }
 
 /* 📝 输入框样式 */
 .input-primary {
   background: #ffffff;
-  border: 1px solid rgba(0, 102, 204, 0.15);
+  border: 1px solid rgba(91, 143, 185, 0.15);
   transition: all 0.2s ease;
 }
 
 .input-primary:hover {
-  border-color: rgba(0, 102, 204, 0.25);
+  border-color: rgba(91, 143, 185, 0.25);
 }
 
 .input-primary:focus {
   outline: none;
-  border-color: #0066CC;
-  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+  border-color: #5B8FB9;
+  box-shadow: 0 0 0 3px rgba(91, 143, 185, 0.12);
 }
 
 /* 🌈 渐变背景 */
 .bg-gradient-blue-subtle {
-  background: linear-gradient(180deg, #F0F7FF 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 100%);
 }
 
 .bg-gradient-blue-card {
   background: linear-gradient(135deg,
-    rgba(230, 242, 255, 0.5) 0%,
+    rgba(232, 241, 248, 0.5) 0%,
     rgba(255, 255, 255, 0.9) 100%
   );
 }
 
 .bg-gradient-blue-vibrant {
-  background: linear-gradient(135deg, #0066CC 0%, #0088FF 100%);
+  background: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
 }
 
-/* 📱 分隔线 - 蓝色调 */
+/* 📱 分隔线 - 低饱和蓝色调 */
 .divider {
   height: 1px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(0, 102, 204, 0.15) 20%,
-    rgba(0, 102, 204, 0.15) 80%,
+    rgba(91, 143, 185, 0.15) 20%,
+    rgba(91, 143, 185, 0.15) 80%,
     transparent 100%
   );
 }
@@ -298,8 +298,8 @@ body {
   width: 1px;
   background: linear-gradient(180deg,
     transparent 0%,
-    rgba(0, 102, 204, 0.15) 20%,
-    rgba(0, 102, 204, 0.15) 80%,
+    rgba(91, 143, 185, 0.15) 20%,
+    rgba(91, 143, 185, 0.15) 80%,
     transparent 100%
   );
 }
@@ -311,7 +311,7 @@ body {
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 102, 204, 0.12);
+  box-shadow: 0 8px 16px rgba(91, 143, 185, 0.12);
 }
 
 .hover-glow {
@@ -319,7 +319,7 @@ body {
 }
 
 .hover-glow:hover {
-  box-shadow: 0 0 20px rgba(0, 102, 204, 0.3);
+  box-shadow: 0 0 20px rgba(91, 143, 185, 0.25);
 }
 
 /* 💎 文字样式 */
@@ -328,7 +328,7 @@ body {
 }
 
 .text-gradient-blue {
-  background: linear-gradient(135deg, #0066CC 0%, #0088FF 100%);
+  background: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -377,7 +377,7 @@ body {
   content: '';
   position: absolute;
   inset: -2px;
-  background: linear-gradient(135deg, #0066CC, #0088FF);
+  background: linear-gradient(135deg, #5B8FB9, #7BA3C2);
   border-radius: inherit;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -386,7 +386,7 @@ body {
 }
 
 .blue-glow:hover::before {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 /* 📐 间距系统增强 */

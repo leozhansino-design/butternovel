@@ -5,10 +5,10 @@ export default function NovelDetailLoading() {
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
         {/* 详情页骨架 - 匹配真实布局 */}
-        <section className="py-12 md:py-16 bg-gradient-to-b from-amber-50 via-orange-50 to-[#fff7ed]">
+        <section className="py-12 md:py-16 bg-gradient-to-b from-blue-50/30 via-sky-50/20 to-white">
           <div className="container mx-auto px-4">
             <div className="max-w-7xl mx-auto">
-              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+              <div className="glass-effect-strong rounded-3xl card-shadow-xl overflow-hidden">
                 <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
 
                   {/* Cover Skeleton */}
@@ -54,8 +54,8 @@ export default function NovelDetailLoading() {
 
                     {/* Buttons */}
                     <div className="flex gap-4 pt-2">
-                      <div className="h-14 w-48 bg-gradient-to-r from-amber-200 to-orange-200 rounded-xl animate-pulse shadow-lg"></div>
-                      <div className="h-14 w-36 bg-gray-200 rounded-xl animate-pulse"></div>
+                      <div className="h-14 w-48 bg-gradient-to-r from-blue-200/60 to-sky-200/60 rounded-xl animate-pulse shadow-lg"></div>
+                      <div className="h-14 w-36 bg-blue-100/40 rounded-xl animate-pulse"></div>
                     </div>
                   </div>
                 </div>
@@ -65,7 +65,7 @@ export default function NovelDetailLoading() {
         </section>
 
         {/* Gradient Divider */}
-        <div className="h-12 bg-gradient-to-b from-[#fff7ed] via-[#fffaf5] via-[#fffcfa] to-white"></div>
+        <div className="h-8 bg-gradient-to-b from-white to-gray-50/30"></div>
 
         {/* First Chapter Skeleton */}
         <section className="pt-6 pb-12 md:pb-16 bg-white">
@@ -93,7 +93,7 @@ export default function NovelDetailLoading() {
 
               {/* Continue Button Skeleton */}
               <div className="border-t border-gray-200 pt-10 text-center">
-                <div className="h-14 w-56 bg-gradient-to-r from-amber-200 to-orange-200 rounded-lg mx-auto animate-pulse"></div>
+                <div className="h-14 w-56 bg-gradient-to-r from-blue-200/60 to-sky-200/60 rounded-lg mx-auto animate-pulse"></div>
               </div>
             </div>
           </div>
