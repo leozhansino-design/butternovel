@@ -4,8 +4,8 @@ export default function NovelDetailLoading() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
-        {/* 详情页骨架 - Logo 蓝色系 */}
-        <section className="relative py-12 md:py-20 bg-gradient-to-b from-blue-50 via-blue-50/30 to-white">
+        {/* 详情页骨架 - Logo 蓝色系，底部逐渐过渡到白色 */}
+        <section className="relative py-12 md:py-20 bg-gradient-to-b from-blue-50 via-blue-50/30 via-blue-50/10 to-white/95">
           {/* 微妙的光效层 */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.03] via-transparent to-blue-500/[0.02]"></div>
 
@@ -67,14 +67,10 @@ export default function NovelDetailLoading() {
           </div>
         </section>
 
-        {/* 柔和的蓝色渐变衔接层 - 加长加深，创造呼吸感 */}
-        <div className="relative h-32">
-          {/* 主渐变层 - 从白到浅蓝 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/40 via-blue-50/60 to-blue-100/50"></div>
-          {/* 深度层 - 增强蓝色 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-200/8 to-blue-200/15"></div>
-          {/* 中心光晕 - 径向扩散 */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_100%_at_50%_0%,_var(--tw-gradient-stops))] from-blue-400/8 via-blue-300/4 to-transparent"></div>
+        {/* 极柔和的过渡层 - 从白色带一点蓝色呼吸感到纯白 */}
+        <div className="relative h-20">
+          <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/5 to-white"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_100%_at_50%_50%,_var(--tw-gradient-stops))] from-blue-400/3 via-transparent to-transparent"></div>
         </div>
 
         {/* First Chapter Skeleton */}

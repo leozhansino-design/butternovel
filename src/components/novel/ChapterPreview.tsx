@@ -83,7 +83,7 @@ export default async function ChapterPreview({
   const preview = truncateByWords(content, 250)
 
   return (
-    <section className="py-16 bg-gradient-to-b from-blue-100/30 via-blue-50/20 to-blue-50/10">
+    <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* 章节标题 */}
@@ -105,8 +105,8 @@ export default async function ChapterPreview({
               </div>
             </div>
 
-            {/* 渐变遮罩效果 - 蓝色主题 */}
-            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-blue-50/60 via-blue-50/40 to-transparent pointer-events-none" />
+            {/* 渐变遮罩效果 - 白色渐变 */}
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
           </div>
 
           {/* Continue Reading 按钮 - 蓝色主题 */}
