@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. 通知书架用户（未关注作者但加入书架）
-        const followerIds = followers.map(f => f.followerId);
+        const followerIds = followers.map((f: { followerId: string }) => f.followerId);
         const libraryUsers = await prisma.library.findMany({
           where: {
             novelId: novel.id,
