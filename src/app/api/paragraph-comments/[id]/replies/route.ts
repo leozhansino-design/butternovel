@@ -72,6 +72,19 @@ export async function POST(
     const body = await request.json()
     const { novelId, chapterId, paragraphIndex, content, image } = body
 
+    console.log('[Comment Reply API] Request data:', {
+      parentId,
+      novelId,
+      novelIdType: typeof novelId,
+      chapterId,
+      chapterIdType: typeof chapterId,
+      paragraphIndex,
+      paragraphIndexType: typeof paragraphIndex,
+      contentLength: content?.length,
+      hasImage: !!image,
+      userId: session.user.id,
+    })
+
     // Validate parent comment exists
     const parentComment = await prisma.paragraphComment.findUnique({
       where: { id: parentId },
@@ -102,11 +115,49 @@ export async function POST(
     const chapterIdNum = typeof chapterId === 'number' ? chapterId : parseInt(chapterId);
     const paragraphIndexNum = typeof paragraphIndex === 'number' ? paragraphIndex : parseInt(paragraphIndex);
 
+    console.log('[Comment Reply API] Converted values:', {
+      novelIdNum,
+      chapterIdNum,
+      paragraphIndexNum,
+      parentComment: {
+        novelId: parentComment.novelId,
+        chapterId: parentComment.chapterId,
+        paragraphIndex: parentComment.paragraphIndex,
+      },
+      match: {
+        novel: novelIdNum === parentComment.novelId,
+        chapter: chapterIdNum === parentComment.chapterId,
+        paragraph: paragraphIndexNum === parentComment.paragraphIndex,
+      }
+    })
+
+    // 检查 NaN
+    if (isNaN(novelIdNum) || isNaN(chapterIdNum) || isNaN(paragraphIndexNum)) {
+      console.error('[Comment Reply API] Invalid number conversion:', {
+        novelIdNum,
+        chapterIdNum,
+        paragraphIndexNum,
+        originalValues: { novelId, chapterId, paragraphIndex }
+      })
+      return NextResponse.json(
+        { success: false, error: 'Invalid parameter types' },
+        { status: 400 }
+      );
+    }
+
     if (
       novelIdNum !== parentComment.novelId ||
       chapterIdNum !== parentComment.chapterId ||
       paragraphIndexNum !== parentComment.paragraphIndex
     ) {
+      console.warn('[Comment Reply API] Parameter mismatch:', {
+        request: { novelIdNum, chapterIdNum, paragraphIndexNum },
+        parent: {
+          novelId: parentComment.novelId,
+          chapterId: parentComment.chapterId,
+          paragraphIndex: parentComment.paragraphIndex,
+        }
+      })
       return NextResponse.json(
         { success: false, error: 'Reply parameters do not match parent comment' },
         { status: 400 }
@@ -147,8 +198,19 @@ export async function POST(
     }
 
     // Create reply in transaction
+    console.log('[Comment Reply API] Starting transaction with data:', {
+      novelIdNum,
+      chapterIdNum,
+      paragraphIndexNum,
+      contentLength: content.trim().length,
+      hasImage: !!imageUrl,
+      userId: session.user.id,
+      parentId,
+    })
+
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Create the reply
+      console.log('[Comment Reply API] Creating reply...')
       const reply = await tx.paragraphComment.create({
         data: {
           novelId: novelIdNum,
@@ -244,8 +306,20 @@ export async function POST(
     })
   } catch (error) {
     console.error('[Comment Reply API] Error:', error)
+
+    // 提供更详细的错误信息
+    let errorMessage = 'Failed to create reply'
+    if (error instanceof Error) {
+      console.error('[Comment Reply API] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      })
+      errorMessage = error.message
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Failed to create reply' },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
