@@ -146,9 +146,9 @@ export async function POST(
       // Create the reply
       const reply = await tx.paragraphComment.create({
         data: {
-          novelId,
-          chapterId,
-          paragraphIndex,
+          novelId: parseInt(novelId),
+          chapterId: parseInt(chapterId),
+          paragraphIndex: parseInt(paragraphIndex),
           content: content.trim(),
           imageUrl,
           imagePublicId,
