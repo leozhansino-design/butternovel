@@ -44,11 +44,11 @@ export default function NotificationBell() {
         aria-label="通知"
       >
         <Bell size={24} />
-        {unreadCount > 0 && (
+        {(typeof unreadCount === 'number' && unreadCount > 0) || unreadCount === '99+' ? (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 font-semibold">
             {unreadCount}
           </span>
-        )}
+        ) : null}
       </button>
 
       {showPanel && <NotificationPanel onClose={handlePanelClose} />}
