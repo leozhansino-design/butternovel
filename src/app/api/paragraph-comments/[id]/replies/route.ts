@@ -96,6 +96,18 @@ export async function POST(
       )
     }
 
+    // 🔧 FIX: 验证参数一致性 - 确保请求参数与父评论匹配
+    if (
+      parseInt(novelId) !== parentComment.novelId ||
+      parseInt(chapterId) !== parentComment.chapterId ||
+      parseInt(paragraphIndex) !== parentComment.paragraphIndex
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Reply parameters do not match parent comment' },
+        { status: 400 }
+      );
+    }
+
     // Validate inputs
     if (!content || content.trim().length === 0) {
       return NextResponse.json(
@@ -194,19 +206,28 @@ export async function POST(
     // 发送通知给评论作者
     if (parentComment.userId !== session.user.id) {
       try {
-        await createNotification({
-          userId: parentComment.userId,
-          type: 'COMMENT_REPLY',
-          actorId: session.user.id,
-          data: {
-            commentId: parentComment.id,
-            novelId: parentComment.novelId,
-            novelSlug: parentComment.novel.slug,
-            chapterId: parentComment.chapterId,
-            chapterNumber: parentComment.chapter.chapterNumber,
-            replyContent: content.trim(),
-          },
-        });
+        // 🔧 FIX: 添加null检查，防止访问已删除的novel/chapter
+        if (parentComment.novel && parentComment.chapter) {
+          await createNotification({
+            userId: parentComment.userId,
+            type: 'COMMENT_REPLY',
+            actorId: session.user.id,
+            data: {
+              commentId: parentComment.id,
+              novelId: parentComment.novelId,
+              novelSlug: parentComment.novel.slug,
+              chapterId: parentComment.chapterId,
+              chapterNumber: parentComment.chapter.chapterNumber,
+              replyContent: content.trim(),
+            },
+          });
+        } else {
+          console.warn('[Comment Reply API] Skipping notification - novel or chapter not found:', {
+            parentCommentId: parentComment.id,
+            novelExists: !!parentComment.novel,
+            chapterExists: !!parentComment.chapter,
+          });
+        }
       } catch (error) {
         console.error('[Comment Reply API] Failed to create notification:', error);
       }

@@ -176,17 +176,25 @@ export async function POST(request: NextRequest, { params }: Params) {
     // 发送通知给评分作者
     if (rating.userId !== session.user.id) {
       try {
-        await createNotification({
-          userId: rating.userId,
-          type: 'RATING_REPLY',
-          actorId: session.user.id,
-          data: {
+        // 🔧 FIX: 添加null检查，防止访问已删除的novel
+        if (rating.novel) {
+          await createNotification({
+            userId: rating.userId,
+            type: 'RATING_REPLY',
+            actorId: session.user.id,
+            data: {
+              ratingId: rating.id,
+              novelId: rating.novelId,
+              novelSlug: rating.novel.slug,
+              replyContent: content.trim(),
+            },
+          });
+        } else {
+          console.warn('[Rating Reply API] Skipping notification - novel not found:', {
             ratingId: rating.id,
             novelId: rating.novelId,
-            novelSlug: rating.novel.slug,
-            replyContent: content.trim(),
-          },
-        });
+          });
+        }
       } catch (error) {
         console.error('[Rating Reply API] Failed to create notification:', error);
       }
