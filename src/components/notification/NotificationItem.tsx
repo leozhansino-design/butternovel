@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { Archive, X } from 'lucide-react';
 
 interface NotificationItemProps {
   notification: any;
@@ -21,22 +22,36 @@ export default function NotificationItem({
 }: NotificationItemProps) {
   const router = useRouter();
 
+  // 点击通知内容 - 仅标记已读并跳转
   const handleClick = async () => {
-    // 标记为归档
-    try {
-      await fetch(`/api/notifications/${notification.id}/archive`, {
-        method: 'POST',
-      });
-    } catch (error) {
-      console.error('Failed to archive notification:', error);
+    // 标记为已读
+    if (!notification.isRead) {
+      try {
+        await fetch(`/api/notifications/${notification.id}/read`, {
+          method: 'POST',
+        });
+      } catch (error) {
+        console.error('Failed to mark as read:', error);
+      }
     }
 
     // 跳转链接
     if (notification.linkUrl) {
       router.push(notification.linkUrl);
     }
+  };
 
-    onArchive();
+  // 归档通知
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    try {
+      await fetch(`/api/notifications/${notification.id}/archive`, {
+        method: 'POST',
+      });
+      onArchive();
+    } catch (error) {
+      console.error('Failed to archive notification:', error);
+    }
   };
 
   const isAuthor = isAuthorNotification(notification.type);
@@ -47,8 +62,7 @@ export default function NotificationItem({
 
   return (
     <div
-      onClick={handleClick}
-      className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+      className={`p-4 border-b border-gray-200 dark:border-gray-700 transition-colors relative group ${
         !notification.isRead
           ? 'bg-blue-50 dark:bg-blue-900/10'
           : ''
@@ -60,20 +74,28 @@ export default function NotificationItem({
     >
       <div className="flex items-start gap-3">
         {/* 头像/图标 */}
-        {notification.imageUrl ? (
-          <img
-            src={notification.imageUrl}
-            alt=""
-            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-lg">🔔</span>
-          </div>
-        )}
+        <div
+          onClick={handleClick}
+          className="cursor-pointer flex-shrink-0"
+        >
+          {notification.imageUrl ? (
+            <img
+              src={notification.imageUrl}
+              alt=""
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <span className="text-white text-lg">🔔</span>
+            </div>
+          )}
+        </div>
 
         {/* 内容 */}
-        <div className="flex-1 min-w-0">
+        <div
+          onClick={handleClick}
+          className="flex-1 min-w-0 cursor-pointer"
+        >
           {isAuthor && (
             <span className="inline-block text-xs text-amber-600 dark:text-amber-400 font-semibold mb-1">
               ✍️ 作者通知
@@ -99,6 +121,17 @@ export default function NotificationItem({
             )}
           </div>
         </div>
+
+        {/* 归档按钮 */}
+        {!notification.isArchived && (
+          <button
+            onClick={handleArchive}
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex-shrink-0"
+            title="归档"
+          >
+            <Archive className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -380,6 +380,75 @@ export async function archiveAll(userId: string) {
   });
 }
 
+/**
+ * 删除特定的点赞通知
+ * 用于取消点赞时删除对应的通知
+ */
+export async function deleteLikeNotification(params: {
+  userId: string;
+  actorId: string;
+  type: 'RATING_LIKE' | 'COMMENT_LIKE';
+  ratingId?: string;
+  commentId?: string;
+}) {
+  const { userId, actorId, type, ratingId, commentId } = params;
+
+  // 删除单个通知（非聚合）
+  const deleteResult = await prisma.notification.deleteMany({
+    where: {
+      userId,
+      type,
+      actorId,
+      isAggregated: false,
+      ratingId: type === 'RATING_LIKE' ? ratingId : undefined,
+      commentId: type === 'COMMENT_LIKE' ? commentId : undefined,
+    },
+  });
+
+  // 如果删除了通知，还需要检查是否有聚合通知需要更新
+  if (deleteResult.count > 0) {
+    const aggregationKey =
+      type === 'RATING_LIKE'
+        ? `${type}:${ratingId}`
+        : `${type}:${commentId}`;
+
+    const aggregatedNotification = await prisma.notification.findFirst({
+      where: {
+        userId,
+        aggregationKey,
+        isAggregated: true,
+      },
+    });
+
+    if (aggregatedNotification) {
+      // 从聚合通知中移除这个 actor
+      const actorIds = aggregatedNotification.actorIds.filter(
+        (id: string) => id !== actorId
+      );
+      const actorCount = actorIds.length;
+
+      if (actorCount === 0) {
+        // 如果没有 actor 了，删除聚合通知
+        await prisma.notification.delete({
+          where: { id: aggregatedNotification.id },
+        });
+      } else {
+        // 更新聚合通知
+        await prisma.notification.update({
+          where: { id: aggregatedNotification.id },
+          data: {
+            actorIds,
+            actorCount,
+            updatedAt: new Date(),
+          },
+        });
+      }
+    }
+  }
+
+  return deleteResult;
+}
+
 // ============================================
 // 用户偏好设置
 // ============================================
