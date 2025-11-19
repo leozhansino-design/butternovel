@@ -33,16 +33,16 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
     >
       {/* User Button */}
       <button
-        className="flex items-center gap-3 px-4 py-2 rounded-full hover:bg-gray-50 transition-all duration-200"
+        className="flex items-center gap-3 px-4 py-2 rounded-full hover:bg-sky-50/50 transition-all duration-200"
       >
         {user.image ? (
           <img
             src={user.image}
             alt={user.name || 'User'}
-            className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-200"
+            className="w-9 h-9 rounded-full object-cover ring-2 ring-sky-200"
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold text-sm ring-2 ring-gray-200 border border-gray-300">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-sky-700 font-semibold text-sm ring-2 ring-sky-200">
             {user.name?.[0]?.toUpperCase() || 'U'}
           </div>
         )}
@@ -50,10 +50,10 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
       </button>
 
       {/* Dropdown Menu */}
-      <div className={`absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-200 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+      <div className={`absolute right-0 mt-3 w-56 glass-effect rounded-2xl card-shadow-xl border border-sky-200/50 overflow-hidden transition-all duration-200 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
 
         {/* User Info Header */}
-        <div className="px-4 py-4 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
+        <div className="px-4 py-4 bg-gradient-to-br from-sky-50/50 to-white border-b border-sky-100/50">
           <div className="flex items-center gap-3">
             {user.image ? (
               <img
@@ -62,7 +62,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
                 className="w-11 h-11 rounded-full object-cover"
               />
             ) : (
-              <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold border border-gray-300">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-sky-700 font-semibold border border-sky-200">
                 {user.name?.[0]?.toUpperCase() || 'U'}
               </div>
             )}
@@ -81,7 +81,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
               setIsOpen(false);
               onOpenLibrary?.('profile');
             }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,7 +97,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
               setIsOpen(false);
               onOpenLibrary?.('library');
             }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,13 +108,13 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
           </button>
 
           {/* Divider */}
-          <div className="h-px bg-gray-100 my-2 mx-4"></div>
+          <div className="h-px bg-sky-100/50 my-2 mx-4"></div>
 
           {/* Writer Dashboard */}
           <Link
             href="/dashboard"
             onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +128,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
           <Link
             href="/dashboard/upload"
             onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +142,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
           <Link
             href="/dashboard/novels"
             onClick={() => setIsOpen(false)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
           </Link>
 
           {/* Divider */}
-          <div className="h-px bg-gray-100 my-2 mx-4"></div>
+          <div className="h-px bg-sky-100/50 my-2 mx-4"></div>
 
           {/* Notification Settings */}
           <button
@@ -161,7 +161,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
               setIsOpen(false);
               setShowPreferences(true);
             }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition-colors"
           >
             <div className="w-5 h-5 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,7 +173,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
         </div>
 
         {/* Sign Out */}
-        <div className="border-t border-gray-100">
+        <div className="border-t border-sky-100/50">
           <button
             onClick={handleSignOut}
             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"

@@ -47,7 +47,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 glass-effect border-b border-sky-200/50 shadow-sm">
         <div className="container mx-auto px-3 sm:px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
 
@@ -82,13 +82,13 @@ export default function Header() {
                 </button>
                 
                 {/* Dropdown Menu */}
-                <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <div className="absolute left-0 mt-2 w-48 glass-effect rounded-lg card-shadow-lg border border-sky-200/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="py-2">
                     {CATEGORIES.map((category) => (
                       <Link
                         key={category.slug}
                         href={`/category/${category.slug}`}
-                        className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="block px-4 py-2 text-gray-700 hover:bg-sky-50 hover:text-sky-700 transition-colors rounded-md mx-1"
                       >
                         {category.name}
                       </Link>
@@ -134,9 +134,9 @@ export default function Header() {
                   >
                     Login
                   </button>
-                  <button 
+                  <button
                     onClick={() => openAuthModal('register')}
-                    className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium rounded-lg transition-colors"
+                    className="btn-gradient-primary px-4 py-2 text-white font-medium rounded-lg shadow-md"
                   >
                     Sign Up
                   </button>
@@ -228,7 +228,7 @@ export default function Header() {
                             className="w-8 h-8 rounded-full flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-gray-900 font-semibold border border-gray-300 flex-shrink-0 text-sm">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-sky-700 font-semibold border border-sky-200 flex-shrink-0 text-sm">
                             {user.name?.[0]?.toUpperCase() || 'U'}
                           </div>
                         )}
@@ -260,7 +260,7 @@ export default function Header() {
                       </button>
                       <button
                         onClick={() => openAuthModal('register')}
-                        className="block w-full px-3 py-2 text-center text-sm bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg transition-colors font-medium"
+                        className="btn-gradient-primary block w-full px-3 py-2 text-center text-sm text-white rounded-lg shadow-md font-medium"
                       >
                         Sign Up
                       </button>
