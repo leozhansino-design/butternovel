@@ -206,7 +206,7 @@ export async function createAggregatedNotification(
 
   const actorIds = [
     ...new Set(
-      allNotifications.map((n) => n.actorId).filter((id): id is string => !!id)
+      allNotifications.map((n: { actorId: string | null }) => n.actorId).filter((id): id is string => !!id)
     ),
   ];
 
