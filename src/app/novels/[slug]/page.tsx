@@ -144,10 +144,10 @@ export default async function NovelDetailPage({
       
       <div className="min-h-screen flex flex-col">
         <main className="flex-1">
-          {/* 顶部渐变背景 - Pantone 蓝色系 */}
-          <section className="relative py-12 md:py-20 bg-gradient-to-b from-[#E7EEF5] via-[#F4F7FA] to-white">
+          {/* 顶部渐变背景 - Logo 蓝色系 */}
+          <section className="relative py-12 md:py-20 bg-gradient-to-b from-blue-50 via-blue-50/30 to-white">
             {/* 微妙的光效层 */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#34568B]/[0.02] via-transparent to-[#5B9BD5]/[0.01]"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.03] via-transparent to-blue-500/[0.02]"></div>
 
             <div className="container mx-auto px-4 relative">
               <div className="max-w-7xl mx-auto">
@@ -156,8 +156,8 @@ export default async function NovelDetailPage({
 
                     <div className="flex flex-col items-center lg:items-start">
                       <div className="relative group">
-                        {/* 封面光效 - Pantone 蓝色 */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#34568B]/[0.12] to-[#5B9BD5]/[0.08] rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500"></div>
+                        {/* 封面光效 - Logo 蓝色 */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.15] to-blue-500/[0.10] rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500"></div>
                         <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden card-shadow-xl border-2 border-white/60">
                           <Image
                             src={novel.coverImage}
@@ -195,13 +195,13 @@ export default async function NovelDetailPage({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="px-4 py-1.5 bg-[#E7EEF5] text-[#34568B] rounded-full font-medium text-sm border border-[#34568B]/10">
+                        <span className="px-4 py-1.5 bg-blue-50 text-blue-700 rounded-full font-medium text-sm border border-blue-200">
                           {novel.category.name}
                         </span>
                         <span className={`px-4 py-1.5 rounded-full font-medium text-sm ${
                           novel.status === 'COMPLETED'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-[#F4F7FA] text-[#5B9BD5] border border-[#5B9BD5]/15'
+                            : 'bg-blue-50/60 text-blue-600 border border-blue-200/60'
                         }`}>
                           {novel.status === 'COMPLETED' ? '✓ Completed' : '📝 Ongoing'}
                         </span>
@@ -252,13 +252,13 @@ export default async function NovelDetailPage({
 
                       <div className="flex-1 min-h-0">
                         <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-[#34568B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                           Blurb
                         </h2>
                         <div className="prose prose-gray max-w-none">
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#5B9BD5]/40 scrollbar-track-[#E7EEF5]/30">
+                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-400/40 scrollbar-track-blue-50/30">
                             {novel.blurb}
                           </p>
                         </div>
@@ -288,10 +288,11 @@ export default async function NovelDetailPage({
             </div>
           </section>
 
-          {/* 优雅的渐变衔接层 - 多层渐变创造平滑过渡 */}
-          <div className="relative h-16">
-            <div className="absolute inset-0 bg-gradient-to-b from-white via-[#FAFBFD] to-[#F8FAFB]"></div>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#E7EEF5]/5 to-[#E7EEF5]/10"></div>
+          {/* 优雅的蓝色渐变衔接层 - 三层叠加创造深度 */}
+          <div className="relative h-24">
+            <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/20 to-blue-50/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-100/10 to-blue-100/20"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent"></div>
           </div>
 
           {/* ⚡ 第一章预览 - 只显示 200-300 字 + 渐变效果 */}
@@ -331,10 +332,11 @@ export default async function NovelDetailPage({
             </Suspense>
           )}
 
-          {/* 优雅的渐变衔接层 - 反向过渡 */}
-          <div className="relative h-16">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFB] via-[#FAFBFD] to-white"></div>
-            <div className="absolute inset-0 bg-gradient-to-b from-[#E7EEF5]/10 via-[#E7EEF5]/5 to-transparent"></div>
+          {/* 优雅的蓝色渐变衔接层 - 反向过渡 */}
+          <div className="relative h-24">
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 via-blue-50/20 to-white"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-100/20 via-blue-100/10 to-transparent"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent"></div>
           </div>
 
           {/* ⚡ 章节目录 - Table of Contents */}
