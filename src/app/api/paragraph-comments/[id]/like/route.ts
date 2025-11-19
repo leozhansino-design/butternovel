@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { createNotification } from '@/lib/notification-service'
+import { createNotification, deleteLikeNotification } from '@/lib/notification-service'
 import crypto from 'crypto'
 
 // POST - 点赞段落评论
@@ -149,6 +149,19 @@ export async function DELETE(
       guestId = hash.digest('hex')
     }
 
+    // 获取评论信息（用于删除通知）
+    const comment = await prisma.paragraphComment.findUnique({
+      where: { id: commentId },
+      select: { userId: true },
+    });
+
+    if (!comment) {
+      return NextResponse.json(
+        { success: false, error: 'Comment not found' },
+        { status: 404 }
+      );
+    }
+
     // 查找点赞记录
     const like = await prisma.paragraphCommentLike.findFirst({
       where: {
@@ -177,6 +190,20 @@ export async function DELETE(
         data: { likeCount: { decrement: 1 } }
       })
     ])
+
+    // 删除对应的通知（仅登录用户）
+    if (userId && comment.userId !== userId) {
+      try {
+        await deleteLikeNotification({
+          userId: comment.userId,
+          actorId: userId,
+          type: 'COMMENT_LIKE',
+          commentId,
+        });
+      } catch (error) {
+        console.error('[Comment Like API] Failed to delete notification:', error);
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

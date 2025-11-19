@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { createNotification } from '@/lib/notification-service'
+import { createNotification, deleteLikeNotification } from '@/lib/notification-service'
 import crypto from 'crypto'
 
 // 生成游客ID
@@ -77,6 +77,20 @@ export async function POST(
         where: { id: ratingId },
         select: { likeCount: true }
       })
+
+      // 删除对应的通知（仅登录用户）
+      if (userId && rating.userId !== userId) {
+        try {
+          await deleteLikeNotification({
+            userId: rating.userId,
+            actorId: userId,
+            type: 'RATING_LIKE',
+            ratingId: rating.id,
+          });
+        } catch (error) {
+          console.error('[Rating Like API] Failed to delete notification:', error);
+        }
+      }
 
       return NextResponse.json({
         liked: false,
