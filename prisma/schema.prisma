@@ -82,6 +82,11 @@ model User {
   paragraphComments     ParagraphComment[]
   paragraphCommentLikes ParagraphCommentLike[]
 
+  // Notification system
+  notifications              Notification[]        @relation("NotificationReceiver")
+  triggeredNotifications     Notification[]        @relation("NotificationActor")
+  notificationPreferences    NotificationPreferences?
+
   @@index([email])
   @@index([isWriter])
   @@index([level, contributionPoints])
@@ -648,4 +653,113 @@ model Tag {
 
   @@index([slug])
   @@index([count])  // 用于按热度排序
+}
+
+// ============================================
+// 通知系统
+// ============================================
+
+// 通知类型
+enum NotificationType {
+  // 读者相关（用户身份）
+  RATING_REPLY         // 评分被回复
+  RATING_LIKE          // 评分被点赞
+  COMMENT_REPLY        // 段落评论被回复
+  COMMENT_LIKE         // 段落评论被点赞
+  AUTHOR_NEW_NOVEL     // 关注的作者发布新书
+  AUTHOR_NEW_CHAPTER   // 关注的作者更新章节
+  NOVEL_UPDATE         // 书架小说更新
+
+  // 作者相关（作者身份）
+  NOVEL_RATING         // 你的书被评分
+  NOVEL_COMMENT        // 你的书被评论
+  NEW_FOLLOWER         // 新增粉丝
+
+  // 系统通知
+  SYSTEM_ANNOUNCEMENT  // 系统公告
+  LEVEL_UP             // 用户升级
+}
+
+// 通知优先级
+enum NotificationPriority {
+  HIGH    // 高优先级（回复、点赞）
+  NORMAL  // 普通（关注更新）
+  LOW     // 低优先级（系统公告）
+}
+
+// 通知表
+model Notification {
+  id        String   @id @default(cuid())
+
+  // 接收者
+  userId    String
+  user      User     @relation("NotificationReceiver", fields: [userId], references: [id], onDelete: Cascade)
+
+  // 通知类型和优先级
+  type      NotificationType
+  priority  NotificationPriority @default(NORMAL)
+
+  // 聚合相关
+  isAggregated    Boolean @default(false)  // 是否为聚合通知
+  aggregationKey  String?                  // 聚合键（用于合并同类通知）
+  actorIds        String[]                 // 触发者ID列表（聚合用）
+  actorCount      Int @default(1)          // 触发者数量
+
+  // 单个触发者（非聚合通知）
+  actorId         String?
+  actor           User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  // 关联实体（根据类型不同，关联不同的实体）
+  novelId         Int?
+  chapterId       Int?
+  ratingId        String?
+  commentId       String?
+
+  // 通知内容
+  title           String            // 通知标题
+  content         String?  @db.Text // 通知详细内容（可选）
+  imageUrl        String?           // 通知图片（如书籍封面、用户头像）
+  linkUrl         String?           // 跳转链接
+
+  // 状态
+  isRead          Boolean @default(false)
+  isArchived      Boolean @default(false)
+  readAt          DateTime?
+  archivedAt      DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, isRead, createdAt])        // 查询未读通知
+  @@index([userId, isArchived])               // 查询已归档通知
+  @@index([aggregationKey])                   // 聚合查询
+  @@index([userId, isArchived, createdAt])    // 分页查询
+}
+
+// 通知偏好设置
+model NotificationPreferences {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 邮件通知总开关
+  emailNotifications  Boolean @default(false)
+
+  // 分类开关
+  enableRatingNotifications   Boolean @default(true)   // 评分相关通知
+  enableCommentNotifications  Boolean @default(true)   // 评论相关通知
+  enableFollowNotifications   Boolean @default(true)   // 关注相关通知
+  enableAuthorNotifications   Boolean @default(true)   // 作者相关通知（书籍更新）
+
+  // 邮件通知分类开关
+  emailRatingNotifications    Boolean @default(false)
+  emailCommentNotifications   Boolean @default(false)
+  emailFollowNotifications    Boolean @default(false)
+  emailAuthorNotifications    Boolean @default(false)
+
+  // 聚合设置
+  aggregationEnabled    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
