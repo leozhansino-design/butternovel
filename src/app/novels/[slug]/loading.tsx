@@ -4,9 +4,12 @@ export default function NovelDetailLoading() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1">
-        {/* 详情页骨架 - 匹配真实布局 */}
-        <section className="py-12 md:py-16 bg-gradient-to-b from-blue-50/30 via-sky-50/20 to-white">
-          <div className="container mx-auto px-4">
+        {/* 详情页骨架 - Pantone 蓝色系 */}
+        <section className="relative py-12 md:py-20 bg-gradient-to-b from-[#E7EEF5] via-[#F4F7FA] to-white">
+          {/* 微妙的光效层 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#34568B]/[0.02] via-transparent to-[#5B9BD5]/[0.01]"></div>
+
+          <div className="container mx-auto px-4 relative">
             <div className="max-w-7xl mx-auto">
               <div className="glass-effect-strong rounded-3xl card-shadow-xl overflow-hidden">
                 <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
@@ -54,8 +57,8 @@ export default function NovelDetailLoading() {
 
                     {/* Buttons */}
                     <div className="flex gap-4 pt-2">
-                      <div className="h-14 w-48 bg-gradient-to-r from-blue-200/60 to-sky-200/60 rounded-xl animate-pulse shadow-lg"></div>
-                      <div className="h-14 w-36 bg-blue-100/40 rounded-xl animate-pulse"></div>
+                      <div className="h-14 w-48 bg-gradient-to-r from-[#34568B]/20 to-[#5B9BD5]/20 rounded-xl animate-pulse shadow-lg"></div>
+                      <div className="h-14 w-36 bg-[#E7EEF5]/60 rounded-xl animate-pulse"></div>
                     </div>
                   </div>
                 </div>
@@ -64,8 +67,11 @@ export default function NovelDetailLoading() {
           </div>
         </section>
 
-        {/* Gradient Divider */}
-        <div className="h-8 bg-gradient-to-b from-white to-gray-50/30"></div>
+        {/* 优雅的渐变衔接层 - 多层渐变创造平滑过渡 */}
+        <div className="relative h-16">
+          <div className="absolute inset-0 bg-gradient-to-b from-white via-[#FAFBFD] to-[#F8FAFB]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#E7EEF5]/5 to-[#E7EEF5]/10"></div>
+        </div>
 
         {/* First Chapter Skeleton */}
         <section className="pt-6 pb-12 md:pb-16 bg-white">
@@ -93,7 +99,7 @@ export default function NovelDetailLoading() {
 
               {/* Continue Button Skeleton */}
               <div className="border-t border-gray-200 pt-10 text-center">
-                <div className="h-14 w-56 bg-gradient-to-r from-blue-200/60 to-sky-200/60 rounded-lg mx-auto animate-pulse"></div>
+                <div className="h-14 w-56 bg-gradient-to-r from-[#34568B]/20 to-[#5B9BD5]/20 rounded-lg mx-auto animate-pulse"></div>
               </div>
             </div>
           </div>

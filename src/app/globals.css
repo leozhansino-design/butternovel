@@ -7,22 +7,24 @@
   --z-60: 60;
   --z-70: 70;
 
-  /* 🔵 品牌色彩 - 低饱和质感蓝色系 (纪念碑谷风格) */
-  --color-brand-primary: #5B8FB9;    /* 柔和蓝 - 低饱和度 */
-  --color-brand-secondary: #7BA3C2;  /* 明亮蓝 - 低饱和度 */
-  --color-brand-accent: #4A7BA7;     /* 深蓝强调 - 低饱和度 */
-  --color-brand-light: #E8F1F8;      /* 浅蓝背景 - 非常淡 */
+  /* 🎨 品牌色彩 - Pantone 专业色彩系统 (Apple 级别精致度) */
+  --color-brand-primary: #34568B;    /* Pantone 5405 C - 深邃优雅蓝 */
+  --color-brand-secondary: #5B9BD5;  /* Pantone 279 C - 明亮天空蓝 */
+  --color-brand-accent: #2E5090;     /* Pantone 2945 C - 深蓝强调 */
+  --color-brand-light: #E7EEF5;      /* Pantone 642 C - 淡雅蓝灰 */
+  --color-brand-subtle: #F4F7FA;     /* 极淡背景色 */
 
-  /* 渐变效果 - 低饱和蓝色系 */
-  --gradient-primary: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
-  --gradient-secondary: linear-gradient(135deg, #4A7BA7 0%, #5B8FB9 100%);
-  --gradient-light: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 100%);
-  --gradient-blue-glow: linear-gradient(135deg, rgba(91, 143, 185, 0.08) 0%, rgba(123, 163, 194, 0.04) 100%);
+  /* 渐变效果 - Pantone 蓝色系精致渐变 */
+  --gradient-primary: linear-gradient(135deg, #34568B 0%, #5B9BD5 100%);
+  --gradient-secondary: linear-gradient(135deg, #2E5090 0%, #34568B 100%);
+  --gradient-light: linear-gradient(180deg, #F4F7FA 0%, #FFFFFF 100%);
+  --gradient-page-bg: linear-gradient(180deg, #E7EEF5 0%, #F8FAFB 50%, #FFFFFF 100%);
+  --gradient-blue-glow: linear-gradient(135deg, rgba(52, 86, 139, 0.06) 0%, rgba(91, 155, 213, 0.03) 100%);
 }
 
 /* 🌐 全局样式 */
 body {
-  background: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 50%, #FAFBFD 100%);
+  background: linear-gradient(180deg, #E7EEF5 0%, #F8FAFB 50%, #FFFFFF 100%);
   background-attachment: fixed;
   color: #1a1a1a;
   font-feature-settings: 'kern' 1, 'liga' 1;
@@ -38,19 +40,19 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(91, 143, 185, 0.04);
+  background: rgba(52, 86, 139, 0.04);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #7BA3C2 0%, #5B8FB9 100%);
+  background: linear-gradient(180deg, #5B9BD5 0%, #34568B 100%);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #8CB3CD 0%, #6B9FC4 100%);
+  background: linear-gradient(180deg, #6DAAE0 0%, #3D6799 100%);
   background-clip: padding-box;
 }
 
@@ -124,172 +126,172 @@ body {
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, rgba(91, 143, 185, 0) 0%, rgba(91, 143, 185, 0.08) 50%, rgba(91, 143, 185, 0) 100%);
+  background: linear-gradient(90deg, rgba(52, 86, 139, 0) 0%, rgba(52, 86, 139, 0.06) 50%, rgba(52, 86, 139, 0) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
 
-/* 🎨 玻璃态效果 - 低饱和蓝色调 */
+/* 🎨 玻璃态效果 - Pantone 蓝色调 */
 .glass-effect {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(91, 143, 185, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(52, 86, 139, 0.08);
   box-shadow:
-    0 1px 3px rgba(91, 143, 185, 0.06),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+    0 1px 3px rgba(52, 86, 139, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
 }
 
 .glass-effect-blue {
-  background: rgba(232, 241, 248, 0.6);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(91, 143, 185, 0.12);
+  background: rgba(231, 238, 245, 0.65);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(52, 86, 139, 0.12);
   box-shadow:
-    0 2px 8px rgba(91, 143, 185, 0.08),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+    0 2px 8px rgba(52, 86, 139, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
 }
 
 .glass-effect-strong {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid rgba(91, 143, 185, 0.1);
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(36px) saturate(200%);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  border: 1px solid rgba(52, 86, 139, 0.1);
   box-shadow:
-    0 4px 12px rgba(91, 143, 185, 0.08),
-    0 1px 3px rgba(91, 143, 185, 0.04),
+    0 8px 24px rgba(52, 86, 139, 0.08),
+    0 2px 6px rgba(52, 86, 139, 0.04),
     inset 0 1px 0 0 rgba(255, 255, 255, 1);
 }
 
-/* 🌟 卡片阴影 - 低饱和蓝色调 */
+/* 🌟 卡片阴影 - Pantone 蓝色调 */
 .card-shadow {
-  box-shadow: 0 1px 3px 0 rgba(91, 143, 185, 0.08);
+  box-shadow: 0 1px 3px 0 rgba(52, 86, 139, 0.08);
 }
 
 .card-shadow-md {
   box-shadow:
-    0 2px 4px -1px rgba(91, 143, 185, 0.1),
-    0 4px 8px -1px rgba(91, 143, 185, 0.06);
+    0 2px 4px -1px rgba(52, 86, 139, 0.1),
+    0 4px 8px -1px rgba(52, 86, 139, 0.06);
 }
 
 .card-shadow-lg {
   box-shadow:
-    0 4px 8px -2px rgba(91, 143, 185, 0.12),
-    0 10px 20px -3px rgba(91, 143, 185, 0.08),
-    0 0 0 1px rgba(91, 143, 185, 0.04);
+    0 4px 8px -2px rgba(52, 86, 139, 0.12),
+    0 10px 20px -3px rgba(52, 86, 139, 0.08),
+    0 0 0 1px rgba(52, 86, 139, 0.04);
 }
 
 .card-shadow-xl {
   box-shadow:
-    0 10px 20px -5px rgba(91, 143, 185, 0.15),
-    0 20px 40px -8px rgba(91, 143, 185, 0.1),
-    0 0 0 1px rgba(91, 143, 185, 0.06);
+    0 12px 28px -8px rgba(52, 86, 139, 0.18),
+    0 24px 48px -12px rgba(52, 86, 139, 0.12),
+    0 0 0 1px rgba(52, 86, 139, 0.06);
 }
 
-/* 🔷 按钮样式 - 低饱和蓝色系 */
+/* 🔷 按钮样式 - Pantone 蓝色系 */
 .btn-primary {
-  background: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
+  background: linear-gradient(135deg, #34568B 0%, #5B9BD5 100%);
   color: #ffffff;
   border: none;
   box-shadow:
-    0 2px 8px rgba(91, 143, 185, 0.2),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    0 2px 8px rgba(52, 86, 139, 0.24),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #6B9FC4 0%, #8CB3CD 100%);
+  background: linear-gradient(135deg, #3D6799 0%, #6DAAE0 100%);
   box-shadow:
-    0 4px 12px rgba(91, 143, 185, 0.28),
-    0 2px 6px rgba(91, 143, 185, 0.15),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+    0 4px 16px rgba(52, 86, 139, 0.32),
+    0 2px 8px rgba(52, 86, 139, 0.18),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
 }
 
 .btn-primary:active {
   transform: translateY(0);
   box-shadow:
-    0 2px 4px rgba(91, 143, 185, 0.15),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+    0 2px 4px rgba(52, 86, 139, 0.18),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary {
-  background: rgba(91, 143, 185, 0.08);
-  color: #5B8FB9;
-  border: 1px solid rgba(91, 143, 185, 0.15);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(52, 86, 139, 0.06);
+  color: #34568B;
+  border: 1px solid rgba(52, 86, 139, 0.15);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary:hover {
-  background: rgba(91, 143, 185, 0.12);
-  border-color: rgba(91, 143, 185, 0.2);
+  background: rgba(52, 86, 139, 0.1);
+  border-color: rgba(52, 86, 139, 0.22);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(91, 143, 185, 0.12);
+  box-shadow: 0 2px 8px rgba(52, 86, 139, 0.12);
 }
 
 .btn-ghost {
   background: transparent;
   color: #4a5568;
   border: 1px solid transparent;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-ghost:hover {
-  background: rgba(91, 143, 185, 0.06);
-  color: #5B8FB9;
+  background: rgba(52, 86, 139, 0.05);
+  color: #34568B;
 }
 
-/* 🎯 焦点样式 - 低饱和蓝色光圈 */
+/* 🎯 焦点样式 - Pantone 蓝色光圈 */
 .focus-ring {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(91, 143, 185, 0.15);
+  box-shadow: 0 0 0 3px rgba(52, 86, 139, 0.15);
 }
 
 .focus-ring-inset {
   outline: none;
-  box-shadow: inset 0 0 0 2px rgba(91, 143, 185, 0.3);
+  box-shadow: inset 0 0 0 2px rgba(52, 86, 139, 0.3);
 }
 
 /* 📝 输入框样式 */
 .input-primary {
   background: #ffffff;
-  border: 1px solid rgba(91, 143, 185, 0.15);
-  transition: all 0.2s ease;
+  border: 1px solid rgba(52, 86, 139, 0.15);
+  transition: all 0.25s ease;
 }
 
 .input-primary:hover {
-  border-color: rgba(91, 143, 185, 0.25);
+  border-color: rgba(52, 86, 139, 0.25);
 }
 
 .input-primary:focus {
   outline: none;
-  border-color: #5B8FB9;
-  box-shadow: 0 0 0 3px rgba(91, 143, 185, 0.12);
+  border-color: #34568B;
+  box-shadow: 0 0 0 3px rgba(52, 86, 139, 0.12);
 }
 
 /* 🌈 渐变背景 */
 .bg-gradient-blue-subtle {
-  background: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #F4F7FA 0%, #FFFFFF 100%);
 }
 
 .bg-gradient-blue-card {
   background: linear-gradient(135deg,
-    rgba(232, 241, 248, 0.5) 0%,
-    rgba(255, 255, 255, 0.9) 100%
+    rgba(231, 238, 245, 0.5) 0%,
+    rgba(255, 255, 255, 0.92) 100%
   );
 }
 
 .bg-gradient-blue-vibrant {
-  background: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
+  background: linear-gradient(135deg, #34568B 0%, #5B9BD5 100%);
 }
 
-/* 📱 分隔线 - 低饱和蓝色调 */
+/* 📱 分隔线 - Pantone 蓝色调 */
 .divider {
   height: 1px;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(91, 143, 185, 0.15) 20%,
-    rgba(91, 143, 185, 0.15) 80%,
+    rgba(52, 86, 139, 0.12) 20%,
+    rgba(52, 86, 139, 0.12) 80%,
     transparent 100%
   );
 }
@@ -298,20 +300,20 @@ body {
   width: 1px;
   background: linear-gradient(180deg,
     transparent 0%,
-    rgba(91, 143, 185, 0.15) 20%,
-    rgba(91, 143, 185, 0.15) 80%,
+    rgba(52, 86, 139, 0.12) 20%,
+    rgba(52, 86, 139, 0.12) 80%,
     transparent 100%
   );
 }
 
 /* 🎭 Hover 效果 */
 .hover-lift {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(91, 143, 185, 0.12);
+  box-shadow: 0 8px 20px rgba(52, 86, 139, 0.14);
 }
 
 .hover-glow {
@@ -319,7 +321,7 @@ body {
 }
 
 .hover-glow:hover {
-  box-shadow: 0 0 20px rgba(91, 143, 185, 0.25);
+  box-shadow: 0 0 24px rgba(52, 86, 139, 0.28);
 }
 
 /* 💎 文字样式 */
@@ -328,7 +330,7 @@ body {
 }
 
 .text-gradient-blue {
-  background: linear-gradient(135deg, #5B8FB9 0%, #7BA3C2 100%);
+  background: linear-gradient(135deg, #34568B 0%, #5B9BD5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -377,16 +379,16 @@ body {
   content: '';
   position: absolute;
   inset: -2px;
-  background: linear-gradient(135deg, #5B8FB9, #7BA3C2);
+  background: linear-gradient(135deg, #34568B, #5B9BD5);
   border-radius: inherit;
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: -1;
-  filter: blur(8px);
+  filter: blur(10px);
 }
 
 .blue-glow:hover::before {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 /* 📐 间距系统增强 */

@@ -144,16 +144,21 @@ export default async function NovelDetailPage({
       
       <div className="min-h-screen flex flex-col">
         <main className="flex-1">
-          <section className="py-12 md:py-16 bg-gradient-to-b from-blue-50/30 via-sky-50/20 to-white">
-            <div className="container mx-auto px-4">
+          {/* 顶部渐变背景 - Pantone 蓝色系 */}
+          <section className="relative py-12 md:py-20 bg-gradient-to-b from-[#E7EEF5] via-[#F4F7FA] to-white">
+            {/* 微妙的光效层 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#34568B]/[0.02] via-transparent to-[#5B9BD5]/[0.01]"></div>
+
+            <div className="container mx-auto px-4 relative">
               <div className="max-w-7xl mx-auto">
                 <div className="glass-effect-strong rounded-3xl card-shadow-xl overflow-hidden">
                   <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
 
                     <div className="flex flex-col items-center lg:items-start">
                       <div className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-400/15 to-sky-400/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all"></div>
-                        <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden card-shadow-xl border-2 border-white/50">
+                        {/* 封面光效 - Pantone 蓝色 */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#34568B]/[0.12] to-[#5B9BD5]/[0.08] rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500"></div>
+                        <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden card-shadow-xl border-2 border-white/60">
                           <Image
                             src={novel.coverImage}
                             alt={novel.title}
@@ -190,13 +195,13 @@ export default async function NovelDetailPage({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="px-4 py-1.5 bg-blue-100/80 text-blue-700 rounded-full font-medium text-sm">
+                        <span className="px-4 py-1.5 bg-[#E7EEF5] text-[#34568B] rounded-full font-medium text-sm border border-[#34568B]/10">
                           {novel.category.name}
                         </span>
                         <span className={`px-4 py-1.5 rounded-full font-medium text-sm ${
                           novel.status === 'COMPLETED'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-sky-100/80 text-sky-700'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-[#F4F7FA] text-[#5B9BD5] border border-[#5B9BD5]/15'
                         }`}>
                           {novel.status === 'COMPLETED' ? '✓ Completed' : '📝 Ongoing'}
                         </span>
@@ -247,13 +252,13 @@ export default async function NovelDetailPage({
 
                       <div className="flex-1 min-h-0">
                         <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-[#34568B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                           Blurb
                         </h2>
                         <div className="prose prose-gray max-w-none">
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-blue-50/30">
+                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#5B9BD5]/40 scrollbar-track-[#E7EEF5]/30">
                             {novel.blurb}
                           </p>
                         </div>
@@ -283,8 +288,11 @@ export default async function NovelDetailPage({
             </div>
           </section>
 
-          {/* 渐变过渡 */}
-          <div className="h-8 bg-gradient-to-b from-white to-gray-50/30"></div>
+          {/* 优雅的渐变衔接层 - 多层渐变创造平滑过渡 */}
+          <div className="relative h-16">
+            <div className="absolute inset-0 bg-gradient-to-b from-white via-[#FAFBFD] to-[#F8FAFB]"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#E7EEF5]/5 to-[#E7EEF5]/10"></div>
+          </div>
 
           {/* ⚡ 第一章预览 - 只显示 200-300 字 + 渐变效果 */}
           {firstChapter && (
@@ -323,8 +331,11 @@ export default async function NovelDetailPage({
             </Suspense>
           )}
 
-          {/* 渐变过渡 */}
-          <div className="h-12 bg-gradient-to-b from-gray-50/30 to-white"></div>
+          {/* 优雅的渐变衔接层 - 反向过渡 */}
+          <div className="relative h-16">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFB] via-[#FAFBFD] to-white"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-[#E7EEF5]/10 via-[#E7EEF5]/5 to-transparent"></div>
+          </div>
 
           {/* ⚡ 章节目录 - Table of Contents */}
           {allChapters.length > 0 && (
