@@ -97,10 +97,15 @@ export async function POST(
     }
 
     // 🔧 FIX: 验证参数一致性 - 确保请求参数与父评论匹配
+    // Convert to numbers safely (handles both string and number inputs)
+    const novelIdNum = typeof novelId === 'number' ? novelId : parseInt(novelId);
+    const chapterIdNum = typeof chapterId === 'number' ? chapterId : parseInt(chapterId);
+    const paragraphIndexNum = typeof paragraphIndex === 'number' ? paragraphIndex : parseInt(paragraphIndex);
+
     if (
-      parseInt(novelId) !== parentComment.novelId ||
-      parseInt(chapterId) !== parentComment.chapterId ||
-      parseInt(paragraphIndex) !== parentComment.paragraphIndex
+      novelIdNum !== parentComment.novelId ||
+      chapterIdNum !== parentComment.chapterId ||
+      paragraphIndexNum !== parentComment.paragraphIndex
     ) {
       return NextResponse.json(
         { success: false, error: 'Reply parameters do not match parent comment' },
@@ -146,9 +151,9 @@ export async function POST(
       // Create the reply
       const reply = await tx.paragraphComment.create({
         data: {
-          novelId: parseInt(novelId),
-          chapterId: parseInt(chapterId),
-          paragraphIndex: parseInt(paragraphIndex),
+          novelId: novelIdNum,
+          chapterId: chapterIdNum,
+          paragraphIndex: paragraphIndexNum,
           content: content.trim(),
           imageUrl,
           imagePublicId,

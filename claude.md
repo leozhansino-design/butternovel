@@ -2,7 +2,7 @@
 
 > **快速参考**: 每次开发前必读,帮助 Claude 快速理解项目上下文
 
-**最后更新**: 2025-11-16
+**最后更新**: 2025-11-19
 **项目版本**: MVP v2.0 (终极简化完成)
 **架构**: ISR + Supabase (完全移除Redis) ✨
 
@@ -17,10 +17,11 @@
 5. [开发规范](#5-开发规范)
 6. [API 路由](#6-api-路由)
 7. [核心功能模块](#7-核心功能模块)
-8. [缓存策略](#8-缓存策略) ⭐ NEW!
+8. [缓存策略](#8-缓存策略)
 9. [常见任务参考](#9-常见任务参考)
 10. [环境变量](#10-环境变量)
 11. [已完成功能](#11-已完成功能)
+12. [测试指南](#12-测试指南) ⭐ NEW!
 
 ---
 
@@ -1143,8 +1144,286 @@ NODE_ENV="development"
 
 ---
 
+## 12. 测试指南 ⭐ NEW!
+
+### 12.1 测试原则
+
+**何时需要添加测试**:
+
+1. **核心业务逻辑**:
+   - ✅ API endpoints (尤其是数据修改类API)
+   - ✅ 数据库操作函数
+   - ✅ 认证和权限检查
+   - ✅ 数据验证和转换逻辑
+
+2. **Bug修复**:
+   - ✅ 修复bug后必须添加回归测试
+   - ✅ 防止同样的问题再次出现
+
+3. **重要功能更新**:
+   - ✅ 新增重要功能后需要测试覆盖
+   - ✅ 修改已有核心功能后需要测试
+
+4. **不需要测试的**:
+   - ❌ 简单的UI组件 (无复杂逻辑)
+   - ❌ 纯展示类页面
+   - ❌ 一次性脚本
+
+### 12.2 常见测试场景
+
+#### API 测试
+
+**场景1: 数据类型转换问题**
+
+```typescript
+// ❌ 错误示例 - 未处理类型转换
+const novelIdNum = parseInt(novelId)  // novelId可能已是number,导致NaN
+
+// ✅ 正确示例 - 安全的类型转换
+const novelIdNum = typeof novelId === 'number' ? novelId : parseInt(novelId)
+
+// 测试用例:
+describe('POST /api/paragraph-comments/[id]/replies', () => {
+  it('应该正确处理number类型的novelId', async () => {
+    const response = await fetch('/api/...', {
+      body: JSON.stringify({
+        novelId: 123,  // number类型
+        content: 'test'
+      })
+    })
+    expect(response.status).toBe(200)
+  })
+
+  it('应该正确处理string类型的novelId', async () => {
+    const response = await fetch('/api/...', {
+      body: JSON.stringify({
+        novelId: "123",  // string类型
+        content: 'test'
+      })
+    })
+    expect(response.status).toBe(200)
+  })
+})
+```
+
+**场景2: 空值和未定义检查**
+
+```typescript
+// ❌ 错误示例 - 未检查null
+const slug = parentComment.novel.slug  // novel可能是null
+
+// ✅ 正确示例 - 添加null检查
+if (parentComment.novel && parentComment.chapter) {
+  const slug = parentComment.novel.slug
+  // 安全使用
+}
+
+// 测试用例:
+it('应该处理已删除novel的评论回复', async () => {
+  // 模拟novel被删除的场景
+  const response = await createReply(commentWithDeletedNovel)
+  expect(response.status).toBe(200)
+  expect(response.data.notificationSent).toBe(false)
+})
+```
+
+**场景3: 参数验证**
+
+```typescript
+// ✅ 正确示例 - 验证参数一致性
+if (
+  novelIdNum !== parentComment.novelId ||
+  chapterIdNum !== parentComment.chapterId
+) {
+  return NextResponse.json(
+    { success: false, error: 'Parameters mismatch' },
+    { status: 400 }
+  )
+}
+
+// 测试用例:
+it('应该拒绝参数不匹配的请求', async () => {
+  const response = await fetch('/api/...', {
+    body: JSON.stringify({
+      novelId: 999,  // 与父评论不匹配
+      chapterId: parentComment.chapterId,
+      content: 'test'
+    })
+  })
+  expect(response.status).toBe(400)
+  expect(response.error).toContain('mismatch')
+})
+```
+
+### 12.3 手动测试检查清单
+
+在提交代码前,手动测试以下场景:
+
+#### API 功能测试
+
+```bash
+# 1. 正常流程测试
+✓ 使用正确的参数调用API
+✓ 检查返回数据格式正确
+✓ 验证数据已保存到数据库
+
+# 2. 边界条件测试
+✓ 空字符串/空值
+✓ 超长字符串
+✓ 特殊字符 (emoji, HTML标签)
+✓ 负数/零/超大数字
+
+# 3. 错误处理测试
+✓ 未登录访问
+✓ 无权限访问
+✓ 不存在的资源ID
+✓ 数据库连接失败 (模拟)
+
+# 4. 类型测试
+✓ 发送number类型的参数
+✓ 发送string类型的参数
+✓ 发送null/undefined
+```
+
+#### 浏览器控制台检查
+
+```bash
+# 打开浏览器开发者工具,检查:
+✓ 无 JavaScript 错误
+✓ 无 404 资源加载失败
+✓ 无 500 API 错误
+✓ 网络请求正常完成
+✓ 控制台无警告信息
+```
+
+### 12.4 Bug 修复流程
+
+```bash
+# 1. 复现问题
+- 记录复现步骤
+- 查看错误日志
+- 检查浏览器控制台
+
+# 2. 定位原因
+- 找到出错的代码位置
+- 分析为什么会出错
+- 确定修复方案
+
+# 3. 修复代码
+- 实现修复
+- 添加防御性检查
+- 改善错误处理
+
+# 4. 测试验证
+- 使用原始复现步骤测试
+- 测试边界条件
+- 测试相关功能未受影响
+
+# 5. 添加测试用例 (如果是重要功能)
+- 写测试覆盖这个bug场景
+- 防止将来再次出现
+```
+
+### 12.5 常见问题检查清单
+
+**API 开发检查清单**:
+
+```typescript
+// ✓ 类型转换安全性
+const numValue = typeof value === 'number' ? value : parseInt(value)
+
+// ✓ 空值检查
+if (!data || !data.field) {
+  return error
+}
+
+// ✓ 数组长度检查
+if (items.length === 0) {
+  return emptyState
+}
+
+// ✓ 数据库关联检查
+if (record.relatedData && record.relatedData.field) {
+  // 安全使用
+}
+
+// ✓ 错误处理
+try {
+  // 操作
+} catch (error) {
+  console.error('[Component] Error:', error)
+  return errorResponse
+}
+
+// ✓ 认证检查
+const session = await auth()
+if (!session?.user?.id) {
+  return unauthorized
+}
+
+// ✓ 参数验证
+if (!content || content.trim().length === 0) {
+  return validationError
+}
+```
+
+### 12.6 实际案例参考
+
+**案例1: 段落评论回复500错误修复**
+
+```typescript
+// 问题:
+// - parseInt(novelId) 当 novelId 已是 number 时返回 NaN
+// - 导致数据库查询失败,返回 500 错误
+
+// 解决方案:
+const novelIdNum = typeof novelId === 'number' ? novelId : parseInt(novelId)
+const chapterIdNum = typeof chapterId === 'number' ? chapterId : parseInt(chapterId)
+const paragraphIndexNum = typeof paragraphIndex === 'number' ? paragraphIndex : parseInt(paragraphIndex)
+
+// 测试:
+// ✓ 测试 number 类型参数
+// ✓ 测试 string 类型参数
+// ✓ 检查浏览器控制台无500错误
+```
+
+**案例2: Icon 404错误修复**
+
+```typescript
+// 问题:
+// - manifest引用 /icon-192.png 但文件不存在
+// - 浏览器不断尝试加载,控制台大量404错误
+
+// 解决方案:
+// 1. 创建缺失的icon文件
+// 2. 更新manifest.json引用
+
+// 测试:
+// ✓ 检查 /icon-192.png 可访问
+// ✓ 检查 /icon-512.png 可访问
+// ✓ 浏览器控制台无404错误
+// ✓ PWA manifest验证通过
+```
+
+### 12.7 开发工作流
+
+```bash
+# 新功能开发:
+1. 阅读需求 → 2. 设计方案 → 3. 编写代码 → 4. 手动测试 → 5. 修复问题 → 6. 提交代码
+
+# Bug修复:
+1. 复现问题 → 2. 定位原因 → 3. 修复代码 → 4. 测试验证 → 5. 检查相关功能 → 6. 提交代码
+
+# 重要功能更新:
+1. 评估影响 → 2. 修改代码 → 3. 全面测试 → 4. 添加测试用例 → 5. 更新文档 → 6. 提交代码
+```
+
+**关键原则**: 每次修改后都要在浏览器中实际测试,检查控制台无错误!
+
+---
+
 **文档维护**: 每次重大功能更新后,请同步更新本文档
-**最后更新**: 2025-11-11
+**最后更新**: 2025-11-19
 **维护者**: Claude + Leo
 
 **🦋 让阅读更轻松,让创作更简单**
