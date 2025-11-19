@@ -630,6 +630,108 @@ git commit -m "fix: 修复管理员登录 session 问题"
 |------|------|------|----------|
 | `/api/views/track` | POST | 追踪小说浏览 | ❌ |
 
+### 6.7 评论/回复 API ⭐ 重要!
+
+#### 段落评论 API
+
+| 路由 | 方法 | 说明 | 需要认证 |
+|------|------|------|----------|
+| `/api/paragraph-comments` | GET | 获取段落评论 | ❌ |
+| `/api/paragraph-comments` | POST | 发表段落评论 | ✅ |
+| `/api/paragraph-comments/[id]` | DELETE | 删除评论 | ✅ |
+| `/api/paragraph-comments/[id]/like` | POST | 点赞评论 | ❌ |
+| `/api/paragraph-comments/[id]/replies` | GET | 获取评论回复 | ❌ |
+| `/api/paragraph-comments/[id]/replies` | POST | 回复评论 | ✅ |
+
+#### 评分回复 API
+
+| 路由 | 方法 | 说明 | 需要认证 |
+|------|------|------|----------|
+| `/api/ratings/[id]/replies` | GET | 获取评分回复 | ❌ |
+| `/api/ratings/[id]/replies` | POST | 回复评分 | ✅ |
+
+#### ⚠️ 关键实现细节
+
+**ParagraphComment 和 Rating 的 Schema 区别**:
+
+```typescript
+// ❌ 错误: ParagraphComment 没有 novel/chapter 关系
+const parentComment = await prisma.paragraphComment.findUnique({
+  where: { id: parentId },
+  include: {
+    novel: { ... },      // ❌ Schema中不存在
+    chapter: { ... },    // ❌ Schema中不存在
+  }
+})
+
+// ✅ 正确: 只查询实际存在的字段
+const parentComment = await prisma.paragraphComment.findUnique({
+  where: { id: parentId },
+  select: {
+    id: true,
+    novelId: true,      // ✅ Int字段
+    chapterId: true,    // ✅ Int字段
+    paragraphIndex: true,
+    userId: true,
+  }
+})
+
+// ✅ 如果需要 novel/chapter 信息，单独查询
+const [novel, chapter] = await Promise.all([
+  prisma.novel.findUnique({
+    where: { id: parentComment.novelId },
+    select: { slug: true }
+  }),
+  prisma.chapter.findUnique({
+    where: { id: parentComment.chapterId },
+    select: { chapterNumber: true }
+  })
+])
+```
+
+**Rating 有 novel 关系**:
+
+```typescript
+// ✅ 正确: Rating 有 novel 关系
+const rating = await prisma.rating.findUnique({
+  where: { id: ratingId },
+  include: {
+    novel: {            // ✅ Schema中存在
+      select: {
+        id: true,
+        slug: true,
+      }
+    }
+  }
+})
+```
+
+**参数类型转换最佳实践**:
+
+```typescript
+// ✅ 安全的类型转换
+// 1. 先检查 null/undefined
+if (novelId === null || novelId === undefined) {
+  return error('Missing parameter')
+}
+
+// 2. 安全转换
+const novelIdNum = typeof novelId === 'number'
+  ? novelId
+  : parseInt(String(novelId), 10)
+
+// 3. 检查 NaN
+if (isNaN(novelIdNum)) {
+  return error('Invalid number')
+}
+```
+
+**为什么这很重要**:
+- ParagraphComment schema 中只有 `novelId` (Int) 和 `chapterId` (Int)，**没有关系字段**
+- 如果尝试使用 `include: { novel: ... }`，Prisma 会报错: `Invalid invocation`
+- Rating schema 中**有** `novel` 关系，所以可以使用 `include`
+- 参数可能是 `number` 或 `string` 类型，必须安全转换
+
 ---
 
 ## 7. 核心功能模块
@@ -1372,19 +1474,67 @@ if (!content || content.trim().length === 0) {
 **案例1: 段落评论回复500错误修复**
 
 ```typescript
-// 问题:
-// - parseInt(novelId) 当 novelId 已是 number 时返回 NaN
-// - 导致数据库查询失败,返回 500 错误
+// 问题1: parseInt(novelId) 当 novelId 已是 number 时返回 NaN
+// 问题2: Prisma查询使用了不存在的关系字段
+// 问题3: 缺少 null/undefined 检查
 
-// 解决方案:
-const novelIdNum = typeof novelId === 'number' ? novelId : parseInt(novelId)
-const chapterIdNum = typeof chapterId === 'number' ? chapterId : parseInt(chapterId)
-const paragraphIndexNum = typeof paragraphIndex === 'number' ? paragraphIndex : parseInt(paragraphIndex)
+// ❌ 错误代码:
+const novelIdNum = parseInt(novelId)  // novelId可能是number,导致NaN
+const parentComment = await prisma.paragraphComment.findUnique({
+  include: {
+    novel: { ... },    // ❌ ParagraphComment没有novel关系
+    chapter: { ... },  // ❌ ParagraphComment没有chapter关系
+  }
+})
+
+// ✅ 修复后:
+// 1. 先检查 null/undefined
+if (novelId === null || novelId === undefined ||
+    chapterId === null || chapterId === undefined ||
+    paragraphIndex === null || paragraphIndex === undefined) {
+  return NextResponse.json(
+    { success: false, error: 'Missing required parameters' },
+    { status: 400 }
+  );
+}
+
+// 2. 安全的类型转换
+const novelIdNum = typeof novelId === 'number' ? novelId : parseInt(String(novelId), 10)
+const chapterIdNum = typeof chapterId === 'number' ? chapterId : parseInt(String(chapterId), 10)
+const paragraphIndexNum = typeof paragraphIndex === 'number' ? paragraphIndex : parseInt(String(paragraphIndex), 10)
+
+// 3. 检查 NaN
+if (isNaN(novelIdNum) || isNaN(chapterIdNum) || isNaN(paragraphIndexNum)) {
+  return NextResponse.json(
+    { success: false, error: 'Invalid parameter types' },
+    { status: 400 }
+  );
+}
+
+// 4. 正确的 Prisma 查询
+const parentComment = await prisma.paragraphComment.findUnique({
+  where: { id: parentId },
+  select: {
+    id: true,
+    novelId: true,      // ✅ 只查询实际存在的字段
+    chapterId: true,
+    paragraphIndex: true,
+    userId: true,
+  }
+})
+
+// 5. 如需 novel/chapter 信息,单独查询
+const [novel, chapter] = await Promise.all([
+  prisma.novel.findUnique({ where: { id: parentComment.novelId }, select: { slug: true } }),
+  prisma.chapter.findUnique({ where: { id: parentComment.chapterId }, select: { chapterNumber: true } })
+])
 
 // 测试:
 // ✓ 测试 number 类型参数
 // ✓ 测试 string 类型参数
+// ✓ 测试 null/undefined 参数
 // ✓ 检查浏览器控制台无500错误
+// ✓ 验证通知功能正常工作
 ```
 
 **案例2: Icon 404错误修复**
