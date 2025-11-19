@@ -85,6 +85,21 @@ export async function POST(
       userId: session.user.id,
     })
 
+    // Validate required parameters
+    if (novelId === null || novelId === undefined ||
+        chapterId === null || chapterId === undefined ||
+        paragraphIndex === null || paragraphIndex === undefined) {
+      console.error('[Comment Reply API] Missing required parameters:', {
+        novelId,
+        chapterId,
+        paragraphIndex,
+      })
+      return NextResponse.json(
+        { success: false, error: 'Missing required parameters: novelId, chapterId, or paragraphIndex' },
+        { status: 400 }
+      );
+    }
+
     // Validate parent comment exists
     const parentComment = await prisma.paragraphComment.findUnique({
       where: { id: parentId },
@@ -111,9 +126,9 @@ export async function POST(
 
     // 🔧 FIX: 验证参数一致性 - 确保请求参数与父评论匹配
     // Convert to numbers safely (handles both string and number inputs)
-    const novelIdNum = typeof novelId === 'number' ? novelId : parseInt(novelId);
-    const chapterIdNum = typeof chapterId === 'number' ? chapterId : parseInt(chapterId);
-    const paragraphIndexNum = typeof paragraphIndex === 'number' ? paragraphIndex : parseInt(paragraphIndex);
+    const novelIdNum = typeof novelId === 'number' ? novelId : parseInt(String(novelId), 10);
+    const chapterIdNum = typeof chapterId === 'number' ? chapterId : parseInt(String(chapterId), 10);
+    const paragraphIndexNum = typeof paragraphIndex === 'number' ? paragraphIndex : parseInt(String(paragraphIndex), 10);
 
     console.log('[Comment Reply API] Converted values:', {
       novelIdNum,
