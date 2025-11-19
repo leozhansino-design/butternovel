@@ -155,10 +155,10 @@ export default async function NovelDetailPage({
                   <div className="grid lg:grid-cols-[380px_1fr] gap-8 p-8 md:p-12">
 
                     <div className="flex flex-col items-center lg:items-start">
-                      <div className="relative group">
+                      <div className="relative group book-shadow-3d">
                         {/* 封面光效 - Logo 蓝色 */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.15] to-blue-500/[0.10] rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500"></div>
-                        <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden card-shadow-xl border-2 border-white/60">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.08] to-blue-500/[0.05] rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 z-0"></div>
+                        <div className="relative w-[280px] h-[400px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/80 bg-white z-10">
                           <Image
                             src={novel.coverImage}
                             alt={novel.title}
@@ -181,27 +181,28 @@ export default async function NovelDetailPage({
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-6">
-                      
-                      <div>
-                        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
+                    <div className="flex flex-col gap-7">
+
+                      <div className="space-y-4">
+                        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight tracking-tight">
                           {novel.title}
                         </h1>
-                        <div className="flex items-center gap-2 text-lg flex-wrap">
-                          <span className="text-gray-600">by</span>
+                        <div className="flex items-center gap-3 text-base">
+                          <span className="text-gray-500 font-medium">by</span>
                           <AuthorNameButton authorId={novel.authorId} authorName={novel.authorName} />
                           <FollowAuthorButton authorId={novel.authorId} authorName={novel.authorName} />
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="px-4 py-1.5 bg-blue-50 text-blue-700 rounded-full font-medium text-sm border border-blue-200">
+                      {/* Category and Status Badges */}
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-50/80 text-blue-700 rounded-lg font-semibold text-sm border border-blue-200/60 shadow-sm">
                           {novel.category.name}
                         </span>
-                        <span className={`px-4 py-1.5 rounded-full font-medium text-sm ${
+                        <span className={`px-4 py-2 rounded-lg font-semibold text-sm shadow-sm ${
                           novel.status === 'COMPLETED'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-blue-50/60 text-blue-600 border border-blue-200/60'
+                            ? 'bg-gradient-to-r from-emerald-50 to-emerald-50/80 text-emerald-700 border border-emerald-200/60'
+                            : 'bg-gradient-to-r from-blue-50/70 to-blue-50/50 text-blue-600 border border-blue-200/50'
                         }`}>
                           {novel.status === 'COMPLETED' ? '✓ Completed' : '📝 Ongoing'}
                         </span>
@@ -209,68 +210,88 @@ export default async function NovelDetailPage({
 
                       {/* Tags */}
                       {novel.tags && novel.tags.length > 0 && (
-                        <div>
-                          <h3 className="text-sm font-semibold text-gray-600 mb-2">Tags</h3>
+                        <div className="space-y-2.5">
+                          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tags</h3>
                           <TagsDisplay tags={novel.tags} clickable={true} />
                         </div>
                       )}
 
-                      <div className="flex flex-wrap items-center gap-6 text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <span className="font-medium">{formatNumber(novel.viewCount)}</span>
-                          <span className="text-sm">Reads</span>
+                      {/* Stats Grid - Enhanced Visual Hierarchy */}
+                      <div className="grid grid-cols-2 gap-4 py-1">
+                        <div className="flex items-center gap-2.5 text-gray-600">
+                          <div className="p-2 bg-blue-50/50 rounded-lg">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-lg font-bold text-gray-900">{formatNumber(novel.viewCount)}</span>
+                            <span className="text-xs text-gray-500">Reads</span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                          </svg>
-                          <span className="font-medium">{novel._count.likes}</span>
-                          <span className="text-sm">Votes</span>
+                        <div className="flex items-center gap-2.5 text-gray-600">
+                          <div className="p-2 bg-red-50/50 rounded-lg">
+                            <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-lg font-bold text-gray-900">{novel._count.likes}</span>
+                            <span className="text-xs text-gray-500">Votes</span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                          <span className="font-medium">{novel._count.chapters}</span>
-                          <span className="text-sm">Chapters</span>
+                        <div className="flex items-center gap-2.5 text-gray-600">
+                          <div className="p-2 bg-blue-50/50 rounded-lg">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-lg font-bold text-gray-900">{novel._count.chapters}</span>
+                            <span className="text-xs text-gray-500">Chapters</span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="font-medium">{Math.ceil(novel.wordCount / 800)}m</span>
-                          <span className="text-sm">Read</span>
+                        <div className="flex items-center gap-2.5 text-gray-600">
+                          <div className="p-2 bg-blue-50/50 rounded-lg">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-lg font-bold text-gray-900">{Math.ceil(novel.wordCount / 800)}m</span>
+                            <span className="text-xs text-gray-500">Read</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex-1 min-h-0">
-                        <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {/* Blurb Section */}
+                      <div className="flex-1 min-h-0 space-y-3">
+                        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          Blurb
+                          Synopsis
                         </h2>
                         <div className="prose prose-gray max-w-none">
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-400/40 scrollbar-track-blue-50/30">
+                          <p className="text-gray-700 text-[15px] leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto pr-3 scrollbar-thin scrollbar-thumb-blue-400/30 scrollbar-track-transparent hover:scrollbar-thumb-blue-500/40 transition-colors">
                             {novel.blurb}
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-4 pt-2">
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100">
                         <Link
                           href={`/novels/${novel.slug}/chapters/1`}
-                          className="btn-primary flex items-center gap-2 px-8 py-3.5 text-white font-medium rounded-lg hover:scale-[1.02] transition-all"
+                          className="btn-primary flex items-center gap-2.5 px-8 py-4 text-white font-semibold rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           Start Reading
                         </Link>

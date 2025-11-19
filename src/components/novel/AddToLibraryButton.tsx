@@ -91,38 +91,38 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
         disabled={loading}
         className={`
           group relative p-4 rounded-xl transition-all duration-300 overflow-hidden
-          ${isInLibrary 
-            ? 'bg-amber-500/10 backdrop-blur-sm border border-amber-500/50' 
-            : 'bg-white/80 backdrop-blur-sm border border-gray-200/50 hover:border-amber-500/50'
+          ${isInLibrary
+            ? 'bg-blue-50 backdrop-blur-sm border-2 border-blue-200'
+            : 'bg-white backdrop-blur-sm border-2 border-gray-200 hover:border-blue-300'
           }
-          shadow-sm hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed
+          shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed
         `}
         title={isInLibrary ? 'Remove from Library' : 'Add to Library'}
         aria-label="Add to Library"
       >
-        <svg 
+        <svg
           className={`
             w-6 h-6 transition-all duration-300 relative z-10
-            ${isInLibrary 
-              ? 'text-amber-600' 
-              : 'text-gray-500 group-hover:text-amber-600'
+            ${isInLibrary
+              ? 'text-blue-600'
+              : 'text-gray-400 group-hover:text-blue-600'
             }
             group-hover:scale-110
             ${loading ? 'animate-pulse' : ''}
           `}
           fill={isInLibrary ? 'currentColor' : 'none'}
-          stroke="currentColor" 
+          stroke="currentColor"
           strokeWidth={2}
           viewBox="0 0 24 24"
         >
-          <path 
-            strokeLinecap="round" 
+          <path
+            strokeLinecap="round"
             strokeLinejoin="round"
-            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
           />
         </svg>
-        
-        <div className="absolute inset-0 bg-amber-500/0 group-hover:bg-amber-500/10 transition-all duration-300" />
+
+        <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/5 transition-all duration-300" />
       </button>
     </>
   )
