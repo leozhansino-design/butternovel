@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { createNotification } from '@/lib/notification-service'
 import crypto from 'crypto'
 
 // 生成游客ID
@@ -33,7 +34,17 @@ export async function POST(
     // 检查评分是否存在
     const rating = await prisma.rating.findUnique({
       where: { id: ratingId },
-      select: { id: true, likeCount: true }
+      select: {
+        id: true,
+        likeCount: true,
+        userId: true,
+        novelId: true,
+        novel: {
+          select: {
+            slug: true,
+          },
+        },
+      },
     })
 
     if (!rating) {
@@ -93,6 +104,24 @@ export async function POST(
         where: { id: ratingId },
         select: { likeCount: true }
       })
+
+      // 发送通知给评分作者（仅登录用户且不是自己点赞）
+      if (userId && rating.userId !== userId) {
+        try {
+          await createNotification({
+            userId: rating.userId,
+            type: 'RATING_LIKE',
+            actorId: userId,
+            data: {
+              ratingId: rating.id,
+              novelId: rating.novelId,
+              novelSlug: rating.novel.slug,
+            },
+          });
+        } catch (error) {
+          console.error('[Rating Like API] Failed to create notification:', error);
+        }
+      }
 
       return NextResponse.json({
         liked: true,

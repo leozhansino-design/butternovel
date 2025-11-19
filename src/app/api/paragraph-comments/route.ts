@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { uploadCommentImage } from '@/lib/cloudinary'
+import { createNotification } from '@/lib/notification-service'
 import { Prisma } from '@prisma/client'
 
 // GET - 获取某个段落的评论
@@ -125,6 +126,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 获取小说信息（用于通知作者）
+    const novel = await prisma.novel.findUnique({
+      where: { id: parseInt(novelId) },
+      select: {
+        authorId: true,
+        slug: true,
+        title: true,
+      },
+    });
+
+    if (!novel) {
+      return NextResponse.json(
+        { success: false, error: 'Novel not found' },
+        { status: 404 }
+      );
+    }
+
+    // 获取章节信息
+    const chapter = await prisma.chapter.findUnique({
+      where: { id: parseInt(chapterId) },
+      select: {
+        chapterNumber: true,
+      },
+    });
+
+    if (!chapter) {
+      return NextResponse.json(
+        { success: false, error: 'Chapter not found' },
+        { status: 404 }
+      );
+    }
+
     // 创建评论（使用事务）
     const comment = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. 创建评论
@@ -180,6 +213,27 @@ export async function POST(request: NextRequest) {
 
       return newComment
     })
+
+    // 发送通知给小说作者
+    if (novel.authorId !== session.user.id) {
+      try {
+        await createNotification({
+          userId: novel.authorId,
+          type: 'NOVEL_COMMENT',
+          actorId: session.user.id,
+          data: {
+            novelId: parseInt(novelId),
+            novelSlug: novel.slug,
+            novelTitle: novel.title,
+            chapterId: parseInt(chapterId),
+            chapterNumber: chapter.chapterNumber,
+            commentContent: content.trim(),
+          },
+        });
+      } catch (error) {
+        console.error('[Paragraph Comment API] Failed to create notification:', error);
+      }
+    }
 
     return NextResponse.json({ success: true, data: comment })
   } catch (error: any) {

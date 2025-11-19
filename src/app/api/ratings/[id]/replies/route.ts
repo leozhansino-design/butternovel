@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { addRatingReplyContribution } from '@/lib/contribution'
+import { createNotification } from '@/lib/notification-service'
 
 type Params = {
   params: Promise<{ id: string }>
@@ -95,6 +96,14 @@ export async function POST(request: NextRequest, { params }: Params) {
     // Check if rating exists
     const rating = await prisma.rating.findUnique({
       where: { id: ratingId },
+      include: {
+        novel: {
+          select: {
+            id: true,
+            slug: true,
+          },
+        },
+      },
     })
 
     if (!rating) {
@@ -162,6 +171,25 @@ export async function POST(request: NextRequest, { params }: Params) {
     } catch (error) {
       // 不影响主流程，只记录错误
       console.error('[Rating Reply API] Failed to add contribution:', error)
+    }
+
+    // 发送通知给评分作者
+    if (rating.userId !== session.user.id) {
+      try {
+        await createNotification({
+          userId: rating.userId,
+          type: 'RATING_REPLY',
+          actorId: session.user.id,
+          data: {
+            ratingId: rating.id,
+            novelId: rating.novelId,
+            novelSlug: rating.novel.slug,
+            replyContent: content.trim(),
+          },
+        });
+      } catch (error) {
+        console.error('[Rating Reply API] Failed to create notification:', error);
+      }
     }
 
     return NextResponse.json({

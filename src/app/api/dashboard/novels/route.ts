@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import cloudinary from '@/lib/cloudinary'
 import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
+import { createNotification } from '@/lib/notification-service'
 
 // GET - List all novels by the current author
 export async function GET(request: NextRequest) {
@@ -162,6 +163,31 @@ export async function POST(request: NextRequest) {
 
     // ⚡ Clear cache: home page and category page
     await invalidateNovelRelatedCache(novel.slug, novel.category?.slug)
+
+    // 通知所有粉丝（仅发布的小说）
+    if (novel.isPublished) {
+      try {
+        const followers = await prisma.follow.findMany({
+          where: { followingId: session.user.id },
+          select: { followerId: true },
+        });
+
+        for (const follower of followers) {
+          await createNotification({
+            userId: follower.followerId,
+            type: 'AUTHOR_NEW_NOVEL',
+            actorId: session.user.id,
+            data: {
+              novelId: novel.id,
+              novelSlug: novel.slug,
+              novelTitle: novel.title,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('[Novel Create API] Failed to create follower notifications:', error);
+      }
+    }
 
     return NextResponse.json({
       message: 'Novel created successfully',

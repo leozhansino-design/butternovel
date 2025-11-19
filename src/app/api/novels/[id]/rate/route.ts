@@ -8,6 +8,7 @@ import { withRetry } from '@/lib/db-utils'
 import { validateWithSchema, ratingSchema } from '@/lib/validators'
 import { invalidateNovelCache } from '@/lib/cache'
 import { addRatingContribution } from '@/lib/contribution'
+import { createNotification } from '@/lib/notification-service'
 
 export async function POST(
   request: NextRequest,
@@ -72,7 +73,9 @@ export async function POST(
         where: { id: novelId },
         select: {
           id: true,
-          slug: true
+          slug: true,
+          title: true,
+          authorId: true,
         }
       })
     ) as any
@@ -174,6 +177,25 @@ export async function POST(
     } catch (error) {
       // 不影响主流程，只记录错误
       console.error('[Rating API] Failed to add contribution:', error)
+    }
+
+    // 发送通知给小说作者
+    if (novel.authorId !== session.user.id) {
+      try {
+        await createNotification({
+          userId: novel.authorId,
+          type: 'NOVEL_RATING',
+          actorId: session.user.id,
+          data: {
+            novelId: novel.id,
+            novelSlug: novel.slug,
+            novelTitle: novel.title,
+            score,
+          },
+        });
+      } catch (error) {
+        console.error('[Rating API] Failed to create notification:', error);
+      }
     }
 
     return NextResponse.json(result, { status: 201 })

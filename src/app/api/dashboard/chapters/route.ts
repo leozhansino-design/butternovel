@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { validateWithSchema, chapterCreateSchema, countWords, WORD_LIMITS } from '@/lib/validators'
+import { createNotification } from '@/lib/notification-service'
 
 // POST - Create a new chapter
 export async function POST(request: NextRequest) {
@@ -41,7 +42,12 @@ export async function POST(request: NextRequest) {
         id: novelId,
         authorId: session.user.id,
       },
-      include: {
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        authorId: true,
+        isPublished: true,
         chapters: {
           orderBy: {
             chapterNumber: 'desc',
@@ -98,6 +104,60 @@ export async function POST(request: NextRequest) {
         where: { id: novelId },
         data: { isPublished: true },
       })
+    }
+
+    // 通知粉丝和书架用户（仅发布的章节）
+    if (isPublished) {
+      try {
+        // 1. 通知所有粉丝
+        const followers = await prisma.follow.findMany({
+          where: { followingId: novel.authorId },
+          select: { followerId: true },
+        });
+
+        for (const follower of followers) {
+          await createNotification({
+            userId: follower.followerId,
+            type: 'AUTHOR_NEW_CHAPTER',
+            actorId: novel.authorId,
+            data: {
+              novelId: novel.id,
+              novelSlug: novel.slug,
+              novelTitle: novel.title,
+              chapterId: chapter.id,
+              chapterNumber: chapter.chapterNumber,
+              chapterTitle: chapter.title,
+            },
+          });
+        }
+
+        // 2. 通知书架用户（未关注作者但加入书架）
+        const followerIds = followers.map(f => f.followerId);
+        const libraryUsers = await prisma.library.findMany({
+          where: {
+            novelId: novel.id,
+            userId: { notIn: followerIds },
+          },
+          select: { userId: true },
+        });
+
+        for (const lib of libraryUsers) {
+          await createNotification({
+            userId: lib.userId,
+            type: 'NOVEL_UPDATE',
+            data: {
+              novelId: novel.id,
+              novelSlug: novel.slug,
+              novelTitle: novel.title,
+              chapterId: chapter.id,
+              chapterNumber: chapter.chapterNumber,
+              chapterTitle: chapter.title,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('[Chapter Create API] Failed to create notifications:', error);
+      }
     }
 
     return NextResponse.json({
