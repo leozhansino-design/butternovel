@@ -103,7 +103,12 @@ export async function POST(
     // Validate parent comment exists
     const parentComment = await prisma.paragraphComment.findUnique({
       where: { id: parentId },
-      include: {
+      select: {
+        id: true,
+        novelId: true,
+        chapterId: true,
+        paragraphIndex: true,
+        userId: true,
         novel: {
           select: {
             slug: true,
