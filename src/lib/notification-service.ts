@@ -3,7 +3,7 @@
  * 提供通知的创建、查询、更新等功能
  */
 
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { NotificationType, NotificationPriority, Prisma } from '@prisma/client';
 import {
   createNotificationTitle,

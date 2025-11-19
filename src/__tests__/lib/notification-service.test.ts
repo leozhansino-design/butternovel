@@ -18,7 +18,7 @@ import {
 // Mock Prisma Client
 jest.mock('@/lib/prisma', () => ({
   __esModule: true,
-  default: {
+  prisma: {
     notification: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -38,7 +38,7 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 describe('Notification Service', () => {
   beforeEach(() => {
