@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import NotificationPreferencesModal from '@/components/notification/NotificationPreferencesModal';
 
 type UserMenuProps = {
   user: {
@@ -18,6 +19,7 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: pathname });
@@ -149,6 +151,25 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
             </div>
             <span>Manage My Novels</span>
           </Link>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-100 my-2 mx-4"></div>
+
+          {/* Notification Settings */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              setShowPreferences(true);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <div className="w-5 h-5 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <span>Notification Settings</span>
+          </button>
         </div>
 
         {/* Sign Out */}
@@ -166,6 +187,13 @@ export default function UserMenu({ user, onOpenLibrary }: UserMenuProps) {
           </button>
         </div>
       </div>
+
+      {/* Notification Preferences Modal */}
+      {showPreferences && (
+        <NotificationPreferencesModal
+          onClose={() => setShowPreferences(false)}
+        />
+      )}
     </div>
   );
 }

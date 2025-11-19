@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { uploadCommentImage } from '@/lib/cloudinary'
+import { createNotification } from '@/lib/notification-service'
 import { Prisma } from '@prisma/client'
 
 // GET /api/paragraph-comments/[id]/replies - Get all replies for a comment
@@ -74,6 +75,18 @@ export async function POST(
     // Validate parent comment exists
     const parentComment = await prisma.paragraphComment.findUnique({
       where: { id: parentId },
+      include: {
+        novel: {
+          select: {
+            slug: true,
+          },
+        },
+        chapter: {
+          select: {
+            chapterNumber: true,
+          },
+        },
+      },
     })
 
     if (!parentComment) {
@@ -177,6 +190,27 @@ export async function POST(
 
       return reply
     })
+
+    // 发送通知给评论作者
+    if (parentComment.userId !== session.user.id) {
+      try {
+        await createNotification({
+          userId: parentComment.userId,
+          type: 'COMMENT_REPLY',
+          actorId: session.user.id,
+          data: {
+            commentId: parentComment.id,
+            novelId: parentComment.novelId,
+            novelSlug: parentComment.novel.slug,
+            chapterId: parentComment.chapterId,
+            chapterNumber: parentComment.chapter.chapterNumber,
+            replyContent: content.trim(),
+          },
+        });
+      } catch (error) {
+        console.error('[Comment Reply API] Failed to create notification:', error);
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { createNotification } from '@/lib/notification-service'
 import crypto from 'crypto'
 
 // POST - 点赞段落评论
@@ -16,7 +17,19 @@ export async function POST(
 
     // 检查评论是否存在
     const comment = await prisma.paragraphComment.findUnique({
-      where: { id: commentId }
+      where: { id: commentId },
+      include: {
+        novel: {
+          select: {
+            slug: true,
+          },
+        },
+        chapter: {
+          select: {
+            chapterNumber: true,
+          },
+        },
+      },
     })
 
     if (!comment) {
@@ -80,6 +93,26 @@ export async function POST(
         data: { likeCount: { increment: 1 } }
       })
     ])
+
+    // 发送通知给评论作者（仅登录用户且不是自己点赞）
+    if (userId && comment.userId !== userId) {
+      try {
+        await createNotification({
+          userId: comment.userId,
+          type: 'COMMENT_LIKE',
+          actorId: userId,
+          data: {
+            commentId: comment.id,
+            novelId: comment.novelId,
+            novelSlug: comment.novel.slug,
+            chapterId: comment.chapterId,
+            chapterNumber: comment.chapter.chapterNumber,
+          },
+        });
+      } catch (error) {
+        console.error('[Comment Like API] Failed to create notification:', error);
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

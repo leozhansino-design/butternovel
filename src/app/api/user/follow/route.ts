@@ -2,6 +2,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withErrorHandling, errorResponse, successResponse } from '@/lib/api-error-handler'
+import { createNotification } from '@/lib/notification-service'
 
 // POST - Follow a user
 export const POST = withErrorHandling(async (request: Request) => {
@@ -61,6 +62,18 @@ export const POST = withErrorHandling(async (request: Request) => {
         followingId: targetUserId
       }
     })
+
+    // 发送通知给被关注的用户
+    try {
+      await createNotification({
+        userId: targetUserId,
+        type: 'NEW_FOLLOWER',
+        actorId: session.user.id,
+        data: {},
+      });
+    } catch (error) {
+      console.error('[Follow API] Failed to create notification:', error);
+    }
 
     return successResponse({ message: 'Successfully followed user' })
   } catch (error) {

@@ -8,6 +8,7 @@ import AuthModal from '@/components/auth/AuthModal';
 import UserMenu from '@/components/shared/UserMenu';
 import LibraryModal from '@/components/shared/LibraryModal';
 import SearchInput from '@/components/search/SearchInput';
+import NotificationBell from '@/components/notification/NotificationBell';
 import { CATEGORIES } from '@/lib/constants';
 
 export default function Header() {
@@ -121,7 +122,10 @@ export default function Header() {
             {/* User Menu - Desktop */}
             <div className="hidden md:flex items-center gap-4">
               {user ? (
-                <UserMenu user={user} onOpenLibrary={openLibraryModal} />
+                <>
+                  <NotificationBell />
+                  <UserMenu user={user} onOpenLibrary={openLibraryModal} />
+                </>
               ) : (
                 <>
                   <button 
