@@ -267,7 +267,7 @@ export default function UsersManagementPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="邮箱或名字..."
+                placeholder="Email or name..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -530,30 +530,30 @@ export default function UsersManagementPage() {
                       <p className="font-mono text-sm">{selectedUser.id}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-gray-600">邮箱</label>
+                      <label className="text-sm text-gray-600">Email</label>
                       <p>{selectedUser.email}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-gray-600">名字</label>
-                      <p>{selectedUser.name || '未设置'}</p>
+                      <label className="text-sm text-gray-600">Name</label>
+                      <p>{selectedUser.name || 'Not set'}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-gray-600">角色</label>
+                      <label className="text-sm text-gray-600">Role</label>
                       <p>{selectedUser.role}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-gray-600">注册时间</label>
-                      <p>{new Date(selectedUser.createdAt).toLocaleString('zh-CN')}</p>
+                      <label className="text-sm text-gray-600">Registered</label>
+                      <p>{new Date(selectedUser.createdAt).toLocaleString('en-US')}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-gray-600">最后更新</label>
-                      <p>{new Date(selectedUser.updatedAt).toLocaleString('zh-CN')}</p>
+                      <label className="text-sm text-gray-600">Last Updated</label>
+                      <p>{new Date(selectedUser.updatedAt).toLocaleString('en-US')}</p>
                     </div>
                   </div>
 
                   {selectedUser.bio && (
                     <div className="mt-4">
-                      <label className="text-sm text-gray-600">个人简介</label>
+                      <label className="text-sm text-gray-600">Bio</label>
                       <p className="text-gray-700">{selectedUser.bio}</p>
                     </div>
                   )}
@@ -562,15 +562,15 @@ export default function UsersManagementPage() {
                 {/* Writer Info */}
                 {selectedUser.isWriter && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">作家信息</h3>
+                    <h3 className="text-lg font-semibold mb-3">Writer Information</h3>
                     <div className="space-y-2">
                       <div>
-                        <label className="text-sm text-gray-600">作家笔名</label>
-                        <p>{selectedUser.writerName || '未设置'}</p>
+                        <label className="text-sm text-gray-600">Writer Pen Name</label>
+                        <p>{selectedUser.writerName || 'Not set'}</p>
                       </div>
                       {selectedUser.writerBio && (
                         <div>
-                          <label className="text-sm text-gray-600">作家简介</label>
+                          <label className="text-sm text-gray-600">Writer Bio</label>
                           <p className="text-gray-700">{selectedUser.writerBio}</p>
                         </div>
                       )}

@@ -71,7 +71,7 @@ export default function BatchUploadPage() {
     }
 
     if (novelData.length > BATCH_UPLOAD_LIMITS.MAX_NOVELS) {
-      alert(`最多只能上传${BATCH_UPLOAD_LIMITS.MAX_NOVELS}本小说`)
+      alert(`You can upload up to ${BATCH_UPLOAD_LIMITS.MAX_NOVELS} novels`)
       return
     }
 
@@ -152,7 +152,7 @@ export default function BatchUploadPage() {
   const handleStartUpload = async () => {
     const validNovels = novels.filter(n => n.validation?.valid)
     if (validNovels.length === 0) {
-      alert('没有可上传的小说（请检查验证错误）')
+      alert('No valid novels to upload (please check validation errors)')
       return
     }
 
@@ -253,7 +253,7 @@ export default function BatchUploadPage() {
   // 清空列表
   const handleClear = () => {
     if (isUploading) {
-      alert('上传进行中，无法清空列表')
+      alert('Upload in progress, cannot clear list')
       return
     }
     setNovels([])

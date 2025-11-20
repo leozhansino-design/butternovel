@@ -414,7 +414,6 @@ export default function NovelUploadForm() {
             <TagsInput
               value={tags}
               onChange={setTags}
-              placeholder="添加标签 (按空格或回车)"
             />
           </div>
 

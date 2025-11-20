@@ -122,12 +122,12 @@ export default function NotificationItem({
           </div>
         </div>
 
-        {/* 归档按钮 */}
+        {/* Archive button */}
         {!notification.isArchived && (
           <button
             onClick={handleArchive}
             className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex-shrink-0"
-            title="归档"
+            title="Archive"
           >
             <Archive className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </button>

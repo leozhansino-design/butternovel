@@ -204,17 +204,9 @@ export default async function NovelDetailPage({
                       </div>
 
                       {/* Content Rating & Rights */}
-                      <div className="w-[280px] mt-3 text-xs text-gray-600 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">Rating:</span>
-                          <span className={`px-2 py-0.5 rounded border ${getContentRatingColor(novel.contentRating)}`}>
-                            {getContentRatingLabel(novel.contentRating)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">License:</span>
-                          <span className="text-gray-700">{getRightsTypeLabel(novel.rightsType)}</span>
-                        </div>
+                      <div className="w-[280px] mt-3 text-xs text-gray-600">
+                        <div>{getContentRatingLabel(novel.contentRating)}</div>
+                        <div>{getRightsTypeLabel(novel.rightsType)}</div>
                       </div>
                     </div>
 

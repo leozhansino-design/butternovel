@@ -449,7 +449,6 @@ export default function EditNovelForm({ novel, categories }: Props) {
             <TagsInput
               value={tags}
               onChange={setTags}
-              placeholder="添加标签 (按空格或回车)"
             />
           </div>
         </div>
