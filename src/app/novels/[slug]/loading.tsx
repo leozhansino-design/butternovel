@@ -79,7 +79,7 @@ export default function NovelDetailLoading() {
         </section>
 
         {/* First Chapter Skeleton */}
-        <section className="pt-6 pb-12 md:pb-16 bg-white">
+        <section className="pt-6 pb-12 md:pb-16">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto space-y-8">
               {/* Chapter Header */}

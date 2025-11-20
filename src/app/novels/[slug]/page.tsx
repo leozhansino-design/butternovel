@@ -296,7 +296,7 @@ export default async function NovelDetailPage({
           {firstChapter && (
             <Suspense
               fallback={
-                <section className="py-12 bg-gradient-to-b from-white to-gray-50">
+                <section className="py-12">
                   <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto space-y-8">
                       <div className="mb-8">
