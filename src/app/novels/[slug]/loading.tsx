@@ -22,7 +22,10 @@ export default function NovelDetailLoading() {
                     {/* Title and Author */}
                     <div className="space-y-4">
                       <div className="h-12 bg-gray-200 rounded-lg w-3/4 animate-pulse"></div>
-                      <div className="h-6 bg-gray-100 rounded w-1/3 animate-pulse"></div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                        <div className="h-6 bg-gray-100 rounded w-32 animate-pulse"></div>
+                      </div>
                     </div>
 
                     {/* Badges */}
