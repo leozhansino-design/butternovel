@@ -204,7 +204,7 @@ export default async function NovelDetailPage({
                       </div>
 
                       {/* Content Rating & Rights */}
-                      <div className="w-[280px] mt-3 text-xs text-gray-600">
+                      <div className="w-[280px] mt-3 text-xs text-gray-600 text-center">
                         <div>{getContentRatingLabel(novel.contentRating)}</div>
                         <div>{getRightsTypeLabel(novel.rightsType)}</div>
                       </div>
