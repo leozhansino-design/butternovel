@@ -181,6 +181,10 @@ model Novel {
   // 书签计数（缓存library关系的计数）
   bookmarkCount Int @default(0)
 
+  // ⭐ 内容分级和版权
+  contentRating ContentRating @default(ALL_AGES)
+  rightsType    RightsType    @default(ALL_RIGHTS_RESERVED)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
@@ -207,6 +211,20 @@ model Novel {
 enum NovelStatus {
   ONGOING // 连载中
   COMPLETED // 已完结
+}
+
+// 内容分级
+enum ContentRating {
+  ALL_AGES    // 所有年龄
+  TEEN_13     // 青少年 13+
+  MATURE_16   // 成熟内容 16+
+  EXPLICIT_18 // 明确成人内容 18+
+}
+
+// 版权类型
+enum RightsType {
+  ALL_RIGHTS_RESERVED // 保留所有权利
+  CREATIVE_COMMONS    // 创作共用许可
 }
 
 // 章节表

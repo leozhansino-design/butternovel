@@ -76,13 +76,23 @@ export const PUT = withAdminAuth(async (
       data.status = updates.status
     }
 
-    // 5. 更新发布状态
+    // 5. 更新内容分级
+    if (updates.contentRating !== undefined) {
+      data.contentRating = updates.contentRating
+    }
+
+    // 6. 更新版权许可
+    if (updates.rightsType !== undefined) {
+      data.rightsType = updates.rightsType
+    }
+
+    // 7. 更新发布状态
     if (updates.isPublished !== undefined) {
       data.isPublished = updates.isPublished
       data.isDraft = !updates.isPublished
     }
 
-    // 6. 更新封面（如果有新图片）
+    // 8. 更新封面（如果有新图片）
     if (updates.newCoverImage) {
 
       try {

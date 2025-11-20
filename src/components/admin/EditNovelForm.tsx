@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import TagsInput from '@/components/shared/TagsInput'
+import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
+import { ContentRating, RightsType } from '@prisma/client'
 
 type Category = {
   id: number
@@ -31,6 +33,8 @@ type Novel = {
   blurb: string
   status: string
   isPublished: boolean
+  contentRating: ContentRating
+  rightsType: RightsType
   categoryId: number
   category: Category
   chapters: Chapter[]
@@ -53,6 +57,8 @@ export default function EditNovelForm({ novel, categories }: Props) {
   const [categoryId, setCategoryId] = useState(novel.categoryId.toString())
   const [status, setStatus] = useState(novel.status)
   const [isPublished, setIsPublished] = useState(novel.isPublished)
+  const [contentRating, setContentRating] = useState<ContentRating>(novel.contentRating)
+  const [rightsType, setRightsType] = useState<RightsType>(novel.rightsType)
 
   // 封面状态
   const [coverPreview, setCoverPreview] = useState(novel.coverImage)
@@ -92,11 +98,13 @@ export default function EditNovelForm({ novel, categories }: Props) {
       categoryId !== novel.categoryId.toString() ||
       status !== novel.status ||
       isPublished !== novel.isPublished ||
+      contentRating !== novel.contentRating ||
+      rightsType !== novel.rightsType ||
       newCoverImage !== null ||
       tagsChanged
 
     setHasChanges(changed)
-  }, [title, blurb, categoryId, status, isPublished, newCoverImage, tags, novel])
+  }, [title, blurb, categoryId, status, isPublished, contentRating, rightsType, newCoverImage, tags, novel])
 
   // ⭐ 保存为草稿 (不发布)
   async function handleSaveDraft() {
@@ -126,6 +134,8 @@ export default function EditNovelForm({ novel, categories }: Props) {
       if (blurb !== novel.blurb) updates.blurb = blurb
       if (categoryId !== novel.categoryId.toString()) updates.categoryId = parseInt(categoryId)
       if (status !== novel.status) updates.status = status
+      if (contentRating !== novel.contentRating) updates.contentRating = contentRating
+      if (rightsType !== novel.rightsType) updates.rightsType = rightsType
       if (newCoverImage) updates.newCoverImage = newCoverImage
 
       // ⭐ 根据按钮设置发布状态
@@ -385,6 +395,49 @@ export default function EditNovelForm({ novel, categories }: Props) {
                 <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
               </select>
+            </div>
+          </div>
+
+          {/* Content Rating & Rights Type */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Content Rating <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={contentRating}
+                onChange={(e) => setContentRating(e.target.value as ContentRating)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {CONTENT_RATING_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                {CONTENT_RATING_OPTIONS.find(o => o.value === contentRating)?.description}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Copyright License <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={rightsType}
+                onChange={(e) => setRightsType(e.target.value as RightsType)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {RIGHTS_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                {RIGHTS_TYPE_OPTIONS.find(o => o.value === rightsType)?.description}
+              </p>
             </div>
           </div>
 

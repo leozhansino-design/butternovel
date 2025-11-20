@@ -129,6 +129,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             authorName: session.name || 'Admin',
             status: 'COMPLETED', // 批量上传的小说默认已完结
             isPublished: true,
+            contentRating: 'ALL_AGES', // 批量上传默认 All Ages
+            rightsType: 'ALL_RIGHTS_RESERVED', // 批量上传默认 All Rights Reserved
             totalChapters,
             wordCount,
           }
