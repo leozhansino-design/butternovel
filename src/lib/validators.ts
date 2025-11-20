@@ -27,6 +27,14 @@ export const novelCreateSchema = z.object({
     message: 'Status must be ONGOING or COMPLETED'
   }),
 
+  contentRating: z.enum(['ALL_AGES', 'TEEN_13', 'MATURE_16', 'EXPLICIT_18'], {
+    message: 'Invalid content rating'
+  }).optional().default('ALL_AGES'),
+
+  rightsType: z.enum(['ALL_RIGHTS_RESERVED', 'CREATIVE_COMMONS'], {
+    message: 'Invalid rights type'
+  }).optional().default('ALL_RIGHTS_RESERVED'),
+
   isPublished: z.boolean().optional(),
   isDraft: z.boolean().optional(),
 
@@ -41,6 +49,8 @@ export const novelUpdateSchema = z.object({
   blurb: z.string().min(1, 'Blurb cannot be empty').max(3000, 'Blurb too long').optional(),
   categoryId: z.coerce.number().int().positive('Please select a valid genre/category').optional(),
   status: z.enum(['ONGOING', 'COMPLETED']).optional(),
+  contentRating: z.enum(['ALL_AGES', 'TEEN_13', 'MATURE_16', 'EXPLICIT_18']).optional(),
+  rightsType: z.enum(['ALL_RIGHTS_RESERVED', 'CREATIVE_COMMONS']).optional(),
   coverImage: z.string().optional(),
   isPublished: z.boolean().optional(),
   isDraft: z.boolean().optional(),

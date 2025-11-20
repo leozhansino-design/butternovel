@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Upload, X, Plus, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
+import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
 
 // Category data (Genres)
 const genres = [
@@ -53,6 +54,8 @@ export default function NovelUploadForm() {
     categoryId: '',
     blurb: '',
     status: 'ONGOING',
+    contentRating: 'ALL_AGES',
+    rightsType: 'ALL_RIGHTS_RESERVED',
     isPublished: false,
   })
 
@@ -132,6 +135,8 @@ export default function NovelUploadForm() {
           categoryId: parseInt(formData.categoryId),
           blurb: formData.blurb,
           status: formData.status,
+          contentRating: formData.contentRating,
+          rightsType: formData.rightsType,
           isPublished: false, // Always save as draft initially
           chapters: [], // No chapters on creation
         }),
@@ -341,6 +346,50 @@ export default function NovelUploadForm() {
                   <span className="text-sm">Completed</span>
                 </label>
               </div>
+            </div>
+
+            {/* Content Rating */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Content Rating <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={formData.contentRating}
+                onChange={(e) => setFormData({ ...formData, contentRating: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                {CONTENT_RATING_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                {CONTENT_RATING_OPTIONS.find(o => o.value === formData.contentRating)?.description}
+              </p>
+            </div>
+
+            {/* Copyright License */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Copyright License <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={formData.rightsType}
+                onChange={(e) => setFormData({ ...formData, rightsType: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                {RIGHTS_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                {RIGHTS_TYPE_OPTIONS.find(o => o.value === formData.rightsType)?.description}
+              </p>
             </div>
           </div>
         </div>

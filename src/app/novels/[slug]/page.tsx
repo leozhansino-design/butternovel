@@ -18,6 +18,7 @@ import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
 import AuthorNameButton from '@/components/novel/AuthorNameButton'
 import TagsDisplay from '@/components/shared/TagsDisplay'
+import { getContentRatingLabel, getRightsTypeLabel, getContentRatingColor } from '@/lib/content-rating'
 
 async function getNovel(slug: string) {
   console.log(`[Novel] 📖 Fetching novel: ${slug}`)
@@ -41,6 +42,8 @@ async function getNovel(slug: string) {
         authorId: true,  // ⭐ Added for follow functionality
         authorName: true,
         status: true,
+        contentRating: true,
+        rightsType: true,
         isPublished: true,
         isBanned: true,
         viewCount: true,
@@ -198,6 +201,20 @@ export default async function NovelDetailPage({
                           averageRating={novel.averageRating ?? 0}
                           totalRatings={novel.totalRatings}
                         />
+                      </div>
+
+                      {/* Content Rating & Rights */}
+                      <div className="w-[280px] mt-3 text-xs text-gray-600 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">Rating:</span>
+                          <span className={`px-2 py-0.5 rounded border ${getContentRatingColor(novel.contentRating)}`}>
+                            {getContentRatingLabel(novel.contentRating)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">License:</span>
+                          <span className="text-gray-700">{getRightsTypeLabel(novel.rightsType)}</span>
+                        </div>
                       </div>
                     </div>
 

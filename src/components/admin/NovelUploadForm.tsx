@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Upload, BookOpen, Plus, X, Edit2, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
+import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
 
 // 分类数据（Genres）- 匹配数据库种子数据
 const genres = [
@@ -63,6 +64,8 @@ export default function NovelUploadForm() {
     blurb: '',
     status: 'ONGOING',
     isPublished: false,
+    contentRating: 'ALL_AGES',
+    rightsType: 'ALL_RIGHTS_RESERVED',
     chapters: [] as any[],
   })
 
@@ -234,6 +237,8 @@ export default function NovelUploadForm() {
           blurb: formData.blurb,
           status: formData.status,
           isPublished: formData.isPublished,
+          contentRating: formData.contentRating,
+          rightsType: formData.rightsType,
           chapters: chapters.map(ch => ({
             title: ch.title,
             content: ch.content,
@@ -279,6 +284,8 @@ export default function NovelUploadForm() {
         blurb: '',
         status: 'ONGOING',
         isPublished: false,
+        contentRating: 'ALL_AGES',
+        rightsType: 'ALL_RIGHTS_RESERVED',
         chapters: [],
       })
       setChapters([])
@@ -473,6 +480,50 @@ export default function NovelUploadForm() {
                 <span className="text-sm">Completed</span>
               </label>
             </div>
+          </div>
+
+          {/* Content Rating */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Content Rating *
+            </label>
+            <select
+              required
+              value={formData.contentRating}
+              onChange={(e) => setFormData({ ...formData, contentRating: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {CONTENT_RATING_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-600 mt-1">
+              {CONTENT_RATING_OPTIONS.find(o => o.value === formData.contentRating)?.description}
+            </p>
+          </div>
+
+          {/* Rights / License */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Copyright License *
+            </label>
+            <select
+              required
+              value={formData.rightsType}
+              onChange={(e) => setFormData({ ...formData, rightsType: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {RIGHTS_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-600 mt-1">
+              {RIGHTS_TYPE_OPTIONS.find(o => o.value === formData.rightsType)?.description}
+            </p>
           </div>
 
           {/* 发布状态 */}

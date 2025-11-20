@@ -30,6 +30,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             blurb,
             status,
             isPublished,
+            contentRating,
+            rightsType,
             chapters
         } = validation.data
 
@@ -146,6 +148,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
                     status: status || 'ONGOING',
                     isPublished: isPublished || false,
                     isDraft: !isPublished,
+                    contentRating: contentRating || 'ALL_AGES',
+                    rightsType: rightsType || 'ALL_RIGHTS_RESERVED',
                     // ⭐ FIXED: Use User.id instead of email
                     authorName: authorName,
                     authorId: user.id, // ✅ Use User.id (not email!) - Fixes 404 and follow errors

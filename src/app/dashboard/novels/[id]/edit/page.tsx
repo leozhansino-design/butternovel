@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpen, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
+import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
 
 const genres = [
   { id: 1, name: 'Fantasy' },
@@ -54,6 +55,8 @@ export default function EditNovelPage() {
     blurb: '',
     categoryId: '',
     status: 'ONGOING',
+    contentRating: 'ALL_AGES',
+    rightsType: 'ALL_RIGHTS_RESERVED',
     isPublished: false,
   })
 
@@ -72,6 +75,8 @@ export default function EditNovelPage() {
           blurb: data.novel.blurb,
           categoryId: data.novel.categoryId.toString(),
           status: data.novel.status,
+          contentRating: data.novel.contentRating || 'ALL_AGES',
+          rightsType: data.novel.rightsType || 'ALL_RIGHTS_RESERVED',
           isPublished: data.novel.isPublished,
         })
         setCoverPreview(data.novel.coverImage)
@@ -162,6 +167,8 @@ export default function EditNovelPage() {
           blurb: formData.blurb,
           categoryId: parseInt(formData.categoryId),
           status: formData.status,
+          contentRating: formData.contentRating,
+          rightsType: formData.rightsType,
           isPublished: formData.isPublished,
           coverImage: newCoverImage || undefined,
         }),
@@ -402,6 +409,50 @@ export default function EditNovelPage() {
                   <span className="text-sm">Completed</span>
                 </label>
               </div>
+            </div>
+
+            {/* Content Rating */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Content Rating <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={formData.contentRating}
+                onChange={(e) => setFormData({ ...formData, contentRating: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                {CONTENT_RATING_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                {CONTENT_RATING_OPTIONS.find(o => o.value === formData.contentRating)?.description}
+              </p>
+            </div>
+
+            {/* Copyright License */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Copyright License <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={formData.rightsType}
+                onChange={(e) => setFormData({ ...formData, rightsType: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                {RIGHTS_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                {RIGHTS_TYPE_OPTIONS.find(o => o.value === formData.rightsType)?.description}
+              </p>
             </div>
 
             {/* Publish Status */}
