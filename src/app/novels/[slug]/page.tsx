@@ -249,7 +249,7 @@ export default async function NovelDetailPage({
                         </Link>
                         {novel.tags && novel.tags.length > 0 && (
                           <>
-                            {novel.tags.map((tag) => (
+                            {novel.tags.map((tag: { id: number; name: string; slug: string }) => (
                               <Link key={tag.slug} href={`/tags/${tag.slug}`}>
                                 <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium hover:bg-indigo-200 transition-colors cursor-pointer">
                                   {tag.name}
