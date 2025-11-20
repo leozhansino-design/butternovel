@@ -17,7 +17,6 @@ import { getCloudinaryBlurUrl } from '@/lib/image-utils'
 import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
 import AuthorNameButton from '@/components/novel/AuthorNameButton'
-import TagsDisplay from '@/components/shared/TagsDisplay'
 import { getContentRatingLabel, getRightsTypeLabel, getContentRatingColor } from '@/lib/content-rating'
 
 async function getNovel(slug: string) {
@@ -232,27 +231,34 @@ export default async function NovelDetailPage({
                         </div>
                       </div>
 
-                      {/* Category and Status Badges */}
+                      {/* Category, Status, and Tags Badges */}
                       <div className="flex flex-wrap items-center gap-2.5">
-                        <span className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-50/80 text-blue-700 rounded-lg font-semibold text-sm border border-blue-200/60 shadow-sm">
-                          {novel.category.name}
-                        </span>
-                        <span className={`px-4 py-2 rounded-lg font-semibold text-sm shadow-sm ${
-                          novel.status === 'COMPLETED'
-                            ? 'bg-gradient-to-r from-emerald-50 to-emerald-50/80 text-emerald-700 border border-emerald-200/60'
-                            : 'bg-gradient-to-r from-blue-50/70 to-blue-50/50 text-blue-600 border border-blue-200/50'
-                        }`}>
-                          {novel.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
-                        </span>
+                        <Link href={`/categories/${novel.category.slug}`}>
+                          <span className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-50/80 text-blue-700 rounded-lg font-semibold text-sm border border-blue-200/60 shadow-sm hover:bg-blue-100 transition-colors cursor-pointer">
+                            {novel.category.name}
+                          </span>
+                        </Link>
+                        <Link href={`/search?status=${novel.status}`}>
+                          <span className={`px-4 py-2 rounded-lg font-semibold text-sm shadow-sm cursor-pointer transition-colors ${
+                            novel.status === 'COMPLETED'
+                              ? 'bg-gradient-to-r from-emerald-50 to-emerald-50/80 text-emerald-700 border border-emerald-200/60 hover:bg-emerald-100'
+                              : 'bg-gradient-to-r from-blue-50/70 to-blue-50/50 text-blue-600 border border-blue-200/50 hover:bg-blue-100'
+                          }`}>
+                            {novel.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
+                          </span>
+                        </Link>
+                        {novel.tags && novel.tags.length > 0 && (
+                          <>
+                            {novel.tags.map((tag) => (
+                              <Link key={tag.slug} href={`/tags/${tag.slug}`}>
+                                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium hover:bg-indigo-200 transition-colors cursor-pointer">
+                                  {tag.name}
+                                </span>
+                              </Link>
+                            ))}
+                          </>
+                        )}
                       </div>
-
-                      {/* Tags */}
-                      {novel.tags && novel.tags.length > 0 && (
-                        <div className="space-y-2.5">
-                          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tags</h3>
-                          <TagsDisplay tags={novel.tags} clickable={true} />
-                        </div>
-                      )}
 
                       {/* Stats - Single Row */}
                       <div className="flex flex-wrap items-center gap-6 text-gray-600">
