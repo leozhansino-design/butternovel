@@ -40,11 +40,6 @@ async function getNovel(slug: string) {
         blurb: true,
         authorId: true,  // ⭐ Added for follow functionality
         authorName: true,
-        author: {  // ⭐ Added for author avatar
-          select: {
-            image: true,
-          }
-        },
         status: true,
         isPublished: true,
         isBanned: true,
@@ -100,6 +95,24 @@ async function getNovel(slug: string) {
   return novel
 }
 
+async function getAuthorAvatar(authorId: string) {
+  try {
+    const author = await withRetry(
+      () => prisma.user.findUnique({
+        where: { id: authorId },
+        select: {
+          avatar: true,
+        },
+      }),
+      { operationName: 'Get author avatar' }
+    )
+    return author?.avatar || null
+  } catch (error) {
+    console.error('[Novel] Failed to fetch author avatar:', error)
+    return null
+  }
+}
+
 // ✅ ISR: 1小时重新验证
 // Next.js 会缓存渲染后的页面，只在 revalidate 时间后重新获取数据
 // 这样可以避免每次请求都访问 Redis，大幅减少 Redis commands
@@ -129,6 +142,9 @@ export default async function NovelDetailPage({
   if (!novel) {
     notFound()
   }
+
+  // Get author avatar separately
+  const authorAvatar = await getAuthorAvatar(novel.authorId)
 
   const firstChapter = novel.chapters[0]
   const allChapters = novel.chapters
@@ -193,9 +209,9 @@ export default async function NovelDetailPage({
                         </h1>
                         <div className="flex items-center gap-3 text-base">
                           <span className="text-gray-500 font-medium">by</span>
-                          {novel.author?.image && (
+                          {authorAvatar && (
                             <Image
-                              src={novel.author.image}
+                              src={authorAvatar}
                               alt={novel.authorName}
                               width={32}
                               height={32}
