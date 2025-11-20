@@ -2,12 +2,10 @@
 // ⚡ 骨架屏 - 立即显示页面结构（< 100ms）
 export default function NovelDetailLoading() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-100/60 via-blue-50/30 via-white to-white">
       <main className="flex-1">
-        {/* 详情页骨架 - Logo 蓝色系，底部逐渐过渡到白色 */}
-        <section className="relative py-12 md:py-20 bg-gradient-to-b from-blue-50 via-blue-50/30 via-blue-50/10 to-white/95">
-          {/* 微妙的光效层 */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.03] via-transparent to-blue-500/[0.02]"></div>
+        {/* 详情页骨架 */}
+        <section className="relative py-12 md:py-20">
 
           <div className="container mx-auto px-4 relative">
             <div className="max-w-7xl mx-auto">
@@ -43,15 +41,13 @@ export default function NovelDetailLoading() {
                       </div>
                     </div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-4 py-1">
+                    {/* Stats - Single Row */}
+                    <div className="flex flex-wrap items-center gap-6">
                       {[...Array(4)].map((_, i) => (
-                        <div key={i} className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 bg-gray-200 rounded-lg animate-pulse"></div>
-                          <div className="flex flex-col gap-1.5">
-                            <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
-                            <div className="h-3 w-12 bg-gray-100 rounded animate-pulse"></div>
-                          </div>
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-5 w-12 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-4 w-16 bg-gray-100 rounded animate-pulse"></div>
                         </div>
                       ))}
                     </div>
@@ -81,12 +77,6 @@ export default function NovelDetailLoading() {
             </div>
           </div>
         </section>
-
-        {/* 极柔和的过渡层 - 从白色带一点蓝色呼吸感到纯白 */}
-        <div className="relative h-20">
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/5 to-white"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_100%_at_50%_50%,_var(--tw-gradient-stops))] from-blue-400/3 via-transparent to-transparent"></div>
-        </div>
 
         {/* First Chapter Skeleton */}
         <section className="pt-6 pb-12 md:pb-16 bg-white">

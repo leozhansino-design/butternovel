@@ -24,8 +24,7 @@
 
 /* 🌐 全局样式 */
 body {
-  background: linear-gradient(180deg, #dbeafe 0%, #f0f9ff 50%, #FFFFFF 100%);
-  background-attachment: fixed;
+  background: #FFFFFF;
   color: #1a1a1a;
   font-feature-settings: 'kern' 1, 'liga' 1;
   -webkit-font-smoothing: antialiased;
@@ -416,37 +415,39 @@ body {
 /* 📚 伪3D书籍阴影效果 - 参考 PlanetEbook 设计 */
 .book-shadow-3d {
   position: relative;
+  z-index: 1;
 }
 
 .book-shadow-3d::before,
 .book-shadow-3d::after {
   content: '';
   position: absolute;
-  top: 10px;
-  bottom: 10px;
-  width: 90%;
-  background: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 15px 20px rgba(0, 0, 0, 0.3);
+  top: 8%;
+  bottom: 8%;
+  width: 88%;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
   z-index: -1;
   transition: all 0.3s ease;
+  pointer-events: none;
 }
 
 .book-shadow-3d::before {
-  left: 5px;
-  transform: rotate(-3deg);
+  left: 3%;
+  transform: rotate(-4deg);
 }
 
 .book-shadow-3d::after {
-  right: 5px;
-  transform: rotate(3deg);
+  right: 3%;
+  transform: rotate(4deg);
 }
 
 .book-shadow-3d:hover::before {
-  transform: rotate(-4deg);
-  box-shadow: 0 18px 25px rgba(0, 0, 0, 0.35);
+  transform: rotate(-5deg);
+  box-shadow: 0 25px 40px rgba(0, 0, 0, 0.45);
 }
 
 .book-shadow-3d:hover::after {
-  transform: rotate(4deg);
-  box-shadow: 0 18px 25px rgba(0, 0, 0, 0.35);
+  transform: rotate(5deg);
+  box-shadow: 0 25px 40px rgba(0, 0, 0, 0.45);
 }
