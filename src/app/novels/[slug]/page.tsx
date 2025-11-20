@@ -95,7 +95,7 @@ async function getNovel(slug: string) {
   return novel
 }
 
-async function getAuthorAvatar(authorId: string) {
+async function getAuthorAvatar(authorId: string): Promise<string | null> {
   try {
     const author = await withRetry(
       () => prisma.user.findUnique({
@@ -105,7 +105,7 @@ async function getAuthorAvatar(authorId: string) {
         },
       }),
       { operationName: 'Get author avatar' }
-    )
+    ) as { avatar: string | null } | null
     return author?.avatar || null
   } catch (error) {
     console.error('[Novel] Failed to fetch author avatar:', error)
