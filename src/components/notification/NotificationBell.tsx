@@ -41,7 +41,7 @@ export default function NotificationBell() {
       <button
         onClick={() => setShowPanel(!showPanel)}
         className="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
-        aria-label="通知"
+        aria-label="Notifications"
       >
         <Bell size={24} />
         {(typeof unreadCount === 'number' && unreadCount > 0) || unreadCount === '99+' ? (

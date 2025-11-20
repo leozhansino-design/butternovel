@@ -157,47 +157,47 @@ export default function ChapterForm({
 
       {/* 表单 */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 标题输入 */}
+        {/* Title Input */}
         <div>
           <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            章节标题 <span className="text-red-500">*</span>
+            Chapter Title <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="例如: 第一章 相遇"
+            placeholder="e.g., Chapter 1: The Beginning"
             maxLength={WORD_LIMITS.CHAPTER_TITLE_MAX}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             required
             disabled={loading}
           />
           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {title.length} / {WORD_LIMITS.CHAPTER_TITLE_MAX} 字
+            {title.length} / {WORD_LIMITS.CHAPTER_TITLE_MAX} characters
           </div>
         </div>
 
-        {/* 内容输入 */}
+        {/* Content Input */}
         <div>
           <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
-            章节内容 <span className="text-red-500">*</span>
+            Chapter Content <span className="text-red-500">*</span>
           </label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="请输入章节内容..."
+            placeholder="Enter chapter content..."
             rows={20}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             required
             disabled={loading}
           />
 
-          {/* 字数统计和进度条 */}
+          {/* Character count and progress bar */}
           <div className="mt-2">
             <div className="flex items-center justify-between mb-1">
               <div className={`text-sm font-medium ${isOverLimit ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
-                字符数: {wordCount.toLocaleString()} / {WORD_LIMITS.CHAPTER_CHARS_MAX.toLocaleString()}
-                {isOverLimit && ' ⚠️ 超出限制'}
+                Characters: {wordCount.toLocaleString()} / {WORD_LIMITS.CHAPTER_CHARS_MAX.toLocaleString()}
+                {isOverLimit && ' ⚠️ Limit exceeded'}
               </div>
             </div>
 

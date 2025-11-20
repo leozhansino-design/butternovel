@@ -86,15 +86,15 @@ export default function TagsInput({
     // Validation
     if (!normalized) return
     if (normalized.length > TAG_LIMITS.MAX_TAG_LENGTH) {
-      alert(`标签长度不能超过${TAG_LIMITS.MAX_TAG_LENGTH}个字符`)
+      alert(`Tag length cannot exceed ${TAG_LIMITS.MAX_TAG_LENGTH} characters`)
       return
     }
     if (value.includes(normalized)) {
-      alert('此标签已存在')
+      alert('This tag already exists')
       return
     }
     if (value.length >= maxTags) {
-      alert(`最多只能添加${maxTags}个标签`)
+      alert(`You can add up to ${maxTags} tags`)
       return
     }
 
@@ -241,7 +241,7 @@ export default function TagsInput({
       {/* Help Text */}
       <div className="mt-2 flex items-start justify-between text-sm">
         <p className="text-gray-500">
-          按空格或回车添加标签 · 最多{maxTags}个标签
+          Press space or enter to add tags · Max {maxTags} tags
         </p>
         <p className={`font-medium ${isMaxTagsReached ? 'text-orange-600' : 'text-gray-600'}`}>
           {value.length} / {maxTags}
@@ -252,7 +252,7 @@ export default function TagsInput({
       {isMaxTagsReached && (
         <p className="mt-1 text-sm text-orange-600 flex items-center gap-1">
           <span className="inline-block w-2 h-2 bg-orange-600 rounded-full"></span>
-          已达到标签数量上限
+          Maximum tag limit reached
         </p>
       )}
     </div>
