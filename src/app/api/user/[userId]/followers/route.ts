@@ -34,7 +34,8 @@ export const GET = withErrorHandling(async (
             avatar: true,
             bio: true,
             level: true,
-            contributionPoints: true
+            contributionPoints: true,
+            role: true  // Include role to determine if official account
           }
         }
       },
@@ -42,7 +43,10 @@ export const GET = withErrorHandling(async (
     }) as any[]
 
     return successResponse({
-      followers: followers.map(f => f.follower)
+      followers: followers.map(f => ({
+        ...f.follower,
+        isOfficial: f.follower.role === 'ADMIN'  // Mark admin users as official
+      }))
     })
   } catch (error) {
     return successResponse({ followers: [] })

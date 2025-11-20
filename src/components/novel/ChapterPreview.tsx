@@ -83,15 +83,15 @@ export default async function ChapterPreview({
   const preview = truncateByWords(content, 250)
 
   return (
-    <section className="py-12 bg-gradient-to-b from-white to-gray-50">
+    <section className="py-16">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* 章节标题 */}
-          <div className="mb-8">
-            <div className="text-sm text-gray-500 mb-2 font-medium">
+          <div className="mb-10">
+            <div className="text-sm text-blue-600 mb-2 font-semibold tracking-wider">
               CHAPTER {chapterNumber}
             </div>
-            <h3 className="text-3xl font-bold text-gray-900">
+            <h3 className="text-4xl font-bold text-gray-900">
               {chapterTitle}
             </h3>
           </div>
@@ -105,15 +105,15 @@ export default async function ChapterPreview({
               </div>
             </div>
 
-            {/* 渐变遮罩效果 */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none" />
+            {/* 渐变遮罩效果 - 向下淡出 */}
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none" />
           </div>
 
-          {/* Continue Reading 按钮 */}
-          <div className="mt-8 text-center">
+          {/* Continue Reading 按钮 - 蓝色主题 */}
+          <div className="mt-10 text-center">
             <Link
               href={`/novels/${novelSlug}/chapters/${chapterNumber}`}
-              className="inline-flex items-center gap-3 px-8 py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 text-lg"
+              className="btn-primary inline-flex items-center gap-3 px-10 py-4 text-white font-semibold rounded-xl text-lg hover:scale-[1.02]"
             >
               Continue Reading
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

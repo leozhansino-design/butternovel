@@ -98,7 +98,7 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
     return (
       <button
         disabled
-        className="ml-3 px-4 py-1.5 rounded-full font-semibold text-sm transition-all shadow-md bg-gray-300 text-gray-500 cursor-not-allowed"
+        className="ml-3 px-5 py-2 rounded-lg font-medium text-sm bg-gray-100 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
       >
         Loading...
       </button>
@@ -111,10 +111,10 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
     <button
       onClick={handleFollowToggle}
       disabled={loading}
-      className={`ml-3 px-4 py-1.5 rounded-full font-semibold text-sm transition-all shadow-md ${
+      className={`ml-3 px-5 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${
         isFollowing
-          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 hover:scale-105'
+          ? 'bg-white border-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300'
+          : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md hover:shadow-lg hover:from-blue-700 hover:to-blue-800 hover:-translate-y-0.5'
       } disabled:opacity-50 disabled:cursor-not-allowed`}
     >
       {loading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
