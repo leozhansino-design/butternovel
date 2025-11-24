@@ -98,21 +98,21 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
         <div className="flex-1 p-5 sm:p-6 md:p-8 flex flex-col justify-between min-w-0">
           {/* 上部分：标题、作者、统计信息、简介 */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {/* 标题 - 最多2行 */}
+            {/* 标题 - 最多2行，缩小字体给下方更多空间 */}
             <Link
               href={`/novels/${slug}`}
-              className="font-bold text-gray-900 text-xl sm:text-2xl hover:text-blue-600 transition-colors mb-2 line-clamp-2"
+              className="font-bold text-gray-900 text-lg sm:text-xl hover:text-blue-600 transition-colors mb-1.5 line-clamp-2 leading-tight"
             >
               {title}
             </Link>
 
             {/* 作者 */}
-            <p className="text-sm sm:text-base text-gray-600 mb-2">
+            <p className="text-sm sm:text-base text-gray-600 mb-1.5">
               by <span className="font-medium">{authorName}</span>
             </p>
 
             {/* 统计信息 - 横向一行，简洁显示 */}
-            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-3">
+            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-2">
               <span>{formatNumber(viewCount)} views</span>
               {averageRating && totalRatings > 0 && (
                 <span>★ {averageRating.toFixed(1)}</span>
@@ -121,15 +121,15 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
               <span className={`font-semibold ${statusColor}`}>{statusText}</span>
             </div>
 
-            {/* 简介 - 2-3行，根据是否有tags调整 */}
-            <p className={`text-sm sm:text-base text-gray-700 leading-relaxed ${displayedTags.length > 0 ? 'line-clamp-2' : 'line-clamp-3'}`}>
+            {/* 简介 - 根据是否有tags动态调整行数：有tags显示3行，无tags显示4-5行 */}
+            <p className={`text-sm sm:text-base text-gray-700 leading-relaxed ${displayedTags.length > 0 ? 'line-clamp-3' : 'line-clamp-5'}`}>
               {blurb}
             </p>
           </div>
 
           {/* 底部：标签 - 智能显示2-3个，单行显示，显示剩余数量 */}
           {displayedTags.length > 0 && (
-            <div className="flex gap-2 items-center flex-wrap pt-3 min-w-0">
+            <div className="flex gap-2 items-center flex-wrap pt-2.5 min-w-0">
               {displayedTags.map((tag) => (
                 <Link
                   key={tag.id}
