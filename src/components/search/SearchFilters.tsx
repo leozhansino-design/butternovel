@@ -182,12 +182,12 @@ export default function SearchFilters({
   return (
     <div className="bg-white sticky top-0 z-10 shadow-sm">
       <div className="container mx-auto px-4 max-w-7xl py-4">
-        {/* 第一行：分类筛选 */}
+        {/* Category filters - wrap to multiple rows */}
         <div className="mb-4">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => onCategoryChange('')}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 !selectedCategory
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -199,7 +199,7 @@ export default function SearchFilters({
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.slug)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   selectedCategory === cat.slug
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
