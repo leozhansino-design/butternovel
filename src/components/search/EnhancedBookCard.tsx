@@ -73,6 +73,7 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
   }
 
   const displayedTags = calculateDisplayTags()
+  const remainingTagsCount = tags.length - displayedTags.length
 
   // 状态显示文本
   const statusText = status === 'COMPLETED' ? 'Completed' : 'Ongoing'
@@ -81,20 +82,20 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
       {/* 横向卡片：封面在左，所有信息在右 */}
-      <div className="flex h-56 sm:h-64">
+      <div className="flex h-64 sm:h-72 md:h-80">
         {/* 左侧：封面图片（占满整个高度） */}
-        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-40 sm:w-48">
+        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-44 sm:w-52 md:w-56">
           <Image
             src={coverImage}
             alt={title}
             fill
             className="object-cover group-hover:opacity-90 transition-opacity"
-            sizes="(max-width: 640px) 160px, 192px"
+            sizes="(max-width: 640px) 176px, (max-width: 768px) 208px, 224px"
           />
         </Link>
 
         {/* 右侧：所有文字信息 */}
-        <div className="flex-1 p-4 sm:p-6 flex flex-col">
+        <div className="flex-1 p-5 sm:p-6 md:p-8 flex flex-col">
           {/* 标题 */}
           <Link
             href={`/novels/${slug}`}
@@ -118,14 +119,14 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
             <span className={`font-semibold ${statusColor}`}>{statusText}</span>
           </div>
 
-          {/* 简介 - 固定2行 */}
-          <p className="text-sm sm:text-base text-gray-700 mb-4 line-clamp-2 leading-relaxed flex-1">
+          {/* 简介 - 固定3行，超出显示省略号 */}
+          <p className="text-sm sm:text-base text-gray-700 mb-4 line-clamp-3 leading-relaxed flex-1">
             {blurb}
           </p>
 
-          {/* 标签 - 智能显示2-3个，单行显示 */}
+          {/* 标签 - 智能显示2-3个，单行显示，显示剩余数量 */}
           {displayedTags.length > 0 && (
-            <div className="flex gap-2 overflow-hidden">
+            <div className="flex gap-2 items-center overflow-hidden">
               {displayedTags.map((tag) => (
                 <Link
                   key={tag.id}
@@ -137,6 +138,11 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
                   {tag.name}
                 </Link>
               ))}
+              {remainingTagsCount > 0 && (
+                <span className="inline-block px-3 py-1 bg-gray-50 text-gray-500 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap">
+                  +{remainingTagsCount} more
+                </span>
+              )}
             </div>
           )}
         </div>
