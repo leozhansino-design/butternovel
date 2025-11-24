@@ -348,9 +348,9 @@ export function validateParsedNovel(novel: ParsedNovel): ValidationResult {
     console.error('❌ [批量上传] 简介太短')
     errors.push('简介长度至少10个字符')
   }
-  if (novel.blurb.length > 1000) {
+  if (novel.blurb.length > 3000) {
     console.error('❌ [批量上传] 简介太长')
-    errors.push('简介长度不能超过1000个字符')
+    errors.push('简介长度不能超过3000个字符')
   }
 
   // Tags
