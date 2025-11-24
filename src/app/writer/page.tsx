@@ -109,20 +109,12 @@ export default function WriterPage() {
             <p className="text-gray-600 mb-8 max-w-xl mx-auto leading-relaxed">
               Join thousands of writers who are already sharing their stories on ButterNovel.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={handleStartWriting}
-                className="btn-primary px-8 py-4 text-white font-semibold rounded-lg"
-              >
-                Start Writing Now
-              </button>
-              <Link
-                href="/"
-                className="btn-secondary px-8 py-4 font-medium rounded-lg"
-              >
-                Learn More
-              </Link>
-            </div>
+            <button
+              onClick={handleStartWriting}
+              className="btn-primary px-8 py-4 text-white font-semibold rounded-lg"
+            >
+              Start Writing Now
+            </button>
           </div>
 
           {/* Info Notice - 简约 */}

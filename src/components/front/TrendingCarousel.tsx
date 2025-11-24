@@ -212,8 +212,6 @@ export default function TrendingCarousel({
                         <span className={novel.status === 'COMPLETED' ? 'text-green-600 font-medium' : 'text-blue-600 font-medium'}>
                           {novel.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
                         </span>
-                        <span>•</span>
-                        <span>{novel.chaptersCount} parts</span>
                       </div>
 
                       {/* Blurb - 增加到5行 */}
