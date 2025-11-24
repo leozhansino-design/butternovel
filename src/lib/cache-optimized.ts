@@ -100,19 +100,22 @@ export async function getHomePageData(): Promise<HomePageData> {
     // 🔧 OPTIMIZATION: 获取30本书（15热门+15最新，去重混合）
     const categoryNovelsArray = await withConcurrency(
       categories.map(category => async () => {
+        // 定义小说类型
+        type NovelData = {
+          id: number;
+          title: string;
+          slug: string;
+          coverImage: string;
+          categoryName: string;
+          status: string;
+          chaptersCount: number;
+          likesCount: number;
+          rating: number | null;
+        };
+
         // 获取15本热门（按点赞数+浏览量排序）
         const hotNovels = await withRetry(() =>
-          prisma.$queryRaw<Array<{
-            id: number;
-            title: string;
-            slug: string;
-            coverImage: string;
-            categoryName: string;
-            status: string;
-            chaptersCount: number;
-            likesCount: number;
-            rating: number | null;
-          }>>`
+          prisma.$queryRaw<NovelData[]>`
             SELECT
               n.id,
               n.title,
@@ -131,21 +134,11 @@ export async function getHomePageData(): Promise<HomePageData> {
             ORDER BY (n."viewCount" + n."likeCount" * 10) DESC
             LIMIT 15
           `
-        );
+        ) as NovelData[];
 
         // 获取15本最新
         const newNovels = await withRetry(() =>
-          prisma.$queryRaw<Array<{
-            id: number;
-            title: string;
-            slug: string;
-            coverImage: string;
-            categoryName: string;
-            status: string;
-            chaptersCount: number;
-            likesCount: number;
-            rating: number | null;
-          }>>`
+          prisma.$queryRaw<NovelData[]>`
             SELECT
               n.id,
               n.title,
@@ -164,11 +157,11 @@ export async function getHomePageData(): Promise<HomePageData> {
             ORDER BY n."createdAt" DESC
             LIMIT 15
           `
-        );
+        ) as NovelData[];
 
         // 合并去重（使用Map去重，保留第一次出现的）
-        const novelMap = new Map();
-        [...hotNovels, ...newNovels].forEach((novel: any) => {
+        const novelMap = new Map<number, NovelData>();
+        [...hotNovels, ...newNovels].forEach((novel) => {
           if (!novelMap.has(novel.id)) {
             novelMap.set(novel.id, novel);
           }
