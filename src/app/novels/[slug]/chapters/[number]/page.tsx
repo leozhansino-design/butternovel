@@ -85,10 +85,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description: description,
         url: `https://butternovel.com/novels/${slug}/chapters/${chapterNumber}`,
         siteName: 'ButterNovel',
-        article: {
-          authors: [novel.authorName],
-          section: novel.category.name,
-        },
+        authors: [novel.authorName],
       },
       twitter: {
         card: 'summary',

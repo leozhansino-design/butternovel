@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import cloudinary from '@/lib/cloudinary'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
 import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
@@ -256,7 +257,7 @@ export async function DELETE(
     }
 
     // Delete novel and update tag counts in a transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Delete novel (chapters will be deleted automatically due to cascade)
       await tx.novel.delete({
         where: { id: novelId },

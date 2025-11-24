@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const chapterCount = novel._count.chapters
   const rating = novel.averageRating ? `${novel.averageRating.toFixed(1)}/10` : 'Not rated'
-  const tagNames = novel.tags.map(t => t.name).join(', ')
+  const tagNames = novel.tags.map((t: { name: string }) => t.name).join(', ')
 
   // Truncate blurb for description (150-160 chars is optimal for Google)
   const description = novel.blurb.length > 155
@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       novel.title,
       novel.authorName,
       novel.category.name,
-      ...novel.tags.map(t => t.name),
+      ...novel.tags.map((t: { name: string }) => t.name),
       `${novel.category.name} novel`,
       'free novel',
       'read online',

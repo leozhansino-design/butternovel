@@ -68,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     take: 10000, // Reasonable limit for sitemap
   })
 
-  const novelPages: MetadataRoute.Sitemap = novels.map((novel) => ({
+  const novelPages: MetadataRoute.Sitemap = novels.map((novel: { slug: string; updatedAt: Date }) => ({
     url: `${baseUrl}/novels/${novel.slug}`,
     lastModified: novel.updatedAt,
     changeFrequency: 'weekly',
@@ -82,7 +82,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   })
 
-  const categoryPages: MetadataRoute.Sitemap = categories.map((category) => ({
+  const categoryPages: MetadataRoute.Sitemap = categories.map((category: { slug: string }) => ({
     url: `${baseUrl}/search?category=${category.slug}`,
     lastModified: new Date(),
     changeFrequency: 'daily',
@@ -110,7 +110,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     take: 100,
   })
 
-  const tagPages: MetadataRoute.Sitemap = tags.map((tag) => ({
+  const tagPages: MetadataRoute.Sitemap = tags.map((tag: { slug: string }) => ({
     url: `${baseUrl}/tags/${tag.slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
