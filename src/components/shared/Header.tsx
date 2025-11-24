@@ -48,7 +48,7 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 glass-effect border-b border-blue-100/50">
-        <div className="w-full" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
+        <div className="w-full px-4 md:px-8 lg:px-[150px]">
           <div className="flex items-center justify-between h-14">
 
             {/* 左侧区域: Logo + 导航 */}
