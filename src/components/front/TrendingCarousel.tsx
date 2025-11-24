@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { smartTruncate } from '@/lib/utils';
@@ -26,233 +26,225 @@ export default function TrendingCarousel({
   novels,
   autoPlayInterval = 5000
 }: TrendingCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // Responsive items per page
+  // 检查滚动状态
+  const checkScrollPosition = () => {
+    if (!trackRef.current) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = trackRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
   useEffect(() => {
-    const updateItemsPerPage = () => {
-      if (window.innerWidth < 768) {
-        setItemsPerPage(1);
-      } else if (window.innerWidth < 1024) {
-        setItemsPerPage(2);
-      } else {
-        setItemsPerPage(3);
+    checkScrollPosition();
+    const track = trackRef.current;
+    if (track) {
+      track.addEventListener('scroll', checkScrollPosition);
+      window.addEventListener('resize', checkScrollPosition);
+      return () => {
+        track.removeEventListener('scroll', checkScrollPosition);
+        window.removeEventListener('resize', checkScrollPosition);
+      };
+    }
+  }, [novels]);
+
+  // 自动播放 - 平滑滚动
+  useEffect(() => {
+    if (!isAutoPlaying || !trackRef.current || novels.length === 0) return;
+
+    const timer = setInterval(() => {
+      if (trackRef.current) {
+        const cardWidth = 500; // 卡片宽度 + gap
+        const currentScroll = trackRef.current.scrollLeft;
+        const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
+
+        if (currentScroll >= maxScroll - 10) {
+          // 滚动到末尾，回到开始
+          trackRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          // 继续滚动
+          trackRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+        }
       }
-    };
+    }, autoPlayInterval);
 
-    updateItemsPerPage();
-    window.addEventListener('resize', updateItemsPerPage);
-    return () => window.removeEventListener('resize', updateItemsPerPage);
-  }, []);
-
-  const totalPages = Math.ceil(novels.length / itemsPerPage);
-
-  const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % totalPages);
-  }, [totalPages]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages);
-  }, [totalPages]);
-
-  const goToSlide = useCallback((index: number) => {
-    setCurrentIndex(index);
-  }, []);
-
-  // Auto play
-  useEffect(() => {
-    if (!isAutoPlaying || novels.length === 0) return;
-
-    const timer = setInterval(nextSlide, autoPlayInterval);
     return () => clearInterval(timer);
-  }, [isAutoPlaying, nextSlide, autoPlayInterval, novels.length]);
+  }, [isAutoPlaying, autoPlayInterval, novels.length]);
 
-  // Touch/swipe support
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  // 手动滚动一张卡片
+  const scrollByOneCard = (direction: 'left' | 'right') => {
+    if (!trackRef.current) return;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
-  };
+    const cardWidth = 500; // 卡片宽度 + gap
+    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (touchStart - touchEnd > 75) {
-      nextSlide();
-    }
-    if (touchStart - touchEnd < -75) {
-      prevSlide();
-    }
+    trackRef.current.scrollBy({
+      left: scrollAmount,
+      behavior: 'smooth'
+    });
   };
 
   if (novels.length === 0) {
     return null;
   }
 
-  const startIdx = currentIndex * itemsPerPage;
-  const visibleNovels = novels.slice(startIdx, startIdx + itemsPerPage);
-
   return (
     <section className="w-full bg-gradient-to-br from-blue-50 via-white to-blue-50/50 py-12 md:py-16 lg:py-20">
-      <div className="w-full px-5 md:px-8 lg:px-12">
-        {/* Header */}
-        <div className="mb-8 md:mb-10">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            🔥 Trending Now
-          </h2>
-          <p className="text-gray-600 text-sm md:text-base">
-            Discover the hottest novels everyone is reading
-          </p>
+      {/* Section Header - 与CategoryCarousel保持一致 */}
+      <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+              Trending
+            </h2>
+            <p className="text-gray-600 text-xs sm:text-sm mt-1">
+              100% Free
+            </p>
+          </div>
         </div>
+      </div>
 
-        {/* Carousel Container */}
-        <div className="relative">
-          {/* Carousel Track */}
-          <div
-            className="overflow-hidden"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseEnter={() => setIsAutoPlaying(false)}
-            onMouseLeave={() => setIsAutoPlaying(true)}
+      {/* Carousel Wrapper - 延伸到屏幕边缘 */}
+      <div
+        className="relative"
+        onMouseEnter={() => setIsAutoPlaying(false)}
+        onMouseLeave={() => setIsAutoPlaying(true)}
+      >
+        {/* 左边缘渐变遮罩 */}
+        <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
+
+        {/* 右边缘渐变遮罩 */}
+        <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
+
+        {/* 左导航按钮 */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scrollByOneCard('left')}
+            className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            style={{ left: '70px' }}
+            aria-label="Previous"
           >
-            <div className="flex gap-4 md:gap-6 transition-transform duration-500 ease-in-out">
-              {visibleNovels.map((novel) => (
-                <div
-                  key={novel.id}
-                  className="flex-shrink-0"
-                  style={{
-                    width: itemsPerPage === 1 ? '100%' : itemsPerPage === 2 ? 'calc(50% - 12px)' : 'calc(33.333% - 16px)'
-                  }}
-                >
-                  <Link
-                    href={`/novels/${novel.slug}`}
-                    className="group block h-full"
-                  >
-                    <div className="relative h-full bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1">
-                      {/* Card Content */}
-                      <div className="flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6 h-full">
-                        {/* Cover Image */}
-                        <div className="flex-shrink-0 mx-auto md:mx-0">
-                          <div
-                            className="relative rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow"
-                            style={{ width: '150px', height: '200px' }}
-                          >
-                            <Image
-                              src={novel.coverImage}
-                              alt={novel.title}
-                              fill
-                              sizes="150px"
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            {/* Rating Badge */}
-                            {novel.rating && novel.rating > 0 && (
-                              <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded-md text-xs font-bold shadow-lg">
-                                ★ {novel.rating.toFixed(1)}
-                              </div>
-                            )}
-                          </div>
+            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
+        {/* 右导航按钮 */}
+        {canScrollRight && (
+          <button
+            onClick={() => scrollByOneCard('right')}
+            className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            style={{ right: '70px' }}
+            aria-label="Next"
+          >
+            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+
+        {/* 小说列表 - 横向滚动 */}
+        <div
+          ref={trackRef}
+          className="flex gap-5 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth"
+          style={{
+            paddingLeft: '150px',
+            paddingRight: '150px',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
+          {novels.map((novel) => (
+            <Link
+              key={novel.id}
+              href={`/novels/${novel.slug}`}
+              className="group block flex-shrink-0"
+              style={{ width: '480px' }}
+            >
+              <div className="relative h-full bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1">
+                {/* Card Content */}
+                <div className="flex gap-5 p-5 h-full">
+                  {/* Cover Image */}
+                  <div className="flex-shrink-0">
+                    <div
+                      className="relative rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow"
+                      style={{ width: '150px', height: '200px' }}
+                    >
+                      <Image
+                        src={novel.coverImage}
+                        alt={novel.title}
+                        fill
+                        sizes="150px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {/* Rating Badge - 与CompactNovelCard保持一致 */}
+                      {novel.rating && novel.rating > 0 && (
+                        <div className="absolute top-2 left-2 z-10 bg-white/95 backdrop-blur-sm text-gray-900 px-2.5 py-1 rounded-md shadow-lg flex items-center gap-1.5 border border-gray-100"
+                             style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+                          <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span className="text-gray-900">{novel.rating.toFixed(1)}</span>
                         </div>
+                      )}
+                    </div>
+                  </div>
 
-                        {/* Novel Info */}
-                        <div className="flex-1 flex flex-col justify-between min-w-0">
-                          {/* Title */}
-                          <div>
-                            <h3
-                              className="text-lg md:text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 line-clamp-2"
-                              title={novel.title}
-                            >
-                              {novel.title}
-                            </h3>
+                  {/* Novel Info */}
+                  <div className="flex-1 flex flex-col justify-between min-w-0">
+                    {/* Title */}
+                    <div>
+                      <h3
+                        className="text-base md:text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 line-clamp-2"
+                        title={novel.title}
+                      >
+                        {novel.title}
+                      </h3>
 
-                            {/* Meta Info */}
-                            <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-gray-600 mb-3">
-                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-                                {novel.categoryName}
-                              </span>
-                              <span>•</span>
-                              <span className={novel.status === 'COMPLETED' ? 'text-green-600 font-medium' : 'text-blue-600 font-medium'}>
-                                {novel.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
-                              </span>
-                              <span>•</span>
-                              <span>{novel.chaptersCount} parts</span>
-                            </div>
-
-                            {/* Blurb */}
-                            <p className="text-sm md:text-base text-gray-700 line-clamp-3 leading-relaxed">
-                              {smartTruncate(novel.blurb, 120)}
-                            </p>
-                          </div>
-
-                          {/* Read Button */}
-                          <div className="mt-4">
-                            <div className="inline-flex items-center gap-2 text-blue-600 font-semibold text-sm md:text-base group-hover:gap-3 transition-all">
-                              Read Now
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
+                      {/* Meta Info */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 mb-2">
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                          {novel.categoryName}
+                        </span>
+                        <span>•</span>
+                        <span className={novel.status === 'COMPLETED' ? 'text-green-600 font-medium' : 'text-blue-600 font-medium'}>
+                          {novel.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
+                        </span>
+                        <span>•</span>
+                        <span>{novel.chaptersCount} parts</span>
                       </div>
 
-                      {/* Blue accent border on hover */}
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                      {/* Blurb - 增加到5行 */}
+                      <p className="text-sm text-gray-700 line-clamp-5 leading-relaxed">
+                        {novel.blurb}
+                      </p>
                     </div>
-                  </Link>
+
+                    {/* Read Button */}
+                    <div className="mt-3">
+                      <div className="inline-flex items-center gap-2 text-blue-600 font-semibold text-sm group-hover:gap-3 transition-all">
+                        Read Now
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Navigation Buttons */}
-          {totalPages > 1 && (
-            <>
-              <button
-                onClick={prevSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-6 w-10 h-10 md:w-12 md:h-12 bg-white hover:bg-blue-600 text-gray-700 hover:text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-10 border border-gray-200"
-                aria-label="Previous"
-              >
-                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-
-              <button
-                onClick={nextSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-6 w-10 h-10 md:w-12 md:h-12 bg-white hover:bg-blue-600 text-gray-700 hover:text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-10 border border-gray-200"
-                aria-label="Next"
-              >
-                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </>
-          )}
+                {/* Blue accent border on hover */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+              </div>
+            </Link>
+          ))}
         </div>
-
-        {/* Indicators */}
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-6 md:mt-8">
-            {Array.from({ length: totalPages }).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentIndex === index
-                    ? 'w-8 bg-blue-600'
-                    : 'w-2 bg-gray-300 hover:bg-gray-400'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </section>
   );
