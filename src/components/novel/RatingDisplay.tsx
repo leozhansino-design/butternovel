@@ -87,9 +87,7 @@ export default function RatingDisplay({
         <div className="text-center">
           {/* ✅ 星星区域：始终显示平均分，未评分用户hover有效果 */}
           <div
-            className={`flex items-center justify-center gap-1 mb-2 ${
-              !hasUserRated ? 'cursor-pointer' : 'cursor-default'
-            }`}
+            className="flex items-center justify-center gap-1 mb-2 cursor-pointer transition-transform hover:scale-[1.05] active:scale-[0.98]"
             onMouseEnter={() => !hasUserRated && setIsHovered(true)}
             onMouseLeave={() => !hasUserRated && setIsHovered(false)}
             onClick={() => setIsModalOpen(true)}
@@ -104,7 +102,7 @@ export default function RatingDisplay({
             </span>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="text-sm text-gray-500 hover:text-amber-700 hover:underline transition-colors"
+              className="text-sm text-gray-500 hover:text-amber-700 hover:underline transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
               {totalRatings > 0
                 ? `${formatNumber(totalRatings)} ${totalRatings === 1 ? 'rating' : 'ratings'}`
