@@ -98,14 +98,9 @@ export default function TrendingCarousel({
       {/* Section Header - 与CategoryCarousel保持一致 */}
       <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
-              Trending
-            </h2>
-            <p className="text-gray-600 text-xs sm:text-sm mt-1">
-              100% Free
-            </p>
-          </div>
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+            Trending
+          </h2>
         </div>
       </div>
 
