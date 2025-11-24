@@ -57,7 +57,7 @@ const CompactNovelCard = memo(function CompactNovelCard({
 
       {/* 标题 */}
       <h3
-        className="mt-2 font-medium text-gray-900 group-hover:text-amber-600 transition-colors"
+        className="mt-2 font-semibold text-gray-900 group-hover:text-amber-600 transition-colors"
         style={{
           fontSize: '14px',
           lineHeight: '1.4',
