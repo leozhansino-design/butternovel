@@ -233,7 +233,7 @@ export default async function NovelDetailPage({
 
                       {/* Category, Status, and Tags Badges */}
                       <div className="flex flex-wrap items-center gap-2.5">
-                        <Link href={`/categories/${novel.category.slug}`}>
+                        <Link href={`/search?category=${novel.category.slug}`}>
                           <span className="px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-50/80 text-blue-700 rounded-lg font-semibold text-sm border border-blue-200/60 shadow-sm hover:bg-blue-100 transition-colors cursor-pointer">
                             {novel.category.name}
                           </span>
@@ -250,7 +250,7 @@ export default async function NovelDetailPage({
                         {novel.tags && novel.tags.length > 0 && (
                           <>
                             {novel.tags.map((tag: { id: number; name: string; slug: string }) => (
-                              <Link key={tag.slug} href={`/tags/${tag.slug}`}>
+                              <Link key={tag.slug} href={`/search?tags=${tag.slug}`}>
                                 <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium hover:bg-indigo-200 transition-colors cursor-pointer">
                                   {tag.name}
                                 </span>
