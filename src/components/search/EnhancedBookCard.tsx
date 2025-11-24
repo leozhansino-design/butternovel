@@ -64,82 +64,61 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
 
   // 状态显示文本
   const statusText = status === 'COMPLETED' ? 'Completed' : 'Ongoing'
-  const statusColor = status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+  const statusColor = status === 'COMPLETED' ? 'text-green-600' : 'text-blue-600'
 
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-      {/* 横向长方形卡片：封面+统计在左，内容在右 */}
-      <div className="flex h-64 sm:h-72 md:h-80">
-        {/* 左侧：封面和统计信息 */}
-        <div className="flex-shrink-0 w-36 sm:w-44 md:w-48 flex flex-col">
-          {/* 封面图片 */}
-          <Link href={`/novels/${slug}`} className="relative group flex-1">
-            <Image
-              src={coverImage}
-              alt={title}
-              fill
-              className="object-cover group-hover:opacity-90 transition-opacity"
-              sizes="(max-width: 640px) 144px, (max-width: 768px) 176px, 192px"
-            />
-          </Link>
+      {/* 横向卡片：封面在左，所有信息在右 */}
+      <div className="flex h-56 sm:h-64">
+        {/* 左侧：封面图片（占满整个高度） */}
+        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-40 sm:w-48">
+          <Image
+            src={coverImage}
+            alt={title}
+            fill
+            className="object-cover group-hover:opacity-90 transition-opacity"
+            sizes="(max-width: 640px) 160px, 192px"
+          />
+        </Link>
 
-          {/* 统计信息区域 */}
-          <div className="p-2 sm:p-3 bg-gray-50 border-t border-gray-200 space-y-1.5">
-            {/* 阅读量 */}
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
-              <span>👁</span>
-              <span>{formatNumber(viewCount)}</span>
-            </div>
-
-            {/* 评分 */}
-            {averageRating && totalRatings > 0 ? (
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
-                <span>⭐</span>
-                <span>{averageRating.toFixed(1)} ({totalRatings})</span>
-              </div>
-            ) : null}
-
-            {/* 章节数 */}
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-600">
-              <span>📖</span>
-              <span>{chaptersCount} ch</span>
-            </div>
-
-            {/* 状态标识 */}
-            <div className={`text-xs font-medium px-2 py-1 rounded text-center ${statusColor}`}>
-              {statusText}
-            </div>
-          </div>
-        </div>
-
-        {/* 右侧：文字内容区域 */}
-        <div className="flex-1 p-4 sm:p-5 md:p-6 flex flex-col overflow-hidden">
+        {/* 右侧：所有文字信息 */}
+        <div className="flex-1 p-4 sm:p-6 flex flex-col">
           {/* 标题 */}
           <Link
             href={`/novels/${slug}`}
-            className="font-bold text-gray-900 text-lg sm:text-xl md:text-2xl hover:text-yellow-600 transition-colors mb-2 line-clamp-2"
+            className="font-bold text-gray-900 text-xl sm:text-2xl hover:text-yellow-600 transition-colors mb-2 line-clamp-2"
           >
             {title}
           </Link>
 
           {/* 作者 */}
-          <p className="text-sm sm:text-base text-gray-600 mb-3 truncate">
+          <p className="text-sm sm:text-base text-gray-600 mb-3">
             by <span className="hover:underline cursor-pointer font-medium">{authorName}</span>
           </p>
 
-          {/* 简介 - 固定3行避免部分露出 */}
-          <p className="text-sm sm:text-base text-gray-700 mb-4 line-clamp-3 leading-relaxed">
+          {/* 统计信息 - 横向一行，简洁显示 */}
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600 mb-4">
+            <span>{formatNumber(viewCount)} views</span>
+            {averageRating && totalRatings > 0 && (
+              <span>★ {averageRating.toFixed(1)}</span>
+            )}
+            <span>{chaptersCount} chapters</span>
+            <span className={`font-semibold ${statusColor}`}>{statusText}</span>
+          </div>
+
+          {/* 简介 - 固定2行 */}
+          <p className="text-sm sm:text-base text-gray-700 mb-4 line-clamp-2 leading-relaxed flex-1">
             {blurb}
           </p>
 
-          {/* 标签 - 最多3个，放在底部 */}
+          {/* 标签 - 最多3个，单行显示 */}
           {displayedTags.length > 0 && (
-            <div className="mt-auto flex flex-wrap gap-2">
+            <div className="flex gap-2">
               {displayedTags.map((tag) => (
                 <Link
                   key={tag.id}
                   href={`/search?tags=${tag.slug}`}
-                  className="inline-block px-3 py-1.5 bg-gray-100 hover:bg-yellow-100 text-gray-700 hover:text-gray-900 rounded-full text-xs sm:text-sm font-medium transition-colors"
+                  className="inline-block px-3 py-1 bg-gray-100 hover:bg-yellow-100 text-gray-700 hover:text-gray-900 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {tag.name}
