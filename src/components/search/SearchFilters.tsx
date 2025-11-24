@@ -68,7 +68,7 @@ export default function SearchFilters({
           const params = new URLSearchParams()
           params.set('tags', selectedTags.join(','))
           if (selectedCategory) {
-            params.set('category', selectedCategory)
+            params.set('genre', selectedCategory)
           }
           params.set('limit', '15')
 
@@ -109,7 +109,7 @@ export default function SearchFilters({
 
             if (stillMissingSlugs.length > 0) {
               const popularResponse = await fetch(
-                `/api/tags/popular?limit=50${selectedCategory ? `&category=${selectedCategory}` : ''}`
+                `/api/tags/popular?limit=50${selectedCategory ? `&genre=${selectedCategory}` : ''}`
               )
               const popularData = await popularResponse.json()
               if (popularData.success) {
@@ -132,7 +132,7 @@ export default function SearchFilters({
           // 未选标签，获取热门标签
           const params = new URLSearchParams()
           if (selectedCategory) {
-            params.set('category', selectedCategory)
+            params.set('genre', selectedCategory)
           }
           params.set('limit', '15')
 
@@ -155,11 +155,11 @@ export default function SearchFilters({
     loadTags()
   }, [selectedCategory, selectedTags])
 
-  const handleCategoryClick = (categoryName: string) => {
-    if (selectedCategory === categoryName) {
+  const handleCategoryClick = (categorySlug: string) => {
+    if (selectedCategory === categorySlug) {
       onCategoryChange('')
     } else {
-      onCategoryChange(categoryName)
+      onCategoryChange(categorySlug)
     }
   }
 
@@ -202,9 +202,9 @@ export default function SearchFilters({
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => handleCategoryClick(cat.name)}
+                onClick={() => handleCategoryClick(cat.slug)}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === cat.name
+                  selectedCategory === cat.slug
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}

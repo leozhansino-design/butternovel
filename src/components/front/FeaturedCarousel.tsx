@@ -76,7 +76,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
     >
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-          ✨ Featured Novels
+          Featured Novels
         </h2>
       </div>
 

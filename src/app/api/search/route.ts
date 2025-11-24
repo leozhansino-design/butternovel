@@ -148,7 +148,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''
-    const category = searchParams.get('category')
+    const category = searchParams.get('genre') || searchParams.get('category') // 支持 genre 或 category
     const tagsParam = searchParams.get('tags')
     const statusParam = searchParams.get('status')
     const sortParam = searchParams.get('sort') || 'hot'
@@ -170,19 +170,24 @@ export async function GET(request: Request) {
       ]
     }
 
-    // 分类筛选（支持分类名称或ID）
+    // 分类筛选（支持分类 slug、名称或ID）
     if (category) {
       // 检查是否为数字ID
       if (/^\d+$/.test(category)) {
         where.categoryId = parseInt(category)
       } else {
-        // 按分类名称查找
+        // 优先按 slug 查找，如果找不到再按名称查找
         const categoryRecord = await withRetry(
           () => prisma.category.findFirst({
-            where: { name: { equals: category, mode: 'insensitive' } },
+            where: {
+              OR: [
+                { slug: { equals: category, mode: 'insensitive' } },
+                { name: { equals: category, mode: 'insensitive' } }
+              ]
+            },
             select: { id: true }
           }),
-          { operationName: 'Find category by name' }
+          { operationName: 'Find category by slug or name' }
         ) as { id: number } | null
         if (categoryRecord) {
           where.categoryId = categoryRecord.id

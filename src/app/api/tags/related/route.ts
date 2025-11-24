@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const tagsParam = searchParams.get('tags')
-    const categoryName = searchParams.get('category')
+    const categoryName = searchParams.get('genre') || searchParams.get('category')
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50)
 
     if (!tagsParam) {
@@ -94,11 +94,16 @@ export async function GET(request: NextRequest) {
     // 如果指定了分类，添加分类筛选
     if (categoryName) {
       const category = await withRetry(
-        () => prisma.category.findUnique({
-          where: { name: categoryName },
+        () => prisma.category.findFirst({
+          where: {
+            OR: [
+              { slug: { equals: categoryName, mode: 'insensitive' } },
+              { name: { equals: categoryName, mode: 'insensitive' } }
+            ]
+          },
           select: { id: true }
         }),
-        { operationName: 'Find category by name' }
+        { operationName: 'Find category by slug or name' }
       ) as { id: number } | null
 
       if (category) {
