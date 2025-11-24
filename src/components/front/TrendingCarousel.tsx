@@ -53,22 +53,41 @@ export default function TrendingCarousel({
     }
   }, [novels]);
 
-  // Auto play - smooth scrolling
+  // Auto play - smooth scrolling with snap alignment
   useEffect(() => {
     if (!isAutoPlaying || !trackRef.current || novels.length === 0) return;
 
     const timer = setInterval(() => {
       if (trackRef.current) {
-        const cardWidth = 500; // Card width + gap
-        const currentScroll = trackRef.current.scrollLeft;
-        const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
+        const track = trackRef.current;
+        const currentScroll = track.scrollLeft;
+        const maxScroll = track.scrollWidth - track.clientWidth;
 
         if (currentScroll >= maxScroll - 10) {
           // Reached end, scroll back to start
-          trackRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+          track.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          // Continue scrolling
-          trackRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+          // Get all card elements
+          const cards = track.children;
+          if (cards.length === 0) return;
+
+          // Find the next card to scroll to
+          let nextCard: Element | null = null;
+          for (let i = 0; i < cards.length; i++) {
+            const card = cards[i] as HTMLElement;
+            const cardLeft = card.offsetLeft - track.offsetLeft;
+            // Find first card that's beyond current scroll position
+            if (cardLeft > currentScroll + 10) {
+              nextCard = card;
+              break;
+            }
+          }
+
+          if (nextCard) {
+            const nextCardElement = nextCard as HTMLElement;
+            const scrollToPosition = nextCardElement.offsetLeft - track.offsetLeft;
+            track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          }
         }
       }
     }, autoPlayInterval);
@@ -76,17 +95,39 @@ export default function TrendingCarousel({
     return () => clearInterval(timer);
   }, [isAutoPlaying, autoPlayInterval, novels.length]);
 
-  // Manually scroll one card
+  // Manually scroll one card - snap to next/prev card
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
-    const cardWidth = 500; // Card width + gap
-    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+    const track = trackRef.current;
+    const currentScroll = track.scrollLeft;
+    const cards = track.children;
 
-    trackRef.current.scrollBy({
-      left: scrollAmount,
-      behavior: 'smooth'
-    });
+    if (cards.length === 0) return;
+
+    if (direction === 'right') {
+      // Find next card
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i] as HTMLElement;
+        const cardLeft = card.offsetLeft - track.offsetLeft;
+        if (cardLeft > currentScroll + 10) {
+          const scrollToPosition = cardLeft;
+          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          return;
+        }
+      }
+    } else {
+      // Find previous card
+      for (let i = cards.length - 1; i >= 0; i--) {
+        const card = cards[i] as HTMLElement;
+        const cardLeft = card.offsetLeft - track.offsetLeft;
+        if (cardLeft < currentScroll - 10) {
+          const scrollToPosition = cardLeft;
+          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          return;
+        }
+      }
+    }
   };
 
   if (novels.length === 0) {
@@ -142,14 +183,15 @@ export default function TrendingCarousel({
           </button>
         )}
 
-        {/* Novel list - horizontal scroll */}
+        {/* Novel list - horizontal scroll with snap */}
         <div
           ref={trackRef}
           className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory'
           }}
         >
           {novels.map((novel) => (
@@ -157,6 +199,7 @@ export default function TrendingCarousel({
               key={novel.id}
               href={`/novels/${novel.slug}`}
               className="group block flex-shrink-0 w-[320px] sm:w-[400px] md:w-[450px] lg:w-[480px]"
+              style={{ scrollSnapAlign: 'start' }}
             >
               <div className="relative h-full bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1">
                 {/* Card Content */}

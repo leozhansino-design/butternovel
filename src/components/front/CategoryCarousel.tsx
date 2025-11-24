@@ -49,17 +49,39 @@ export default function CategoryCarousel({
     }
   }, [books]);
 
-  // Scroll by one book width (card width + gap)
+  // Scroll by one card - snap to next/prev card
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
-    const cardWidth = 150 + 16; // Card width + gap
-    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+    const track = trackRef.current;
+    const currentScroll = track.scrollLeft;
+    const cards = track.children;
 
-    trackRef.current.scrollBy({
-      left: scrollAmount,
-      behavior: 'smooth'
-    });
+    if (cards.length === 0) return;
+
+    if (direction === 'right') {
+      // Find next card
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i] as HTMLElement;
+        const cardLeft = card.offsetLeft - track.offsetLeft;
+        if (cardLeft > currentScroll + 10) {
+          const scrollToPosition = cardLeft;
+          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          return;
+        }
+      }
+    } else {
+      // Find previous card
+      for (let i = cards.length - 1; i >= 0; i--) {
+        const card = cards[i] as HTMLElement;
+        const cardLeft = card.offsetLeft - track.offsetLeft;
+        if (cardLeft < currentScroll - 10) {
+          const scrollToPosition = cardLeft;
+          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          return;
+        }
+      }
+    }
   };
 
   if (books.length === 0) {
@@ -129,25 +151,27 @@ export default function CategoryCarousel({
           </button>
         )}
 
-        {/* Novel list - horizontal scroll, extends to edge */}
+        {/* Novel list - horizontal scroll with snap, extends to edge */}
         <div
           ref={trackRef}
           className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory'
           }}
         >
           {books.map((book) => (
-            <CompactNovelCard
-              key={book.id}
-              id={book.id}
-              title={book.title}
+            <div key={book.id} style={{ scrollSnapAlign: 'start' }}>
+              <CompactNovelCard
+                id={book.id}
+                title={book.title}
               slug={book.slug}
               coverImage={book.coverImage}
               rating={book.rating}
             />
+            </div>
           ))}
         </div>
       </div>
