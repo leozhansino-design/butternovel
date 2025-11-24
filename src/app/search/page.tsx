@@ -94,6 +94,16 @@ function SearchContent() {
     hasMore: false,
   })
 
+  // 同步URL参数到state（当从外部链接进入时）
+  useEffect(() => {
+    setSearchQuery(queryParam)
+    setSelectedCategory(categoryParam)
+    setSelectedTags(tagsParam ? tagsParam.split(',').filter(Boolean) : [])
+    setSelectedStatuses(statusParam ? statusParam.split(',').filter(Boolean) : [])
+    setSelectedSort(sortParam)
+    setCurrentPage(pageParam)
+  }, [queryParam, categoryParam, tagsParam, statusParam, sortParam, pageParam])
+
   // 执行搜索
   useEffect(() => {
     const fetchResults = async () => {
