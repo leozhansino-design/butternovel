@@ -28,7 +28,7 @@ export default function Footer() {
               <span className="text-lg font-bold text-gray-900">ButterNovel</span>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Your destination for free short novels. Discover thousands of complete stories across all genres.
+              100% Free Forever. Read thousands of complete stories across all genres—no hidden fees, ever.
             </p>
           </div>
 
@@ -51,11 +51,6 @@ export default function Footer() {
                   Become a Writer
                 </Link>
               </li>
-              <li>
-                <Link href="/about" className="text-sm text-gray-600 hover:text-sky-600 transition-colors">
-                  About Us
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -66,7 +61,7 @@ export default function Footer() {
               {categories.map((category) => (
                 <li key={category.slug}>
                   <Link
-                    href={`/category/${category.slug}`}
+                    href={`/search?category=${category.slug}`}
                     className="text-sm text-gray-600 hover:text-sky-600 transition-colors"
                   >
                     {category.name}
