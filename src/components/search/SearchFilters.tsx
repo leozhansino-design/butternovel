@@ -227,17 +227,16 @@ export default function SearchFilters({
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+            <div className="flex items-center gap-2 flex-wrap max-h-[120px] overflow-y-auto">
               {availableTags.map((tag) => (
                 <button
                   key={tag.id}
                   onClick={() => handleTagClick(tag.slug)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     selectedTags.includes(tag.slug)
                       ? 'bg-blue-600 text-white font-medium'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
-
                 >
                   {tag.name}
                 </button>
