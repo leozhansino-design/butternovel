@@ -122,27 +122,48 @@ export async function GET(request: NextRequest) {
         count: tag._count.novels
       }))
     } else {
-      // 获取全站热门标签
-      tags = await withRetry(
+      // 获取全站热门标签 - 使用实际关联的小说数量
+      const tagsWithCount = await withRetry(
         () => prisma.tag.findMany({
           select: {
             id: true,
             name: true,
             slug: true,
-            count: true
+            _count: {
+              select: {
+                novels: {
+                  where: {
+                    isPublished: true,
+                    isBanned: false
+                  }
+                }
+              }
+            }
           },
           orderBy: {
-            count: 'desc'
+            count: 'desc' // 先按存储的count排序以提高性能
           },
-          take: limit,
-          where: {
-            count: {
-              gt: 0 // 只返回至少被使用过一次的标签
-            }
-          }
+          take: limit * 3 // 多取一些，然后过滤掉没有小说的标签
         }),
         { operationName: 'Get popular tags' }
-      ) as Array<{ id: string; name: string; slug: string; count: number }>
+      ) as Array<{
+        id: string
+        name: string
+        slug: string
+        _count: { novels: number }
+      }>
+
+      // 过滤掉没有小说的标签，并按实际数量排序
+      tags = tagsWithCount
+        .filter(tag => tag._count.novels > 0) // 只返回有小说的标签
+        .map(tag => ({
+          id: tag.id,
+          name: tag.name,
+          slug: tag.slug,
+          count: tag._count.novels
+        }))
+        .sort((a, b) => b.count - a.count) // 按实际数量排序
+        .slice(0, limit) // 限制返回数量
     }
 
     return NextResponse.json({
