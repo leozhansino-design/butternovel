@@ -26,14 +26,9 @@ export default function CategorySection({
     <section className="w-full">
       {/* Section Header - 📱 优化移动端spacing */}
       <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
-          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
-            {title}
-          </h2>
-          <span className="text-xs sm:text-sm text-gray-400 font-medium flex-shrink-0">
-            {books.length} {books.length === 1 ? 'novel' : 'novels'}
-          </span>
-        </div>
+        <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+          {title}
+        </h2>
 
         {categorySlug && books.length > 0 && (
           <Link
