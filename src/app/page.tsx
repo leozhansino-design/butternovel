@@ -53,7 +53,8 @@ async function HomeContent() {
       )}
 
       <div className="bg-white">
-        <div className="container mx-auto max-w-7xl py-8 sm:py-12 md:py-16 space-y-12 sm:space-y-16 md:space-y-20">
+        {/* 移除container限制，让轮播可以延伸到屏幕边缘 */}
+        <div className="py-8 sm:py-12 md:py-16 space-y-12 sm:space-y-16 md:space-y-20">
           {categoryData.map(cat => {
             const books = cat.novels.map(novel => ({
               id: novel.id,

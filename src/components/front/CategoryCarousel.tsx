@@ -68,48 +68,50 @@ export default function CategoryCarousel({
 
   return (
     <section className="w-full">
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8 px-3 sm:px-4">
-        <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
-          {title}
-        </h2>
+      {/* Section Header - 使用container保持固定边距 */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1920px] mb-4 sm:mb-6 md:mb-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+            {title}
+          </h2>
 
-        {categorySlug && (
-          <Link
-            href={`/search?genre=${categorySlug}`}
-            className="group flex items-center gap-1 sm:gap-2 text-sm sm:text-base text-gray-600 hover:text-amber-600 transition-colors font-medium flex-shrink-0 ml-2"
-          >
-            <span className="hidden sm:inline">View All</span>
-            <span className="sm:hidden">All</span>
-            <svg
-              className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {categorySlug && (
+            <Link
+              href={`/search?genre=${categorySlug}`}
+              className="group flex items-center gap-1 sm:gap-2 text-sm sm:text-base text-gray-600 hover:text-amber-600 transition-colors font-medium flex-shrink-0 ml-2"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
-        )}
+              <span className="hidden sm:inline">View All</span>
+              <span className="sm:hidden">All</span>
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Carousel Wrapper */}
+      {/* Carousel Wrapper - 延伸到屏幕边缘 */}
       <div className="relative">
         {/* 左边缘渐变遮罩 */}
-        <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-12 md:w-16 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
 
         {/* 右边缘渐变遮罩 */}
-        <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-12 md:w-16 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" />
 
         {/* 左导航按钮 */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
-            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full border border-gray-200 shadow-md hover:shadow-lg hover:bg-gray-50 transition-all"
+            className="hidden md:flex absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
             aria-label="Previous"
           >
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         )}
@@ -118,19 +120,19 @@ export default function CategoryCarousel({
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
-            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full border border-gray-200 shadow-md hover:shadow-lg hover:bg-gray-50 transition-all"
+            className="hidden md:flex absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
             aria-label="Next"
           >
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         )}
 
-        {/* 小说列表 - 横向滚动 */}
+        {/* 小说列表 - 横向滚动，延伸到边缘 */}
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 px-3 sm:px-4 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex gap-3 sm:gap-4 md:gap-5 pl-4 sm:pl-6 lg:pl-8 pr-4 sm:pr-6 lg:pr-8 overflow-x-auto scrollbar-hide scroll-smooth"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
