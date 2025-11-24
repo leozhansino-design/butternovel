@@ -150,7 +150,7 @@ export default function SearchFilters({
   const hasFilters = selectedCategory || selectedTags.length > 0 || selectedStatuses.length > 0
 
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+    <div className="bg-white sticky top-0 z-10 shadow-sm">
       <div className="container mx-auto px-4 max-w-7xl py-4">
         {/* 第一行：分类筛选 */}
         <div className="mb-4">

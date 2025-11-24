@@ -201,7 +201,7 @@ function SearchContent() {
   return (
     <main className="flex-1 bg-gray-50">
       {/* 搜索头部 */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white">
         <div className="container mx-auto px-4 max-w-7xl py-6 sm:py-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
             Search Novels
