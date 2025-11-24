@@ -311,7 +311,7 @@ function SearchContent() {
                         onClick={() => handlePageChange(pageNum)}
                         className={`px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base ${
                           currentPage === pageNum
-                            ? 'bg-yellow-400 text-gray-900 font-semibold'
+                            ? 'bg-blue-600 text-white font-semibold'
                             : 'border border-gray-300 hover:bg-gray-50'
                         }`}
                       >
@@ -343,7 +343,7 @@ function SearchContent() {
             </p>
             <button
               onClick={handleClearAll}
-              className="text-yellow-600 hover:text-yellow-700 font-medium underline"
+              className="text-blue-600 hover:text-blue-700 font-medium underline"
             >
               Clear all filters
             </button>

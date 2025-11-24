@@ -88,8 +88,11 @@ export default function SearchFilters({
             const selectedTagObjects = selectedTagsData.data.filter((tag: Tag) =>
               selectedTags.includes(tag.slug)
             )
-            // 将已选标签放在前面，然后是相关标签
-            tags = [...selectedTagObjects, ...tags]
+            // 过滤掉相关标签中已包含的已选标签（去重）
+            const selectedSlugs = selectedTagObjects.map(t => t.slug)
+            const uniqueRelatedTags = tags.filter(t => !selectedSlugs.includes(t.slug))
+            // 将已选标签放在前面，然后是去重后的相关标签
+            tags = [...selectedTagObjects, ...uniqueRelatedTags]
           }
         } else {
           // 未选标签，获取热门标签
@@ -156,7 +159,7 @@ export default function SearchFilters({
               onClick={() => onCategoryChange('')}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 !selectedCategory
-                  ? 'bg-yellow-400 text-gray-900'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -168,7 +171,7 @@ export default function SearchFilters({
                 onClick={() => handleCategoryClick(cat.name)}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   selectedCategory === cat.name
-                    ? 'bg-yellow-400 text-gray-900'
+                    ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -201,17 +204,12 @@ export default function SearchFilters({
                   onClick={() => handleTagClick(tag.slug)}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm transition-colors ${
                     selectedTags.includes(tag.slug)
-                      ? 'bg-yellow-400 text-gray-900 font-medium'
+                      ? 'bg-blue-600 text-white font-medium'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
+
                 >
                   {tag.name}
-                  {tag.count !== undefined && (
-                    <span className="ml-1 text-xs text-gray-500">({tag.count})</span>
-                  )}
-                  {tag.coOccurrence !== undefined && (
-                    <span className="ml-1 text-xs text-gray-500">({tag.coOccurrence})</span>
-                  )}
                 </button>
               ))}
             </div>
@@ -227,7 +225,7 @@ export default function SearchFilters({
                 type="checkbox"
                 checked={selectedStatuses.includes('completed')}
                 onChange={() => handleStatusChange('completed')}
-                className="w-4 h-4 text-yellow-400 border-gray-300 rounded focus:ring-yellow-400"
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700">Completed</span>
             </label>
@@ -236,7 +234,7 @@ export default function SearchFilters({
                 type="checkbox"
                 checked={selectedStatuses.includes('ongoing')}
                 onChange={() => handleStatusChange('ongoing')}
-                className="w-4 h-4 text-yellow-400 border-gray-300 rounded focus:ring-yellow-400"
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700">Ongoing</span>
             </label>
@@ -255,7 +253,7 @@ export default function SearchFilters({
             <select
               value={selectedSort}
               onChange={(e) => onSortChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option value="hot">Hot</option>
               <option value="new">New</option>

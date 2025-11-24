@@ -86,14 +86,14 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
           {/* 标题 */}
           <Link
             href={`/novels/${slug}`}
-            className="font-bold text-gray-900 text-xl sm:text-2xl hover:text-yellow-600 transition-colors mb-2 line-clamp-2"
+            className="font-bold text-gray-900 text-xl sm:text-2xl hover:text-blue-600 transition-colors mb-2 line-clamp-2"
           >
             {title}
           </Link>
 
           {/* 作者 */}
           <p className="text-sm sm:text-base text-gray-600 mb-3">
-            by <span className="hover:underline cursor-pointer font-medium">{authorName}</span>
+            by <span className="font-medium">{authorName}</span>
           </p>
 
           {/* 统计信息 - 横向一行，简洁显示 */}
@@ -118,7 +118,7 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
                 <Link
                   key={tag.id}
                   href={`/search?tags=${tag.slug}`}
-                  className="inline-block px-3 py-1 bg-gray-100 hover:bg-yellow-100 text-gray-700 hover:text-gray-900 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+                  className="inline-block px-3 py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {tag.name}
