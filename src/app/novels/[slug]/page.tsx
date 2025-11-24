@@ -2,6 +2,7 @@
 // ⚡ 性能优化：减少数据库查询 + 延迟加载章节内容 + ISR缓存
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import Image from 'next/image'
@@ -18,6 +19,100 @@ import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
 import AuthorNameButton from '@/components/novel/AuthorNameButton'
 import { getContentRatingLabel, getRightsTypeLabel, getContentRatingColor } from '@/lib/content-rating'
+
+interface PageProps {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+// SEO: Generate metadata for each novel page
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
+
+  const novel = await prisma.novel.findUnique({
+    where: { slug },
+    select: {
+      title: true,
+      slug: true,
+      blurb: true,
+      coverImage: true,
+      authorName: true,
+      status: true,
+      averageRating: true,
+      totalRatings: true,
+      viewCount: true,
+      isPublished: true,
+      isBanned: true,
+      category: {
+        select: { name: true }
+      },
+      tags: {
+        select: { name: true },
+        take: 5
+      },
+      _count: {
+        select: { chapters: true }
+      }
+    }
+  })
+
+  if (!novel || !novel.isPublished || novel.isBanned) {
+    return {
+      title: 'Novel Not Found | ButterNovel',
+      description: 'This novel is not available.',
+    }
+  }
+
+  const chapterCount = novel._count.chapters
+  const rating = novel.averageRating ? `${novel.averageRating.toFixed(1)}/10` : 'Not rated'
+  const tagNames = novel.tags.map((t: { name: string }) => t.name).join(', ')
+
+  // Truncate blurb for description (150-160 chars is optimal for Google)
+  const description = novel.blurb.length > 155
+    ? novel.blurb.substring(0, 152) + '...'
+    : novel.blurb
+
+  return {
+    title: `${novel.title} by ${novel.authorName} - Free Online Novel`,
+    description: description,
+    keywords: [
+      novel.title,
+      novel.authorName,
+      novel.category.name,
+      ...novel.tags.map((t: { name: string }) => t.name),
+      `${novel.category.name} novel`,
+      'free novel',
+      'read online',
+      'web novel'
+    ],
+    authors: [{ name: novel.authorName }],
+    openGraph: {
+      type: 'book',
+      title: novel.title,
+      description: description,
+      url: `https://butternovel.com/novels/${slug}`,
+      siteName: 'ButterNovel',
+      images: [
+        {
+          url: novel.coverImage,
+          width: 800,
+          height: 1200,
+          alt: `${novel.title} cover`,
+        },
+      ],
+      authors: [novel.authorName],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${novel.title} by ${novel.authorName}`,
+      description: description,
+      images: [novel.coverImage],
+    },
+    alternates: {
+      canonical: `https://butternovel.com/novels/${slug}`,
+    },
+  }
+}
 
 async function getNovel(slug: string) {
   console.log(`[Novel] 📖 Fetching novel: ${slug}`)
@@ -151,8 +246,42 @@ export default async function NovelDetailPage({
   const firstChapter = novel.chapters[0]
   const allChapters = novel.chapters
 
+  // JSON-LD structured data for SEO (Google Rich Snippets)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Book',
+    name: novel.title,
+    author: {
+      '@type': 'Person',
+      name: novel.authorName,
+    },
+    genre: novel.category.name,
+    description: novel.blurb,
+    image: novel.coverImage,
+    url: `https://butternovel.com/novels/${novel.slug}`,
+    inLanguage: 'en',
+    ...(novel.averageRating && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: novel.averageRating,
+        ratingCount: novel.totalRatings,
+        bestRating: 10,
+        worstRating: 2,
+      },
+    }),
+    numberOfPages: novel.chapters.length,
+    bookFormat: 'EBook',
+    isAccessibleForFree: true,
+  }
+
   return (
     <>
+      {/* JSON-LD for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <ViewTracker novelId={novel.id} />
       <ReadingHistoryTracker novelId={novel.id} />
 
@@ -164,7 +293,7 @@ export default async function NovelDetailPage({
           as="document"
         />
       )}
-      
+
       {/* 蓝天到白色的整体渐变背景 */}
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-100/60 via-blue-50/30 via-white to-white">
         <main className="flex-1">

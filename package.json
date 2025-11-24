@@ -18,7 +18,8 @@
     "db:studio": "dotenv -e .env -- npx prisma studio",
     "db:diagnose": "dotenv -e .env -- npx tsx scripts/diagnose-authors.ts",
     "db:fix-authors": "dotenv -e .env -- npx tsx scripts/fix-authors.ts",
-    "cache:clear": "dotenv -e .env -- npx tsx scripts/clear-redis-cache.ts"
+    "cache:clear": "dotenv -e .env -- npx tsx scripts/clear-redis-cache.ts",
+    "tags:cleanup": "dotenv -e .env -- npx tsx scripts/cleanup-tags.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
