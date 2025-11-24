@@ -59,8 +59,20 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
     return num.toString()
   }
 
-  // 显示的标签（最多3个）
-  const displayedTags = tags.slice(0, 3)
+  // 智能显示标签：根据标签长度决定显示2个或3个
+  const calculateDisplayTags = () => {
+    if (tags.length === 0) return []
+
+    // 计算前3个标签的总字符长度
+    const firstThree = tags.slice(0, 3)
+    const totalLength = firstThree.reduce((sum, tag) => sum + tag.name.length, 0)
+
+    // 如果3个标签总长度超过30个字符，只显示2个避免溢出
+    // 否则显示3个
+    return totalLength > 30 ? tags.slice(0, 2) : tags.slice(0, 3)
+  }
+
+  const displayedTags = calculateDisplayTags()
 
   // 状态显示文本
   const statusText = status === 'COMPLETED' ? 'Completed' : 'Ongoing'
@@ -111,15 +123,16 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
             {blurb}
           </p>
 
-          {/* 标签 - 最多3个，单行显示 */}
+          {/* 标签 - 智能显示2-3个，单行显示 */}
           {displayedTags.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-hidden">
               {displayedTags.map((tag) => (
                 <Link
                   key={tag.id}
                   href={`/search?tags=${tag.slug}`}
-                  className="inline-block px-3 py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+                  className="inline-block px-3 py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap max-w-[160px] overflow-hidden text-ellipsis"
                   onClick={(e) => e.stopPropagation()}
+                  title={tag.name}
                 >
                   {tag.name}
                 </Link>
