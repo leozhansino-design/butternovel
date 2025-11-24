@@ -5,7 +5,10 @@ import { PrismaClient } from '@prisma/client'
 
 // 🔧 CRITICAL FIX: Only run server-side validation in Node.js environment
 // This prevents "Missing environment variables" errors when accidentally included in client bundle
-if (typeof window === 'undefined') {
+// Check build time before validation
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+
+if (typeof window === 'undefined' && !isBuildTime) {
   // 1. Validate required environment variables
   const requiredEnvVars = ['DATABASE_URL']
   const missingVars = requiredEnvVars.filter(key => !process.env[key])
@@ -22,9 +25,6 @@ const rawDatabaseUrl = typeof window === 'undefined'
   ? (process.env.DATABASE_URL || '').replace(/^["']|["']$/g, '')
   : ''
 const databaseUrl = rawDatabaseUrl ? new URL(rawDatabaseUrl) : null as any
-
-// Adjust connection pool parameters based on environment
-const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
 // ✅ OPTIMIZED: Balanced connection pool settings for production traffic
 //
@@ -75,10 +75,16 @@ let resetTimer: NodeJS.Timeout | null = null
 // Previously: Created new instance every time, causing connection leaks
 // Now: Reuse existing instance in development, preventing connection pool exhaustion
 function createPrismaClient() {
+  // During build time without DATABASE_URL, return a mock client
+  if (isBuildTime && !databaseUrl) {
+    console.warn('[Prisma] Build time: DATABASE_URL not available, using mock client')
+    return new PrismaClient() as any
+  }
+
   const basePrisma = new PrismaClient({
     datasources: {
       db: {
-        url: databaseUrl.toString(),
+        url: databaseUrl?.toString() || process.env.DATABASE_URL,
       },
     },
     log: isBuildTime

@@ -5,6 +5,8 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+
 const requiredEnvVars = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
@@ -15,7 +17,8 @@ const missingVars = Object.entries(requiredEnvVars)
   .filter(([_, value]) => !value)
   .map(([key]) => key)
 
-if (missingVars.length > 0) {
+// Only validate environment variables when not building
+if (!isBuildTime && missingVars.length > 0) {
   throw new Error(`Missing environment variables: ${missingVars.join(', ')}`)
 }
 
@@ -44,8 +47,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || 'build-time-placeholder',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'build-time-placeholder',
       authorization: {
         params: {
           prompt: "consent",

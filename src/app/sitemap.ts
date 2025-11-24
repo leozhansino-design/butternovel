@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://butternovel.com'
 
-  // Static pages
+  // Static pages - always available
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -52,70 +52,66 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Fetch all published novels (limit to 50,000 for sitemap size limits)
-  const novels = await prisma.novel.findMany({
-    where: {
-      isPublished: true,
-      isBanned: false,
-    },
-    select: {
-      slug: true,
-      updatedAt: true,
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
-    take: 10000, // Reasonable limit for sitemap
-  })
-
-  const novelPages: MetadataRoute.Sitemap = novels.map((novel: { slug: string; updatedAt: Date }) => ({
-    url: `${baseUrl}/novels/${novel.slug}`,
-    lastModified: novel.updatedAt,
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }))
-
-  // Fetch all categories
-  const categories = await prisma.category.findMany({
-    select: {
-      slug: true,
-    },
-  })
-
-  const categoryPages: MetadataRoute.Sitemap = categories.map((category: { slug: string }) => ({
-    url: `${baseUrl}/search?category=${category.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'daily',
-    priority: 0.7,
-  }))
-
-  // Fetch popular tags (top 100)
-  const tags = await prisma.tag.findMany({
-    where: {
-      _count: {
-        novels: {
-          where: {
-            isPublished: true,
-            isBanned: false,
-          },
-        },
+  try {
+    // Fetch all published novels (limit to 10,000 for sitemap size)
+    const novels = await prisma.novel.findMany({
+      where: {
+        isPublished: true,
+        isBanned: false,
       },
-    },
-    select: {
-      slug: true,
-    },
-    orderBy: {
-      count: 'desc',
-    },
-    take: 100,
-  })
+      select: {
+        slug: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: 10000,
+    })
 
-  const tagPages: MetadataRoute.Sitemap = tags.map((tag: { slug: string }) => ({
-    url: `${baseUrl}/tags/${tag.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.6,
-  }))
+    const novelPages: MetadataRoute.Sitemap = novels.map((novel: { slug: string; updatedAt: Date }) => ({
+      url: `${baseUrl}/novels/${novel.slug}`,
+      lastModified: novel.updatedAt,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }))
 
-  return [...staticPages, ...novelPages, ...categoryPages, ...tagPages]
+    // Fetch all categories
+    const categories = await prisma.category.findMany({
+      select: {
+        slug: true,
+      },
+    })
+
+    const categoryPages: MetadataRoute.Sitemap = categories.map((category: { slug: string }) => ({
+      url: `${baseUrl}/search?category=${category.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.7,
+    }))
+
+    // Fetch popular tags (top 100)
+    const tags = await prisma.tag.findMany({
+      select: {
+        slug: true,
+      },
+      orderBy: {
+        count: 'desc',
+      },
+      take: 100,
+    })
+
+    const tagPages: MetadataRoute.Sitemap = tags.map((tag: { slug: string }) => ({
+      url: `${baseUrl}/tags/${tag.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }))
+
+    return [...staticPages, ...novelPages, ...categoryPages, ...tagPages]
+  } catch (error) {
+    // If database is not available during build, return static pages only
+    console.warn('Sitemap: Database not available, returning static pages only')
+    return staticPages
+  }
 }
