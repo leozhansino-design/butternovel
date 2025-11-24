@@ -183,7 +183,7 @@ export async function GET(request: Request) {
             select: { id: true }
           }),
           { operationName: 'Find category by name' }
-        )
+        ) as { id: number } | null
         if (categoryRecord) {
           where.categoryId = categoryRecord.id
         }
@@ -201,7 +201,7 @@ export async function GET(request: Request) {
             select: { id: true }
           }),
           { operationName: 'Find tags by slugs' }
-        )
+        ) as Array<{ id: string }>
 
         if (tagRecords.length > 0) {
           const tagIds = tagRecords.map(t => t.id)
