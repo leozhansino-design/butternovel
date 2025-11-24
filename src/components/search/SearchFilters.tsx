@@ -155,11 +155,11 @@ export default function SearchFilters({
     loadTags()
   }, [selectedCategory, selectedTags])
 
-  const handleCategoryClick = (categoryName: string) => {
-    if (selectedCategory === categoryName) {
+  const handleCategoryClick = (categorySlug: string) => {
+    if (selectedCategory === categorySlug) {
       onCategoryChange('')
     } else {
-      onCategoryChange(categoryName)
+      onCategoryChange(categorySlug)
     }
   }
 
@@ -202,9 +202,9 @@ export default function SearchFilters({
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => handleCategoryClick(cat.name)}
+                onClick={() => handleCategoryClick(cat.slug)}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === cat.name
+                  selectedCategory === cat.slug
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
