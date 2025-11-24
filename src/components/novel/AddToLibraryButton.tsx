@@ -24,17 +24,17 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
     } catch (error) {
       console.error('Failed to check library status:', error)
     }
-  }, [novelId])  // ✅ 修复: 使用 useCallback 避免无限循环
+  }, [novelId])  // FIX: Use useCallback to avoid infinite loop
 
   useEffect(() => {
     if (userId) {
       checkLibraryStatus()
     }
-  }, [userId, checkLibraryStatus])  // ✅ 修复: 添加正确的依赖
+  }, [userId, checkLibraryStatus])  // FIX: Add correct dependencies
 
   const handleClick = async () => {
     if (!userId) {
-      // 直接跳转登录,带上当前页面URL
+      // Redirect to login with current page URL
       signIn('google', { callbackUrl: window.location.href })
       return
     }

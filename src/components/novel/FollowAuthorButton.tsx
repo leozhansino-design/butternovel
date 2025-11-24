@@ -21,7 +21,7 @@ export default function FollowAuthorButton({ authorId, authorName }: FollowAutho
 
   const isOwnProfile = session?.user?.id === authorId
 
-  // 🔧 FIX: 使用 useCallback 防止无限循环
+  // FIX: Use useCallback to prevent infinite loop
   const checkFollowStatus = useCallback(async () => {
     console.log(`[FollowAuthorButton] Checking follow status for author: ${authorId}`)
     try {

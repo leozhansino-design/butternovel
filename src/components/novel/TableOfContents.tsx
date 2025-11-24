@@ -1,6 +1,6 @@
 'use client'
 // src/components/novel/TableOfContents.tsx
-// 章节目录组件 - 简约高端设计
+// Table of contents component - elegant design
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -19,7 +19,7 @@ type TableOfContentsProps = {
   novelSlug: string
 }
 
-const CHAPTERS_PER_PAGE = 30 // 每页显示30章
+const CHAPTERS_PER_PAGE = 30 // 30 chapters per page
 
 export default function TableOfContents({ chapters, novelSlug }: TableOfContentsProps) {
   const [currentPage, setCurrentPage] = useState(1)
@@ -29,7 +29,7 @@ export default function TableOfContents({ chapters, novelSlug }: TableOfContents
   const endIndex = startIndex + CHAPTERS_PER_PAGE
   const currentChapters = chapters.slice(startIndex, endIndex)
 
-  // 根据章节数量决定布局：少用大样式，多用3列
+  // Layout based on chapter count: few use large style, many use 3 columns
   const isCompactLayout = chapters.length > 10
   const gridCols = isCompactLayout ? 'md:grid-cols-3' : 'md:grid-cols-2'
 
@@ -37,7 +37,7 @@ export default function TableOfContents({ chapters, novelSlug }: TableOfContents
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          {/* 标题 */}
+          {/* Title */}
           <div className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Table of Contents
@@ -47,7 +47,7 @@ export default function TableOfContents({ chapters, novelSlug }: TableOfContents
             </p>
           </div>
 
-          {/* 章节列表 */}
+          {/* Chapter list */}
           <div className={`grid grid-cols-1 ${gridCols} gap-4 mb-12`}>
             {currentChapters.map((chapter) => (
               <Link
@@ -57,23 +57,23 @@ export default function TableOfContents({ chapters, novelSlug }: TableOfContents
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    {/* 章节号 */}
+                    {/* Chapter number */}
                     <div className="text-xs font-medium text-gray-500 mb-1.5">
                       CH {chapter.chapterNumber}
                     </div>
 
-                    {/* 标题 */}
+                    {/* Title */}
                     <h3 className="font-semibold text-gray-900 group-hover:text-gray-700 mb-2 line-clamp-2 leading-snug">
                       {chapter.title}
                     </h3>
 
-                    {/* 元信息 */}
+                    {/* Meta information */}
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                       <span>{formatDistanceToNow(new Date(chapter.createdAt), { addSuffix: true })}</span>
                     </div>
                   </div>
 
-                  {/* 箭头图标 */}
+                  {/* Arrow icon */}
                   <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -84,7 +84,7 @@ export default function TableOfContents({ chapters, novelSlug }: TableOfContents
             ))}
           </div>
 
-          {/* 分页控件 */}
+          {/* Pagination controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2">
               <button
