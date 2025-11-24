@@ -245,7 +245,7 @@ export async function DELETE(
     // Store slug and category slug for cache invalidation
     const novelSlug = existingNovel.slug
     const categorySlug = existingNovel.category?.slug
-    const tagIds = existingNovel.tags.map(t => t.id)
+    const tagIds = existingNovel.tags.map((t: { id: string; slug: string }) => t.id)
 
     // Delete cover image from Cloudinary
     if (existingNovel.coverImagePublicId) {

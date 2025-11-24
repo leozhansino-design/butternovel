@@ -1,6 +1,7 @@
 // src/app/novels/[slug]/chapters/[number]/page.tsx
 // ✅ 修复：统一缓存策略
 import { notFound } from 'next/navigation'
+import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import ChapterReader from '@/components/reader/ChapterReader'
@@ -11,6 +12,99 @@ interface PageProps {
     slug: string
     number: string
   }>
+}
+
+// SEO: Generate metadata for each chapter
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug, number } = await params
+  const chapterNumber = parseInt(number)
+
+  if (isNaN(chapterNumber)) {
+    return {
+      title: 'Chapter Not Found | ButterNovel',
+      description: 'The requested chapter could not be found.',
+    }
+  }
+
+  try {
+    const [novel, chapter] = await Promise.all([
+      prisma.novel.findUnique({
+        where: { slug },
+        select: {
+          title: true,
+          slug: true,
+          authorName: true,
+          blurb: true,
+          category: { select: { name: true } },
+        }
+      }),
+      prisma.chapter.findFirst({
+        where: {
+          novel: { slug },
+          chapterNumber,
+          isPublished: true
+        },
+        select: {
+          title: true,
+          chapterNumber: true,
+          wordCount: true,
+          content: true,
+        }
+      })
+    ])
+
+    if (!novel || !chapter) {
+      return {
+        title: 'Chapter Not Found | ButterNovel',
+        description: 'The requested chapter could not be found.',
+      }
+    }
+
+    // Extract first 150 chars of chapter content for description
+    const plainText = chapter.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+    const description = plainText.length > 150
+      ? plainText.substring(0, 147) + '...'
+      : plainText
+
+    return {
+      title: `${novel.title} - Chapter ${chapterNumber}: ${chapter.title}`,
+      description: description,
+      keywords: [
+        novel.title,
+        `chapter ${chapterNumber}`,
+        chapter.title,
+        novel.authorName,
+        novel.category.name,
+        'free chapter',
+        'read online'
+      ],
+      authors: [{ name: novel.authorName }],
+      openGraph: {
+        type: 'article',
+        title: `${novel.title} - Chapter ${chapterNumber}`,
+        description: description,
+        url: `https://butternovel.com/novels/${slug}/chapters/${chapterNumber}`,
+        siteName: 'ButterNovel',
+        article: {
+          authors: [novel.authorName],
+          section: novel.category.name,
+        },
+      },
+      twitter: {
+        card: 'summary',
+        title: `${novel.title} - Ch.${chapterNumber}`,
+        description: description,
+      },
+      alternates: {
+        canonical: `https://butternovel.com/novels/${slug}/chapters/${chapterNumber}`,
+      },
+    }
+  } catch (error) {
+    return {
+      title: 'Chapter Not Found | ButterNovel',
+      description: 'The requested chapter could not be found.',
+    }
+  }
 }
 
 async function getChapterData(slug: string, chapterNumber: number) {
