@@ -228,6 +228,9 @@ export async function DELETE(
       include: {
         category: {
           select: { slug: true }
+        },
+        tags: {
+          select: { id: true, slug: true }
         }
       }
     })
@@ -242,6 +245,7 @@ export async function DELETE(
     // Store slug and category slug for cache invalidation
     const novelSlug = existingNovel.slug
     const categorySlug = existingNovel.category?.slug
+    const tagIds = existingNovel.tags.map(t => t.id)
 
     // Delete cover image from Cloudinary
     if (existingNovel.coverImagePublicId) {
@@ -251,9 +255,28 @@ export async function DELETE(
       }
     }
 
-    // Delete novel (chapters will be deleted automatically due to cascade)
-    await prisma.novel.delete({
-      where: { id: novelId },
+    // Delete novel and update tag counts in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete novel (chapters will be deleted automatically due to cascade)
+      await tx.novel.delete({
+        where: { id: novelId },
+      })
+
+      // Decrement tag counts for all associated tags
+      if (tagIds.length > 0) {
+        await tx.tag.updateMany({
+          where: { id: { in: tagIds } },
+          data: { count: { decrement: 1 } }
+        })
+
+        // Optional: Delete tags with zero count to keep database clean
+        await tx.tag.deleteMany({
+          where: {
+            id: { in: tagIds },
+            count: { lte: 0 }
+          }
+        })
+      }
     })
 
     // ⚡ CRITICAL: Clear cache after deletion
