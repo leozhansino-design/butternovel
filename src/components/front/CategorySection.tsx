@@ -37,7 +37,7 @@ export default function CategorySection({
 
         {categorySlug && books.length > 0 && (
           <Link
-            href={`/novels?category=${categorySlug}`}
+            href={`/search?category=${categorySlug}`}
             className="group flex items-center gap-1 sm:gap-2 text-sm sm:text-base text-gray-600 hover:text-amber-600 transition-colors font-medium flex-shrink-0 ml-2"
           >
             <span className="hidden sm:inline">View All</span>
