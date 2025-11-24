@@ -96,7 +96,7 @@ export default function TrendingCarousel({
   return (
     <section className="w-full bg-gradient-to-br from-blue-50 via-white to-blue-50/50 py-12 md:py-16 lg:py-20">
       {/* Section Header - consistent with CategoryCarousel */}
-      <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
+      <div className="mb-4 sm:mb-6 md:mb-8 px-4 md:px-8 lg:px-[150px]">
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
             Trending
@@ -110,18 +110,17 @@ export default function TrendingCarousel({
         onMouseEnter={() => setIsAutoPlaying(false)}
         onMouseLeave={() => setIsAutoPlaying(true)}
       >
-        {/* Left edge gradient mask */}
-        <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
+        {/* Left edge gradient mask - hidden on mobile */}
+        <div className="hidden lg:block absolute left-0 top-0 bottom-0 bg-gradient-to-r from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none lg:w-[150px]" />
 
-        {/* Right edge gradient mask */}
-        <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
+        {/* Right edge gradient mask - hidden on mobile */}
+        <div className="hidden lg:block absolute right-0 top-0 bottom-0 bg-gradient-to-l from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none lg:w-[150px]" />
 
         {/* Left navigation button */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
-            className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
-            style={{ left: '70px' }}
+            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 left-[70px]"
             aria-label="Previous"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,8 +133,7 @@ export default function TrendingCarousel({
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
-            className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
-            style={{ right: '70px' }}
+            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 right-[70px]"
             aria-label="Next"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,10 +145,8 @@ export default function TrendingCarousel({
         {/* Novel list - horizontal scroll */}
         <div
           ref={trackRef}
-          className="flex gap-5 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{
-            paddingLeft: '150px',
-            paddingRight: '150px',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch'
@@ -160,8 +156,7 @@ export default function TrendingCarousel({
             <Link
               key={novel.id}
               href={`/novels/${novel.slug}`}
-              className="group block flex-shrink-0"
-              style={{ width: '480px' }}
+              className="group block flex-shrink-0 w-[320px] sm:w-[400px] md:w-[450px] lg:w-[480px]"
             >
               <div className="relative h-full bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1">
                 {/* Card Content */}
