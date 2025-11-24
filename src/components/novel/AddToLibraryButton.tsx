@@ -90,12 +90,12 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
         onClick={handleClick}
         disabled={loading}
         className={`
-          group relative p-4 rounded-xl transition-all duration-300 overflow-hidden
+          group relative p-4 rounded-xl transition-all duration-300 overflow-hidden cursor-pointer
           ${isInLibrary
             ? 'bg-blue-50 backdrop-blur-sm border-2 border-blue-200'
             : 'bg-white backdrop-blur-sm border-2 border-gray-200 hover:border-blue-300'
           }
-          shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed
+          shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
         `}
         title={isInLibrary ? 'Remove from Library' : 'Add to Library'}
         aria-label="Add to Library"

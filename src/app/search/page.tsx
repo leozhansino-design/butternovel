@@ -1,11 +1,25 @@
+// src/app/search/page.tsx
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import Footer from '@/components/shared/Footer'
-import BookCard from '@/components/front/BookCard'
 import SearchInput from '@/components/search/SearchInput'
+import SearchFilters from '@/components/search/SearchFilters'
+import EnhancedBookCard from '@/components/search/EnhancedBookCard'
+import { BookCardSkeletonList } from '@/components/search/BookCardSkeleton'
+
+interface Tag {
+  id: string
+  name: string
+  slug: string
+}
+
+interface Category {
+  id: number
+  name: string
+  slug: string
+}
 
 interface Novel {
   id: number
@@ -15,11 +29,12 @@ interface Novel {
   coverImage: string
   authorName: string
   status: string
-  category: {
-    id: number
-    name: string
-    slug: string
-  }
+  viewCount: number
+  averageRating?: number | null
+  totalRatings: number
+  category: Category
+  tags: Tag[]
+  tagsCount: number // 添加tags总数
   chaptersCount: number
   likesCount: number
 }
@@ -36,7 +51,10 @@ interface SearchResponse {
       hasMore: boolean
     }
     query: string | null
-    category: number | null
+    category: string | null
+    tags: string | null
+    status: string | null
+    sort: string
   }
   error?: string
 }
@@ -44,13 +62,27 @@ interface SearchResponse {
 function SearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // URL参数
   const queryParam = searchParams.get('q') || ''
   const categoryParam = searchParams.get('category') || ''
+  const tagsParam = searchParams.get('tags') || ''
+  const statusParam = searchParams.get('status') || ''
+  const sortParam = searchParams.get('sort') || 'hot'
   const pageParam = parseInt(searchParams.get('page') || '1')
 
+  // 状态
   const [searchQuery, setSearchQuery] = useState(queryParam)
   const [selectedCategory, setSelectedCategory] = useState(categoryParam)
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    tagsParam ? tagsParam.split(',').filter(Boolean) : []
+  )
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(
+    statusParam ? statusParam.split(',').filter(Boolean) : []
+  )
+  const [selectedSort, setSelectedSort] = useState(sortParam)
   const [currentPage, setCurrentPage] = useState(pageParam)
+
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,19 +93,16 @@ function SearchContent() {
     totalPages: 0,
     hasMore: false,
   })
-  const [categories, setCategories] = useState<Array<{ id: number; name: string; slug: string }>>([])
 
-  // 获取分类列表
+  // 同步URL参数到state（当从外部链接进入时）
   useEffect(() => {
-    fetch('/api/categories')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setCategories(data.data || [])
-        }
-      })
-      .catch(err => console.error('Failed to fetch categories:', err))
-  }, [])
+    setSearchQuery(queryParam)
+    setSelectedCategory(categoryParam)
+    setSelectedTags(tagsParam ? tagsParam.split(',').filter(Boolean) : [])
+    setSelectedStatuses(statusParam ? statusParam.split(',').filter(Boolean) : [])
+    setSelectedSort(sortParam)
+    setCurrentPage(pageParam)
+  }, [queryParam, categoryParam, tagsParam, statusParam, sortParam, pageParam])
 
   // 执行搜索
   useEffect(() => {
@@ -85,6 +114,9 @@ function SearchContent() {
         const params = new URLSearchParams()
         if (queryParam) params.set('q', queryParam)
         if (categoryParam) params.set('category', categoryParam)
+        if (tagsParam) params.set('tags', tagsParam)
+        if (statusParam) params.set('status', statusParam)
+        if (sortParam) params.set('sort', sortParam)
         params.set('page', pageParam.toString())
         params.set('limit', '20')
 
@@ -108,18 +140,66 @@ function SearchContent() {
     }
 
     fetchResults()
-  }, [queryParam, categoryParam, pageParam])
+  }, [queryParam, categoryParam, tagsParam, statusParam, sortParam, pageParam])
 
-  // 处理搜索表单提交
+  // 更新URL参数
+  const updateSearchParams = (updates: Record<string, string>) => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value)
+      } else {
+        params.delete(key)
+      }
+    })
+
+    // 筛选条件改变时重置页码
+    if (updates.category !== undefined || updates.tags !== undefined ||
+        updates.status !== undefined || updates.sort !== undefined || updates.q !== undefined) {
+      params.set('page', '1')
+    }
+
+    router.push(`/search?${params.toString()}`)
+  }
+
+  // 处理搜索
   const handleSearch = (query: string) => {
     setSearchQuery(query)
     updateSearchParams({ q: query, page: '1' })
   }
 
-  // 处理分类筛选
-  const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategory(categoryId)
-    updateSearchParams({ category: categoryId, page: '1' })
+  // 处理分类变更
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category)
+    updateSearchParams({ category, page: '1' })
+  }
+
+  // 处理标签变更
+  const handleTagsChange = (tags: string[]) => {
+    setSelectedTags(tags)
+    updateSearchParams({ tags: tags.join(','), page: '1' })
+  }
+
+  // 处理状态变更
+  const handleStatusesChange = (statuses: string[]) => {
+    setSelectedStatuses(statuses)
+    updateSearchParams({ status: statuses.join(','), page: '1' })
+  }
+
+  // 处理排序变更
+  const handleSortChange = (sort: string) => {
+    setSelectedSort(sort)
+    updateSearchParams({ sort, page: '1' })
+  }
+
+  // 清除所有筛选
+  const handleClearAll = () => {
+    setSelectedCategory('')
+    setSelectedTags([])
+    setSelectedStatuses([])
+    setSearchQuery('')
+    router.push('/search')
   }
 
   // 处理分页
@@ -129,192 +209,158 @@ function SearchContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // 更新URL参数
-  const updateSearchParams = (updates: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString())
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value)
-      } else {
-        params.delete(key)
-      }
-    })
-    router.push(`/search?${params.toString()}`)
-  }
-
-  // 清除筛选
-  const handleClearFilters = () => {
-    setSelectedCategory('')
-    setSearchQuery('')
-    router.push('/search')
-  }
-
   return (
-    <main className="flex-1">
-      <div className="container mx-auto px-4 max-w-7xl py-8 sm:py-12">
-          {/* 搜索头部 */}
-          <div className="mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-              Search Novels
-            </h1>
+    <main className="flex-1 bg-gray-50">
+      {/* 搜索头部 */}
+      <div className="bg-white">
+        <div className="container mx-auto px-4 max-w-7xl py-6 sm:py-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
+            Search Novels
+          </h1>
 
-            {/* 搜索框（带自动补全） */}
-            <div className="mb-6">
-              <SearchInput
-                initialValue={searchQuery}
-                onSearch={handleSearch}
-                placeholder="Search by title, author, or description..."
-              />
-            </div>
+          {/* 搜索框 */}
+          <SearchInput
+            initialValue={searchQuery}
+            onSearch={handleSearch}
+            placeholder="Search by title, author, or description..."
+          />
+        </div>
+      </div>
 
-            {/* 筛选器 */}
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="text-sm font-medium text-gray-700">Filter by category:</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+      {/* 筛选栏 */}
+      <SearchFilters
+        selectedCategory={selectedCategory}
+        selectedTags={selectedTags}
+        selectedStatuses={selectedStatuses}
+        selectedSort={selectedSort}
+        onCategoryChange={handleCategoryChange}
+        onTagsChange={handleTagsChange}
+        onStatusesChange={handleStatusesChange}
+        onSortChange={handleSortChange}
+        onClearAll={handleClearAll}
+      />
 
-              {(queryParam || categoryParam) && (
-                <button
-                  onClick={handleClearFilters}
-                  className="text-sm text-gray-600 hover:text-gray-900 underline"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
+      {/* 搜索结果 */}
+      <div className="container mx-auto px-4 max-w-7xl py-6 sm:py-8">
+        {/* 搜索结果信息 */}
+        {!loading && (
+          <div className="mb-6 text-gray-600">
+            <p className="text-sm sm:text-base">
+              {pagination.total.toLocaleString()}{' '}
+              {pagination.total === 1 ? 'novel' : 'novels'} found
+            </p>
           </div>
+        )}
 
-          {/* 搜索结果信息 */}
-          {queryParam && (
-            <div className="mb-6 text-gray-600">
-              <p>
-                Showing results for <span className="font-semibold text-gray-900">&quot;{queryParam}&quot;</span>
-                {categoryParam && categories.find(c => c.id.toString() === categoryParam) && (
-                  <span> in <span className="font-semibold text-gray-900">
-                    {categories.find(c => c.id.toString() === categoryParam)?.name}
-                  </span></span>
-                )}
-              </p>
-              <p className="text-sm mt-1">
-                {pagination.total} {pagination.total === 1 ? 'novel' : 'novels'} found
-              </p>
+        {/* 加载状态 - 骨架屏 */}
+        {loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <BookCardSkeletonList count={8} />
+          </div>
+        )}
+
+        {/* 错误状态 */}
+        {error && !loading && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        )}
+
+        {/* 搜索结果网格 - 横向卡片适合单列或双列布局 */}
+        {!loading && !error && novels.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+              {novels.map((novel) => (
+                <EnhancedBookCard
+                  key={novel.id}
+                  id={novel.id}
+                  title={novel.title}
+                  slug={novel.slug}
+                  coverImage={novel.coverImage}
+                  authorName={novel.authorName}
+                  blurb={novel.blurb}
+                  viewCount={novel.viewCount}
+                  averageRating={novel.averageRating}
+                  totalRatings={novel.totalRatings}
+                  status={novel.status}
+                  category={novel.category}
+                  tags={novel.tags}
+                  tagsCount={novel.tagsCount}
+                  chaptersCount={novel.chaptersCount}
+                />
+              ))}
             </div>
-          )}
 
-          {/* 加载状态 */}
-          {loading && (
-            <div className="flex items-center justify-center py-20">
-              <div className="text-center">
-                <div className="text-4xl mb-4">⏳</div>
-                <p className="text-gray-600">Searching...</p>
-              </div>
-            </div>
-          )}
+            {/* 分页 */}
+            {pagination.totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                >
+                  Previous
+                </button>
 
-          {/* 错误状态 */}
-          {error && !loading && (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
-              <p className="text-gray-600">{error}</p>
-            </div>
-          )}
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                    let pageNum
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
 
-          {/* 搜索结果 */}
-          {!loading && !error && novels.length > 0 && (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-12">
-                {novels.map((novel) => (
-                  <BookCard
-                    key={novel.id}
-                    id={novel.id}
-                    title={novel.title}
-                    slug={novel.slug}
-                    coverImage={novel.coverImage}
-                    category={novel.category.name}
-                    status={novel.status}
-                    chapters={novel.chaptersCount}
-                    likes={novel.likesCount}
-                  />
-                ))}
-              </div>
-
-              {/* 分页 */}
-              {pagination.totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-
-                  <div className="flex gap-1">
-                    {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
-                      let pageNum
-                      if (pagination.totalPages <= 5) {
-                        pageNum = i + 1
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1
-                      } else if (currentPage >= pagination.totalPages - 2) {
-                        pageNum = pagination.totalPages - 4 + i
-                      } else {
-                        pageNum = currentPage - 2 + i
-                      }
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`px-4 py-2 rounded-lg ${
-                            currentPage === pageNum
-                              ? 'bg-yellow-400 text-gray-900 font-semibold'
-                              : 'border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === pagination.totalPages}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white font-semibold'
+                            : 'border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
                 </div>
-              )}
-            </>
-          )}
 
-          {/* 无结果 */}
-          {!loading && !error && novels.length === 0 && (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🔍</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {queryParam ? 'No results found' : 'Start searching'}
-              </h2>
-              <p className="text-gray-600">
-                {queryParam
-                  ? 'Try different keywords or filters'
-                  : 'Enter a search term to find novels'}
-              </p>
-            </div>
-          )}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === pagination.totalPages}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 无结果 */}
+        {!loading && !error && novels.length === 0 && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🔍</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">No results found</h2>
+            <p className="text-gray-600 mb-4">
+              Try different keywords or adjust your filters
+            </p>
+            <button
+              onClick={handleClearAll}
+              className="text-blue-600 hover:text-blue-700 font-medium underline"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
       </div>
     </main>
   )
@@ -322,15 +368,17 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Suspense fallback={
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-4xl mb-4">⏳</div>
-            <p className="text-gray-600">Loading search...</p>
+    <div className="min-h-screen flex flex-col">
+      <Suspense
+        fallback={
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-4xl mb-4">⏳</div>
+              <p className="text-gray-600">Loading search...</p>
+            </div>
           </div>
-        </div>
-      }>
+        }
+      >
         <SearchContent />
       </Suspense>
       <Footer />

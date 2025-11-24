@@ -121,7 +121,7 @@ function calculateRelevanceScore(novel: any, query: string): number {
   return finalScore
 }
 
-// GET /api/search?q=keyword&category=1&page=1&limit=20
+// GET /api/search?q=keyword&category=1&tags=ceo,billionaire&status=completed,ongoing&sort=hot&page=1&limit=20
 export async function GET(request: Request) {
   try {
     // 速率限制：防止滥用搜索功能
@@ -149,6 +149,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''
     const category = searchParams.get('category')
+    const tagsParam = searchParams.get('tags')
+    const statusParam = searchParams.get('status')
+    const sortParam = searchParams.get('sort') || 'hot'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50) // 最大50条
 
@@ -167,56 +170,160 @@ export async function GET(request: Request) {
       ]
     }
 
-    // 分类筛选
+    // 分类筛选（支持分类名称或ID）
     if (category) {
-      where.categoryId = parseInt(category)
+      // 检查是否为数字ID
+      if (/^\d+$/.test(category)) {
+        where.categoryId = parseInt(category)
+      } else {
+        // 按分类名称查找
+        const categoryRecord = await withRetry(
+          () => prisma.category.findFirst({
+            where: { name: { equals: category, mode: 'insensitive' } },
+            select: { id: true }
+          }),
+          { operationName: 'Find category by name' }
+        ) as { id: number } | null
+        if (categoryRecord) {
+          where.categoryId = categoryRecord.id
+        }
+      }
+    }
+
+    // 标签筛选（多标签AND逻辑）
+    if (tagsParam) {
+      const tagSlugs = tagsParam.split(',').map(t => t.trim()).filter(Boolean)
+      if (tagSlugs.length > 0) {
+        // 查找标签记录
+        const tagRecords = await withRetry(
+          () => prisma.tag.findMany({
+            where: { slug: { in: tagSlugs } },
+            select: { id: true }
+          }),
+          { operationName: 'Find tags by slugs' }
+        ) as Array<{ id: string }>
+
+        if (tagRecords.length > 0) {
+          const tagIds = tagRecords.map(t => t.id)
+          // 小说必须包含所有选中的标签
+          if (!where.AND) where.AND = []
+          where.AND.push(
+            ...tagIds.map(tagId => ({
+              tags: {
+                some: {
+                  id: tagId
+                }
+              }
+            }))
+          )
+        }
+      }
+    }
+
+    // 状态筛选（多选）
+    if (statusParam) {
+      const statuses = statusParam.split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+      if (statuses.length > 0) {
+        // 验证状态值
+        const validStatuses = statuses.filter(s => ['COMPLETED', 'ONGOING'].includes(s))
+        if (validStatuses.length > 0) {
+          where.status = { in: validStatuses }
+        }
+      }
     }
 
     // 如果有搜索关键词，获取更多结果以便排序（不分页）
-    // 否则按更新时间排序并分页
+    // 否则按指定排序方式排序并分页
     const shouldRankByRelevance = query.trim().length > 0
+
+    // 确定排序方式
+    let orderBy: any = []
+    if (!shouldRankByRelevance) {
+      switch (sortParam) {
+        case 'hot':
+          // 热度 = hotScore 或 综合评分
+          orderBy = [
+            { hotScore: 'desc' },
+            { viewCount: 'desc' }
+          ]
+          break
+        case 'new':
+          // 最新
+          orderBy = [{ createdAt: 'desc' }]
+          break
+        case 'top_rated':
+          // 高评分
+          orderBy = [
+            { averageRating: 'desc' },
+            { totalRatings: 'desc' }
+          ]
+          break
+        case 'most_read':
+          // 最多阅读
+          orderBy = [{ viewCount: 'desc' }]
+          break
+        default:
+          // 默认按热度
+          orderBy = [
+            { hotScore: 'desc' },
+            { viewCount: 'desc' }
+          ]
+      }
+    }
 
     let novels: any[] = []
     let total = 0
+
+    // 基础查询选项
+    const selectOptions = {
+      id: true,
+      title: true,
+      slug: true,
+      blurb: true,
+      coverImage: true,
+      authorName: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      // 热度相关字段
+      viewCount: true,
+      likeCount: true,
+      bookmarkCount: true,
+      commentCount: true,
+      averageRating: true,
+      totalRatings: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      tags: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+        take: 5, // 只返回前5个标签用于显示
+      },
+      _count: {
+        select: {
+          chapters: {
+            where: { isPublished: true },
+          },
+          likes: true,
+          tags: true, // 添加tags总数统计
+        },
+      },
+    }
 
     if (shouldRankByRelevance) {
       // 获取所有匹配结果（限制最多200条以避免性能问题）
       const allResults = await withRetry(
         () => prisma.novel.findMany({
           where,
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            blurb: true,
-            coverImage: true,
-            authorName: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-            // 热度相关字段
-            viewCount: true,
-            likeCount: true,
-            bookmarkCount: true,
-            commentCount: true,
-            averageRating: true,
-            totalRatings: true,
-            category: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            _count: {
-              select: {
-                chapters: {
-                  where: { isPublished: true },
-                },
-                likes: true,
-              },
-            },
-          },
+          select: selectOptions,
           take: 200, // 限制最大查询量
         }),
         { operationName: 'Search novels' }
@@ -236,47 +343,13 @@ export async function GET(request: Request) {
       const startIndex = (page - 1) * limit
       novels = rankedResults.slice(startIndex, startIndex + limit)
     } else {
-      // 无搜索关键词，按更新时间排序
+      // 按指定排序方式查询
       const [allNovels, count] = await Promise.all([
         withRetry(
           () => prisma.novel.findMany({
             where,
-            select: {
-              id: true,
-              title: true,
-              slug: true,
-              blurb: true,
-              coverImage: true,
-              authorName: true,
-              status: true,
-              createdAt: true,
-              updatedAt: true,
-              // 热度相关字段
-              viewCount: true,
-              likeCount: true,
-              bookmarkCount: true,
-              commentCount: true,
-              averageRating: true,
-              totalRatings: true,
-              category: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
-              _count: {
-                select: {
-                  chapters: {
-                    where: { isPublished: true },
-                  },
-                  likes: true,
-                },
-              },
-            },
-            orderBy: [
-              { updatedAt: 'desc' },
-            ],
+            select: selectOptions,
+            orderBy,
             skip: (page - 1) * limit,
             take: limit,
           }),
@@ -303,7 +376,12 @@ export async function GET(request: Request) {
       status: novel.status,
       createdAt: novel.createdAt,
       updatedAt: novel.updatedAt,
+      viewCount: novel.viewCount,
+      averageRating: novel.averageRating,
+      totalRatings: novel.totalRatings,
       category: novel.category,
+      tags: novel.tags || [],
+      tagsCount: novel._count.tags, // 添加tags总数
       chaptersCount: novel._count.chapters,
       likesCount: novel._count.likes,
     }))
@@ -320,7 +398,10 @@ export async function GET(request: Request) {
           hasMore: page * limit < total,
         },
         query: query.trim() || null,
-        category: category ? parseInt(category) : null,
+        category: category || null,
+        tags: tagsParam || null,
+        status: statusParam || null,
+        sort: sortParam,
       },
     })
   } catch (error) {
