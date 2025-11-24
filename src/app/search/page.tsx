@@ -94,6 +94,11 @@ function SearchContent() {
     hasMore: false,
   })
 
+  // 页面加载时滚动到顶部
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   // 同步URL参数到state（当从外部链接进入时）
   useEffect(() => {
     setSearchQuery(queryParam)
