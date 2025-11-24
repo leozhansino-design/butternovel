@@ -63,9 +63,9 @@ function SearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // URL参数
+  // URL参数 - 支持 genre 或 category（向后兼容）
   const queryParam = searchParams.get('q') || ''
-  const categoryParam = searchParams.get('category') || ''
+  const categoryParam = searchParams.get('genre') || searchParams.get('category') || ''
   const tagsParam = searchParams.get('tags') || ''
   const statusParam = searchParams.get('status') || ''
   const sortParam = searchParams.get('sort') || 'hot'
@@ -113,7 +113,7 @@ function SearchContent() {
       try {
         const params = new URLSearchParams()
         if (queryParam) params.set('q', queryParam)
-        if (categoryParam) params.set('category', categoryParam)
+        if (categoryParam) params.set('genre', categoryParam)
         if (tagsParam) params.set('tags', tagsParam)
         if (statusParam) params.set('status', statusParam)
         if (sortParam) params.set('sort', sortParam)
@@ -154,8 +154,13 @@ function SearchContent() {
       }
     })
 
+    // 如果设置了 genre，删除旧的 category 参数（向后兼容）
+    if (updates.genre !== undefined) {
+      params.delete('category')
+    }
+
     // 筛选条件改变时重置页码
-    if (updates.category !== undefined || updates.tags !== undefined ||
+    if (updates.genre !== undefined || updates.tags !== undefined ||
         updates.status !== undefined || updates.sort !== undefined || updates.q !== undefined) {
       params.set('page', '1')
     }
@@ -172,7 +177,7 @@ function SearchContent() {
   // 处理分类变更
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
-    updateSearchParams({ category, page: '1' })
+    updateSearchParams({ genre: category, page: '1' })
   }
 
   // 处理标签变更
