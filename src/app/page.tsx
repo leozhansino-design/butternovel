@@ -3,7 +3,7 @@
 import { Suspense } from 'react'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
-import CategorySection from '@/components/front/CategorySection'
+import CategoryCarousel from '@/components/front/CategoryCarousel'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 import { getHomePageData } from '@/lib/cache-optimized'
 
@@ -53,21 +53,18 @@ async function HomeContent() {
       )}
 
       <div className="bg-white">
-        <div className="container mx-auto px-3 sm:px-4 max-w-7xl py-8 sm:py-12 md:py-16 space-y-12 sm:space-y-16 md:space-y-20">
+        <div className="container mx-auto max-w-7xl py-8 sm:py-12 md:py-16 space-y-12 sm:space-y-16 md:space-y-20">
           {categoryData.map(cat => {
             const books = cat.novels.map(novel => ({
               id: novel.id,
               title: novel.title,
-              category: novel.categoryName,
-              status: novel.status,
-              chapters: Number(novel.chaptersCount),
-              likes: Number(novel.likesCount),
               slug: novel.slug,
               coverImage: novel.coverImage,
+              rating: novel.rating,
             }))
 
             return (
-              <CategorySection
+              <CategoryCarousel
                 key={cat.slug}
                 title={cat.name}
                 books={books}
