@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
           select: { id: true }
         }),
         { operationName: 'Find category by name' }
-      )
+      ) as { id: number } | null
 
       if (!category) {
         return NextResponse.json(
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
           select: { id: true }
         }),
         { operationName: 'Get novels by category' }
-      )
+      ) as Array<{ id: number }>
 
       const novelIds = novels.map(n => n.id)
 
