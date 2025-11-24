@@ -61,6 +61,8 @@ export default function SearchFilters({
     const loadTags = async () => {
       setLoadingTags(true)
       try {
+        let tags: Tag[] = []
+
         if (selectedTags.length > 0) {
           // 已选标签，获取相关标签
           const params = new URLSearchParams()
@@ -74,7 +76,20 @@ export default function SearchFilters({
           const data = await response.json()
 
           if (data.success) {
-            setAvailableTags(data.data || [])
+            tags = data.data || []
+          }
+
+          // 获取已选标签的完整信息并添加到列表前面
+          const selectedTagsResponse = await fetch(
+            `/api/tags/popular?limit=50${selectedCategory ? `&category=${selectedCategory}` : ''}`
+          )
+          const selectedTagsData = await selectedTagsResponse.json()
+          if (selectedTagsData.success) {
+            const selectedTagObjects = selectedTagsData.data.filter((tag: Tag) =>
+              selectedTags.includes(tag.slug)
+            )
+            // 将已选标签放在前面，然后是相关标签
+            tags = [...selectedTagObjects, ...tags]
           }
         } else {
           // 未选标签，获取热门标签
@@ -88,9 +103,11 @@ export default function SearchFilters({
           const data = await response.json()
 
           if (data.success) {
-            setAvailableTags(data.data || [])
+            tags = data.data || []
           }
         }
+
+        setAvailableTags(tags)
       } catch (err) {
         console.error('Failed to fetch tags:', err)
       } finally {

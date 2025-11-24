@@ -7,6 +7,7 @@ import Footer from '@/components/shared/Footer'
 import SearchInput from '@/components/search/SearchInput'
 import SearchFilters from '@/components/search/SearchFilters'
 import EnhancedBookCard from '@/components/search/EnhancedBookCard'
+import { BookCardSkeletonList } from '@/components/search/BookCardSkeleton'
 
 interface Tag {
   id: string
@@ -240,13 +241,10 @@ function SearchContent() {
           </div>
         )}
 
-        {/* 加载状态 */}
+        {/* 加载状态 - 骨架屏 */}
         {loading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="text-4xl mb-4">⏳</div>
-              <p className="text-gray-600">Searching...</p>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <BookCardSkeletonList count={8} />
           </div>
         )}
 
@@ -259,10 +257,10 @@ function SearchContent() {
           </div>
         )}
 
-        {/* 搜索结果网格 */}
+        {/* 搜索结果网格 - 横向卡片适合单列或双列布局 */}
         {!loading && !error && novels.length > 0 && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
               {novels.map((novel) => (
                 <EnhancedBookCard
                   key={novel.id}
