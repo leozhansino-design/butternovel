@@ -2,6 +2,7 @@
 // ⚡ 优化：使用单个缓存键，减少 Redis commands 从 17 降到 1（节省94%）
 import { Suspense } from 'react'
 import Footer from '@/components/shared/Footer'
+import TrendingCarousel from '@/components/front/TrendingCarousel'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategoryCarousel from '@/components/front/CategoryCarousel'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
@@ -14,7 +15,7 @@ async function HomeContent() {
   // 节省：94% Redis commands
   const homeData = await getHomePageData()
 
-  const { featured, categories, categoryNovels } = homeData
+  const { featured, trending, categories, categoryNovels } = homeData
 
   // 构造类别数据映射
   const categoryData = categories.map((category) => ({
@@ -38,6 +39,11 @@ async function HomeContent() {
 
   return (
     <main className="flex-1">
+      {/* Trending Carousel - 热门推荐轮播区 */}
+      {trending.length > 0 && (
+        <TrendingCarousel novels={trending} />
+      )}
+
       {featuredBooks.length > 0 ? (
         <section className="bg-gradient-to-b from-slate-50/80 to-white py-6 sm:py-8 md:py-12 lg:py-16">
           <FeaturedCarousel books={featuredBooks} />

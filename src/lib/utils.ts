@@ -21,3 +21,23 @@ export function truncate(text: string, length: number): string {
   if (text.length <= length) return text
   return text.slice(0, length) + '...'
 }
+
+/**
+ * Smart truncate that doesn't cut words in the middle
+ * @param text - Text to truncate
+ * @param maxLength - Maximum length before truncation
+ * @returns Truncated text with ellipsis if needed
+ */
+export function smartTruncate(text: string, maxLength: number): string {
+  if (!text || text.length <= maxLength) return text || ''
+
+  let truncated = text.substring(0, maxLength)
+  const lastSpaceIndex = truncated.lastIndexOf(' ')
+
+  // If we found a space and it's not too far back (at least 70% of maxLength)
+  if (lastSpaceIndex > maxLength * 0.7) {
+    truncated = truncated.substring(0, lastSpaceIndex)
+  }
+
+  return truncated.trim() + '...'
+}
