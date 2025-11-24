@@ -79,25 +79,47 @@ export default function SearchFilters({
             tags = data.data || []
           }
 
-          // 从当前可用标签中找出已选的标签（确保所有已选标签都保留）
-          const selectedTagObjects = availableTags.filter((tag: Tag) =>
-            selectedTags.includes(tag.slug)
-          )
+          // 构建已选标签对象数组 - 确保所有已选标签都被保留
+          const selectedTagObjects: Tag[] = []
 
-          // 如果有已选标签在当前列表中找不到，从popular中补充
+          // 首先从相关标签中查找已选标签
+          for (const slug of selectedTags) {
+            const tagInRelated = tags.find((t: Tag) => t.slug === slug)
+            if (tagInRelated) {
+              selectedTagObjects.push(tagInRelated)
+            }
+          }
+
+          // 如果有已选标签在相关标签中找不到，从当前可用标签中查找
           const foundSlugs = selectedTagObjects.map((t: Tag) => t.slug)
           const missingSlugs = selectedTags.filter(slug => !foundSlugs.includes(slug))
 
           if (missingSlugs.length > 0) {
-            const popularResponse = await fetch(
-              `/api/tags/popular?limit=50${selectedCategory ? `&category=${selectedCategory}` : ''}`
+            for (const slug of missingSlugs) {
+              const tagInAvailable = availableTags.find((t: Tag) => t.slug === slug)
+              if (tagInAvailable) {
+                selectedTagObjects.push(tagInAvailable)
+              }
+            }
+
+            // 如果还有找不到的，从popular中获取
+            const stillMissingSlugs = selectedTags.filter(
+              slug => !selectedTagObjects.find((t: Tag) => t.slug === slug)
             )
-            const popularData = await popularResponse.json()
-            if (popularData.success) {
-              const missingTags = popularData.data.filter((tag: Tag) =>
-                missingSlugs.includes(tag.slug)
+
+            if (stillMissingSlugs.length > 0) {
+              const popularResponse = await fetch(
+                `/api/tags/popular?limit=50${selectedCategory ? `&category=${selectedCategory}` : ''}`
               )
-              selectedTagObjects.push(...missingTags)
+              const popularData = await popularResponse.json()
+              if (popularData.success) {
+                for (const slug of stillMissingSlugs) {
+                  const tagInPopular = popularData.data.find((t: Tag) => t.slug === slug)
+                  if (tagInPopular) {
+                    selectedTagObjects.push(tagInPopular)
+                  }
+                }
+              }
             }
           }
 
