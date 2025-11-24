@@ -44,22 +44,40 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
     }
   }, [books]);
 
-  // Auto scroll
+  // Auto scroll with snap alignment
   useEffect(() => {
     if (isPaused || !trackRef.current) return;
 
     const interval = setInterval(() => {
       if (trackRef.current) {
-        const cardWidth = 150 + 16; // Card width + gap
-        const currentScroll = trackRef.current.scrollLeft;
-        const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
+        const track = trackRef.current;
+        const currentScroll = track.scrollLeft;
+        const maxScroll = track.scrollWidth - track.clientWidth;
 
         if (currentScroll >= maxScroll - 10) {
           // Reached end, scroll back to start
-          trackRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+          track.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          // Continue scrolling
-          trackRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+          // Get all card elements
+          const cards = track.children;
+          if (cards.length === 0) return;
+
+          // Find the next card to scroll to
+          let nextCard: Element | null = null;
+          for (let i = 0; i < cards.length; i++) {
+            const card = cards[i] as HTMLElement;
+            const cardLeft = card.offsetLeft - track.offsetLeft;
+            if (cardLeft > currentScroll + 10) {
+              nextCard = card;
+              break;
+            }
+          }
+
+          if (nextCard) {
+            const nextCardElement = nextCard as HTMLElement;
+            const scrollToPosition = nextCardElement.offsetLeft - track.offsetLeft;
+            track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          }
         }
       }
     }, 3000);
@@ -67,17 +85,39 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
     return () => clearInterval(interval);
   }, [isPaused]);
 
-  // Scroll by one card width
+  // Scroll by one card - snap to next/prev card
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
-    const cardWidth = 150 + 16; // Card width + gap
-    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+    const track = trackRef.current;
+    const currentScroll = track.scrollLeft;
+    const cards = track.children;
 
-    trackRef.current.scrollBy({
-      left: scrollAmount,
-      behavior: 'smooth'
-    });
+    if (cards.length === 0) return;
+
+    if (direction === 'right') {
+      // Find next card
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i] as HTMLElement;
+        const cardLeft = card.offsetLeft - track.offsetLeft;
+        if (cardLeft > currentScroll + 10) {
+          const scrollToPosition = cardLeft;
+          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          return;
+        }
+      }
+    } else {
+      // Find previous card
+      for (let i = cards.length - 1; i >= 0; i--) {
+        const card = cards[i] as HTMLElement;
+        const cardLeft = card.offsetLeft - track.offsetLeft;
+        if (cardLeft < currentScroll - 10) {
+          const scrollToPosition = cardLeft;
+          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          return;
+        }
+      }
+    }
   };
 
   return (
@@ -127,14 +167,15 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           </button>
         )}
 
-        {/* Novel list - horizontal scroll */}
+        {/* Novel list - horizontal scroll with snap */}
         <div
           ref={trackRef}
           className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory'
           }}
         >
           {books.map((book) => (
@@ -142,7 +183,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
               key={book.id}
               href={`/novels/${book.slug}`}
               className="group block flex-shrink-0"
-              style={{ width: '150px' }}
+              style={{ width: '150px', scrollSnapAlign: 'start' }}
             >
               {/* Cover container */}
               <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-shadow"

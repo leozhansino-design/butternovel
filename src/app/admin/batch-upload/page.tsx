@@ -136,8 +136,10 @@ export default function BatchUploadPage() {
       }
     }
 
-    if (novelData.length > BATCH_UPLOAD_LIMITS.MAX_NOVELS) {
-      alert(`You can upload up to ${BATCH_UPLOAD_LIMITS.MAX_NOVELS} novels`)
+    // 检查是否超过限制
+    const totalNovels = novels.length + novelData.length
+    if (totalNovels > BATCH_UPLOAD_LIMITS.MAX_NOVELS) {
+      alert(`最多只能上传 ${BATCH_UPLOAD_LIMITS.MAX_NOVELS} 本小说。当前已有 ${novels.length} 本，新增 ${novelData.length} 本将超过限制。`)
       return
     }
 
@@ -145,7 +147,14 @@ export default function BatchUploadPage() {
 
     // 验证所有文件
     const validatedNovels = await validateNovels(novelData)
-    setNovels(validatedNovels)
+
+    // 追加到现有列表
+    setNovels(prev => [...prev, ...validatedNovels])
+
+    // 重置文件输入，允许再次选择相同的文件夹
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   // 验证所有小说
@@ -444,6 +453,21 @@ export default function BatchUploadPage() {
     }
   }
 
+  // 移除单个小说
+  const handleRemoveNovel = (folderName: string) => {
+    if (isUploading) {
+      alert('无法在上传过程中移除小说')
+      return
+    }
+    setNovels(prev => prev.filter(n => n.folderName !== folderName))
+    // 同时移除上传状态
+    setUploadStatuses(prev => {
+      const newStatuses = new Map(prev)
+      newStatuses.delete(folderName)
+      return newStatuses
+    })
+  }
+
   const validCount = novels.filter(n => n.validation?.valid).length
   const completedCount = Array.from(uploadStatuses.values()).filter(s => s.status === 'completed').length
   const failedCount = Array.from(uploadStatuses.values()).filter(s => s.status === 'failed').length
@@ -509,6 +533,26 @@ export default function BatchUploadPage() {
               <div className="flex gap-3">
                 {!isUploading && (
                   <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      /* @ts-ignore */
+                      webkitdirectory=""
+                      directory=""
+                      multiple
+                      onChange={handleFolderSelect}
+                      className="hidden"
+                      id="folder-input-add"
+                    />
+                    <label
+                      htmlFor="folder-input-add"
+                      className="inline-flex items-center px-4 py-2 text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 cursor-pointer transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      添加文件夹
+                    </label>
                     <button
                       onClick={handleClear}
                       className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
@@ -604,14 +648,30 @@ export default function BatchUploadPage() {
 
                     {/* 小说信息 */}
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {novel.parsed?.title || novel.folderName}
-                      </h3>
-                      {novel.parsed && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {novel.parsed.genre} | {novel.parsed.chapters.length} 章节 | {novel.parsed.tags.join(', ')}
-                        </p>
-                      )}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {novel.parsed?.title || novel.folderName}
+                          </h3>
+                          {novel.parsed && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              {novel.parsed.genre} | {novel.parsed.chapters.length} 章节 | {novel.parsed.tags.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                        {/* 移除按钮 - 只在未上传和未上传失败时显示 */}
+                        {!isUploading && !status?.status && (
+                          <button
+                            onClick={() => handleRemoveNovel(novel.folderName)}
+                            className="ml-4 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="移除"
+                          >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
 
                       {/* 错误信息 */}
                       {errors.length > 0 && (

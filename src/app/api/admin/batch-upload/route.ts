@@ -65,6 +65,73 @@ export const POST = withAdminAuth(async (session, request: Request) => {
       console.warn(`[Batch Upload] Invalid contentRating: ${contentRatingRaw}, using default: ALL_AGES`)
     }
 
+    // 1. 获取 Admin Profile 信息
+    const adminProfile = await withRetry(() =>
+      prisma.adminProfile.findUnique({
+        where: { email: session.email },
+      })
+    ) as { displayName: string | null; email: string; avatar: string | null } | null
+
+    if (!adminProfile) {
+      return NextResponse.json(
+        { error: 'Admin profile not found' },
+        { status: 404 }
+      )
+    }
+
+    const authorName = adminProfile.displayName || 'ButterPicks'
+
+    // 2. 查找或创建对应的 User 账号
+    // ⭐ CRITICAL FIX: 使用 User.id 而不是 session.id，解决 follow 错误
+    let user = await withRetry(() =>
+      prisma.user.findUnique({
+        where: { email: session.email },
+        select: { id: true }
+      })
+    ) as { id: string } | null
+
+    // 如果 user 不存在，自动创建
+    if (!user) {
+      console.log(`[Batch Upload] User not found for ${session.email}, creating from admin_profile...`)
+
+      try {
+        user = await withRetry(() =>
+          prisma.user.create({
+            data: {
+              email: adminProfile.email,
+              name: authorName,
+              avatar: adminProfile.avatar || null,
+              role: 'ADMIN',
+              isVerified: true,
+            },
+            select: { id: true }
+          })
+        ) as { id: string }
+
+        console.log(`[Batch Upload] ✅ Successfully created user account: ${user.id}`)
+      } catch (createError: any) {
+        // 如果创建失败（可能是名字冲突），尝试使用唯一的名字
+        if (createError?.code === 'P2002') {
+          const uniqueName = `${authorName}-${Date.now()}`
+          user = await withRetry(() =>
+            prisma.user.create({
+              data: {
+                email: adminProfile.email,
+                name: uniqueName,
+                avatar: adminProfile.avatar || null,
+                role: 'ADMIN',
+                isVerified: true,
+              },
+              select: { id: true }
+            })
+          ) as { id: string }
+          console.log(`[Batch Upload] ✅ Created user with unique name: ${uniqueName}`)
+        } else {
+          throw createError
+        }
+      }
+    }
+
     // 3. 检查书名是否重复
     const existingNovel = await withRetry(() =>
       prisma.novel.findFirst({
@@ -137,8 +204,8 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             blurb,
             coverImage: coverImageUrl,
             categoryId: category.id,
-            authorId: session.id.toString(), // 转换为字符串
-            authorName: session.name || 'Admin',
+            authorId: user.id, // ⭐ CRITICAL FIX: 使用 User.id，解决 follow 问题
+            authorName: authorName, // 使用 admin profile 的 displayName
             status: 'COMPLETED', // 批量上传的小说默认已完结
             isPublished: true,
             contentRating: contentRating, // 从前端传来或默认 ALL_AGES
