@@ -71,17 +71,17 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
 
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-      {/* 卡片布局：移动端横向，桌面端纵向 */}
-      <div className="flex sm:flex-col">
+      {/* 卡片布局：所有屏幕都是左右结构（封面在左，内容在右） */}
+      <div className="flex">
         {/* 封面图片 */}
         <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group">
-          <div className="relative w-24 h-36 sm:w-full sm:h-64 md:h-72">
+          <div className="relative w-24 h-36 sm:w-28 sm:h-42 md:w-32 md:h-48">
             <Image
               src={coverImage}
               alt={title}
               fill
               className="object-cover group-hover:opacity-90 transition-opacity"
-              sizes="(max-width: 640px) 96px, (max-width: 768px) 33vw, 25vw"
+              sizes="(max-width: 640px) 96px, (max-width: 768px) 112px, 128px"
             />
           </div>
         </Link>
@@ -123,9 +123,9 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
             </div>
           </div>
 
-          {/* 简介 - 仅在桌面端显示 */}
-          <p className="hidden sm:block text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2">
-            {truncateBlurb(blurb, 100)}
+          {/* 简介 */}
+          <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2 sm:line-clamp-3">
+            {truncateBlurb(blurb, 150)}
           </p>
 
           {/* 标签 */}
