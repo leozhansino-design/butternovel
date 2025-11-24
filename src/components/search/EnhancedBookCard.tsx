@@ -30,6 +30,7 @@ interface EnhancedBookCardProps {
   status: string
   category: Category
   tags: Tag[]
+  tagsCount: number // 添加tags总数
   chaptersCount: number
 }
 
@@ -46,6 +47,7 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
   status,
   category,
   tags,
+  tagsCount,
   chaptersCount,
 }: EnhancedBookCardProps) {
   // 格式化数字（K/M）
@@ -73,7 +75,8 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
   }
 
   const displayedTags = calculateDisplayTags()
-  const remainingTagsCount = tags.length - displayedTags.length
+  // 使用实际的tags总数而不是返回的tags数组长度
+  const remainingTagsCount = tagsCount - displayedTags.length
 
   // 状态显示文本
   const statusText = status === 'COMPLETED' ? 'Completed' : 'Ongoing'

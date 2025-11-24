@@ -305,7 +305,7 @@ export async function GET(request: Request) {
           name: true,
           slug: true,
         },
-        take: 5, // 只返回前5个标签
+        take: 5, // 只返回前5个标签用于显示
       },
       _count: {
         select: {
@@ -313,6 +313,7 @@ export async function GET(request: Request) {
             where: { isPublished: true },
           },
           likes: true,
+          tags: true, // 添加tags总数统计
         },
       },
     }
@@ -380,6 +381,7 @@ export async function GET(request: Request) {
       totalRatings: novel.totalRatings,
       category: novel.category,
       tags: novel.tags || [],
+      tagsCount: novel._count.tags, // 添加tags总数
       chaptersCount: novel._count.chapters,
       likesCount: novel._count.likes,
     }))

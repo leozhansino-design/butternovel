@@ -34,6 +34,7 @@ interface Novel {
   totalRatings: number
   category: Category
   tags: Tag[]
+  tagsCount: number // 添加tags总数
   chaptersCount: number
   likesCount: number
 }
@@ -276,6 +277,7 @@ function SearchContent() {
                   status={novel.status}
                   category={novel.category}
                   tags={novel.tags}
+                  tagsCount={novel.tagsCount}
                   chaptersCount={novel.chaptersCount}
                 />
               ))}
