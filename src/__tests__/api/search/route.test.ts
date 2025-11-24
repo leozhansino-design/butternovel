@@ -55,7 +55,9 @@ describe('Search API - /api/search', () => {
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.set(key, value)
     })
-    return new NextRequest(url)
+    // Create a Request object and then convert to NextRequest
+    const request = new Request(url.toString())
+    return request as NextRequest
   }
 
   const mockNovel = {
@@ -86,6 +88,7 @@ describe('Search API - /api/search', () => {
     _count: {
       chapters: 50,
       likes: 100,
+      tags: 2, // 添加tags总数
     },
   }
 
@@ -709,6 +712,7 @@ describe('Search API - /api/search', () => {
       expect(novel).toHaveProperty('totalRatings')
       expect(novel).toHaveProperty('category')
       expect(novel).toHaveProperty('tags')
+      expect(novel).toHaveProperty('tagsCount')
       expect(novel).toHaveProperty('chaptersCount')
       expect(novel).toHaveProperty('likesCount')
     })
@@ -749,6 +753,48 @@ describe('Search API - /api/search', () => {
           select: expect.objectContaining({
             tags: expect.objectContaining({
               take: 5,
+            }),
+          }),
+        })
+      )
+    })
+
+    it('should include tagsCount in response', async () => {
+      const novelWith15Tags = {
+        ...mockNovel,
+        _count: {
+          ...mockNovel._count,
+          tags: 15, // 实际有15个tags
+        },
+      }
+      mockPrisma.novel.findMany.mockResolvedValue([novelWith15Tags])
+      mockPrisma.novel.count.mockResolvedValue(1)
+
+      const request = createRequest()
+      const response = await GET(request)
+      const data = await response.json()
+
+      expect(data.success).toBe(true)
+      expect(data.data.novels[0].tagsCount).toBe(15)
+      // Tags array should be limited to 5, but tagsCount shows the real total
+      expect(data.data.novels[0].tags.length).toBeLessThanOrEqual(5)
+    })
+
+    it('should count tags in _count select', async () => {
+      mockPrisma.novel.findMany.mockResolvedValue([mockNovel])
+      mockPrisma.novel.count.mockResolvedValue(1)
+
+      const request = createRequest()
+      await GET(request)
+
+      // Verify that tags count is requested in the select
+      expect(mockPrisma.novel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({
+            _count: expect.objectContaining({
+              select: expect.objectContaining({
+                tags: true,
+              }),
             }),
           }),
         })
