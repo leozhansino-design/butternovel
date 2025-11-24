@@ -28,6 +28,17 @@ export interface HomePageData {
     blurb: string;
     categoryName: string;
   }>;
+  trending: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    coverImage: string;
+    blurb: string;
+    categoryName: string;
+    status: string;
+    chaptersCount: number;
+    rating: number | null;
+  }>;
   categories: Array<{
     id: number;
     name: string;
@@ -64,7 +75,10 @@ export async function getHomePageData(): Promise<HomePageData> {
   try {
     console.log('[Homepage] 📊 Fetching fresh data from database');
 
-    // 1. 获取精选小说
+    // 1. 获取热门推荐小说（用于轮播）
+    const trending = await getTrendingNovels();
+
+    // 2. 获取精选小说
     const featured = await withRetry(() =>
       prisma.$queryRaw<Array<{
         id: number;
@@ -188,12 +202,13 @@ export async function getHomePageData(): Promise<HomePageData> {
 
     const data: HomePageData = {
       featured,
+      trending,
       categories,
       categoryNovels,
       timestamp: Date.now()
     };
 
-    console.log(`[Homepage] ✅ Data prepared: ${featured.length} featured, ${categories.length} categories`);
+    console.log(`[Homepage] ✅ Data prepared: ${trending.length} trending, ${featured.length} featured, ${categories.length} categories`);
 
     const totalDuration = Date.now() - totalStartTime;
     console.log(`[Homepage] 🏁 getHomePageData complete (total: ${totalDuration}ms)`);
@@ -205,6 +220,7 @@ export async function getHomePageData(): Promise<HomePageData> {
     // 返回空数据而不是抛出错误，避免整个页面崩溃
     return {
       featured: [],
+      trending: [],
       categories: [],
       categoryNovels: {},
       timestamp: Date.now()
@@ -222,4 +238,69 @@ export async function invalidateHomePageCache(): Promise<void> {
   const { revalidatePath } = await import('next/cache');
   revalidatePath('/', 'page');
   console.log('[Homepage] ✅ ISR cache invalidated for homepage');
+}
+
+/**
+ * 获取热门推荐小说
+ *
+ * 用于首页轮播展示
+ * - 获取18本最热小说
+ * - 按热度排序(浏览量 + 点赞数 * 10)
+ * - 只选择有封面和简介的小说
+ */
+export async function getTrendingNovels(): Promise<Array<{
+  id: number;
+  title: string;
+  slug: string;
+  coverImage: string;
+  blurb: string;
+  categoryName: string;
+  status: string;
+  chaptersCount: number;
+  rating: number | null;
+}>> {
+  try {
+    console.log('[Trending] 🔥 Fetching trending novels');
+
+    const trending = await withRetry(() =>
+      prisma.$queryRaw<Array<{
+        id: number;
+        title: string;
+        slug: string;
+        coverImage: string;
+        blurb: string;
+        categoryName: string;
+        status: string;
+        chaptersCount: number;
+        rating: number | null;
+      }>>`
+        SELECT
+          n.id,
+          n.title,
+          n.slug,
+          n."coverImage",
+          n.blurb,
+          n.status,
+          c.name as "categoryName",
+          (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+          n."averageRating" as rating
+        FROM "Novel" n
+        INNER JOIN "Category" c ON n."categoryId" = c.id
+        WHERE n."isPublished" = true
+          AND n."isBanned" = false
+          AND n."coverImage" IS NOT NULL
+          AND n."coverImage" != ''
+          AND n.blurb IS NOT NULL
+          AND n.blurb != ''
+        ORDER BY (n."viewCount" + n."likeCount" * 10) DESC
+        LIMIT 18
+      `
+    ) as any[];
+
+    console.log(`[Trending] ✅ Fetched ${trending.length} trending novels`);
+    return trending;
+  } catch (error) {
+    console.error('[Trending] 🚨 Error fetching trending novels:', error);
+    return [];
+  }
 }
