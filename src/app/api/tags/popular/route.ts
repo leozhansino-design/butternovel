@@ -24,27 +24,32 @@ import { withRetry } from '@/lib/db-retry'
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const categoryName = searchParams.get('category')
+    const categoryParam = searchParams.get('genre') || searchParams.get('category')
     const limit = Math.min(parseInt(searchParams.get('limit') || '15'), 50)
 
     let tags: Array<{ id: string; name: string; slug: string; count: number }>
 
-    if (categoryName) {
+    if (categoryParam) {
       // 获取特定分类下的热门标签
       // 查找该分类下的所有小说，然后统计其标签
       const category = await withRetry(
-        () => prisma.category.findUnique({
-          where: { name: categoryName },
+        () => prisma.category.findFirst({
+          where: {
+            OR: [
+              { slug: { equals: categoryParam, mode: 'insensitive' } },
+              { name: { equals: categoryParam, mode: 'insensitive' } }
+            ]
+          },
           select: { id: true }
         }),
-        { operationName: 'Find category by name' }
+        { operationName: 'Find category by slug or name' }
       ) as { id: number } | null
 
       if (!category) {
         return NextResponse.json(
           {
             success: false,
-            error: `Category '${categoryName}' not found`
+            error: `Category '${categoryParam}' not found`
           },
           { status: 404 }
         )

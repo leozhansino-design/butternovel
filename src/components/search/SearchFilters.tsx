@@ -68,7 +68,7 @@ export default function SearchFilters({
           const params = new URLSearchParams()
           params.set('tags', selectedTags.join(','))
           if (selectedCategory) {
-            params.set('category', selectedCategory)
+            params.set('genre', selectedCategory)
           }
           params.set('limit', '15')
 
@@ -109,7 +109,7 @@ export default function SearchFilters({
 
             if (stillMissingSlugs.length > 0) {
               const popularResponse = await fetch(
-                `/api/tags/popular?limit=50${selectedCategory ? `&category=${selectedCategory}` : ''}`
+                `/api/tags/popular?limit=50${selectedCategory ? `&genre=${selectedCategory}` : ''}`
               )
               const popularData = await popularResponse.json()
               if (popularData.success) {
@@ -132,7 +132,7 @@ export default function SearchFilters({
           // 未选标签，获取热门标签
           const params = new URLSearchParams()
           if (selectedCategory) {
-            params.set('category', selectedCategory)
+            params.set('genre', selectedCategory)
           }
           params.set('limit', '15')
 
