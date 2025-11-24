@@ -79,21 +79,33 @@ export default function SearchFilters({
             tags = data.data || []
           }
 
-          // 获取已选标签的完整信息并添加到列表前面
-          const selectedTagsResponse = await fetch(
-            `/api/tags/popular?limit=50${selectedCategory ? `&category=${selectedCategory}` : ''}`
+          // 从当前可用标签中找出已选的标签（确保所有已选标签都保留）
+          const selectedTagObjects = availableTags.filter((tag: Tag) =>
+            selectedTags.includes(tag.slug)
           )
-          const selectedTagsData = await selectedTagsResponse.json()
-          if (selectedTagsData.success) {
-            const selectedTagObjects = selectedTagsData.data.filter((tag: Tag) =>
-              selectedTags.includes(tag.slug)
+
+          // 如果有已选标签在当前列表中找不到，从popular中补充
+          const foundSlugs = selectedTagObjects.map((t: Tag) => t.slug)
+          const missingSlugs = selectedTags.filter(slug => !foundSlugs.includes(slug))
+
+          if (missingSlugs.length > 0) {
+            const popularResponse = await fetch(
+              `/api/tags/popular?limit=50${selectedCategory ? `&category=${selectedCategory}` : ''}`
             )
-            // 过滤掉相关标签中已包含的已选标签（去重）
-            const selectedSlugs = selectedTagObjects.map((t: Tag) => t.slug)
-            const uniqueRelatedTags = tags.filter((t: Tag) => !selectedSlugs.includes(t.slug))
-            // 将已选标签放在前面，然后是去重后的相关标签
-            tags = [...selectedTagObjects, ...uniqueRelatedTags]
+            const popularData = await popularResponse.json()
+            if (popularData.success) {
+              const missingTags = popularData.data.filter((tag: Tag) =>
+                missingSlugs.includes(tag.slug)
+              )
+              selectedTagObjects.push(...missingTags)
+            }
           }
+
+          // 过滤掉相关标签中已包含的已选标签（去重）
+          const selectedSlugs = selectedTagObjects.map((t: Tag) => t.slug)
+          const uniqueRelatedTags = tags.filter((t: Tag) => !selectedSlugs.includes(t.slug))
+          // 将已选标签放在前面，然后是去重后的相关标签
+          tags = [...selectedTagObjects, ...uniqueRelatedTags]
         } else {
           // 未选标签，获取热门标签
           const params = new URLSearchParams()
