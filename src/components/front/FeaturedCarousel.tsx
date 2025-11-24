@@ -1,7 +1,7 @@
 // src/components/front/FeaturedCarousel.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -17,55 +17,67 @@ interface Book {
 }
 
 export default function FeaturedCarousel({ books }: { books: Book[] }) {
-  const [scrollPosition, setScrollPosition] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [booksPerView, setBooksPerView] = useState(8);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // 📱 响应式：根据屏幕宽度自适应显示数量
-  useEffect(() => {
-    const updateBooksPerView = () => {
-      const width = window.innerWidth;
-      if (width < 640) {
-        // 移动端：显示3本
-        setBooksPerView(3);
-      } else if (width < 768) {
-        // 平板小屏：显示4本
-        setBooksPerView(4);
-      } else if (width < 1024) {
-        // 平板大屏：显示6本
-        setBooksPerView(6);
-      } else {
-        // 桌面端：显示8本
-        setBooksPerView(8);
-      }
-    };
+  // 检查滚动状态
+  const checkScrollPosition = () => {
+    if (!trackRef.current) return;
 
-    updateBooksPerView();
-    window.addEventListener('resize', updateBooksPerView);
-    return () => window.removeEventListener('resize', updateBooksPerView);
-  }, []);
-
-  const maxScroll = Math.max(0, books.length - booksPerView);
-
-  useEffect(() => {
-    if (isPaused || maxScroll === 0) return;
-
-    const interval = setInterval(() => {
-      setScrollPosition((prev) => {
-        const next = prev + 1;
-        return next > maxScroll ? 0 : next;
-      });
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [isPaused, maxScroll]);
-
-  const scrollLeft = () => {
-    setScrollPosition((prev) => Math.max(0, prev - booksPerView));
+    const { scrollLeft, scrollWidth, clientWidth } = trackRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
   };
 
-  const scrollRight = () => {
-    setScrollPosition((prev) => Math.min(maxScroll, prev + booksPerView));
+  useEffect(() => {
+    checkScrollPosition();
+    const track = trackRef.current;
+    if (track) {
+      track.addEventListener('scroll', checkScrollPosition);
+      window.addEventListener('resize', checkScrollPosition);
+      return () => {
+        track.removeEventListener('scroll', checkScrollPosition);
+        window.removeEventListener('resize', checkScrollPosition);
+      };
+    }
+  }, [books]);
+
+  // 自动滚动
+  useEffect(() => {
+    if (isPaused || !trackRef.current) return;
+
+    const interval = setInterval(() => {
+      if (trackRef.current) {
+        const cardWidth = 150 + 16; // 卡片宽度 + gap
+        const currentScroll = trackRef.current.scrollLeft;
+        const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
+
+        if (currentScroll >= maxScroll - 10) {
+          // 滚动到末尾，回到开始
+          trackRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          // 继续滚动
+          trackRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  // 滚动一本书的宽度
+  const scrollByOneCard = (direction: 'left' | 'right') => {
+    if (!trackRef.current) return;
+
+    const cardWidth = 150 + 16; // 卡片宽度 + gap
+    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+
+    trackRef.current.scrollBy({
+      left: scrollAmount,
+      behavior: 'smooth'
+    });
   };
 
   return (
@@ -75,117 +87,95 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* 标题区域 - 使用container保持固定边距 */}
-      <div className="container mx-auto px-6 lg:px-8 xl:px-12 max-w-[1920px] mb-4 sm:mb-6">
-        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+      <div className="container mx-auto px-6 lg:px-8 xl:px-12 max-w-[1920px] mb-4 sm:mb-6 md:mb-8">
+        <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
           Featured Novels
         </h2>
       </div>
 
       {/* 轮播区域 - 延伸到屏幕边缘 */}
       <div className="relative">
-        {scrollPosition > 0 && (
+        {/* 左边缘渐变遮罩 */}
+        <div className="absolute left-0 top-0 bottom-0 w-12 lg:w-16 xl:w-20 bg-gradient-to-r from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" />
+
+        {/* 右边缘渐变遮罩 */}
+        <div className="absolute right-0 top-0 bottom-0 w-12 lg:w-16 xl:w-20 bg-gradient-to-l from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" />
+
+        {/* 左导航按钮 */}
+        {canScrollLeft && (
           <button
-            onClick={scrollLeft}
-            className="absolute left-4 lg:left-6 xl:left-8 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
-            aria-label="Scroll left"
+            onClick={() => scrollByOneCard('left')}
+            className="hidden md:flex absolute left-4 lg:left-6 xl:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            aria-label="Previous"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         )}
 
-        <div className="overflow-hidden px-6 lg:px-8 xl:px-12">
-          <div
-            className="flex transition-transform duration-500 ease-out gap-3 sm:gap-4 md:gap-5"
-            style={{
-              transform: `translateX(-${scrollPosition * (100 / booksPerView)}%)`
-            }}
-          >
-            {books.map((book) => (
-              <div
-                key={book.id}
-                className="flex-shrink-0"
-                style={{ width: `${100 / booksPerView}%` }}
-              >
-                <Link
-                  href={`/novels/${book.slug}`}
-                  className="group block"
-                >
-                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-md hover:shadow-xl transition-shadow duration-300">
-                    <Image
-                      src={book.coverImage}
-                      alt={book.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="12.5vw"
-                    />
-                    <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-black/10 pointer-events-none" />
-                  </div>
-
-                  <div className="mt-2 space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded-full">
-                        {book.category.name}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ⭐ 关键修改：固定高度容器 + 精确行高 + 省略号 */}
-                  <h3 
-                    className="text-xs font-semibold text-gray-900 mt-1 group-hover:text-purple-600 transition-colors"
-                    style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      lineHeight: '1.2rem',
-                      height: '2.4rem',
-                    }}
-                  >
-                    {book.title}
-                  </h3>
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {scrollPosition < maxScroll && (
+        {/* 右导航按钮 */}
+        {canScrollRight && (
           <button
-            onClick={scrollRight}
-            className="absolute right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
-            aria-label="Scroll right"
+            onClick={() => scrollByOneCard('right')}
+            className="hidden md:flex absolute right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            aria-label="Next"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         )}
-      </div>
 
-      {/* 指示器 - 使用container保持居中 */}
-      {maxScroll > 0 && (
-        <div className="container mx-auto px-6 lg:px-8 xl:px-12 max-w-[1920px] mt-4 sm:mt-6">
-          <div className="flex justify-center items-center gap-1 sm:gap-1.5">
-            {Array.from({ length: Math.ceil(books.length / booksPerView) }).map((_, index) => {
-              const isActive = Math.floor(scrollPosition / booksPerView) === index;
-              return (
-                <button
-                  key={index}
-                  onClick={() => setScrollPosition(index * booksPerView)}
-                  className={`transition-all duration-300 rounded-full ${
-                    isActive
-                      ? 'w-6 h-1.5 bg-purple-600'
-                      : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'
-                  }`}
-                  aria-label={`Go to group ${index + 1}`}
+        {/* 小说列表 - 横向滚动 */}
+        <div
+          ref={trackRef}
+          className="flex gap-3 sm:gap-4 md:gap-5 pl-6 lg:pl-8 xl:pl-12 pr-6 lg:pr-8 xl:pr-12 overflow-x-auto scrollbar-hide scroll-smooth"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
+          {books.map((book) => (
+            <Link
+              key={book.id}
+              href={`/novels/${book.slug}`}
+              className="group block flex-shrink-0"
+              style={{ width: '150px' }}
+            >
+              {/* 封面容器 */}
+              <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-shadow"
+                   style={{ aspectRatio: '2/3' }}>
+                <Image
+                  src={book.coverImage}
+                  alt={book.title}
+                  fill
+                  sizes="150px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-              );
-            })}
-          </div>
+              </div>
+
+              {/* 标题 */}
+              <h3
+                className="mt-2 font-medium text-gray-900 group-hover:text-amber-600 transition-colors"
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.4',
+                  height: '2.8em',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  wordBreak: 'break-word'
+                }}
+              >
+                {book.title}
+              </h3>
+            </Link>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
