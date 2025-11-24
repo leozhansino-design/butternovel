@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { CATEGORIES } from '@/lib/constants'
 
 interface Category {
   id: number
@@ -40,21 +41,16 @@ export default function SearchFilters({
   onSortChange,
   onClearAll,
 }: SearchFiltersProps) {
-  const [categories, setCategories] = useState<Category[]>([])
+  // Use static categories from constants to ensure consistency with Header/Footer
+  const [categories] = useState<Category[]>(
+    CATEGORIES.map((cat, index) => ({
+      id: index + 1,
+      name: cat.name,
+      slug: cat.slug,
+    }))
+  )
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [loadingTags, setLoadingTags] = useState(false)
-
-  // 加载分类列表
-  useEffect(() => {
-    fetch('/api/categories')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setCategories(data.data || [])
-        }
-      })
-      .catch((err) => console.error('Failed to fetch categories:', err))
-  }, [])
 
   // 加载热门标签或相关标签（智能联动）
   useEffect(() => {
@@ -186,12 +182,12 @@ export default function SearchFilters({
   return (
     <div className="bg-white sticky top-0 z-10 shadow-sm">
       <div className="container mx-auto px-4 max-w-7xl py-4">
-        {/* 第一行：分类筛选 */}
+        {/* Category filters - wrap to multiple rows */}
         <div className="mb-4">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => onCategoryChange('')}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 !selectedCategory
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -203,7 +199,7 @@ export default function SearchFilters({
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.slug)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   selectedCategory === cat.slug
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -231,17 +227,16 @@ export default function SearchFilters({
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+            <div className="flex items-center gap-2 flex-wrap max-h-[120px] overflow-y-auto">
               {availableTags.map((tag) => (
                 <button
                   key={tag.id}
                   onClick={() => handleTagClick(tag.slug)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     selectedTags.includes(tag.slug)
                       ? 'bg-blue-600 text-white font-medium'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
-
                 >
                   {tag.name}
                 </button>

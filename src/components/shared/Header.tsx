@@ -56,7 +56,10 @@ export default function Header() {
               {/* Logo */}
               <Link href="/" className="flex items-center gap-2 hover:opacity-70 transition-opacity flex-shrink-0">
                 <div className="text-xl">🧈</div>
-                <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent tracking-tight">ButterNovel</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent tracking-tight">ButterNovel</span>
+                  <span className="text-[10px] text-blue-600/70 font-medium tracking-wide">100% Free Forever</span>
+                </div>
               </Link>
 
               {/* Desktop Navigation */}
