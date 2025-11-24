@@ -1,6 +1,6 @@
 'use client'
 // src/components/novel/RatingModal.tsx
-// 评分 Modal 组件
+// Rating Modal component
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -92,7 +92,7 @@ export default function RatingModal({
     setShowLibraryModal(true)
   }
 
-  // ✅ 获取用户评分状态 - 将逻辑移到 useEffect 内部，避免依赖问题
+  // Get user rating status - move logic into useEffect to avoid dependency issues
   useEffect(() => {
     if (isOpen && userId) {
       const fetchUserRating = async () => {
@@ -112,7 +112,7 @@ export default function RatingModal({
     }
   }, [isOpen, userId, novelId])
 
-  // 🔧 FIX: 使用 useCallback 防止无限循环
+  // FIX: Use useCallback to prevent infinite loop
   const fetchRatings = useCallback(async (pageNum: number, sort?: 'likes' | 'newest') => {
     setLoading(true)
     try {
@@ -135,7 +135,7 @@ export default function RatingModal({
     }
   }, [novelId, sortBy])
 
-  // ✅ 初始加载评分列表
+  // Initial load of rating list
   useEffect(() => {
     if (isOpen) {
       fetchRatings(1)
@@ -149,24 +149,24 @@ export default function RatingModal({
     }
   }, [sortBy, isOpen, fetchRatings])
 
-  // 防止背景滚动 - Prevent background scroll when modal is open
+  // Prevent background scroll when modal is open
   useEffect(() => {
     if (isOpen) {
-      // 保存原始的 overflow 值
+      // Save original overflow value
       const originalOverflow = document.body.style.overflow
       const originalPaddingRight = document.body.style.paddingRight
 
-      // 计算滚动条宽度，防止内容抖动
+      // Calculate scrollbar width to prevent content shift
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
 
-      // 锁定滚动
+      // Lock scroll
       document.body.style.overflow = 'hidden'
-      // 如果有滚动条，添加 padding 防止内容位移
+      // If scrollbar exists, add padding to prevent content shift
       if (scrollbarWidth > 0) {
         document.body.style.paddingRight = `${scrollbarWidth}px`
       }
 
-      // 清理函数：modal 关闭时恢复滚动
+      // Cleanup: restore scroll when modal closes
       return () => {
         document.body.style.overflow = originalOverflow
         document.body.style.paddingRight = originalPaddingRight
@@ -178,12 +178,12 @@ export default function RatingModal({
     if (hasRated) return
 
     if (!userId) {
-      // 未登录，打开登录modal而不是直接跳转
+      // Not logged in, open login modal instead of direct redirect
       setShowAuthModal(true)
       return
     }
 
-    // 只设置评分，显示评论输入框，不自动提交
+    // Only set rating, show comment input, don't auto-submit
     setUserRating(score)
     setShowReviewInput(true)
   }
@@ -208,10 +208,10 @@ export default function RatingModal({
       const data = await res.json()
       setHasRated(true)
 
-      // 刷新评分列表
+      // Refresh rating list
       fetchRatings(1)
 
-      // 刷新页面以更新统计
+      // Refresh page to update statistics
       router.refresh()
     } catch (error) {
       console.error('Error submitting rating:', error)
@@ -228,7 +228,7 @@ export default function RatingModal({
     setShowReviewInput(false)
   }
 
-  // 处理点赞
+  // Handle like
   const handleLike = async (ratingId: string, currentLiked: boolean) => {
     try {
       const res = await fetch(`/api/ratings/${ratingId}/like`, {
@@ -238,7 +238,7 @@ export default function RatingModal({
       if (res.ok) {
         const data = await res.json()
 
-        // ✅ FIX: 验证 API 返回的数据结构，防止 undefined 错误
+        // FIX: Validate API response data structure to prevent undefined errors
         if (data && typeof data.likeCount === 'number' && typeof data.liked === 'boolean') {
           // 更新ratings列表中的点赞状态
           setRatings(prevRatings =>

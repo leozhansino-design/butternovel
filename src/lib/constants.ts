@@ -23,6 +23,7 @@ export const CATEGORIES = [
   { name: 'Reborn', slug: 'reborn', order: 13 },
   { name: 'Revenge', slug: 'revenge', order: 14 },
   { name: 'Fanfiction', slug: 'fanfiction', order: 15 },
+  { name: 'Humor', slug: 'humor', order: 16 },
 ] as const
 
 /**

@@ -1,5 +1,5 @@
 // src/components/novel/ChapterPreview.tsx
-// 第一章预览组件 - 只显示 200-300 字，带渐变效果
+// First chapter preview component - shows 200-300 characters with gradient effect
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
@@ -27,11 +27,11 @@ async function getChapterContent(chapterId: number) {
 }
 
 /**
- * 截取指定字数（中文字符数）
- * 中文字符算1个字，英文单词算1个字
+ * Truncate to specified character count
+ * Chinese characters count as 1, English words count as 1
  */
 function truncateByWords(text: string, wordCount: number): string {
-  // 移除多余的空白字符
+  // Remove extra whitespace
   const cleaned = text.trim()
 
   let count = 0
@@ -40,15 +40,15 @@ function truncateByWords(text: string, wordCount: number): string {
   for (let i = 0; i < cleaned.length; i++) {
     const char = cleaned[i]
 
-    // 中文字符（CJK统一表意文字）
+    // Chinese characters (CJK Unified Ideographs)
     if (/[\u4e00-\u9fa5]/.test(char)) {
       count++
       result += char
       if (count >= wordCount) break
     }
-    // 英文字符
+    // English characters
     else if (/[a-zA-Z]/.test(char)) {
-      // 读取整个英文单词
+      // Read entire English word
       let word = char
       while (i + 1 < cleaned.length && /[a-zA-Z]/.test(cleaned[i + 1])) {
         i++
@@ -58,7 +58,7 @@ function truncateByWords(text: string, wordCount: number): string {
       result += word
       if (count >= wordCount) break
     }
-    // 其他字符（标点、空格等）直接添加
+    // Other characters (punctuation, spaces, etc.) add directly
     else {
       result += char
     }
@@ -79,14 +79,14 @@ export default async function ChapterPreview({
     return null
   }
 
-  // 截取 250 字左右
+  // Truncate to around 250 characters
   const preview = truncateByWords(content, 250)
 
   return (
     <section className="py-16">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          {/* 章节标题 */}
+          {/* Chapter title */}
           <div className="mb-10">
             <div className="text-sm text-blue-600 mb-2 font-semibold tracking-wider">
               CHAPTER {chapterNumber}
@@ -96,20 +96,20 @@ export default async function ChapterPreview({
             </h3>
           </div>
 
-          {/* 内容预览区域 - 带渐变遮罩 */}
+          {/* Content preview area - with gradient mask */}
           <div className="relative">
-            {/* 预览内容 */}
+            {/* Preview content */}
             <div className="prose prose-lg max-w-none">
               <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {preview}
               </div>
             </div>
 
-            {/* 渐变遮罩效果 - 向下淡出 */}
+            {/* Gradient mask effect - fade out downward */}
             <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none" />
           </div>
 
-          {/* Continue Reading 按钮 - 蓝色主题 */}
+          {/* Continue Reading button - blue theme */}
           <div className="mt-10 text-center">
             <Link
               href={`/novels/${novelSlug}/chapters/${chapterNumber}`}

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Archive, X } from 'lucide-react';
 
 interface NotificationItemProps {
@@ -10,7 +10,7 @@ interface NotificationItemProps {
   onArchive: () => void;
 }
 
-// 判断是否为作者通知
+// Check if this is an author notification
 function isAuthorNotification(type: string): boolean {
   const authorTypes = ['NOVEL_RATING', 'NOVEL_COMMENT'];
   return authorTypes.includes(type);
@@ -22,9 +22,9 @@ export default function NotificationItem({
 }: NotificationItemProps) {
   const router = useRouter();
 
-  // 点击通知内容 - 仅标记已读并跳转
+  // Click notification content - mark as read and navigate
   const handleClick = async () => {
-    // 标记为已读
+    // Mark as read
     if (!notification.isRead) {
       try {
         await fetch(`/api/notifications/${notification.id}/read`, {
@@ -35,15 +35,15 @@ export default function NotificationItem({
       }
     }
 
-    // 跳转链接
+    // Navigate to link
     if (notification.linkUrl) {
       router.push(notification.linkUrl);
     }
   };
 
-  // 归档通知
+  // Archive notification
   const handleArchive = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // 阻止事件冒泡
+    e.stopPropagation(); // Prevent event bubbling
     try {
       await fetch(`/api/notifications/${notification.id}/archive`, {
         method: 'POST',
@@ -57,7 +57,7 @@ export default function NotificationItem({
   const isAuthor = isAuthorNotification(notification.type);
   const timeAgo = formatDistanceToNow(new Date(notification.createdAt), {
     addSuffix: true,
-    locale: zhCN,
+    locale: enUS,
   });
 
   return (
@@ -73,7 +73,7 @@ export default function NotificationItem({
       }`}
     >
       <div className="flex items-start gap-3">
-        {/* 头像/图标 */}
+        {/* Avatar/Icon */}
         <div
           onClick={handleClick}
           className="cursor-pointer flex-shrink-0"
@@ -91,14 +91,14 @@ export default function NotificationItem({
           )}
         </div>
 
-        {/* 内容 */}
+        {/* Content */}
         <div
           onClick={handleClick}
           className="flex-1 min-w-0 cursor-pointer"
         >
           {isAuthor && (
             <span className="inline-block text-xs text-amber-600 dark:text-amber-400 font-semibold mb-1">
-              ✍️ 作者通知
+              ✍️ Author Notification
             </span>
           )}
 

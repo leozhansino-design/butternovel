@@ -1,4 +1,4 @@
-// src/components/front/CategorySection.tsx - 优化版
+// src/components/front/CategorySection.tsx - optimized version
 import BookCard from './BookCard'
 import Link from 'next/link'
 
@@ -24,7 +24,7 @@ export default function CategorySection({
 }: CategorySectionProps) {
   return (
     <section className="w-full">
-      {/* Section Header - 📱 优化移动端spacing */}
+      {/* Section Header - mobile-optimized spacing */}
       <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
           {title}
@@ -49,7 +49,7 @@ export default function CategorySection({
         )}
       </div>
 
-      {/* Books Grid - 📱 优化移动端间距 */}
+      {/* Books Grid - mobile-optimized spacing */}
       {books.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
           {books.map((book) => (

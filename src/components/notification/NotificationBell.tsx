@@ -8,7 +8,7 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState<number | string>(0);
   const [showPanel, setShowPanel] = useState(false);
 
-  // 轮询未读数量（每30秒）
+  // Poll unread count every 30 seconds
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
@@ -29,7 +29,7 @@ export default function NotificationBell() {
 
   const handlePanelClose = () => {
     setShowPanel(false);
-    // 刷新未读数量
+    // Refresh unread count
     fetch('/api/notifications/unread-count')
       .then((res) => res.json())
       .then((data) => setUnreadCount(data.count))

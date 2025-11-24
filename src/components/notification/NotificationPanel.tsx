@@ -19,7 +19,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
     fetchNotifications();
   }, [tab]);
 
-  // 点击外部关闭面板
+  // Close panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
@@ -64,7 +64,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900 dark:text-white">通知</h3>
+        <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
         {tab === 'inbox' && notifications.length > 0 && (
           <button
             onClick={handleArchiveAll}
@@ -102,10 +102,10 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
       {/* Notification List */}
       <div className="max-h-96 overflow-y-auto">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">加载中...</div>
+          <div className="p-8 text-center text-gray-400">Loading...</div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-gray-400">
-            {tab === 'inbox' ? '没有新通知' : '没有归档的通知'}
+            {tab === 'inbox' ? 'No new notifications' : 'No archived notifications'}
           </div>
         ) : (
           notifications.map((notif) => (

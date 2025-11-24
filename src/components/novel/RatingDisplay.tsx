@@ -1,6 +1,6 @@
 'use client'
 // src/components/novel/RatingDisplay.tsx
-// 评分显示组件（封面下方）
+// Rating display component (below cover)
 
 import { useState } from 'react'
 import RatingModal from './RatingModal'
@@ -26,14 +26,14 @@ export default function RatingDisplay({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
 
-  // ✅ 始终显示小说的平均分星星
+  // Always show novel's average rating stars
   const renderStars = (score: number) => {
     const starCount = score / 2 // Convert 2-10 to 1-5 stars
     const fullStars = Math.floor(starCount)
     const hasHalfStar = starCount % 1 >= 0.5
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
 
-    // ✅ 未评分用户hover时高亮星星
+    // Highlight stars on hover for users who haven't rated
     const color = (!hasUserRated && isHovered) ? '#FFA500' : '#FFB800'
     const emptyColor = (!hasUserRated && isHovered) ? '#FFD700' : '#E5E7EB'
 
@@ -85,7 +85,7 @@ export default function RatingDisplay({
     <>
       <div className="mt-4">
         <div className="text-center">
-          {/* ✅ 星星区域：始终显示平均分，未评分用户hover有效果 */}
+          {/* Star area: always show average rating, hover effect for unrated users */}
           <div
             className="flex items-center justify-center gap-1 mb-2 cursor-pointer transition-transform hover:scale-[1.05] active:scale-[0.98]"
             onMouseEnter={() => !hasUserRated && setIsHovered(true)}
@@ -95,7 +95,7 @@ export default function RatingDisplay({
             {renderStars(averageRating)}
           </div>
 
-          {/* 评分数字和统计 */}
+          {/* Rating number and statistics */}
           <div className="flex items-center justify-center gap-2">
             <span className="text-2xl font-bold text-gray-900">
               {totalRatings > 0 ? averageRating.toFixed(1) : '-'}

@@ -1,5 +1,5 @@
 // src/components/front/CompactNovelCard.tsx
-// 简化的小说卡片组件 - 用于横向滚动分类区
+// Simplified novel card component - for horizontal scroll category area
 'use client';
 
 import { memo } from 'react';
@@ -31,10 +31,10 @@ const CompactNovelCard = memo(function CompactNovelCard({
       className="group block flex-shrink-0"
       style={{ width: '150px' }}
     >
-      {/* 封面容器 */}
+      {/* Cover container */}
       <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-shadow"
            style={{ aspectRatio: '2/3' }}>
-        {/* 评分徽章 - 简约大气设计 */}
+        {/* Rating badge - elegant design */}
         {showRating && (
           <div className="absolute top-2 left-2 z-10 bg-white/95 backdrop-blur-sm text-gray-900 px-2.5 py-1 rounded-md shadow-lg flex items-center gap-1.5 border border-gray-100"
                style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '-0.01em' }}>
@@ -45,7 +45,7 @@ const CompactNovelCard = memo(function CompactNovelCard({
           </div>
         )}
 
-        {/* 封面图片 */}
+        {/* Cover image */}
         <Image
           src={cover}
           alt={title}
@@ -55,7 +55,7 @@ const CompactNovelCard = memo(function CompactNovelCard({
         />
       </div>
 
-      {/* 标题 */}
+      {/* Title */}
       <h3
         className="mt-2 font-semibold text-gray-900 group-hover:text-amber-600 transition-colors"
         style={{

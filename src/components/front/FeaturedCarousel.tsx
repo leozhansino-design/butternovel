@@ -22,7 +22,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // 检查滚动状态
+  // Check scroll position
   const checkScrollPosition = () => {
     if (!trackRef.current) return;
 
@@ -44,21 +44,21 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
     }
   }, [books]);
 
-  // 自动滚动
+  // Auto scroll
   useEffect(() => {
     if (isPaused || !trackRef.current) return;
 
     const interval = setInterval(() => {
       if (trackRef.current) {
-        const cardWidth = 150 + 16; // 卡片宽度 + gap
+        const cardWidth = 150 + 16; // Card width + gap
         const currentScroll = trackRef.current.scrollLeft;
         const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
 
         if (currentScroll >= maxScroll - 10) {
-          // 滚动到末尾，回到开始
+          // Reached end, scroll back to start
           trackRef.current.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          // 继续滚动
+          // Continue scrolling
           trackRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
         }
       }
@@ -67,11 +67,11 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
     return () => clearInterval(interval);
   }, [isPaused]);
 
-  // 滚动一本书的宽度
+  // Scroll by one card width
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
-    const cardWidth = 150 + 16; // 卡片宽度 + gap
+    const cardWidth = 150 + 16; // Card width + gap
     const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
 
     trackRef.current.scrollBy({
@@ -86,22 +86,22 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* 标题区域 - 与第一本书对齐 */}
+      {/* Title area - aligned with first book */}
       <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
           Featured Novels
         </h2>
       </div>
 
-      {/* 轮播区域 - 延伸到屏幕边缘 */}
+      {/* Carousel area - extends to screen edge */}
       <div className="relative">
-        {/* 左边缘渐变遮罩 */}
+        {/* Left edge gradient mask */}
         <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
-        {/* 右边缘渐变遮罩 */}
+        {/* Right edge gradient mask */}
         <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
-        {/* 左导航按钮 */}
+        {/* Left navigation button */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
@@ -115,7 +115,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           </button>
         )}
 
-        {/* 右导航按钮 */}
+        {/* Right navigation button */}
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
@@ -129,7 +129,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           </button>
         )}
 
-        {/* 小说列表 - 横向滚动 */}
+        {/* Novel list - horizontal scroll */}
         <div
           ref={trackRef}
           className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth"
@@ -148,7 +148,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
               className="group block flex-shrink-0"
               style={{ width: '150px' }}
             >
-              {/* 封面容器 */}
+              {/* Cover container */}
               <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-shadow"
                    style={{ aspectRatio: '2/3' }}>
                 <Image
@@ -160,7 +160,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
                 />
               </div>
 
-              {/* 标题 */}
+              {/* Title */}
               <h3
                 className="mt-2 font-semibold text-gray-900 group-hover:text-amber-600 transition-colors"
                 style={{

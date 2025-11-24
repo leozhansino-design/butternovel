@@ -1,5 +1,5 @@
 // src/components/novel/FirstChapterContent.tsx
-// ⚡ 延迟加载组件 - 异步获取章节内容，不阻塞首屏渲染
+// Lazy loading component - async fetch chapter content, doesn't block initial render
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 

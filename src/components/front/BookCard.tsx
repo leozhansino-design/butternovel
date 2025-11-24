@@ -1,5 +1,5 @@
 // src/components/front/BookCard.tsx
-// 🔧 PERFORMANCE: 添加React.memo减少不必要的重渲染
+// PERFORMANCE: Added React.memo to reduce unnecessary re-renders
 import { memo } from 'react'
 import Link from 'next/link'
 import NovelCover from '././NovelCover'
@@ -47,7 +47,7 @@ const BookCard = memo(function BookCard({
           <span className="truncate">{chapters} ch</span>
         </div>
 
-        {/* ⭐ 📱 优化移动端标题显示 */}
+        {/* Mobile-optimized title display */}
         <h3
           className="font-semibold text-[var(--text-primary)] mb-1.5 sm:mb-2 group-hover:text-[#b39320] transition-colors text-sm sm:text-base"
           style={{
