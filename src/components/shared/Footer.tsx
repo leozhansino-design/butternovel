@@ -28,7 +28,7 @@ export default function Footer() {
               <span className="text-lg font-bold text-gray-900">ButterNovel</span>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
-              100% Free Forever. Read thousands of complete stories across all genres—no hidden fees, ever.
+              100% Free Forever. Read millions of free novels across all genres—no hidden fees, ever.
             </p>
           </div>
 
