@@ -31,7 +31,7 @@ export default function TrendingCarousel({
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // 检查滚动状态
+  // Check scroll position
   const checkScrollPosition = () => {
     if (!trackRef.current) return;
 
@@ -53,21 +53,21 @@ export default function TrendingCarousel({
     }
   }, [novels]);
 
-  // 自动播放 - 平滑滚动
+  // Auto play - smooth scrolling
   useEffect(() => {
     if (!isAutoPlaying || !trackRef.current || novels.length === 0) return;
 
     const timer = setInterval(() => {
       if (trackRef.current) {
-        const cardWidth = 500; // 卡片宽度 + gap
+        const cardWidth = 500; // Card width + gap
         const currentScroll = trackRef.current.scrollLeft;
         const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
 
         if (currentScroll >= maxScroll - 10) {
-          // 滚动到末尾，回到开始
+          // Reached end, scroll back to start
           trackRef.current.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          // 继续滚动
+          // Continue scrolling
           trackRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
         }
       }
@@ -76,11 +76,11 @@ export default function TrendingCarousel({
     return () => clearInterval(timer);
   }, [isAutoPlaying, autoPlayInterval, novels.length]);
 
-  // 手动滚动一张卡片
+  // Manually scroll one card
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
-    const cardWidth = 500; // 卡片宽度 + gap
+    const cardWidth = 500; // Card width + gap
     const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
 
     trackRef.current.scrollBy({
@@ -95,7 +95,7 @@ export default function TrendingCarousel({
 
   return (
     <section className="w-full bg-gradient-to-br from-blue-50 via-white to-blue-50/50 py-12 md:py-16 lg:py-20">
-      {/* Section Header - 与CategoryCarousel保持一致 */}
+      {/* Section Header - consistent with CategoryCarousel */}
       <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
@@ -104,19 +104,19 @@ export default function TrendingCarousel({
         </div>
       </div>
 
-      {/* Carousel Wrapper - 延伸到屏幕边缘 */}
+      {/* Carousel Wrapper - extends to screen edge */}
       <div
         className="relative"
         onMouseEnter={() => setIsAutoPlaying(false)}
         onMouseLeave={() => setIsAutoPlaying(true)}
       >
-        {/* 左边缘渐变遮罩 */}
+        {/* Left edge gradient mask */}
         <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
-        {/* 右边缘渐变遮罩 */}
+        {/* Right edge gradient mask */}
         <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
-        {/* 左导航按钮 */}
+        {/* Left navigation button */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
@@ -130,7 +130,7 @@ export default function TrendingCarousel({
           </button>
         )}
 
-        {/* 右导航按钮 */}
+        {/* Right navigation button */}
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
@@ -144,7 +144,7 @@ export default function TrendingCarousel({
           </button>
         )}
 
-        {/* 小说列表 - 横向滚动 */}
+        {/* Novel list - horizontal scroll */}
         <div
           ref={trackRef}
           className="flex gap-5 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth"
@@ -179,7 +179,7 @@ export default function TrendingCarousel({
                         sizes="150px"
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      {/* Rating Badge - 与CompactNovelCard保持一致 */}
+                      {/* Rating Badge - consistent with CompactNovelCard */}
                       {novel.rating && novel.rating > 0 && (
                         <div className="absolute top-2 left-2 z-10 bg-white/95 backdrop-blur-sm text-gray-900 px-2.5 py-1 rounded-md shadow-lg flex items-center gap-1.5 border border-gray-100"
                              style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '-0.01em' }}>
@@ -214,7 +214,7 @@ export default function TrendingCarousel({
                         </span>
                       </div>
 
-                      {/* Blurb - 增加到5行 */}
+                      {/* Blurb - increased to 5 lines */}
                       <p className="text-sm text-gray-700 line-clamp-5 leading-relaxed">
                         {novel.blurb}
                       </p>

@@ -1,5 +1,5 @@
 // src/components/front/CategoryCarousel.tsx
-// 横向滚动分类区组件 - 类似Inkitt风格
+// Horizontal scroll category component - Inkitt style
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -27,7 +27,7 @@ export default function CategoryCarousel({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  // 检查滚动状态
+  // Check scroll position
   const checkScrollPosition = () => {
     if (!trackRef.current) return;
 
@@ -49,11 +49,11 @@ export default function CategoryCarousel({
     }
   }, [books]);
 
-  // 滚动一本书的宽度（卡片宽度 + gap）
+  // Scroll by one book width (card width + gap)
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
-    const cardWidth = 150 + 16; // 卡片宽度 + gap
+    const cardWidth = 150 + 16; // Card width + gap
     const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
 
     trackRef.current.scrollBy({
@@ -68,7 +68,7 @@ export default function CategoryCarousel({
 
   return (
     <section className="w-full">
-      {/* Section Header - 与第一本书对齐 */}
+      {/* Section Header - aligned with first book */}
       <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
@@ -95,15 +95,15 @@ export default function CategoryCarousel({
         </div>
       </div>
 
-      {/* Carousel Wrapper - 延伸到屏幕边缘 */}
+      {/* Carousel Wrapper - extends to screen edge */}
       <div className="relative">
-        {/* 左边缘渐变遮罩 */}
+        {/* Left edge gradient mask */}
         <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
-        {/* 右边缘渐变遮罩 */}
+        {/* Right edge gradient mask */}
         <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
-        {/* 左导航按钮 */}
+        {/* Left navigation button */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
@@ -117,7 +117,7 @@ export default function CategoryCarousel({
           </button>
         )}
 
-        {/* 右导航按钮 */}
+        {/* Right navigation button */}
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
@@ -131,7 +131,7 @@ export default function CategoryCarousel({
           </button>
         )}
 
-        {/* 小说列表 - 横向滚动，延伸到边缘 */}
+        {/* Novel list - horizontal scroll, extends to edge */}
         <div
           ref={trackRef}
           className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth"
