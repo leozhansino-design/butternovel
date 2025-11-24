@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       }
 
       // 获取这些小说关联的标签，并按使用频率排序
-      tags = await withRetry(
+      const tagsWithCount = await withRetry(
         () => prisma.tag.findMany({
           where: {
             novels: {
@@ -102,10 +102,15 @@ export async function GET(request: NextRequest) {
           take: limit
         }),
         { operationName: 'Get popular tags by category' }
-      ) as any[]
+      ) as Array<{
+        id: string
+        name: string
+        slug: string
+        _count: { novels: number }
+      }>
 
       // 格式化响应
-      tags = tags.map(tag => ({
+      tags = tagsWithCount.map(tag => ({
         id: tag.id,
         name: tag.name,
         slug: tag.slug,
