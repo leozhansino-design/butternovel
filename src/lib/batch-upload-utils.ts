@@ -447,3 +447,241 @@ export function calculateTotalWordCount(chapters: ParsedNovel['chapters']): numb
     return total + chineseChars + englishWords
   }, 0)
 }
+
+/**
+ * 解析年龄分级（age.txt）
+ * 支持不同格式，通过关键词匹配
+ */
+export function parseAgeRating(ageContent: string): 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' {
+  const normalized = ageContent.toLowerCase().trim()
+
+  console.log('🔍 [批量上传] 解析年龄分级:', ageContent)
+
+  // 按优先级匹配关键词
+  if (normalized.includes('explicit') || normalized.includes('18+') || normalized.includes('18') || normalized.includes('adult')) {
+    console.log('✅ [批量上传] 匹配到: Explicit 18+')
+    return 'EXPLICIT_18'
+  }
+
+  if (normalized.includes('mature') || normalized.includes('16+') || normalized.includes('16')) {
+    console.log('✅ [批量上传] 匹配到: Mature 16+')
+    return 'MATURE_16'
+  }
+
+  if (normalized.includes('teen') || normalized.includes('13+') || normalized.includes('13')) {
+    console.log('✅ [批量上传] 匹配到: Teen 13+')
+    return 'TEEN_13'
+  }
+
+  if (normalized.includes('all ages') || normalized.includes('all')) {
+    console.log('✅ [批量上传] 匹配到: All Ages')
+    return 'ALL_AGES'
+  }
+
+  // 默认设为 All Ages
+  console.warn('⚠️ [批量上传] 无法识别年龄分级，使用默认值: All Ages')
+  return 'ALL_AGES'
+}
+
+/**
+ * 从文件名提取章节信息
+ * 格式: chapter_{序号}_{章节标题}.txt
+ * 例如: chapter_1_Baton_Pass.txt → { number: 1, title: "Baton Pass" }
+ */
+export function extractChapterInfoFromFilename(filename: string): { number: number; title: string } | null {
+  // 匹配格式: chapter_数字_标题.txt
+  const match = filename.match(/^chapter_(\d+)_(.+)\.txt$/i)
+
+  if (!match) {
+    return null
+  }
+
+  const number = parseInt(match[1], 10)
+  const titleRaw = match[2]
+
+  // 下划线转空格
+  const title = titleRaw.replace(/_/g, ' ')
+
+  console.log(`📖 [批量上传] 章节文件: ${filename} → 第${number}章: "${title}"`)
+
+  return { number, title }
+}
+
+/**
+ * 检查是否为提示词文件（需要忽略）
+ */
+export function isPromptFile(filename: string): boolean {
+  return filename.match(/^chapter_\d+_prompt\.txt$/i) !== null
+}
+
+/**
+ * 扩展的小说上传数据接口（支持独立文件结构）
+ */
+export interface IndividualFilesUploadData {
+  folderName: string
+  coverFile?: File
+  titleFile?: File
+  blurbFile?: File
+  categoryFile?: File
+  tagsFile?: File
+  ageFile?: File
+  chapterFiles: File[]
+  parsed?: ParsedNovel & { contentRating?: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' }
+  validation?: ValidationResult
+}
+
+/**
+ * 从独立文件解析小说数据
+ * 支持的文件结构：
+ * - title.txt: 小说标题
+ * - blurb.txt: 小说简介
+ * - category.txt: 小说类型/分类
+ * - tags.txt: 标签
+ * - age.txt: 年龄分级
+ * - cover.png / cover.jpg / cover_300x400.jpg: 封面图片
+ * - chapter_1_XXX.txt, chapter_2_XXX.txt, ...: 章节正文
+ */
+export async function parseIndividualFiles(data: IndividualFilesUploadData): Promise<ParsedNovel & { contentRating?: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' }> {
+  console.log('📁 [批量上传] 开始解析独立文件结构:', data.folderName)
+
+  // 读取标题
+  if (!data.titleFile) {
+    throw new Error('缺少 title.txt 文件')
+  }
+  const title = (await data.titleFile.text()).trim()
+  console.log(`📌 [批量上传] 标题: ${title}`)
+
+  if (!title) {
+    throw new Error('标题不能为空')
+  }
+
+  // 读取简介
+  if (!data.blurbFile) {
+    throw new Error('缺少 blurb.txt 文件')
+  }
+  const blurb = (await data.blurbFile.text()).trim()
+  console.log(`📌 [批量上传] 简介长度: ${blurb.length}字符`)
+
+  if (!blurb) {
+    throw new Error('简介不能为空')
+  }
+
+  // 读取分类
+  if (!data.categoryFile) {
+    throw new Error('缺少 category.txt 文件')
+  }
+  const genre = (await data.categoryFile.text()).trim()
+  console.log(`📌 [批量上传] 分类: ${genre}`)
+
+  if (!genre) {
+    throw new Error('分类不能为空')
+  }
+
+  // 读取标签（可选）
+  let tags: string[] = []
+  if (data.tagsFile) {
+    const tagsContent = await data.tagsFile.text()
+    tags = tagsContent
+      .split(',')
+      .map(t => normalizeTag(t.trim()))
+      .filter(t => t.length > 0)
+      .slice(0, 20) // 最多20个tags
+    console.log(`📌 [批量上传] 标签: ${tags.join(', ')}`)
+  } else {
+    console.warn('⚠️ [批量上传] 未找到 tags.txt，标签为空')
+  }
+
+  // 读取年龄分级（可选）
+  let contentRating: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' = 'ALL_AGES'
+  if (data.ageFile) {
+    const ageContent = await data.ageFile.text()
+    contentRating = parseAgeRating(ageContent)
+    console.log(`📌 [批量上传] 年龄分级: ${contentRating}`)
+  } else {
+    console.warn('⚠️ [批量上传] 未找到 age.txt，使用默认值: ALL_AGES')
+  }
+
+  // 解析章节文件
+  const chapters: ParsedNovel['chapters'] = []
+
+  for (const file of data.chapterFiles) {
+    const chapterInfo = extractChapterInfoFromFilename(file.name)
+
+    if (!chapterInfo) {
+      console.warn(`⚠️ [批量上传] 无法解析章节文件名: ${file.name}`)
+      continue
+    }
+
+    const content = (await file.text()).trim()
+
+    if (!content) {
+      console.warn(`⚠️ [批量上传] 章节 ${chapterInfo.number} 内容为空`)
+      throw new Error(`第${chapterInfo.number}章内容为空`)
+    }
+
+    chapters.push({
+      number: chapterInfo.number,
+      title: chapterInfo.title,
+      content
+    })
+  }
+
+  // 按章节编号排序
+  chapters.sort((a, b) => a.number - b.number)
+
+  if (chapters.length === 0) {
+    throw new Error('至少需要1个章节')
+  }
+
+  console.log(`📚 [批量上传] 解析到 ${chapters.length} 个章节`)
+
+  // 验证章节编号连续
+  for (let i = 0; i < chapters.length; i++) {
+    if (chapters[i].number !== i + 1) {
+      throw new Error(`章节编号不连续：期望第 ${i + 1} 章，实际为第 ${chapters[i].number} 章`)
+    }
+  }
+
+  console.log('✅ [批量上传] 独立文件解析完成')
+
+  return {
+    title,
+    genre,
+    blurb,
+    tags,
+    chapters,
+    contentRating
+  }
+}
+
+/**
+ * 识别封面文件
+ * 优先级: cover_300x400.jpg > cover.png > cover.jpg
+ */
+export function identifyCoverFile(files: File[]): File | null {
+  console.log('🔍 [批量上传] 识别封面文件...')
+
+  // 优先查找 cover_300x400.jpg
+  let cover = files.find(f => f.name === 'cover_300x400.jpg')
+  if (cover) {
+    console.log('✅ [批量上传] 找到封面: cover_300x400.jpg')
+    return cover
+  }
+
+  // 其次查找 cover.png
+  cover = files.find(f => f.name === 'cover.png')
+  if (cover) {
+    console.log('✅ [批量上传] 找到封面: cover.png')
+    return cover
+  }
+
+  // 最后查找 cover.jpg
+  cover = files.find(f => f.name === 'cover.jpg')
+  if (cover) {
+    console.log('✅ [批量上传] 找到封面: cover.jpg')
+    return cover
+  }
+
+  console.warn('⚠️ [批量上传] 未找到封面文件')
+  return null
+}

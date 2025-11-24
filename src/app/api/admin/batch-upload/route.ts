@@ -31,6 +31,7 @@ cloudinary.config({
  * - blurb: string
  * - tags: string (JSON array)
  * - chapters: string (JSON array of {number, title, content})
+ * - contentRating: string (optional, defaults to 'ALL_AGES')
  */
 export const POST = withAdminAuth(async (session, request: Request) => {
   try {
@@ -42,6 +43,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     const blurb = formData.get('blurb') as string
     const tagsJson = formData.get('tags') as string
     const chaptersJson = formData.get('chapters') as string
+    const contentRatingRaw = formData.get('contentRating') as string | null
 
     if (!coverImage || !title || !genre || !blurb || !tagsJson || !chaptersJson) {
       return NextResponse.json(
@@ -52,6 +54,16 @@ export const POST = withAdminAuth(async (session, request: Request) => {
 
     const tags: string[] = JSON.parse(tagsJson)
     const chapters: ParsedNovel['chapters'] = JSON.parse(chaptersJson)
+
+    // 验证和设置 contentRating
+    const validRatings = ['ALL_AGES', 'TEEN_13', 'MATURE_16', 'EXPLICIT_18']
+    let contentRating: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' = 'ALL_AGES'
+
+    if (contentRatingRaw && validRatings.includes(contentRatingRaw)) {
+      contentRating = contentRatingRaw as typeof contentRating
+    } else if (contentRatingRaw) {
+      console.warn(`[Batch Upload] Invalid contentRating: ${contentRatingRaw}, using default: ALL_AGES`)
+    }
 
     // 3. 检查书名是否重复
     const existingNovel = await withRetry(() =>
@@ -129,7 +141,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             authorName: session.name || 'Admin',
             status: 'COMPLETED', // 批量上传的小说默认已完结
             isPublished: true,
-            contentRating: 'ALL_AGES', // 批量上传默认 All Ages
+            contentRating: contentRating, // 从前端传来或默认 ALL_AGES
             rightsType: 'ALL_RIGHTS_RESERVED', // 批量上传默认 All Rights Reserved
             totalChapters,
             wordCount,

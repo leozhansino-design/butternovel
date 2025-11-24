@@ -10,8 +10,13 @@ import {
   validateCoverImage,
   validateContentFile,
   validateParsedNovel,
+  parseIndividualFiles,
+  identifyCoverFile,
+  isPromptFile,
+  extractChapterInfoFromFilename,
   BATCH_UPLOAD_LIMITS,
   type NovelUploadData,
+  type IndividualFilesUploadData,
   type ParsedNovel
 } from '@/lib/batch-upload-utils'
 
@@ -22,8 +27,10 @@ interface UploadStatus {
   novelId?: number
 }
 
+type UploadDataUnion = NovelUploadData | IndividualFilesUploadData
+
 export default function BatchUploadPage() {
-  const [novels, setNovels] = useState<NovelUploadData[]>([])
+  const [novels, setNovels] = useState<UploadDataUnion[]>([])
   const [uploadStatuses, setUploadStatuses] = useState<Map<string, UploadStatus>>(new Map())
   const [isUploading, setIsUploading] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
@@ -37,7 +44,19 @@ export default function BatchUploadPage() {
     if (files.length === 0) return
 
     // 按文件夹组织文件
-    const folders = new Map<string, { cover?: File; content?: File }>()
+    const folders = new Map<string, {
+      // 旧格式
+      cover?: File
+      content?: File
+      // 新格式（独立文件）
+      titleFile?: File
+      blurbFile?: File
+      categoryFile?: File
+      tagsFile?: File
+      ageFile?: File
+      chapterFiles: File[]
+      allFiles: File[]
+    }>()
 
     files.forEach(file => {
       const pathParts = file.webkitRelativePath.split('/')
@@ -47,26 +66,73 @@ export default function BatchUploadPage() {
       const fileName = pathParts[pathParts.length - 1]
 
       if (!folders.has(folderName)) {
-        folders.set(folderName, {})
+        folders.set(folderName, { chapterFiles: [], allFiles: [] })
       }
 
       const folder = folders.get(folderName)!
-      if (fileName === 'cover.jpg' || fileName === 'cover.png') {
-        folder.cover = file
+      folder.allFiles.push(file)
+
+      // 识别文件类型
+      if (fileName === 'cover.jpg' || fileName === 'cover.png' || fileName === 'cover_300x400.jpg') {
+        if (!folder.cover) { // 只保留第一个找到的封面
+          folder.cover = file
+        }
       } else if (fileName === 'content.txt') {
         folder.content = file
+      } else if (fileName === 'title.txt') {
+        folder.titleFile = file
+      } else if (fileName === 'blurb.txt') {
+        folder.blurbFile = file
+      } else if (fileName === 'category.txt') {
+        folder.categoryFile = file
+      } else if (fileName === 'tags.txt') {
+        folder.tagsFile = file
+      } else if (fileName === 'age.txt') {
+        folder.ageFile = file
+      } else if (fileName.match(/^chapter_\d+_.*\.txt$/i)) {
+        // 章节文件，但排除 prompt 文件
+        if (!isPromptFile(fileName)) {
+          folder.chapterFiles.push(file)
+        } else {
+          console.log(`🔇 [批量上传] 忽略提示词文件: ${fileName}`)
+        }
       }
     })
 
-    // 转换为NovelUploadData
-    const novelData: NovelUploadData[] = []
-    for (const [folderName, files] of folders.entries()) {
-      if (files.cover && files.content) {
+    // 转换为 UploadData
+    const novelData: UploadDataUnion[] = []
+    for (const [folderName, folderFiles] of folders.entries()) {
+      // 判断是哪种格式
+      const hasContentTxt = !!folderFiles.content
+      const hasIndividualFiles = !!folderFiles.titleFile || !!folderFiles.blurbFile || !!folderFiles.categoryFile
+
+      if (hasIndividualFiles) {
+        // 新格式：独立文件
+        console.log(`📁 [批量上传] 识别为独立文件格式: ${folderName}`)
+
+        // 识别封面（按优先级）
+        const coverFile = identifyCoverFile(folderFiles.allFiles)
+
         novelData.push({
           folderName,
-          coverFile: files.cover,
-          contentFile: files.content
-        })
+          coverFile,
+          titleFile: folderFiles.titleFile,
+          blurbFile: folderFiles.blurbFile,
+          categoryFile: folderFiles.categoryFile,
+          tagsFile: folderFiles.tagsFile,
+          ageFile: folderFiles.ageFile,
+          chapterFiles: folderFiles.chapterFiles
+        } as IndividualFilesUploadData)
+      } else if (hasContentTxt && folderFiles.cover) {
+        // 旧格式：content.txt
+        console.log(`📄 [批量上传] 识别为 content.txt 格式: ${folderName}`)
+        novelData.push({
+          folderName,
+          coverFile: folderFiles.cover,
+          contentFile: folderFiles.content
+        } as NovelUploadData)
+      } else {
+        console.warn(`⚠️ [批量上传] 文件夹格式不完整，跳过: ${folderName}`)
       }
     }
 
@@ -75,69 +141,168 @@ export default function BatchUploadPage() {
       return
     }
 
+    console.log(`📚 [批量上传] 共识别 ${novelData.length} 个小说文件夹`)
+
     // 验证所有文件
     const validatedNovels = await validateNovels(novelData)
     setNovels(validatedNovels)
   }
 
   // 验证所有小说
-  const validateNovels = async (novelData: NovelUploadData[]) => {
+  const validateNovels = async (novelData: UploadDataUnion[]) => {
     console.log('🚀 [批量上传] 开始验证', novelData.length, '本小说')
 
     const validatedNovels = await Promise.all(
       novelData.map(async (novel) => {
         console.log('📚 [批量上传] ========== 验证小说:', novel.folderName, '==========')
         try {
-          // 验证封面
-          const coverValidation = await validateCoverImage(novel.coverFile)
+          // 判断是哪种格式
+          const isIndividualFiles = 'chapterFiles' in novel
 
-          // 验证content.txt
-          const contentValidation = validateContentFile(novel.contentFile)
+          if (isIndividualFiles) {
+            // 新格式：独立文件
+            console.log('📁 [批量上传] 使用独立文件格式验证')
 
-          // 解析content.txt
-          let parsed: ParsedNovel | undefined
-          let parseValidation: { valid: boolean; errors: string[]; warnings: string[] } = {
-            valid: true,
-            errors: [],
-            warnings: []
-          }
+            const errors: string[] = []
+            const warnings: string[] = []
 
-          if (coverValidation.valid && contentValidation.valid) {
+            // 验证必需文件存在
+            if (!novel.titleFile) {
+              errors.push('缺少 title.txt 文件')
+            }
+            if (!novel.blurbFile) {
+              errors.push('缺少 blurb.txt 文件')
+            }
+            if (!novel.categoryFile) {
+              errors.push('缺少 category.txt 文件')
+            }
+            if (!novel.coverFile) {
+              errors.push('缺少封面图片 (cover_300x400.jpg / cover.png / cover.jpg)')
+            }
+            if (novel.chapterFiles.length === 0) {
+              errors.push('至少需要1个章节文件 (chapter_1_XXX.txt)')
+            }
+
+            // 验证封面
+            let coverValidation = { valid: true, errors: [] as string[], warnings: [] as string[] }
+            if (novel.coverFile) {
+              try {
+                coverValidation = await validateCoverImage(novel.coverFile)
+              } catch (error: any) {
+                coverValidation = {
+                  valid: false,
+                  errors: [`封面验证失败: ${error.message}`],
+                  warnings: []
+                }
+              }
+            }
+
+            // 解析文件内容
+            let parsed: (ParsedNovel & { contentRating?: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' }) | undefined
+            let parseValidation: { valid: boolean; errors: string[]; warnings: string[] } = {
+              valid: true,
+              errors: [],
+              warnings: []
+            }
+
+            if (errors.length === 0 && coverValidation.valid) {
+              try {
+                parsed = await parseIndividualFiles(novel)
+                parseValidation = validateParsedNovel(parsed)
+              } catch (error: any) {
+                parseValidation = {
+                  valid: false,
+                  errors: [`解析失败: ${error.message}`],
+                  warnings: []
+                }
+              }
+            }
+
+            return {
+              ...novel,
+              parsed,
+              validation: {
+                valid: errors.length === 0 && coverValidation.valid && parseValidation.valid,
+                errors: [
+                  ...errors,
+                  ...coverValidation.errors,
+                  ...parseValidation.errors
+                ],
+                warnings: [
+                  ...warnings,
+                  ...coverValidation.warnings,
+                  ...parseValidation.warnings
+                ]
+              }
+            }
+          } else {
+            // 旧格式：content.txt
+            console.log('📄 [批量上传] 使用 content.txt 格式验证')
+
+            const errors: string[] = []
+            const warnings: string[] = []
+
+            // 验证封面
+            let coverValidation = { valid: true, errors: [] as string[], warnings: [] as string[] }
             try {
-              parsed = await parseContentFile(novel.contentFile)
-              parseValidation = validateParsedNovel(parsed)
+              coverValidation = await validateCoverImage(novel.coverFile)
             } catch (error: any) {
-              parseValidation = {
+              coverValidation = {
                 valid: false,
-                errors: [error.message],
+                errors: [`封面验证失败: ${error.message}`],
                 warnings: []
               }
             }
-          }
 
-          return {
-            ...novel,
-            parsed,
-            validation: {
-              valid: coverValidation.valid && contentValidation.valid && parseValidation.valid,
-              errors: [
-                ...coverValidation.errors,
-                ...contentValidation.errors,
-                ...parseValidation.errors
-              ],
-              warnings: [
-                ...coverValidation.warnings,
-                ...contentValidation.warnings,
-                ...parseValidation.warnings
-              ]
+            // 验证content.txt
+            const contentValidation = validateContentFile(novel.contentFile)
+
+            // 解析content.txt
+            let parsed: ParsedNovel | undefined
+            let parseValidation: { valid: boolean; errors: string[]; warnings: string[] } = {
+              valid: true,
+              errors: [],
+              warnings: []
+            }
+
+            if (coverValidation.valid && contentValidation.valid) {
+              try {
+                parsed = await parseContentFile(novel.contentFile)
+                parseValidation = validateParsedNovel(parsed)
+              } catch (error: any) {
+                parseValidation = {
+                  valid: false,
+                  errors: [`解析 content.txt 失败: ${error.message}`],
+                  warnings: []
+                }
+              }
+            }
+
+            return {
+              ...novel,
+              parsed,
+              validation: {
+                valid: coverValidation.valid && contentValidation.valid && parseValidation.valid,
+                errors: [
+                  ...coverValidation.errors,
+                  ...contentValidation.errors,
+                  ...parseValidation.errors
+                ],
+                warnings: [
+                  ...coverValidation.warnings,
+                  ...contentValidation.warnings,
+                  ...parseValidation.warnings
+                ]
+              }
             }
           }
         } catch (error: any) {
+          console.error('❌ [批量上传] 验证过程出错:', error)
           return {
             ...novel,
             validation: {
               valid: false,
-              errors: [error.message],
+              errors: [`验证过程出错: ${error.message || '未知错误'}`],
               warnings: []
             }
           }
@@ -189,7 +354,7 @@ export default function BatchUploadPage() {
   }
 
   // 上传单本小说
-  const uploadNovel = async (novel: NovelUploadData, statuses: Map<string, UploadStatus>) => {
+  const uploadNovel = async (novel: UploadDataUnion, statuses: Map<string, UploadStatus>) => {
     const updateStatus = (update: Partial<UploadStatus>) => {
       const current = statuses.get(novel.folderName)!
       statuses.set(novel.folderName, { ...current, ...update })
@@ -199,13 +364,26 @@ export default function BatchUploadPage() {
     try {
       updateStatus({ status: 'uploading', progress: 0 })
 
+      if (!novel.coverFile) {
+        throw new Error('缺少封面文件')
+      }
+
+      if (!novel.parsed) {
+        throw new Error('解析数据缺失')
+      }
+
       const formData = new FormData()
       formData.append('coverImage', novel.coverFile)
-      formData.append('title', novel.parsed!.title)
-      formData.append('genre', novel.parsed!.genre)
-      formData.append('blurb', novel.parsed!.blurb)
-      formData.append('tags', JSON.stringify(novel.parsed!.tags))
-      formData.append('chapters', JSON.stringify(novel.parsed!.chapters))
+      formData.append('title', novel.parsed.title)
+      formData.append('genre', novel.parsed.genre)
+      formData.append('blurb', novel.parsed.blurb)
+      formData.append('tags', JSON.stringify(novel.parsed.tags))
+      formData.append('chapters', JSON.stringify(novel.parsed.chapters))
+
+      // 如果有年龄分级信息，也一起传递
+      if ('contentRating' in novel.parsed && novel.parsed.contentRating) {
+        formData.append('contentRating', novel.parsed.contentRating)
+      }
 
       updateStatus({ progress: 30 })
 
@@ -218,7 +396,7 @@ export default function BatchUploadPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Upload failed')
+        throw new Error(error.error || `上传失败: HTTP ${response.status}`)
       }
 
       const result = await response.json()
@@ -228,10 +406,13 @@ export default function BatchUploadPage() {
         progress: 100,
         novelId: result.novel.id
       })
+
+      console.log(`✅ [批量上传] 上传成功: ${novel.parsed.title} (ID: ${result.novel.id})`)
     } catch (error: any) {
+      console.error(`❌ [批量上传] 上传失败: ${novel.folderName}`, error)
       updateStatus({
         status: 'failed',
-        error: error.message
+        error: error.message || '上传失败'
       })
     }
   }
@@ -496,24 +677,52 @@ export default function BatchUploadPage() {
       {/* 格式说明 */}
       <div className="mt-8 bg-gray-50 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 文件格式要求</h3>
-        <div className="space-y-4 text-sm text-gray-700">
+        <div className="space-y-6 text-sm text-gray-700">
           <div>
-            <p className="font-semibold mb-2">文件夹结构：</p>
+            <p className="font-semibold mb-2 text-indigo-700">格式 1: 独立文件结构（推荐）</p>
+            <p className="text-gray-600 mb-2">每个小说文件夹包含独立的元数据文件和章节文件：</p>
+            <pre className="bg-white p-3 rounded border border-gray-200 overflow-x-auto">
+{`novels/
+├── novel1/
+│   ├── cover_300x400.jpg  (优先) 或 cover.png / cover.jpg
+│   ├── title.txt          (小说标题)
+│   ├── blurb.txt          (小说简介)
+│   ├── category.txt       (小说类型，如 Romance)
+│   ├── tags.txt           (标签，逗号分隔，可选)
+│   ├── age.txt            (年龄分级，可选)
+│   ├── chapter_1_Baton_Pass.txt
+│   ├── chapter_2_Just_Keep_Swimming.txt
+│   └── ...
+└── novel2/
+    ├── cover_300x400.jpg
+    ├── title.txt
+    └── ...`}
+            </pre>
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-gray-600">
+                <span className="font-semibold">章节文件命名：</span> chapter_数字_标题.txt （下划线会转为空格）
+              </p>
+              <p className="text-xs text-gray-600">
+                <span className="font-semibold">忽略文件：</span> chapter_X_prompt.txt 会被自动忽略
+              </p>
+              <p className="text-xs text-gray-600">
+                <span className="font-semibold">年龄分级：</span> All Ages / Teen 13+ / Mature 16+ / Explicit 18+
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-300 pt-4">
+            <p className="font-semibold mb-2 text-gray-700">格式 2: content.txt 结构（兼容旧版）</p>
+            <p className="text-gray-600 mb-2">使用单个 content.txt 文件包含所有内容：</p>
             <pre className="bg-white p-3 rounded border border-gray-200 overflow-x-auto">
 {`novels/
 ├── novel1/
 │   ├── cover.jpg    (必须是300x400像素)
 │   └── content.txt
-├── novel2/
-│   ├── cover.jpg
-│   └── content.txt
-└── ...`}
-            </pre>
-          </div>
-          <div>
-            <p className="font-semibold mb-2">content.txt 格式：</p>
-            <pre className="bg-white p-3 rounded border border-gray-200 overflow-x-auto">
-{`Tags: romance, fantasy, adventure
+└── ...
+
+content.txt 格式：
+Tags: romance, fantasy, adventure
 Title: 小说标题
 Genre: Romance
 Blurb: 小说简介（10-1000字符）
