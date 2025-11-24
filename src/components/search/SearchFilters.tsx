@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { CATEGORIES } from '@/lib/constants'
 
 interface Category {
   id: number
@@ -40,21 +41,16 @@ export default function SearchFilters({
   onSortChange,
   onClearAll,
 }: SearchFiltersProps) {
-  const [categories, setCategories] = useState<Category[]>([])
+  // Use static categories from constants to ensure consistency with Header/Footer
+  const [categories] = useState<Category[]>(
+    CATEGORIES.map((cat, index) => ({
+      id: index + 1,
+      name: cat.name,
+      slug: cat.slug,
+    }))
+  )
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [loadingTags, setLoadingTags] = useState(false)
-
-  // 加载分类列表
-  useEffect(() => {
-    fetch('/api/categories')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setCategories(data.data || [])
-        }
-      })
-      .catch((err) => console.error('Failed to fetch categories:', err))
-  }, [])
 
   // 加载热门标签或相关标签（智能联动）
   useEffect(() => {
