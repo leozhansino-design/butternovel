@@ -69,33 +69,35 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
   };
 
   return (
-    <div 
+    <div
       className="relative w-full"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
+      {/* 标题区域 - 使用container保持固定边距 */}
+      <div className="container mx-auto px-6 lg:px-8 xl:px-12 max-w-[1920px] mb-4 sm:mb-6">
         <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
           Featured Novels
         </h2>
       </div>
 
-      <div className="relative -mx-1 sm:-mx-2">
+      {/* 轮播区域 - 延伸到屏幕边缘 */}
+      <div className="relative">
         {scrollPosition > 0 && (
           <button
             onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
+            className="absolute left-4 lg:left-6 xl:left-8 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
             aria-label="Scroll left"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
         )}
 
-        <div className="overflow-hidden px-1 sm:px-2">
-          <div 
-            className="flex transition-transform duration-500 ease-out"
+        <div className="overflow-hidden px-6 lg:px-8 xl:px-12">
+          <div
+            className="flex transition-transform duration-500 ease-out gap-3 sm:gap-4 md:gap-5"
             style={{
               transform: `translateX(-${scrollPosition * (100 / booksPerView)}%)`
             }}
@@ -103,7 +105,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
             {books.map((book) => (
               <div
                 key={book.id}
-                className="flex-shrink-0 px-1 sm:px-2"
+                className="flex-shrink-0"
                 style={{ width: `${100 / booksPerView}%` }}
               >
                 <Link
@@ -152,33 +154,36 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
         {scrollPosition < maxScroll && (
           <button
             onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
+            className="absolute right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border border-gray-200"
             aria-label="Scroll right"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         )}
       </div>
 
+      {/* 指示器 - 使用container保持居中 */}
       {maxScroll > 0 && (
-        <div className="flex justify-center items-center gap-1 sm:gap-1.5 mt-2 sm:mt-3">
-          {Array.from({ length: Math.ceil(books.length / booksPerView) }).map((_, index) => {
-            const isActive = Math.floor(scrollPosition / booksPerView) === index;
-            return (
-              <button
-                key={index}
-                onClick={() => setScrollPosition(index * booksPerView)}
-                className={`transition-all duration-300 rounded-full ${
-                  isActive
-                    ? 'w-6 h-1.5 bg-purple-600'
-                    : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'
-                }`}
-                aria-label={`Go to group ${index + 1}`}
-              />
-            );
-          })}
+        <div className="container mx-auto px-6 lg:px-8 xl:px-12 max-w-[1920px] mt-4 sm:mt-6">
+          <div className="flex justify-center items-center gap-1 sm:gap-1.5">
+            {Array.from({ length: Math.ceil(books.length / booksPerView) }).map((_, index) => {
+              const isActive = Math.floor(scrollPosition / booksPerView) === index;
+              return (
+                <button
+                  key={index}
+                  onClick={() => setScrollPosition(index * booksPerView)}
+                  className={`transition-all duration-300 rounded-full ${
+                    isActive
+                      ? 'w-6 h-1.5 bg-purple-600'
+                      : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400'
+                  }`}
+                  aria-label={`Go to group ${index + 1}`}
+                />
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

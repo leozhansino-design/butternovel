@@ -48,8 +48,8 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 glass-effect border-b border-blue-100/50">
-        <div className="w-full px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 max-w-[1600px] mx-auto">
+        <div className="w-full px-6 lg:px-8 xl:px-12">
+          <div className="flex items-center justify-between h-14 max-w-[1920px] mx-auto">
 
             {/* 左侧区域: Logo + 导航 */}
             <div className="flex items-center gap-6">

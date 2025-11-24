@@ -69,7 +69,7 @@ export default function CategoryCarousel({
   return (
     <section className="w-full">
       {/* Section Header - 使用container保持固定边距 */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[1920px] mb-4 sm:mb-6 md:mb-8">
+      <div className="container mx-auto px-6 lg:px-8 xl:px-12 max-w-[1920px] mb-4 sm:mb-6 md:mb-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
             {title}
@@ -98,16 +98,16 @@ export default function CategoryCarousel({
       {/* Carousel Wrapper - 延伸到屏幕边缘 */}
       <div className="relative">
         {/* 左边缘渐变遮罩 */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-12 md:w-16 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-12 lg:w-16 xl:w-20 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
 
         {/* 右边缘渐变遮罩 */}
-        <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-12 md:w-16 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-12 lg:w-16 xl:w-20 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" />
 
         {/* 左导航按钮 */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
-            className="hidden md:flex absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            className="hidden md:flex absolute left-4 lg:left-6 xl:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
             aria-label="Previous"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +120,7 @@ export default function CategoryCarousel({
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
-            className="hidden md:flex absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            className="hidden md:flex absolute right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
             aria-label="Next"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +132,7 @@ export default function CategoryCarousel({
         {/* 小说列表 - 横向滚动，延伸到边缘 */}
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 md:gap-5 pl-4 sm:pl-6 lg:pl-8 pr-4 sm:pr-6 lg:pr-8 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex gap-3 sm:gap-4 md:gap-5 pl-6 lg:pl-8 xl:pl-12 pr-6 lg:pr-8 xl:pr-12 overflow-x-auto scrollbar-hide scroll-smooth"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
