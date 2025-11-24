@@ -188,7 +188,7 @@ export default function SearchInput({
               }
             }}
             placeholder={placeholder}
-            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            className="w-full px-3 py-1.5 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
           />
           {loading && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">

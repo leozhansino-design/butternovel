@@ -48,8 +48,8 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 glass-effect border-b border-blue-100/50">
-        <div className="w-full px-6 lg:px-8 xl:px-12">
-          <div className="flex items-center justify-between h-14 max-w-[1920px] mx-auto">
+        <div className="w-full" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
+          <div className="flex items-center justify-between h-14">
 
             {/* 左侧区域: Logo + 导航 */}
             <div className="flex items-center gap-6">
@@ -89,7 +89,7 @@ export default function Header() {
                       {CATEGORIES.map((category) => (
                         <Link
                           key={category.slug}
-                          href={`/category/${category.slug}`}
+                          href={`/search?genre=${category.slug}`}
                           className="block px-3 py-1.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                         >
                           {category.name}
@@ -120,7 +120,7 @@ export default function Header() {
             {/* 右侧区域: 搜索 + 用户功能 */}
             <div className="flex items-center gap-3">
               {/* Search Bar - Desktop */}
-              <div className="hidden md:block w-64">
+              <div className="hidden md:block w-80">
                 <SearchInput placeholder="Search..." />
               </div>
 
@@ -197,7 +197,7 @@ export default function Header() {
                 {CATEGORIES.map((category) => (
                   <Link
                     key={category.slug}
-                    href={`/category/${category.slug}`}
+                    href={`/search?genre=${category.slug}`}
                     className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
