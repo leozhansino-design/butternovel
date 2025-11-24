@@ -44,6 +44,7 @@ export interface HomePageData {
     status: string;
     chaptersCount: number;
     likesCount: number;
+    rating: number | null;
   }>>;
   timestamp: number; // 缓存生成时间
 }
@@ -96,19 +97,25 @@ export async function getHomePageData(): Promise<HomePageData> {
     ) as any[];
 
     // 3. 为每个分类获取小说（并发控制）
+    // 🔧 OPTIMIZATION: 获取30本书（15热门+15最新，去重混合）
     const categoryNovelsArray = await withConcurrency(
       categories.map(category => async () => {
-        return await withRetry(() =>
-          prisma.$queryRaw<Array<{
-            id: number;
-            title: string;
-            slug: string;
-            coverImage: string;
-            categoryName: string;
-            status: string;
-            chaptersCount: number;
-            likesCount: number;
-          }>>`
+        // 定义小说类型
+        type NovelData = {
+          id: number;
+          title: string;
+          slug: string;
+          coverImage: string;
+          categoryName: string;
+          status: string;
+          chaptersCount: number;
+          likesCount: number;
+          rating: number | null;
+        };
+
+        // 获取15本热门（按点赞数+浏览量排序）
+        const hotNovels = await withRetry(() =>
+          prisma.$queryRaw<NovelData[]>`
             SELECT
               n.id,
               n.title,
@@ -117,16 +124,58 @@ export async function getHomePageData(): Promise<HomePageData> {
               n.status,
               c.name as "categoryName",
               (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
-              (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount"
+              (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount",
+              n."averageRating" as rating
             FROM "Novel" n
             INNER JOIN "Category" c ON n."categoryId" = c.id
             WHERE n."isPublished" = true
               AND n."isBanned" = false
               AND c.slug = ${category.slug}
-            ORDER BY RANDOM()
-            LIMIT 10
+            ORDER BY (n."viewCount" + n."likeCount" * 10) DESC
+            LIMIT 15
           `
-        );
+        ) as NovelData[];
+
+        // 获取15本最新
+        const newNovels = await withRetry(() =>
+          prisma.$queryRaw<NovelData[]>`
+            SELECT
+              n.id,
+              n.title,
+              n.slug,
+              n."coverImage",
+              n.status,
+              c.name as "categoryName",
+              (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
+              (SELECT COUNT(*) FROM "NovelLike" nl WHERE nl."novelId" = n.id) as "likesCount",
+              n."averageRating" as rating
+            FROM "Novel" n
+            INNER JOIN "Category" c ON n."categoryId" = c.id
+            WHERE n."isPublished" = true
+              AND n."isBanned" = false
+              AND c.slug = ${category.slug}
+            ORDER BY n."createdAt" DESC
+            LIMIT 15
+          `
+        ) as NovelData[];
+
+        // 合并去重（使用Map去重，保留第一次出现的）
+        const novelMap = new Map<number, NovelData>();
+        [...hotNovels, ...newNovels].forEach((novel) => {
+          if (!novelMap.has(novel.id)) {
+            novelMap.set(novel.id, novel);
+          }
+        });
+
+        // 转为数组并随机打乱
+        const combined = Array.from(novelMap.values());
+        for (let i = combined.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [combined[i], combined[j]] = [combined[j], combined[i]];
+        }
+
+        // 返回最多30本
+        return combined.slice(0, 30);
       }),
       { concurrency: 3 }
     ) as any[];

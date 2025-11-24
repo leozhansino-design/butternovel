@@ -3,7 +3,7 @@
 import { Suspense } from 'react'
 import Footer from '@/components/shared/Footer'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
-import CategorySection from '@/components/front/CategorySection'
+import CategoryCarousel from '@/components/front/CategoryCarousel'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 import { getHomePageData } from '@/lib/cache-optimized'
 
@@ -40,34 +40,30 @@ async function HomeContent() {
     <main className="flex-1">
       {featuredBooks.length > 0 ? (
         <section className="bg-gradient-to-b from-slate-50/80 to-white py-6 sm:py-8 md:py-12 lg:py-16">
-          <div className="container mx-auto px-3 sm:px-4 max-w-7xl">
-            <FeaturedCarousel books={featuredBooks} />
-          </div>
+          <FeaturedCarousel books={featuredBooks} />
         </section>
       ) : (
         <section className="bg-gradient-to-b from-slate-50/80 to-white py-6 sm:py-8 md:py-12 lg:py-16">
-          <div className="container mx-auto px-3 sm:px-4 max-w-7xl text-center">
+          <div className="text-center">
             <p className="text-sm sm:text-base text-gray-500">No featured novels yet</p>
           </div>
         </section>
       )}
 
       <div className="bg-white">
-        <div className="container mx-auto px-3 sm:px-4 max-w-7xl py-8 sm:py-12 md:py-16 space-y-12 sm:space-y-16 md:space-y-20">
+        {/* 移除container限制，让轮播可以延伸到屏幕边缘 */}
+        <div className="py-8 sm:py-12 md:py-16 space-y-12 sm:space-y-16 md:space-y-20">
           {categoryData.map(cat => {
             const books = cat.novels.map(novel => ({
               id: novel.id,
               title: novel.title,
-              category: novel.categoryName,
-              status: novel.status,
-              chapters: Number(novel.chaptersCount),
-              likes: Number(novel.likesCount),
               slug: novel.slug,
               coverImage: novel.coverImage,
+              rating: novel.rating,
             }))
 
             return (
-              <CategorySection
+              <CategoryCarousel
                 key={cat.slug}
                 title={cat.name}
                 books={books}

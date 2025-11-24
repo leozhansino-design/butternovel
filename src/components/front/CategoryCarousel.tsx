@@ -1,23 +1,28 @@
-// src/components/front/FeaturedCarousel.tsx
+// src/components/front/CategoryCarousel.tsx
+// 横向滚动分类区组件 - 类似Inkitt风格
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
+import CompactNovelCard from './CompactNovelCard';
 
-interface Book {
-  id: number;
+interface CategoryCarouselProps {
   title: string;
-  slug: string;
-  coverImage: string;
-  description: string;
-  category: {
-    name: string;
-  };
+  categorySlug?: string;
+  books: Array<{
+    id: number;
+    title: string;
+    slug?: string;
+    coverImage?: string;
+    rating?: number | null;
+  }>;
 }
 
-export default function FeaturedCarousel({ books }: { books: Book[] }) {
-  const [isPaused, setIsPaused] = useState(false);
+export default function CategoryCarousel({
+  title,
+  categorySlug,
+  books
+}: CategoryCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -44,30 +49,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
     }
   }, [books]);
 
-  // 自动滚动
-  useEffect(() => {
-    if (isPaused || !trackRef.current) return;
-
-    const interval = setInterval(() => {
-      if (trackRef.current) {
-        const cardWidth = 150 + 16; // 卡片宽度 + gap
-        const currentScroll = trackRef.current.scrollLeft;
-        const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
-
-        if (currentScroll >= maxScroll - 10) {
-          // 滚动到末尾，回到开始
-          trackRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          // 继续滚动
-          trackRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
-        }
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isPaused]);
-
-  // 滚动一本书的宽度
+  // 滚动一本书的宽度（卡片宽度 + gap）
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
@@ -80,26 +62,46 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
     });
   };
 
+  if (books.length === 0) {
+    return null;
+  }
+
   return (
-    <div
-      className="relative w-full"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      {/* 标题区域 - 与第一本书对齐 */}
+    <section className="w-full">
+      {/* Section Header - 与第一本书对齐 */}
       <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
-        <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
-          Featured Novels
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+            {title}
+          </h2>
+
+          {categorySlug && (
+            <Link
+              href={`/search?genre=${categorySlug}`}
+              className="group flex items-center gap-1 sm:gap-2 text-sm sm:text-base text-gray-600 hover:text-amber-600 transition-colors font-medium flex-shrink-0 ml-2"
+            >
+              <span className="hidden sm:inline">View All</span>
+              <span className="sm:hidden">All</span>
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* 轮播区域 - 延伸到屏幕边缘 */}
+      {/* Carousel Wrapper - 延伸到屏幕边缘 */}
       <div className="relative">
         {/* 左边缘渐变遮罩 */}
-        <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
+        <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
         {/* 右边缘渐变遮罩 */}
-        <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
+        <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
         {/* 左导航按钮 */}
         {canScrollLeft && (
@@ -129,7 +131,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           </button>
         )}
 
-        {/* 小说列表 - 横向滚动 */}
+        {/* 小说列表 - 横向滚动，延伸到边缘 */}
         <div
           ref={trackRef}
           className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth"
@@ -142,44 +144,17 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           }}
         >
           {books.map((book) => (
-            <Link
+            <CompactNovelCard
               key={book.id}
-              href={`/novels/${book.slug}`}
-              className="group block flex-shrink-0"
-              style={{ width: '150px' }}
-            >
-              {/* 封面容器 */}
-              <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-shadow"
-                   style={{ aspectRatio: '2/3' }}>
-                <Image
-                  src={book.coverImage}
-                  alt={book.title}
-                  fill
-                  sizes="150px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-
-              {/* 标题 */}
-              <h3
-                className="mt-2 font-semibold text-gray-900 group-hover:text-amber-600 transition-colors"
-                style={{
-                  fontSize: '14px',
-                  lineHeight: '1.4',
-                  height: '2.8em',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  wordBreak: 'break-word'
-                }}
-              >
-                {book.title}
-              </h3>
-            </Link>
+              id={book.id}
+              title={book.title}
+              slug={book.slug}
+              coverImage={book.coverImage}
+              rating={book.rating}
+            />
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

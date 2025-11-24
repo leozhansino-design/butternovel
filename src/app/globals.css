@@ -451,3 +451,13 @@ body {
   transform: rotate(5deg);
   box-shadow: 0 25px 40px rgba(0, 0, 0, 0.45);
 }
+
+/* 🎠 横向滚动样式 - 用于首页分类轮播 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
