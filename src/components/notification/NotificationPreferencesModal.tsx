@@ -59,7 +59,7 @@ export default function NotificationPreferencesModal({
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
           <div className="text-center text-gray-600 dark:text-gray-400">
-            加载中...
+            Loading...
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function NotificationPreferencesModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            通知偏好设置
+            Notification Preferences
           </h2>
           <button
             onClick={onClose}
@@ -84,14 +84,14 @@ export default function NotificationPreferencesModal({
           </button>
         </div>
 
-        {/* 站内通知 */}
+        {/* In-App Notifications */}
         <div className="space-y-4 mb-6">
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            站内通知
+            In-App Notifications
           </h3>
           <label className="flex items-center justify-between">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              评分相关通知
+              Rating Notifications
             </span>
             <input
               type="checkbox"
@@ -104,7 +104,7 @@ export default function NotificationPreferencesModal({
           </label>
           <label className="flex items-center justify-between">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              评论相关通知
+              Comment Notifications
             </span>
             <input
               type="checkbox"
@@ -117,7 +117,7 @@ export default function NotificationPreferencesModal({
           </label>
           <label className="flex items-center justify-between">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              关注相关通知
+              Follow Notifications
             </span>
             <input
               type="checkbox"
@@ -130,7 +130,7 @@ export default function NotificationPreferencesModal({
           </label>
           <label className="flex items-center justify-between">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              作者更新通知
+              Author Update Notifications
             </span>
             <input
               type="checkbox"
@@ -143,7 +143,7 @@ export default function NotificationPreferencesModal({
           </label>
           <label className="flex items-center justify-between">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              启用通知聚合
+              Enable Notification Aggregation
             </span>
             <input
               type="checkbox"
@@ -156,14 +156,14 @@ export default function NotificationPreferencesModal({
           </label>
         </div>
 
-        {/* 邮件通知 */}
+        {/* Email Notifications */}
         <div className="space-y-4 mb-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            邮件通知
+            Email Notifications
           </h3>
           <label className="flex items-center justify-between">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              启用邮件通知
+              Enable Email Notifications
             </span>
             <input
               type="checkbox"
@@ -179,7 +179,7 @@ export default function NotificationPreferencesModal({
             <div className="ml-4 space-y-3 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
               <label className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  评分相关
+                  Rating
                 </span>
                 <input
                   type="checkbox"
@@ -195,7 +195,7 @@ export default function NotificationPreferencesModal({
               </label>
               <label className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  评论相关
+                  Comment
                 </span>
                 <input
                   type="checkbox"
@@ -211,7 +211,7 @@ export default function NotificationPreferencesModal({
               </label>
               <label className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  关注相关
+                  Follow
                 </span>
                 <input
                   type="checkbox"
@@ -227,7 +227,7 @@ export default function NotificationPreferencesModal({
               </label>
               <label className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  作者更新
+                  Author Update
                 </span>
                 <input
                   type="checkbox"
@@ -245,20 +245,20 @@ export default function NotificationPreferencesModal({
           )}
         </div>
 
-        {/* 按钮 */}
+        {/* Buttons */}
         <div className="flex gap-3">
           <button
             onClick={handleSave}
             disabled={saving}
             className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-2.5 rounded-lg font-medium transition-colors"
           >
-            {saving ? '保存中...' : '保存'}
+            {saving ? 'Saving...' : 'Save'}
           </button>
           <button
             onClick={onClose}
             className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white py-2.5 rounded-lg font-medium transition-colors"
           >
-            取消
+            Cancel
           </button>
         </div>
       </div>
