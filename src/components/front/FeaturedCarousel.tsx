@@ -86,8 +86,8 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* 标题区域 - 使用container保持固定边距 */}
-      <div className="container mx-auto px-6 lg:px-8 xl:px-12 max-w-[1920px] mb-4 sm:mb-6 md:mb-8">
+      {/* 标题区域 - 与第一本书对齐 */}
+      <div className="mb-4 sm:mb-6 md:mb-8" style={{ paddingLeft: '150px', paddingRight: '150px' }}>
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
           Featured Novels
         </h2>
@@ -96,16 +96,17 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
       {/* 轮播区域 - 延伸到屏幕边缘 */}
       <div className="relative">
         {/* 左边缘渐变遮罩 */}
-        <div className="absolute left-0 top-0 bottom-0 w-12 lg:w-16 xl:w-20 bg-gradient-to-r from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
         {/* 右边缘渐变遮罩 */}
-        <div className="absolute right-0 top-0 bottom-0 w-12 lg:w-16 xl:w-20 bg-gradient-to-l from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 bg-gradient-to-l from-slate-50/80 via-slate-50/60 to-transparent z-10 pointer-events-none" style={{ width: '150px' }} />
 
         {/* 左导航按钮 */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
-            className="hidden md:flex absolute left-4 lg:left-6 xl:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            style={{ left: '70px' }}
             aria-label="Previous"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +119,8 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
-            className="hidden md:flex absolute right-4 lg:right-6 xl:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            className="hidden md:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+            style={{ right: '70px' }}
             aria-label="Next"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,8 +132,10 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
         {/* 小说列表 - 横向滚动 */}
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 md:gap-5 pl-6 lg:pl-8 xl:pl-12 pr-6 lg:pr-8 xl:pr-12 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth"
           style={{
+            paddingLeft: '150px',
+            paddingRight: '150px',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch'
