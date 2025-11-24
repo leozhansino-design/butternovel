@@ -34,11 +34,10 @@ export default function BookCardSkeleton() {
           <div className="h-5 bg-gray-200 rounded w-full mb-2" />
           <div className="h-5 bg-gray-200 rounded w-5/6 mb-6 flex-1" />
 
-          {/* 标签骨架 - 单行 */}
+          {/* 标签骨架 - 通常显示2个 */}
           <div className="flex gap-2">
-            <div className="h-7 bg-gray-200 rounded-full w-20" />
             <div className="h-7 bg-gray-200 rounded-full w-24" />
-            <div className="h-7 bg-gray-200 rounded-full w-16" />
+            <div className="h-7 bg-gray-200 rounded-full w-28" />
           </div>
         </div>
       </div>
