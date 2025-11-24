@@ -89,8 +89,8 @@ export default function SearchFilters({
               selectedTags.includes(tag.slug)
             )
             // 过滤掉相关标签中已包含的已选标签（去重）
-            const selectedSlugs = selectedTagObjects.map(t => t.slug)
-            const uniqueRelatedTags = tags.filter(t => !selectedSlugs.includes(t.slug))
+            const selectedSlugs = selectedTagObjects.map((t: Tag) => t.slug)
+            const uniqueRelatedTags = tags.filter((t: Tag) => !selectedSlugs.includes(t.slug))
             // 将已选标签放在前面，然后是去重后的相关标签
             tags = [...selectedTagObjects, ...uniqueRelatedTags]
           }
