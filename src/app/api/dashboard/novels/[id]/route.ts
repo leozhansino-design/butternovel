@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client'
 import cloudinary from '@/lib/cloudinary'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
 import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
+import { checkNovelTitleExists } from '@/lib/novel-queries'
 
 // GET - Get a single novel
 export async function GET(
@@ -97,6 +98,17 @@ export async function PUT(
         { error: 'Novel not found or unauthorized' },
         { status: 404 }
       )
+    }
+
+    // Check for duplicate title if title is being changed
+    if (body.title && body.title !== existingNovel.title) {
+      const titleExists = await checkNovelTitleExists(body.title, novelId)
+      if (titleExists) {
+        return NextResponse.json(
+          { error: 'A novel with this title already exists. Please choose a different title.' },
+          { status: 409 }
+        )
+      }
     }
 
     // Handle cover image update if provided

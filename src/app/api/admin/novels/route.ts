@@ -7,6 +7,7 @@ import { validateWithSchema, novelCreateSchema, countWords } from '@/lib/validat
 import { parsePaginationParams, createPaginationResponse } from '@/lib/pagination'
 import { successResponse, handleApiError } from '@/lib/api-response'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
+import { checkNovelTitleExists } from '@/lib/novel-queries'
 
 // POST /api/admin/novels - 创建小说
 export const POST = withAdminAuth(async (session, request: Request) => {
@@ -34,6 +35,15 @@ export const POST = withAdminAuth(async (session, request: Request) => {
             rightsType,
             chapters
         } = validation.data
+
+        // ⭐ 步骤0：检查标题是否重复
+        const titleExists = await checkNovelTitleExists(title)
+        if (titleExists) {
+            return NextResponse.json(
+                { error: 'A novel with this title already exists. Please choose a different title.' },
+                { status: 409 }  // 409 Conflict
+            )
+        }
 
         // ⭐ 步骤1：获取 AdminProfile 的 displayName
         // 🔄 添加数据库重试机制，解决连接超时问题

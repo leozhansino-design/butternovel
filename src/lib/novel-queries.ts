@@ -335,6 +335,58 @@ export async function getNovelStats(novelId: number) {
 }
 
 // ============================================
+// 标题重复检查
+// ============================================
+
+/**
+ * 检查小说标题是否已存在（完全匹配，不区分大小写）
+ * @param title 要检查的标题
+ * @param excludeNovelId 排除的小说ID（用于更新时排除自身）
+ * @returns 如果标题已存在返回 true，否则返回 false
+ */
+export async function checkNovelTitleExists(
+  title: string,
+  excludeNovelId?: number
+): Promise<boolean> {
+  const normalizedTitle = title.trim()
+
+  const existingNovel = await withRetry(
+    () => prisma.novel.findFirst({
+      where: {
+        title: {
+          equals: normalizedTitle,
+          mode: 'insensitive'  // 不区分大小写
+        },
+        ...(excludeNovelId !== undefined && {
+          NOT: { id: excludeNovelId }
+        })
+      },
+      select: { id: true }
+    }),
+    { operationName: 'Check novel title exists' }
+  )
+
+  return existingNovel !== null
+}
+
+/**
+ * 验证小说标题唯一性
+ * @param title 要验证的标题
+ * @param excludeNovelId 排除的小说ID（用于更新时排除自身）
+ * @throws Error 如果标题已存在
+ */
+export async function validateNovelTitleUnique(
+  title: string,
+  excludeNovelId?: number
+): Promise<void> {
+  const exists = await checkNovelTitleExists(title, excludeNovelId)
+
+  if (exists) {
+    throw new Error('A novel with this title already exists')
+  }
+}
+
+// ============================================
 // 类型守卫和断言函数
 // ============================================
 

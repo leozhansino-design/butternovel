@@ -6,6 +6,7 @@ import { withAdminAuth } from '@/lib/admin-middleware'
 import { uploadNovelCover, deleteImage } from '@/lib/cloudinary'
 import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
+import { checkNovelTitleExists } from '@/lib/novel-queries'
 
 // PUT /api/admin/novels/[id] - 更新小说（增量更新）
 export const PUT = withAdminAuth(async (
@@ -54,6 +55,15 @@ export const PUT = withAdminAuth(async (
 
     // 1. 更新标题（如果改变了，重新生成 slug）
     if (updates.title && updates.title !== currentNovel.title) {
+      // 检查新标题是否与其他小说重复
+      const titleExists = await checkNovelTitleExists(updates.title, novelId)
+      if (titleExists) {
+        return NextResponse.json(
+          { error: 'A novel with this title already exists. Please choose a different title.' },
+          { status: 409 }  // 409 Conflict
+        )
+      }
+
       data.title = updates.title
       data.slug = updates.title
         .toLowerCase()

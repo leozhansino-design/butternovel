@@ -5,6 +5,7 @@ import cloudinary from '@/lib/cloudinary'
 import { validateWithSchema, novelCreateSchema } from '@/lib/validators'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
 import { createNotification } from '@/lib/notification-service'
+import { checkNovelTitleExists } from '@/lib/novel-queries'
 
 // GET - List all novels by the current author
 export async function GET(request: NextRequest) {
@@ -93,6 +94,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { title, coverImage, categoryId, blurb, status, isPublished, chapters } = validation.data
+
+    // Check for duplicate title
+    const titleExists = await checkNovelTitleExists(title)
+    if (titleExists) {
+      return NextResponse.json(
+        { error: 'A novel with this title already exists. Please choose a different title.' },
+        { status: 409 }
+      )
+    }
 
     // Upload cover image to Cloudinary
     let coverImageUrl = ''
