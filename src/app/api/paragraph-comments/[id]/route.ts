@@ -4,6 +4,41 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { deleteImage } from '@/lib/cloudinary'
 
+// GET - 获取单个评论（用于通知跳转）
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params
+
+    const comment = await prisma.paragraphComment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        paragraphIndex: true,
+        chapterId: true,
+        novelId: true,
+      }
+    })
+
+    if (!comment) {
+      return NextResponse.json(
+        { success: false, error: 'Comment not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ success: true, data: comment })
+  } catch (error: any) {
+    console.error('Failed to get paragraph comment:', error)
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
+  }
+}
+
 // DELETE - 删除段落评论
 export async function DELETE(
   request: NextRequest,

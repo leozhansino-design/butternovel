@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import RatingDisplay from './RatingDisplay'
 
 interface ClientRatingDisplayProps {
@@ -18,9 +19,15 @@ export default function ClientRatingDisplay({
   totalRatings
 }: ClientRatingDisplayProps) {
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
   const [userRating, setUserRating] = useState<number | undefined>(undefined)
   const [hasUserRated, setHasUserRated] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Check URL params for auto-opening rating modal
+  const openRatingId = searchParams.get('openRating')
+  const openRatings = searchParams.get('openRatings') === 'true'
+  const shouldAutoOpen = !!openRatingId || openRatings
 
   // Fetch user's rating from API if logged in
   useEffect(() => {
@@ -51,6 +58,8 @@ export default function ClientRatingDisplay({
       userId={session?.user?.id}
       hasUserRated={hasUserRated}
       userRatingScore={userRating}
+      autoOpen={shouldAutoOpen}
+      highlightRatingId={openRatingId || undefined}
     />
   )
 }
