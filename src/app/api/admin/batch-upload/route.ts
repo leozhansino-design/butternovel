@@ -291,12 +291,21 @@ async function uploadCoverToCloudinary(file: File, novelTitle: string): Promise<
   const base64 = buffer.toString('base64')
   const dataURI = `data:${file.type};base64,${base64}`
 
+  // Sanitize novelTitle for Cloudinary public_id (remove special characters)
+  const sanitizedTitle = novelTitle
+    .substring(0, 30)
+    .replace(/[^a-zA-Z0-9-_\s]/g, '') // Remove special chars except hyphen, underscore, space
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Collapse multiple hyphens
+    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+    || 'untitled' // Fallback if empty
+
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload(
       dataURI,
       {
         folder: 'novel-covers',
-        public_id: `batch-${Date.now()}-${novelTitle.substring(0, 30)}`,
+        public_id: `batch-${Date.now()}-${sanitizedTitle}`,
         transformation: [
           { width: 300, height: 400, crop: 'fill' },
           { quality: 'auto' },

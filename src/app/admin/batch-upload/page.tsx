@@ -54,6 +54,7 @@ export default function BatchUploadPage() {
       categoryFile?: File
       tagsFile?: File
       ageFile?: File
+      fullOutlineFile?: File // _full_outline.txt for fallback metadata
       chapterFiles: File[]
       allFiles: File[]
     }>()
@@ -89,6 +90,8 @@ export default function BatchUploadPage() {
         folder.tagsFile = file
       } else if (fileName === 'age.txt') {
         folder.ageFile = file
+      } else if (fileName === '_full_outline.txt') {
+        folder.fullOutlineFile = file
       } else if (fileName.match(/^chapter_\d+_.*\.txt$/i)) {
         // 章节文件，但排除 prompt 文件
         if (!isPromptFile(fileName)) {
@@ -121,6 +124,7 @@ export default function BatchUploadPage() {
           categoryFile: folderFiles.categoryFile,
           tagsFile: folderFiles.tagsFile,
           ageFile: folderFiles.ageFile,
+          fullOutlineFile: folderFiles.fullOutlineFile,
           chapterFiles: folderFiles.chapterFiles
         } as IndividualFilesUploadData)
       } else if (hasContentTxt && folderFiles.cover) {
@@ -175,21 +179,25 @@ export default function BatchUploadPage() {
             const errors: string[] = []
             const warnings: string[] = []
 
-            // 验证必需文件存在
-            if (!novel.titleFile) {
-              errors.push('缺少 title.txt 文件')
+            // 验证必需文件存在（支持 _full_outline.txt 回退）
+            const hasFullOutline = !!novel.fullOutlineFile
+            if (!novel.titleFile && !hasFullOutline) {
+              errors.push('缺少 title.txt 文件（或 _full_outline.txt）')
             }
-            if (!novel.blurbFile) {
-              errors.push('缺少 blurb.txt 文件')
+            if (!novel.blurbFile && !hasFullOutline) {
+              errors.push('缺少 blurb.txt 文件（或 _full_outline.txt）')
             }
-            if (!novel.categoryFile) {
-              errors.push('缺少 category.txt 文件')
+            if (!novel.categoryFile && !hasFullOutline) {
+              errors.push('缺少 category.txt 文件（或 _full_outline.txt）')
             }
             if (!novel.coverFile) {
               errors.push('缺少封面图片 (cover_300x400.jpg / cover.png / cover.jpg)')
             }
             if (novel.chapterFiles.length === 0) {
               errors.push('至少需要1个章节文件 (chapter_1_XXX.txt)')
+            }
+            if (hasFullOutline) {
+              warnings.push('将使用 _full_outline.txt 作为元数据备用来源')
             }
 
             // 验证封面
@@ -750,6 +758,7 @@ export default function BatchUploadPage() {
 │   ├── category.txt       (小说类型，如 Romance)
 │   ├── tags.txt           (标签，逗号分隔，可选)
 │   ├── age.txt            (年龄分级，可选)
+│   ├── _full_outline.txt  (备用元数据，当上述文件为空时使用)
 │   ├── chapter_1_Baton_Pass.txt
 │   ├── chapter_2_Just_Keep_Swimming.txt
 │   └── ...
