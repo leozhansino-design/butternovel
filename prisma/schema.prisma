@@ -752,6 +752,7 @@ model Notification {
   @@index([userId, isArchived])               // 查询已归档通知
   @@index([aggregationKey])                   // 聚合查询
   @@index([userId, isArchived, createdAt])    // 分页查询
+  @@index([userId, isRead, isArchived])       // 未读计数查询优化（高频轮询）
 }
 
 // 通知偏好设置

@@ -85,7 +85,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           }`}
         >
-          📥 Inbox
+          Inbox
         </button>
         <button
           onClick={() => setTab('archives')}
@@ -95,7 +95,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           }`}
         >
-          📦 Archives
+          Archives
         </button>
       </div>
 
