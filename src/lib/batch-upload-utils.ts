@@ -525,9 +525,73 @@ export interface IndividualFilesUploadData {
   categoryFile?: File
   tagsFile?: File
   ageFile?: File
+  fullOutlineFile?: File // _full_outline.txt for fallback values
   chapterFiles: File[]
   parsed?: ParsedNovel & { contentRating?: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' }
   validation?: ValidationResult
+}
+
+/**
+ * 从 _full_outline.txt 提取元数据
+ * 格式：
+ * ===== TITLE =====
+ * Title text
+ * ===== BLURB =====
+ * Blurb text...
+ * ===== CATEGORY =====
+ * Category name
+ * ===== AGE_CATEGORY =====
+ * Mature 16+
+ * ===== TAGS =====
+ * tag1, tag2, tag3
+ */
+export interface FullOutlineData {
+  title?: string
+  blurb?: string
+  category?: string
+  ageCategory?: string
+  tags?: string
+}
+
+export function parseFullOutline(content: string): FullOutlineData {
+  console.log('📜 [批量上传] 解析 _full_outline.txt...')
+
+  const result: FullOutlineData = {}
+
+  // Match sections like ===== SECTION_NAME =====
+  const sectionRegex = /=====\s*([A-Z_]+)\s*=====\s*([\s\S]*?)(?======|$)/gi
+  let match
+
+  while ((match = sectionRegex.exec(content)) !== null) {
+    const sectionName = match[1].toUpperCase().trim()
+    const sectionContent = match[2].trim()
+
+    switch (sectionName) {
+      case 'TITLE':
+        result.title = sectionContent
+        console.log(`  📌 Title: ${result.title}`)
+        break
+      case 'BLURB':
+        result.blurb = sectionContent
+        console.log(`  📌 Blurb: ${result.blurb.substring(0, 50)}...`)
+        break
+      case 'CATEGORY':
+        result.category = sectionContent
+        console.log(`  📌 Category: ${result.category}`)
+        break
+      case 'AGE_CATEGORY':
+        result.ageCategory = sectionContent
+        console.log(`  📌 Age Category: ${result.ageCategory}`)
+        break
+      case 'TAGS':
+        result.tags = sectionContent
+        console.log(`  📌 Tags: ${result.tags}`)
+        break
+    }
+  }
+
+  console.log('✅ [批量上传] _full_outline.txt 解析完成')
+  return result
 }
 
 /**
@@ -538,49 +602,76 @@ export interface IndividualFilesUploadData {
  * - category.txt: 小说类型/分类
  * - tags.txt: 标签
  * - age.txt: 年龄分级
+ * - _full_outline.txt: 备用元数据（当上述文件为空时使用）
  * - cover.png / cover.jpg / cover_300x400.jpg: 封面图片
  * - chapter_1_XXX.txt, chapter_2_XXX.txt, ...: 章节正文
  */
 export async function parseIndividualFiles(data: IndividualFilesUploadData): Promise<ParsedNovel & { contentRating?: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' }> {
   console.log('📁 [批量上传] 开始解析独立文件结构:', data.folderName)
 
-  // 读取标题
-  if (!data.titleFile) {
-    throw new Error('缺少 title.txt 文件')
+  // Parse _full_outline.txt for fallback values
+  let fullOutlineData: FullOutlineData = {}
+  if (data.fullOutlineFile) {
+    const fullOutlineContent = await data.fullOutlineFile.text()
+    fullOutlineData = parseFullOutline(fullOutlineContent)
   }
-  const title = (await data.titleFile.text()).trim()
+
+  // 读取标题（支持从 _full_outline.txt 回退）
+  let title = ''
+  if (data.titleFile) {
+    title = (await data.titleFile.text()).trim()
+  }
+  if (!title && fullOutlineData.title) {
+    console.log('⚠️ [批量上传] title.txt 为空，使用 _full_outline.txt 中的 TITLE')
+    title = fullOutlineData.title
+  }
   console.log(`📌 [批量上传] 标题: ${title}`)
 
   if (!title) {
-    throw new Error('标题不能为空')
+    throw new Error('标题不能为空（title.txt 和 _full_outline.txt 都没有标题）')
   }
 
-  // 读取简介
-  if (!data.blurbFile) {
-    throw new Error('缺少 blurb.txt 文件')
+  // 读取简介（支持从 _full_outline.txt 回退）
+  let blurb = ''
+  if (data.blurbFile) {
+    blurb = (await data.blurbFile.text()).trim()
   }
-  const blurb = (await data.blurbFile.text()).trim()
+  if (!blurb && fullOutlineData.blurb) {
+    console.log('⚠️ [批量上传] blurb.txt 为空，使用 _full_outline.txt 中的 BLURB')
+    blurb = fullOutlineData.blurb
+  }
   console.log(`📌 [批量上传] 简介长度: ${blurb.length}字符`)
 
   if (!blurb) {
-    throw new Error('简介不能为空')
+    throw new Error('简介不能为空（blurb.txt 和 _full_outline.txt 都没有简介）')
   }
 
-  // 读取分类
-  if (!data.categoryFile) {
-    throw new Error('缺少 category.txt 文件')
+  // 读取分类（支持从 _full_outline.txt 回退）
+  let genre = ''
+  if (data.categoryFile) {
+    genre = (await data.categoryFile.text()).trim()
   }
-  const genre = (await data.categoryFile.text()).trim()
+  if (!genre && fullOutlineData.category) {
+    console.log('⚠️ [批量上传] category.txt 为空，使用 _full_outline.txt 中的 CATEGORY')
+    genre = fullOutlineData.category
+  }
   console.log(`📌 [批量上传] 分类: ${genre}`)
 
   if (!genre) {
-    throw new Error('分类不能为空')
+    throw new Error('分类不能为空（category.txt 和 _full_outline.txt 都没有分类）')
   }
 
-  // 读取标签（可选）
+  // 读取标签（可选，支持从 _full_outline.txt 回退）
   let tags: string[] = []
+  let tagsContent = ''
   if (data.tagsFile) {
-    const tagsContent = await data.tagsFile.text()
+    tagsContent = (await data.tagsFile.text()).trim()
+  }
+  if (!tagsContent && fullOutlineData.tags) {
+    console.log('⚠️ [批量上传] tags.txt 为空，使用 _full_outline.txt 中的 TAGS')
+    tagsContent = fullOutlineData.tags
+  }
+  if (tagsContent) {
     tags = tagsContent
       .split(',')
       .map(t => normalizeTag(t.trim()))
@@ -588,17 +679,24 @@ export async function parseIndividualFiles(data: IndividualFilesUploadData): Pro
       .slice(0, 20) // 最多20个tags
     console.log(`📌 [批量上传] 标签: ${tags.join(', ')}`)
   } else {
-    console.warn('⚠️ [批量上传] 未找到 tags.txt，标签为空')
+    console.warn('⚠️ [批量上传] 未找到标签信息')
   }
 
-  // 读取年龄分级（可选）
+  // 读取年龄分级（可选，支持从 _full_outline.txt 回退）
   let contentRating: 'ALL_AGES' | 'TEEN_13' | 'MATURE_16' | 'EXPLICIT_18' = 'ALL_AGES'
+  let ageContent = ''
   if (data.ageFile) {
-    const ageContent = await data.ageFile.text()
+    ageContent = (await data.ageFile.text()).trim()
+  }
+  if (!ageContent && fullOutlineData.ageCategory) {
+    console.log('⚠️ [批量上传] age.txt 为空，使用 _full_outline.txt 中的 AGE_CATEGORY')
+    ageContent = fullOutlineData.ageCategory
+  }
+  if (ageContent) {
     contentRating = parseAgeRating(ageContent)
     console.log(`📌 [批量上传] 年龄分级: ${contentRating}`)
   } else {
-    console.warn('⚠️ [批量上传] 未找到 age.txt，使用默认值: ALL_AGES')
+    console.warn('⚠️ [批量上传] 未找到年龄分级信息，使用默认值: ALL_AGES')
   }
 
   // 解析章节文件
