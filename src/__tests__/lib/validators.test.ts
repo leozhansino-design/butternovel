@@ -32,9 +32,9 @@ describe('Validators', () => {
       expect(result.success).toBe(false)
     })
 
-    it('should reject title that is too long', () => {
+    it('should reject title that is too long (>120 chars)', () => {
       const invalidData = {
-        title: 'A'.repeat(201),
+        title: 'A'.repeat(121),  // Max is 120 characters
         coverImage: 'https://example.com/image.jpg',
         categoryId: 1,
         blurb: 'Description',
@@ -45,6 +45,21 @@ describe('Validators', () => {
 
       const result = novelCreateSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
+    })
+
+    it('should accept title at max length (120 chars)', () => {
+      const validData = {
+        title: 'A'.repeat(120),  // Exactly at max
+        coverImage: 'https://example.com/image.jpg',
+        categoryId: 1,
+        blurb: 'Description',
+        status: 'ONGOING',
+        isPublished: true,
+        chapters: [],
+      }
+
+      const result = novelCreateSchema.safeParse(validData)
+      expect(result.success).toBe(true)
     })
   })
 

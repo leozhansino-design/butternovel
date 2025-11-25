@@ -12,7 +12,6 @@ import {
   formatActorNames,
   AGGREGATION_THRESHOLDS,
 } from '@/lib/notification';
-import { NotificationType } from '@prisma/client';
 
 describe('Notification Core Logic', () => {
   describe('Aggregation Thresholds', () => {
@@ -88,22 +87,22 @@ describe('Notification Core Logic', () => {
 
     it('should format 2 actor names', () => {
       const result = formatActorNames(actors.slice(0, 2), 2);
-      expect(result).toBe('Alice、Bob');
+      expect(result).toBe('Alice and Bob');
     });
 
-    it('should format 3 actor names with count', () => {
+    it('should format 3 actor names', () => {
       const result = formatActorNames(actors.slice(0, 3), 3);
-      expect(result).toBe('Alice、Bob、Charlie 等3人');
+      expect(result).toBe('Alice, Bob and Charlie');
     });
 
     it('should format when count exceeds actors array (aggregated)', () => {
       const result = formatActorNames(actors.slice(0, 3), 10);
-      expect(result).toBe('Alice、Bob、Charlie 等10人');
+      expect(result).toBe('Alice, Bob, Charlie and 7 others');
     });
 
     it('should format 100+ actors', () => {
       const result = formatActorNames(actors.slice(0, 3), 150);
-      expect(result).toBe('Alice、Bob、Charlie 等150人');
+      expect(result).toBe('Alice, Bob, Charlie and 147 others');
     });
 
     it('should handle actors without names (use email)', () => {
@@ -112,7 +111,7 @@ describe('Notification Core Logic', () => {
         { id: '2', name: null, email: 'bob@example.com' },
       ];
       const result = formatActorNames(noNameActors, 2);
-      expect(result).toBe('alice@example.com、bob@example.com');
+      expect(result).toBe('alice@example.com and bob@example.com');
     });
   });
 
@@ -124,16 +123,16 @@ describe('Notification Core Logic', () => {
           actorName: 'Alice',
           isAggregated: false,
         });
-        expect(title).toBe('Alice 回复了你的评分');
+        expect(title).toBe('Alice replied to your rating');
       });
 
       it('should create title for aggregated replies', () => {
         const title = createNotificationTitle({
           type: 'RATING_REPLY',
-          actorName: 'Alice、Bob 等5人',
+          actorName: 'Alice, Bob and 3 others',
           isAggregated: true,
         });
-        expect(title).toBe('Alice、Bob 等5人 回复了你的评分');
+        expect(title).toBe('Alice, Bob and 3 others replied to your rating');
       });
     });
 
@@ -144,16 +143,16 @@ describe('Notification Core Logic', () => {
           actorName: 'Bob',
           isAggregated: false,
         });
-        expect(title).toBe('Bob 赞了你的评分');
+        expect(title).toBe('Bob liked your rating');
       });
 
-      it('should create title for 100+ likes', () => {
+      it('should create title for aggregated likes', () => {
         const title = createNotificationTitle({
           type: 'RATING_LIKE',
-          actorName: '100+ 人',
+          actorName: 'Alice, Bob and 98 others',
           isAggregated: true,
         });
-        expect(title).toBe('100+ 人 赞了你的评分');
+        expect(title).toBe('Alice, Bob and 98 others liked your rating');
       });
     });
 
@@ -164,7 +163,7 @@ describe('Notification Core Logic', () => {
           actorName: 'Charlie',
           isAggregated: false,
         });
-        expect(title).toBe('Charlie 回复了你的评论');
+        expect(title).toBe('Charlie replied to your comment');
       });
     });
 
@@ -175,7 +174,7 @@ describe('Notification Core Logic', () => {
           actorName: 'David',
           isAggregated: false,
         });
-        expect(title).toBe('David 赞了你的评论');
+        expect(title).toBe('David liked your comment');
       });
     });
 
@@ -186,7 +185,7 @@ describe('Notification Core Logic', () => {
           actorName: 'Eve',
           novelTitle: 'The Truth Switch',
         });
-        expect(title).toBe('Eve 发布了新书');
+        expect(title).toBe('Eve published a new novel');
       });
     });
 
@@ -197,7 +196,7 @@ describe('Notification Core Logic', () => {
           actorName: 'Eve',
           novelTitle: 'The Truth Switch',
         });
-        expect(title).toBe('Eve 更新了《The Truth Switch》');
+        expect(title).toBe('Eve updated "The Truth Switch"');
       });
     });
 
@@ -207,29 +206,29 @@ describe('Notification Core Logic', () => {
           type: 'NOVEL_UPDATE',
           novelTitle: 'The Truth Switch',
         });
-        expect(title).toBe('《The Truth Switch》更新了');
+        expect(title).toBe('"The Truth Switch" has been updated');
       });
     });
 
-    describe('NOVEL_RATING (作者通知)', () => {
+    describe('NOVEL_RATING (author notification)', () => {
       it('should create title for novel rating', () => {
         const title = createNotificationTitle({
           type: 'NOVEL_RATING',
           actorName: 'Alice',
           novelTitle: 'My Novel',
         });
-        expect(title).toBe('Alice 评分了你的小说《My Novel》');
+        expect(title).toBe('Alice rated your novel "My Novel"');
       });
     });
 
-    describe('NOVEL_COMMENT (作者通知)', () => {
+    describe('NOVEL_COMMENT (author notification)', () => {
       it('should create title for novel comment', () => {
         const title = createNotificationTitle({
           type: 'NOVEL_COMMENT',
           actorName: 'Bob',
           novelTitle: 'My Novel',
         });
-        expect(title).toBe('Bob 评论了你的小说《My Novel》');
+        expect(title).toBe('Bob commented on your novel "My Novel"');
       });
     });
 
@@ -240,16 +239,16 @@ describe('Notification Core Logic', () => {
           actorName: 'Charlie',
           isAggregated: false,
         });
-        expect(title).toBe('Charlie 关注了你');
+        expect(title).toBe('Charlie followed you');
       });
 
       it('should create title for multiple followers', () => {
         const title = createNotificationTitle({
           type: 'NEW_FOLLOWER',
-          actorName: 'Charlie、David 等10人',
+          actorName: 'Charlie, David and 8 others',
           isAggregated: true,
         });
-        expect(title).toBe('Charlie、David 等10人 关注了你');
+        expect(title).toBe('Charlie, David and 8 others followed you');
       });
     });
 
@@ -259,7 +258,7 @@ describe('Notification Core Logic', () => {
           type: 'LEVEL_UP',
           level: 5,
         });
-        expect(title).toBe('恭喜你升级到 Lv.5');
+        expect(title).toBe("Congratulations! You've reached Lv.5");
       });
     });
 
@@ -267,9 +266,16 @@ describe('Notification Core Logic', () => {
       it('should use custom title for system announcement', () => {
         const title = createNotificationTitle({
           type: 'SYSTEM_ANNOUNCEMENT',
-          customTitle: '系统维护通知',
+          customTitle: 'System Maintenance Notice',
         });
-        expect(title).toBe('系统维护通知');
+        expect(title).toBe('System Maintenance Notice');
+      });
+
+      it('should use default title when no custom title provided', () => {
+        const title = createNotificationTitle({
+          type: 'SYSTEM_ANNOUNCEMENT',
+        });
+        expect(title).toBe('System Notification');
       });
     });
   });
@@ -278,17 +284,17 @@ describe('Notification Core Logic', () => {
     it('should create content for RATING_REPLY', () => {
       const content = createNotificationContent({
         type: 'RATING_REPLY',
-        replyContent: '我也这么认为！',
+        replyContent: 'I agree with you!',
       });
-      expect(content).toBe('我也这么认为！');
+      expect(content).toBe('I agree with you!');
     });
 
     it('should create content for AUTHOR_NEW_CHAPTER', () => {
       const content = createNotificationContent({
         type: 'AUTHOR_NEW_CHAPTER',
-        chapterTitle: '第42章：新篇章',
+        chapterTitle: 'Chapter 42: New Beginning',
       });
-      expect(content).toBe('第42章：新篇章');
+      expect(content).toBe('Chapter 42: New Beginning');
     });
 
     it('should create content for NOVEL_RATING', () => {
@@ -315,7 +321,7 @@ describe('Notification Core Logic', () => {
         novelSlug: 'the-truth-switch',
         ratingId: 'rating123',
       });
-      expect(link).toBe('/novel/42/the-truth-switch#rating-rating123');
+      expect(link).toBe('/novels/the-truth-switch?openRating=rating123');
     });
 
     it('should create link for COMMENT_REPLY', () => {
@@ -327,9 +333,7 @@ describe('Notification Core Logic', () => {
         chapterNumber: 5,
         commentId: 'comment456',
       });
-      expect(link).toBe(
-        '/novel/42/the-truth-switch/chapter/5#comment-comment456'
-      );
+      expect(link).toBe('/novels/the-truth-switch/chapters/5?openComment=comment456');
     });
 
     it('should create link for AUTHOR_NEW_CHAPTER', () => {
@@ -340,7 +344,7 @@ describe('Notification Core Logic', () => {
         chapterId: 10,
         chapterNumber: 10,
       });
-      expect(link).toBe('/novel/42/the-truth-switch/chapter/10');
+      expect(link).toBe('/novels/the-truth-switch/chapters/10');
     });
 
     it('should create link for AUTHOR_NEW_NOVEL', () => {
@@ -349,7 +353,7 @@ describe('Notification Core Logic', () => {
         novelId: 99,
         novelSlug: 'new-novel',
       });
-      expect(link).toBe('/novel/99/new-novel');
+      expect(link).toBe('/novels/new-novel?openRatings=true');
     });
 
     it('should create link for NEW_FOLLOWER', () => {
