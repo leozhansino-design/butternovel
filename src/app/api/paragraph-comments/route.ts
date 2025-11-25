@@ -227,6 +227,7 @@ export async function POST(request: NextRequest) {
             novelTitle: novel.title,
             chapterId: parseInt(chapterId),
             chapterNumber: chapter.chapterNumber,
+            commentId: comment.id, // 添加 commentId 以便跳转到评论位置
             commentContent: content.trim(),
           },
         });

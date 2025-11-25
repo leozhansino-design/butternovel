@@ -81,11 +81,11 @@ export function formatActorNames(
   if (totalCount === 1) {
     return names[0];
   } else if (totalCount === 2) {
-    return names.join('、');
-  } else if (totalCount >= 100) {
-    return `${names.join('、')} 等${totalCount}人`;
+    return names.join(' and ');
+  } else if (totalCount === 3) {
+    return `${names.slice(0, 2).join(', ')} and ${names[2]}`;
   } else {
-    return `${names.join('、')} 等${totalCount}人`;
+    return `${names.join(', ')} and ${totalCount - names.length} others`;
   }
 }
 
@@ -111,43 +111,43 @@ export function createNotificationTitle(data: NotificationTitleData): string {
 
   switch (type) {
     case 'RATING_REPLY':
-      return `${actorName} 回复了你的评分`;
+      return `${actorName} replied to your rating`;
 
     case 'RATING_LIKE':
-      return `${actorName} 赞了你的评分`;
+      return `${actorName} liked your rating`;
 
     case 'COMMENT_REPLY':
-      return `${actorName} 回复了你的评论`;
+      return `${actorName} replied to your comment`;
 
     case 'COMMENT_LIKE':
-      return `${actorName} 赞了你的评论`;
+      return `${actorName} liked your comment`;
 
     case 'AUTHOR_NEW_NOVEL':
-      return `${actorName} 发布了新书`;
+      return `${actorName} published a new novel`;
 
     case 'AUTHOR_NEW_CHAPTER':
-      return `${actorName} 更新了《${novelTitle}》`;
+      return `${actorName} updated "${novelTitle}"`;
 
     case 'NOVEL_UPDATE':
-      return `《${novelTitle}》更新了`;
+      return `"${novelTitle}" has been updated`;
 
     case 'NOVEL_RATING':
-      return `${actorName} 评分了你的小说《${novelTitle}》`;
+      return `${actorName} rated your novel "${novelTitle}"`;
 
     case 'NOVEL_COMMENT':
-      return `${actorName} 评论了你的小说《${novelTitle}》`;
+      return `${actorName} commented on your novel "${novelTitle}"`;
 
     case 'NEW_FOLLOWER':
-      return `${actorName} 关注了你`;
+      return `${actorName} followed you`;
 
     case 'LEVEL_UP':
-      return `恭喜你升级到 Lv.${level}`;
+      return `Congratulations! You've reached Lv.${level}`;
 
     case 'SYSTEM_ANNOUNCEMENT':
-      return customTitle || '系统通知';
+      return customTitle || 'System Notification';
 
     default:
-      return '新通知';
+      return 'New Notification';
   }
 }
 
@@ -250,7 +250,17 @@ export function createNotificationLink(
 
     case 'AUTHOR_NEW_NOVEL':
     case 'NOVEL_RATING':
+      if (novelId && novelSlug) {
+        return `/novel/${novelId}/${novelSlug}`;
+      }
+      return null;
+
     case 'NOVEL_COMMENT':
+      // 段落评论应该跳转到章节页面的评论位置
+      if (novelId && novelSlug && chapterNumber && commentId) {
+        return `/novel/${novelId}/${novelSlug}/chapter/${chapterNumber}#comment-${commentId}`;
+      }
+      // 如果没有章节信息，回退到小说详情页
       if (novelId && novelSlug) {
         return `/novel/${novelId}/${novelSlug}`;
       }
