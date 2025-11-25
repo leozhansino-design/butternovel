@@ -191,6 +191,9 @@ export async function GET(request: Request) {
         ) as { id: number } | null
         if (categoryRecord) {
           where.categoryId = categoryRecord.id
+        } else {
+          // 分类不存在，设置不可能的ID确保返回空结果
+          where.categoryId = -1
         }
       }
     }

@@ -22,6 +22,8 @@ async function main() {
     { name: 'Revenge', slug: 'revenge', order: 14 },
     { name: 'Fanfiction', slug: 'fanfiction', order: 15 },
     { name: 'Humor', slug: 'humor', order: 16 },
+    { name: 'Werewolf', slug: 'werewolf', order: 17 },
+    { name: 'Vampire', slug: 'vampire', order: 18 },
   ]
 
   for (const category of categories) {
