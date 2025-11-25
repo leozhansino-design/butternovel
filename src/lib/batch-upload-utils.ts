@@ -14,6 +14,27 @@ export const BATCH_UPLOAD_LIMITS = {
 } as const
 
 /**
+ * 规范化章节内容格式
+ * - 统一换行符为 \n（处理 Windows \r\n 和 Mac \r）
+ * - 确保段落之间有双换行符（便于阅读器正确分割段落）
+ * - 移除多余的空白行（超过2个连续空行合并为2个）
+ */
+export function normalizeChapterContent(content: string): string {
+  if (!content) return ''
+
+  return content
+    // 1. 统一换行符：\r\n -> \n, 单独的 \r -> \n
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    // 2. 移除行末空白字符（保留换行符）
+    .replace(/[ \t]+$/gm, '')
+    // 3. 将3个或更多连续换行符合并为2个（保持段落分隔）
+    .replace(/\n{3,}/g, '\n\n')
+    // 4. 首尾去空白
+    .trim()
+}
+
+/**
  * 解析的小说数据结构
  */
 export interface ParsedNovel {
@@ -193,7 +214,7 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
       if (currentChapter) {
         chapters.push({
           ...currentChapter,
-          content: currentChapter.content.trim()
+          content: normalizeChapterContent(currentChapter.content)
         })
       }
 
@@ -213,7 +234,7 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
   if (currentChapter) {
     chapters.push({
       ...currentChapter,
-      content: currentChapter.content.trim()
+      content: normalizeChapterContent(currentChapter.content)
     })
   }
 
@@ -710,7 +731,8 @@ export async function parseIndividualFiles(data: IndividualFilesUploadData): Pro
       continue
     }
 
-    const content = (await file.text()).trim()
+    const rawContent = await file.text()
+    const content = normalizeChapterContent(rawContent)
 
     if (!content) {
       console.warn(`⚠️ [批量上传] 章节 ${chapterInfo.number} 内容为空`)
