@@ -24,6 +24,9 @@ const genres = [
   { id: 13, name: 'Reborn' },
   { id: 14, name: 'Revenge' },
   { id: 15, name: 'Fanfiction' },
+  { id: 16, name: 'Humor' },
+  { id: 17, name: 'Werewolf' },
+  { id: 18, name: 'Vampire' },
 ]
 
 // 字数限制

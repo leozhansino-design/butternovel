@@ -9,8 +9,8 @@ const FOOTER_CATEGORIES = [
   { slug: 'sci-fi', name: 'Sci-Fi' },
   { slug: 'horror', name: 'Horror' },
   { slug: 'adventure', name: 'Adventure' },
-  { slug: 'historical', name: 'Historical' },
-  { slug: 'humor', name: 'Humor' },
+  { slug: 'werewolf', name: 'Werewolf' },
+  { slug: 'vampire', name: 'Vampire' },
 ];
 
 export default function Footer() {
