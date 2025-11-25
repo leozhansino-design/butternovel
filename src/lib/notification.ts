@@ -229,40 +229,40 @@ export function createNotificationLink(
   switch (type) {
     case 'RATING_REPLY':
     case 'RATING_LIKE':
-      if (novelId && novelSlug && ratingId) {
-        return `/novel/${novelId}/${novelSlug}#rating-${ratingId}`;
+      if (novelSlug && ratingId) {
+        return `/novels/${novelSlug}#rating-${ratingId}`;
       }
       return null;
 
     case 'COMMENT_REPLY':
     case 'COMMENT_LIKE':
-      if (novelId && novelSlug && chapterNumber && commentId) {
-        return `/novel/${novelId}/${novelSlug}/chapter/${chapterNumber}#comment-${commentId}`;
+      if (novelSlug && chapterNumber && commentId) {
+        return `/novels/${novelSlug}/chapters/${chapterNumber}#comment-${commentId}`;
       }
       return null;
 
     case 'AUTHOR_NEW_CHAPTER':
     case 'NOVEL_UPDATE':
-      if (novelId && novelSlug && chapterNumber) {
-        return `/novel/${novelId}/${novelSlug}/chapter/${chapterNumber}`;
+      if (novelSlug && chapterNumber) {
+        return `/novels/${novelSlug}/chapters/${chapterNumber}`;
       }
       return null;
 
     case 'AUTHOR_NEW_NOVEL':
     case 'NOVEL_RATING':
-      if (novelId && novelSlug) {
-        return `/novel/${novelId}/${novelSlug}`;
+      if (novelSlug) {
+        return `/novels/${novelSlug}`;
       }
       return null;
 
     case 'NOVEL_COMMENT':
       // 段落评论应该跳转到章节页面的评论位置
-      if (novelId && novelSlug && chapterNumber && commentId) {
-        return `/novel/${novelId}/${novelSlug}/chapter/${chapterNumber}#comment-${commentId}`;
+      if (novelSlug && chapterNumber && commentId) {
+        return `/novels/${novelSlug}/chapters/${chapterNumber}#comment-${commentId}`;
       }
       // 如果没有章节信息，回退到小说详情页
-      if (novelId && novelSlug) {
-        return `/novel/${novelId}/${novelSlug}`;
+      if (novelSlug) {
+        return `/novels/${novelSlug}`;
       }
       return null;
 
