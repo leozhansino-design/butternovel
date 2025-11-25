@@ -230,14 +230,16 @@ export function createNotificationLink(
     case 'RATING_REPLY':
     case 'RATING_LIKE':
       if (novelSlug && ratingId) {
-        return `/novels/${novelSlug}#rating-${ratingId}`;
+        // Use query param to open rating modal and highlight specific rating
+        return `/novels/${novelSlug}?openRating=${ratingId}`;
       }
       return null;
 
     case 'COMMENT_REPLY':
     case 'COMMENT_LIKE':
       if (novelSlug && chapterNumber && commentId) {
-        return `/novels/${novelSlug}/chapters/${chapterNumber}#comment-${commentId}`;
+        // Use query param to open comment panel and highlight specific comment
+        return `/novels/${novelSlug}/chapters/${chapterNumber}?openComment=${commentId}`;
       }
       return null;
 
@@ -251,14 +253,15 @@ export function createNotificationLink(
     case 'AUTHOR_NEW_NOVEL':
     case 'NOVEL_RATING':
       if (novelSlug) {
-        return `/novels/${novelSlug}`;
+        // Open rating modal when arriving from notification
+        return `/novels/${novelSlug}?openRatings=true`;
       }
       return null;
 
     case 'NOVEL_COMMENT':
       // 段落评论应该跳转到章节页面的评论位置
       if (novelSlug && chapterNumber && commentId) {
-        return `/novels/${novelSlug}/chapters/${chapterNumber}#comment-${commentId}`;
+        return `/novels/${novelSlug}/chapters/${chapterNumber}?openComment=${commentId}`;
       }
       // 如果没有章节信息，回退到小说详情页
       if (novelSlug) {

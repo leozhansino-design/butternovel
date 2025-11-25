@@ -2,7 +2,7 @@
 // src/components/novel/RatingDisplay.tsx
 // Rating display component (below cover)
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RatingModal from './RatingModal'
 import { formatNumber } from '@/lib/format'
 
@@ -13,6 +13,8 @@ interface RatingDisplayProps {
   userId?: string
   hasUserRated?: boolean
   userRatingScore?: number
+  autoOpen?: boolean
+  highlightRatingId?: string
 }
 
 export default function RatingDisplay({
@@ -22,9 +24,18 @@ export default function RatingDisplay({
   userId,
   hasUserRated = false,
   userRatingScore,
+  autoOpen = false,
+  highlightRatingId,
 }: RatingDisplayProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+
+  // Auto-open modal if requested via URL params
+  useEffect(() => {
+    if (autoOpen) {
+      setIsModalOpen(true)
+    }
+  }, [autoOpen])
 
   // Always show novel's average rating stars
   const renderStars = (score: number) => {
@@ -120,6 +131,7 @@ export default function RatingDisplay({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         userId={userId}
+        highlightRatingId={highlightRatingId}
       />
     </>
   )

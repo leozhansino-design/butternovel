@@ -35,6 +35,7 @@ interface ParagraphCommentPanelProps {
   onClose: () => void
   bgColor?: string
   textColor?: string
+  highlightCommentId?: string
 }
 
 // Common emojis for quick selection
@@ -46,7 +47,8 @@ export default function ParagraphCommentPanel({
   paragraphIndex,
   onClose,
   bgColor = 'bg-white',
-  textColor = 'text-gray-900'
+  textColor = 'text-gray-900',
+  highlightCommentId
 }: ParagraphCommentPanelProps) {
   const { data: session } = useSession()
   const [comments, setComments] = useState<Comment[]>([])
@@ -125,6 +127,19 @@ export default function ParagraphCommentPanel({
       controller.abort()
     }
   }, [chapterId, paragraphIndex])
+
+  // Scroll to highlighted comment after comments are loaded
+  useEffect(() => {
+    if (highlightCommentId && comments.length > 0 && !loading) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        const element = document.getElementById(`comment-${highlightCommentId}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+  }, [highlightCommentId, comments, loading])
 
   const fetchReplies = async (commentId: string) => {
     if (replies[commentId]) {
@@ -378,7 +393,13 @@ export default function ParagraphCommentPanel({
           </div>
         ) : (
           comments.map(comment => (
-            <div key={comment.id} className={`${cardBg} rounded-lg p-4`}>
+            <div
+              key={comment.id}
+              id={`comment-${comment.id}`}
+              className={`${cardBg} rounded-lg p-4 transition-colors ${
+                highlightCommentId === comment.id ? 'ring-2 ring-amber-500 bg-amber-50/50' : ''
+              }`}
+            >
               {/* Comment header */}
               <div className="flex items-start gap-3">
                 <div

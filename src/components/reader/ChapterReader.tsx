@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ParagraphCommentButton from './ParagraphCommentButton'
 import ParagraphCommentPanel from './ParagraphCommentPanel'
 
@@ -52,8 +52,9 @@ const fontSizes = {
 
 export default function ChapterReader({ novel, chapter, chapters, totalChapters }: ChapterReaderProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const contentRef = useRef<HTMLDivElement>(null)
-  
+
   const [readMode, setReadMode] = useState<ReadMode>('scroll')
   const [bgColor, setBgColor] = useState<BgColor>('beige')
   const [fontSize, setFontSize] = useState<keyof typeof fontSizes>('medium')
@@ -68,6 +69,27 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
   const [activeParagraphIndex, setActiveParagraphIndex] = useState<number | null>(null)
   const [paragraphs, setParagraphs] = useState<string[]>([])
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({})
+
+  // ⭐ URL param for opening specific comment from notification
+  const openCommentId = searchParams.get('openComment')
+  const [highlightCommentId, setHighlightCommentId] = useState<string | null>(openCommentId)
+
+  // ⭐ Auto-open comment panel from notification link
+  useEffect(() => {
+    if (openCommentId) {
+      // Fetch the comment to find its paragraphIndex
+      fetch(`/api/paragraph-comments/${openCommentId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            const paragraphIndex = data.data.paragraphIndex
+            setActiveParagraphIndex(paragraphIndex)
+            setHighlightCommentId(openCommentId)
+          }
+        })
+        .catch(err => console.error('Failed to fetch comment:', err))
+    }
+  }, [openCommentId])
 
   // ⭐ 阅读时长追踪
   const startTimeRef = useRef<number>(Date.now())
@@ -582,6 +604,7 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
               onClose={() => setActiveParagraphIndex(null)}
               bgColor={bgColors[bgColor].bg}
               textColor={bgColors[bgColor].text}
+              highlightCommentId={highlightCommentId || undefined}
             />
           </div>
         )}

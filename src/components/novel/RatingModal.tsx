@@ -49,6 +49,7 @@ interface RatingModalProps {
   isOpen: boolean
   onClose: () => void
   userId?: string
+  highlightRatingId?: string
 }
 
 export default function RatingModal({
@@ -58,6 +59,7 @@ export default function RatingModal({
   isOpen,
   onClose,
   userId,
+  highlightRatingId,
 }: RatingModalProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -148,6 +150,19 @@ export default function RatingModal({
       fetchRatings(1, sortBy)
     }
   }, [sortBy, isOpen, fetchRatings])
+
+  // Scroll to highlighted rating after ratings are loaded
+  useEffect(() => {
+    if (highlightRatingId && ratings.length > 0 && !loading) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        const element = document.getElementById(`rating-${highlightRatingId}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+  }, [highlightRatingId, ratings, loading])
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -603,7 +618,13 @@ export default function RatingModal({
           ) : (
             <div className="space-y-4">
               {ratings.map((rating) => (
-                <div key={rating.id} className="border-b border-gray-100 pb-4 last:border-0">
+                <div
+                  key={rating.id}
+                  id={`rating-${rating.id}`}
+                  className={`border-b border-gray-100 pb-4 last:border-0 transition-colors ${
+                    highlightRatingId === rating.id ? 'bg-amber-50 -mx-2 px-2 rounded-lg' : ''
+                  }`}
+                >
                   <div className="flex items-start gap-3">
                     <button onClick={() => handleUserClick(rating.user.id)} className="flex-shrink-0 cursor-pointer">
                       <UserBadge
