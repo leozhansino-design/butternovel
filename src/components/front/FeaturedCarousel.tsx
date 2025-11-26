@@ -172,7 +172,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
         {/* Novel list - horizontal scroll with snap */}
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
+          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:pl-0 lg:pr-[150px]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -180,6 +180,8 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
             scrollSnapType: 'x mandatory'
           }}
         >
+          {/* 桌面端左侧占位符 - 让第一本书初始位置在渐变区域之后 */}
+          <div className="hidden lg:block flex-shrink-0 w-[150px]" aria-hidden="true" />
           {books.map((book) => (
             <Link
               key={book.id}
@@ -217,6 +219,8 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
               </h3>
             </Link>
           ))}
+          {/* 桌面端右侧占位符 */}
+          <div className="hidden lg:block flex-shrink-0 w-[120px]" aria-hidden="true" />
         </div>
       </div>
     </div>
