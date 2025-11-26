@@ -129,8 +129,8 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
               <span className={`font-semibold ${statusColor}`}>{statusText}</span>
             </div>
 
-            {/* 简介 - 移动端隐藏，平板以上显示 */}
-            <p className="hidden sm:block text-xs sm:text-sm md:text-base text-gray-700 leading-relaxed line-clamp-2 md:line-clamp-3">
+            {/* 简介 - 移动端1行，平板以上2-3行 */}
+            <p className="text-[11px] sm:text-sm md:text-base text-gray-600 sm:text-gray-700 leading-snug sm:leading-relaxed line-clamp-1 sm:line-clamp-2 md:line-clamp-3">
               {blurb}
             </p>
           </div>

@@ -154,7 +154,7 @@ export default function CategoryCarousel({
         {/* Novel list - horizontal scroll with snap, extends to edge */}
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
+          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:pl-[180px] lg:pr-[150px]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',

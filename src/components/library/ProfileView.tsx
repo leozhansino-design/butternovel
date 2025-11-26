@@ -275,12 +275,12 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
 
   return (
     <div>
-      {/* 毛玻璃 Profile 卡片 */}
-      <div className="relative backdrop-blur-2xl bg-white/70 rounded-2xl shadow-xl border border-white/30 p-6">
+      {/* 毛玻璃 Profile 卡片 - 移动端优化 */}
+      <div className="relative backdrop-blur-2xl bg-white/70 rounded-xl sm:rounded-2xl shadow-xl border border-white/30 p-3 sm:p-6">
         {/* 渐变背景装饰 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-2xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-xl sm:rounded-2xl pointer-events-none" />
 
-        <div className="relative flex items-start gap-6">
+        <div className="relative flex items-start gap-3 sm:gap-6">
           {/* Avatar with Badge and upload */}
           <div className="flex-shrink-0 flex flex-col items-center gap-2">
             <div className="relative group">
@@ -378,72 +378,72 @@ export default function ProfileView({ user, onNavigate }: ProfileViewProps) {
               </div>
             ) : (
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900 truncate">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                  <h2 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
                     {profileData.name || 'Anonymous Reader'}
                   </h2>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-2 text-gray-400 hover:text-amber-500 hover:bg-white/60 rounded-lg transition-colors flex-shrink-0"
+                    className="p-1.5 sm:p-2 text-gray-400 hover:text-amber-500 hover:bg-white/60 rounded-lg transition-colors flex-shrink-0"
                     title="Edit profile"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </button>
                 </div>
-                <p className="text-gray-600 text-sm mb-4 truncate">{profileData.email}</p>
+                <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-4 truncate">{profileData.email}</p>
 
-                {/* Bio */}
+                {/* Bio - 移动端隐藏 */}
                 {profileData.bio ? (
-                  <p className="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-2">{profileData.bio}</p>
+                  <p className="hidden sm:block text-gray-700 text-sm leading-relaxed mb-4 line-clamp-2">{profileData.bio}</p>
                 ) : (
-                  <p className="text-gray-400 italic text-sm mb-4">No bio yet. Click the edit button to add one!</p>
+                  <p className="hidden sm:block text-gray-400 italic text-sm mb-4">No bio yet. Click the edit button to add one!</p>
                 )}
 
-                {/* Stats cards - 4 cards in a row with frosted glass effect */}
-                <div className="grid grid-cols-4 gap-3">
+                {/* Stats cards - 移动端2列，桌面端4列 */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                   {/* Books Read */}
-                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg">
-                    <div className="text-lg font-bold text-gray-900">{profileData.stats.booksRead}</div>
-                    <div className="text-xs text-gray-600 mt-0.5">Books Read</div>
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-2 sm:p-3 text-center shadow-lg">
+                    <div className="text-base sm:text-lg font-bold text-gray-900">{profileData.stats.booksRead}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">Books</div>
                   </div>
 
                   {/* Following - clickable */}
                   <button
                     onClick={() => setShowFollowModal('following')}
-                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
+                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-2 sm:p-3 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
                   >
-                    <div className="text-lg font-bold text-gray-900">{profileData.stats.following}</div>
-                    <div className="text-xs text-gray-600 mt-0.5">Following</div>
+                    <div className="text-base sm:text-lg font-bold text-gray-900">{profileData.stats.following}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">Following</div>
                   </button>
 
                   {/* Followers - clickable */}
                   <button
                     onClick={() => setShowFollowModal('followers')}
-                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
+                    className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-2 sm:p-3 text-center shadow-lg hover:bg-white/60 transition-colors cursor-pointer"
                   >
-                    <div className="text-lg font-bold text-gray-900">{profileData.stats.followers}</div>
-                    <div className="text-xs text-gray-600 mt-0.5">Followers</div>
+                    <div className="text-base sm:text-lg font-bold text-gray-900">{profileData.stats.followers}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">Followers</div>
                   </button>
 
                   {/* Reviews */}
-                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg">
-                    <div className="text-lg font-bold text-gray-900">{profileData.stats.totalRatings}</div>
-                    <div className="text-xs text-gray-600 mt-0.5">Reviews</div>
+                  <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-2 sm:p-3 text-center shadow-lg">
+                    <div className="text-base sm:text-lg font-bold text-gray-900">{profileData.stats.totalRatings}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-600 mt-0.5">Reviews</div>
                   </div>
                 </div>
 
-                {/* Reading Time - separate row */}
-                <div className="mt-3">
+                {/* Reading Time + Privacy - 移动端隐藏，保持界面简洁 */}
+                <div className="hidden sm:block mt-3">
                   <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-3 text-center shadow-lg">
                     <div className="text-sm font-bold text-gray-900">{formatReadingTime(profileData.stats.readingTime)}</div>
                     <div className="text-xs text-gray-600 mt-0.5">Reading Time</div>
                   </div>
                 </div>
 
-                {/* Privacy Settings */}
-                <div className="mt-3">
+                {/* Privacy Settings - 移动端隐藏 */}
+                <div className="hidden sm:block mt-3">
                   <div className="backdrop-blur-xl bg-white/40 border border-white/60 rounded-lg p-4 shadow-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">

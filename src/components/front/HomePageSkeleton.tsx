@@ -2,40 +2,44 @@
 export default function HomePageSkeleton() {
   return (
     <div className="animate-pulse">
-      {/* Trending Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-blue-50/50 py-12 md:py-16 lg:py-20">
-        <div style={{ paddingLeft: '150px', paddingRight: '150px' }}>
-          <div className="h-8 bg-gray-200 rounded-lg w-48 mb-4 sm:mb-6 md:mb-8"></div>
-          <div className="flex gap-5 md:gap-6 overflow-hidden">
+      {/* Trending Section - 响应式 */}
+      <section className="bg-gradient-to-br from-blue-50 via-white to-blue-50/50 py-6 sm:py-8 md:py-12 lg:py-16">
+        <div className="px-4 md:px-8 lg:px-[150px]">
+          <div className="h-6 sm:h-8 bg-gray-200 rounded-lg w-32 sm:w-48 mb-4 sm:mb-6 md:mb-8"></div>
+          <div className="flex gap-3 sm:gap-4 md:gap-5 overflow-hidden">
+            {/* 移动端显示1.5个卡片，平板2个，桌面3个 */}
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex-shrink-0 bg-white rounded-xl shadow-md border border-gray-100" style={{ width: '480px' }}>
-                <div className="flex gap-5 p-5 h-full">
+              <div
+                key={i}
+                className={`flex-shrink-0 bg-white rounded-lg sm:rounded-xl shadow-md border border-gray-100 w-[280px] sm:w-[360px] md:w-[420px] lg:w-[480px] ${i > 0 ? 'hidden sm:block' : ''} ${i > 1 ? 'sm:hidden md:block' : ''}`}
+              >
+                <div className="flex gap-3 sm:gap-4 md:gap-5 p-3 sm:p-4 md:p-5 h-full">
                   <div className="flex-shrink-0">
-                    <div className="bg-gray-200 rounded-lg shadow-lg" style={{ width: '150px', height: '200px' }}></div>
+                    <div className="bg-gray-200 rounded-lg shadow-lg w-[80px] h-[110px] sm:w-[120px] sm:h-[160px] md:w-[150px] md:h-[200px]"></div>
                   </div>
                   <div className="flex-1 flex flex-col justify-between min-w-0">
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 sm:space-y-2">
                       {/* Title */}
-                      <div className="h-5 bg-gray-200 rounded w-full"></div>
-                      <div className="h-5 bg-gray-200 rounded w-4/5"></div>
+                      <div className="h-4 sm:h-5 bg-gray-200 rounded w-full"></div>
+                      <div className="h-4 sm:h-5 bg-gray-200 rounded w-4/5"></div>
                       {/* Meta Info */}
                       <div className="flex gap-2 items-center">
-                        <div className="h-5 bg-gray-200 rounded-full w-20"></div>
+                        <div className="h-4 sm:h-5 bg-gray-200 rounded-full w-16 sm:w-20"></div>
                         <div className="h-3 w-1 bg-gray-200 rounded-full"></div>
-                        <div className="h-4 bg-gray-200 rounded w-16"></div>
+                        <div className="h-3 sm:h-4 bg-gray-200 rounded w-12 sm:w-16"></div>
                       </div>
-                      {/* Blurb - 5 lines */}
-                      <div className="space-y-2 pt-1">
-                        <div className="h-3 bg-gray-200 rounded w-full"></div>
-                        <div className="h-3 bg-gray-200 rounded w-full"></div>
-                        <div className="h-3 bg-gray-200 rounded w-full"></div>
-                        <div className="h-3 bg-gray-200 rounded w-full"></div>
-                        <div className="h-3 bg-gray-200 rounded w-4/5"></div>
+                      {/* Blurb - 移动端3行，桌面5行 */}
+                      <div className="space-y-1.5 sm:space-y-2 pt-1">
+                        <div className="h-2.5 sm:h-3 bg-gray-200 rounded w-full"></div>
+                        <div className="h-2.5 sm:h-3 bg-gray-200 rounded w-full"></div>
+                        <div className="h-2.5 sm:h-3 bg-gray-200 rounded w-4/5"></div>
+                        <div className="h-3 bg-gray-200 rounded w-full hidden sm:block"></div>
+                        <div className="h-3 bg-gray-200 rounded w-4/5 hidden md:block"></div>
                       </div>
                     </div>
                     {/* Read Now Button */}
-                    <div className="mt-3">
-                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="mt-2 sm:mt-3">
+                      <div className="h-3 sm:h-4 bg-gray-200 rounded w-20 sm:w-24"></div>
                     </div>
                   </div>
                 </div>
@@ -45,38 +49,38 @@ export default function HomePageSkeleton() {
         </div>
       </section>
 
-      {/* Featured Section */}
-      <section className="bg-gradient-to-b from-slate-50/80 to-white py-12 md:py-16">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="h-8 bg-gray-200 rounded-lg w-48 mb-6"></div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+      {/* Featured Section - 响应式 */}
+      <section className="bg-gradient-to-b from-slate-50/80 to-white py-6 sm:py-8 md:py-12 lg:py-16">
+        <div className="px-4 md:px-8 lg:px-[150px]">
+          <div className="h-6 sm:h-8 bg-gray-200 rounded-lg w-32 sm:w-48 mb-4 sm:mb-6"></div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="space-y-3">
-                <div className="aspect-[2/3] bg-gray-200 rounded-lg"></div>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div key={i} className={`space-y-2 sm:space-y-3 ${i >= 6 ? 'hidden lg:block' : ''} ${i >= 4 ? 'hidden md:block' : ''}`}>
+                <div className="aspect-[2/3] bg-gray-200 rounded-md sm:rounded-lg"></div>
+                <div className="h-3 sm:h-4 bg-gray-200 rounded w-full"></div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Categories */}
+      {/* Categories - 响应式 */}
       <div className="bg-white">
-        <div className="container mx-auto px-4 max-w-7xl py-16 space-y-20">
+        <div className="py-6 sm:py-8 md:py-12 lg:py-16 space-y-8 sm:space-y-12 md:space-y-16 lg:space-y-20">
           {[...Array(3)].map((_, idx) => (
-            <div key={idx}>
-              <div className="flex items-center justify-between mb-8">
-                <div className="h-8 bg-gray-200 rounded-lg w-48"></div>
-                <div className="h-10 bg-gray-200 rounded-lg w-32"></div>
+            <div key={idx} className="px-4 md:px-8 lg:px-[150px]">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+                <div className="h-5 sm:h-6 md:h-8 bg-gray-200 rounded-lg w-24 sm:w-32 md:w-48"></div>
+                <div className="h-6 sm:h-8 md:h-10 bg-gray-200 rounded-lg w-16 sm:w-24 md:w-32"></div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="space-y-3">
-                    <div className="aspect-[2/3] bg-gray-200 rounded-lg"></div>
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    <div className="flex gap-2">
-                      <div className="h-3 bg-gray-200 rounded w-16"></div>
-                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+              <div className="flex gap-2 sm:gap-3 md:gap-4 lg:gap-5 overflow-hidden">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className={`flex-shrink-0 w-[100px] sm:w-[120px] md:w-[140px] lg:w-[160px] space-y-2 sm:space-y-3 ${i >= 5 ? 'hidden lg:block' : ''} ${i >= 4 ? 'hidden md:block' : ''} ${i >= 3 ? 'hidden sm:block' : ''}`}>
+                    <div className="aspect-[2/3] bg-gray-200 rounded-md sm:rounded-lg"></div>
+                    <div className="h-3 sm:h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <div className="h-2.5 sm:h-3 bg-gray-200 rounded w-10 sm:w-16"></div>
+                      <div className="h-2.5 sm:h-3 bg-gray-200 rounded w-10 sm:w-16"></div>
                     </div>
                   </div>
                 ))}
