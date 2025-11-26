@@ -8,9 +8,10 @@ import Toast from '@/components/shared/Toast'
 interface AddToLibraryButtonProps {
   novelId: number
   userId?: string
+  compact?: boolean  // 移动端紧凑模式
 }
 
-export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButtonProps) {
+export default function AddToLibraryButton({ novelId, userId, compact = false }: AddToLibraryButtonProps) {
   const pathname = usePathname()
   const [isInLibrary, setIsInLibrary] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -79,7 +80,7 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
 
   return (
     <>
-      <Toast 
+      <Toast
         message={toast.message}
         type={toast.type}
         isVisible={toast.show}
@@ -90,7 +91,11 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
         onClick={handleClick}
         disabled={loading}
         className={`
-          group relative p-4 rounded-xl transition-all duration-300 overflow-hidden cursor-pointer
+          group relative transition-all duration-300 overflow-hidden cursor-pointer
+          ${compact
+            ? 'p-3 rounded-lg'
+            : 'p-4 rounded-xl'
+          }
           ${isInLibrary
             ? 'bg-blue-50 backdrop-blur-sm border-2 border-blue-200'
             : 'bg-white backdrop-blur-sm border-2 border-gray-200 hover:border-blue-300'
@@ -102,7 +107,7 @@ export default function AddToLibraryButton({ novelId, userId }: AddToLibraryButt
       >
         <svg
           className={`
-            w-6 h-6 transition-all duration-300 relative z-10
+            ${compact ? 'w-5 h-5' : 'w-6 h-6'} transition-all duration-300 relative z-10
             ${isInLibrary
               ? 'text-blue-600'
               : 'text-gray-400 group-hover:text-blue-600'

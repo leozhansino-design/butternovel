@@ -244,13 +244,27 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
     if (savedShowComments !== null) setShowParagraphComments(savedShowComments === 'true')
   }, [])
 
-  // ⭐ 段落分割逻辑
+  // ⭐ 段落分割逻辑 - 改进：支持单换行符或双换行符分隔
   useEffect(() => {
-    // 将章节内容按段落分割（使用双换行符）
-    const splitParagraphs = chapter.content
+    // 尝试按双换行符分割
+    let splitParagraphs = chapter.content
       .split(/\n\n+/)
       .map(p => p.trim())
       .filter(p => p.length > 0)
+
+    // 如果只有一个段落且内容较长，尝试按单换行符分割
+    // 这解决了 batch upload 内容只使用单换行符的问题
+    if (splitParagraphs.length === 1 && splitParagraphs[0].length > 500) {
+      const singleLineSplit = chapter.content
+        .split(/\n/)
+        .map(p => p.trim())
+        .filter(p => p.length > 0)
+
+      // 如果按单换行符分割后有更多段落，使用这个结果
+      if (singleLineSplit.length > 1) {
+        splitParagraphs = singleLineSplit
+      }
+    }
 
     setParagraphs(splitParagraphs)
   }, [chapter.content])

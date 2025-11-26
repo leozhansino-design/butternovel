@@ -221,10 +221,10 @@ function SearchContent() {
 
   return (
     <main className="flex-1 bg-gray-50">
-      {/* 搜索头部 */}
+      {/* 搜索头部 - 移动端更紧凑 */}
       <div className="bg-white">
-        <div className="container mx-auto px-4 max-w-7xl py-6 sm:py-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
+        <div className="container mx-auto px-3 sm:px-4 max-w-7xl py-3 sm:py-6 md:py-8">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-4 md:mb-6">
             Search Novels
           </h1>
 
@@ -232,7 +232,7 @@ function SearchContent() {
           <SearchInput
             initialValue={searchQuery}
             onSearch={handleSearch}
-            placeholder="Search by title, author, or description..."
+            placeholder="Search by title, author..."
           />
         </div>
       </div>
@@ -250,12 +250,12 @@ function SearchContent() {
         onClearAll={handleClearAll}
       />
 
-      {/* 搜索结果 */}
-      <div className="container mx-auto px-4 max-w-7xl py-6 sm:py-8">
+      {/* 搜索结果 - 移动端更紧凑 */}
+      <div className="container mx-auto px-3 sm:px-4 max-w-7xl py-3 sm:py-6 md:py-8">
         {/* 搜索结果信息 */}
         {!loading && (
-          <div className="mb-6 text-gray-600">
-            <p className="text-sm sm:text-base">
+          <div className="mb-3 sm:mb-6 text-gray-600">
+            <p className="text-xs sm:text-sm md:text-base">
               {pagination.total.toLocaleString()}{' '}
               {pagination.total === 1 ? 'novel' : 'novels'} found
             </p>
@@ -264,24 +264,24 @@ function SearchContent() {
 
         {/* 加载状态 - 骨架屏 */}
         {loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-6">
             <BookCardSkeletonList count={8} />
           </div>
         )}
 
         {/* 错误状态 */}
         {error && !loading && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
-            <p className="text-gray-600">{error}</p>
+          <div className="text-center py-10 sm:py-20">
+            <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">⚠️</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Error</h2>
+            <p className="text-sm sm:text-base text-gray-600">{error}</p>
           </div>
         )}
 
-        {/* 搜索结果网格 - 横向卡片适合单列或双列布局 */}
+        {/* 搜索结果网格 - 移动端单列更紧凑 */}
         {!loading && !error && novels.length > 0 && (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">
               {novels.map((novel) => (
                 <EnhancedBookCard
                   key={novel.id}
@@ -303,18 +303,19 @@ function SearchContent() {
               ))}
             </div>
 
-            {/* 分页 */}
+            {/* 分页 - 移动端更紧凑 */}
             {pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
+              <div className="flex justify-center items-center gap-1 sm:gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                  className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm md:text-base"
                 >
-                  Previous
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Prev</span>
                 </button>
 
-                <div className="flex gap-1">
+                <div className="flex gap-0.5 sm:gap-1">
                   {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
                     let pageNum
                     if (pagination.totalPages <= 5) {
@@ -331,7 +332,7 @@ function SearchContent() {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base ${
+                        className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base ${
                           currentPage === pageNum
                             ? 'bg-blue-600 text-white font-semibold'
                             : 'border border-gray-300 hover:bg-gray-50'
@@ -346,7 +347,7 @@ function SearchContent() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === pagination.totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                  className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm md:text-base"
                 >
                   Next
                 </button>
@@ -357,15 +358,15 @@ function SearchContent() {
 
         {/* 无结果 */}
         {!loading && !error && novels.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No results found</h2>
-            <p className="text-gray-600 mb-4">
+          <div className="text-center py-10 sm:py-20">
+            <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🔍</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">No results found</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
               Try different keywords or adjust your filters
             </p>
             <button
               onClick={handleClearAll}
-              className="text-blue-600 hover:text-blue-700 font-medium underline"
+              className="text-sm sm:text-base text-blue-600 hover:text-blue-700 font-medium underline"
             >
               Clear all filters
             </button>

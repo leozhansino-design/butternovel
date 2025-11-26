@@ -61,9 +61,13 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
     return num.toString()
   }
 
-  // 智能显示标签：根据标签长度决定显示2个或3个
-  const calculateDisplayTags = () => {
+  // 智能显示标签：移动端显示更少
+  const calculateDisplayTags = (isMobile: boolean) => {
     if (tags.length === 0) return []
+    if (isMobile) {
+      // 移动端只显示2个标签
+      return tags.slice(0, 2)
+    }
 
     // 计算前3个标签的总字符长度
     const firstThree = tags.slice(0, 3)
@@ -74,9 +78,10 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
     return totalLength > 30 ? tags.slice(0, 2) : tags.slice(0, 3)
   }
 
-  const displayedTags = calculateDisplayTags()
-  // 使用实际的tags总数而不是返回的tags数组长度
-  const remainingTagsCount = tagsCount - displayedTags.length
+  const displayedTagsMobile = calculateDisplayTags(true)
+  const displayedTagsDesktop = calculateDisplayTags(false)
+  const remainingTagsCountMobile = tagsCount - displayedTagsMobile.length
+  const remainingTagsCountDesktop = tagsCount - displayedTagsDesktop.length
 
   // 状态显示文本
   const statusText = status === 'COMPLETED' ? 'Completed' : 'Ongoing'
@@ -84,73 +89,96 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
 
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-      {/* 横向卡片：封面在左，所有信息在右 */}
-      <div className="flex h-64 sm:h-72 md:h-80">
-        {/* 左侧：封面图片（占满整个高度） */}
-        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-44 sm:w-52 md:w-56">
+      {/* 移动端竖屏：紧凑水平布局 */}
+      <div className="flex h-32 sm:h-48 md:h-56 lg:h-64">
+        {/* 左侧：封面图片 - 移动端更小 */}
+        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-20 sm:w-32 md:w-40 lg:w-44">
           <Image
             src={coverImage}
             alt={title}
             fill
             className="object-cover group-hover:opacity-90 transition-opacity"
-            sizes="(max-width: 640px) 176px, (max-width: 768px) 208px, 224px"
+            sizes="(max-width: 640px) 80px, (max-width: 768px) 128px, (max-width: 1024px) 160px, 176px"
           />
         </Link>
 
         {/* 右侧：所有文字信息 */}
-        <div className="flex-1 p-5 sm:p-6 md:p-8 flex flex-col justify-between min-w-0">
-          {/* 上部分：标题、作者、统计信息、简介 */}
+        <div className="flex-1 p-2.5 sm:p-4 md:p-5 lg:p-6 flex flex-col justify-between min-w-0">
+          {/* 上部分：标题、作者、统计信息 */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {/* 标题 - 最多2行，缩小字体给下方更多空间 */}
+            {/* 标题 - 移动端更紧凑 */}
             <Link
               href={`/novels/${slug}`}
-              className="font-bold text-gray-900 text-lg sm:text-xl hover:text-blue-600 transition-colors mb-1.5 line-clamp-2 leading-tight"
+              className="font-bold text-gray-900 text-sm sm:text-base md:text-lg lg:text-xl hover:text-blue-600 transition-colors mb-0.5 sm:mb-1 line-clamp-2 leading-tight"
             >
               {title}
             </Link>
 
             {/* 作者 */}
-            <p className="text-sm sm:text-base text-gray-600 mb-1.5">
+            <p className="text-xs sm:text-sm text-gray-600 mb-0.5 sm:mb-1 truncate">
               by <span className="font-medium">{authorName}</span>
             </p>
 
-            {/* 统计信息 - 横向一行，简洁显示 */}
-            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 mb-2">
-              <span>{formatNumber(viewCount)} views</span>
+            {/* 统计信息 - 移动端单行紧凑 */}
+            <div className="flex items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-0.5 text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
+              <span>{formatNumber(viewCount)}</span>
               {averageRating && totalRatings > 0 && (
-                <span>★ {averageRating.toFixed(1)}</span>
+                <span>★{averageRating.toFixed(1)}</span>
               )}
-              <span>{chaptersCount} chapters</span>
+              <span>{chaptersCount}ch</span>
               <span className={`font-semibold ${statusColor}`}>{statusText}</span>
             </div>
 
-            {/* 简介 - 根据是否有tags动态调整行数：有tags显示3行，无tags显示4-5行 */}
-            <p className={`text-sm sm:text-base text-gray-700 leading-relaxed ${displayedTags.length > 0 ? 'line-clamp-3' : 'line-clamp-5'}`}>
+            {/* 简介 - 移动端隐藏，平板以上显示 */}
+            <p className="hidden sm:block text-xs sm:text-sm md:text-base text-gray-700 leading-relaxed line-clamp-2 md:line-clamp-3">
               {blurb}
             </p>
           </div>
 
-          {/* 底部：标签 - 智能显示2-3个，单行显示，显示剩余数量 */}
-          {displayedTags.length > 0 && (
-            <div className="flex gap-2 items-center flex-wrap pt-2.5 min-w-0">
-              {displayedTags.map((tag) => (
-                <Link
-                  key={tag.id}
-                  href={`/search?tags=${tag.slug}`}
-                  className="inline-block px-3 py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap overflow-hidden text-ellipsis shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                  title={tag.name}
-                  style={{ maxWidth: '200px' }}
-                >
-                  {tag.name}
-                </Link>
-              ))}
-              {remainingTagsCount > 0 && (
-                <span className="inline-block px-3 py-1 bg-gray-50 text-gray-500 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap shrink-0">
-                  +{remainingTagsCount} more
-                </span>
-              )}
-            </div>
+          {/* 底部：标签 - 移动端更紧凑 */}
+          {tags.length > 0 && (
+            <>
+              {/* 移动端标签 */}
+              <div className="flex sm:hidden gap-1 items-center flex-wrap pt-1 min-w-0">
+                {displayedTagsMobile.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/search?tags=${tag.slug}`}
+                    className="inline-block px-1.5 py-0.5 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded text-[10px] font-medium transition-colors whitespace-nowrap overflow-hidden text-ellipsis shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ maxWidth: '80px' }}
+                  >
+                    {tag.name}
+                  </Link>
+                ))}
+                {remainingTagsCountMobile > 0 && (
+                  <span className="inline-block px-1.5 py-0.5 bg-gray-50 text-gray-500 rounded text-[10px] font-medium whitespace-nowrap shrink-0">
+                    +{remainingTagsCountMobile}
+                  </span>
+                )}
+              </div>
+
+              {/* 平板以上标签 */}
+              <div className="hidden sm:flex gap-1.5 md:gap-2 items-center flex-wrap pt-2 min-w-0">
+                {displayedTagsDesktop.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/search?tags=${tag.slug}`}
+                    className="inline-block px-2 py-0.5 md:px-3 md:py-1 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 rounded-full text-xs md:text-sm font-medium transition-colors whitespace-nowrap overflow-hidden text-ellipsis shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                    title={tag.name}
+                    style={{ maxWidth: '150px' }}
+                  >
+                    {tag.name}
+                  </Link>
+                ))}
+                {remainingTagsCountDesktop > 0 && (
+                  <span className="inline-block px-2 py-0.5 md:px-3 md:py-1 bg-gray-50 text-gray-500 rounded-full text-xs md:text-sm font-medium whitespace-nowrap shrink-0">
+                    +{remainingTagsCountDesktop} more
+                  </span>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>

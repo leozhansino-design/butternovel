@@ -11,12 +11,14 @@ interface ClientRatingDisplayProps {
   novelId: number
   averageRating: number
   totalRatings: number
+  compact?: boolean  // 移动端紧凑模式
 }
 
 export default function ClientRatingDisplay({
   novelId,
   averageRating,
-  totalRatings
+  totalRatings,
+  compact = false
 }: ClientRatingDisplayProps) {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
@@ -60,6 +62,7 @@ export default function ClientRatingDisplay({
       userRatingScore={userRating}
       autoOpen={shouldAutoOpen}
       highlightRatingId={openRatingId || undefined}
+      compact={compact}
     />
   )
 }

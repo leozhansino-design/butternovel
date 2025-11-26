@@ -7,10 +7,12 @@ import AddToLibraryButton from './AddToLibraryButton'
 
 interface ClientAddToLibraryButtonProps {
   novelId: number
+  compact?: boolean  // 移动端紧凑模式
 }
 
 export default function ClientAddToLibraryButton({
-  novelId
+  novelId,
+  compact = false
 }: ClientAddToLibraryButtonProps) {
   const { data: session } = useSession()
 
@@ -18,6 +20,7 @@ export default function ClientAddToLibraryButton({
     <AddToLibraryButton
       novelId={novelId}
       userId={session?.user?.id}
+      compact={compact}
     />
   )
 }

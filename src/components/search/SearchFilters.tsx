@@ -181,13 +181,13 @@ export default function SearchFilters({
 
   return (
     <div className="bg-white sticky top-0 z-10 shadow-sm">
-      <div className="container mx-auto px-4 max-w-7xl py-4">
-        {/* Category filters - wrap to multiple rows */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2 flex-wrap">
+      <div className="container mx-auto px-3 sm:px-4 max-w-7xl py-2 sm:py-4">
+        {/* Category filters - 移动端水平滚动 */}
+        <div className="mb-2 sm:mb-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto sm:flex-wrap scrollbar-hide pb-1 sm:pb-0">
             <button
               onClick={() => onCategoryChange('')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 !selectedCategory
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -199,7 +199,7 @@ export default function SearchFilters({
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.slug)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                   selectedCategory === cat.slug
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -211,28 +211,42 @@ export default function SearchFilters({
           </div>
         </div>
 
-        {/* 第二行：热门标签（智能联动） */}
+        {/* 第二行：热门标签（智能联动）- 移动端隐藏或简化 */}
         {availableTags.length > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-sm font-medium text-gray-700">
-                {selectedTags.length > 0 ? 'Related Tags:' : 'Popular Tags:'}
+          <div className="mb-2 sm:mb-4">
+            <div className="flex items-center gap-2 mb-1 sm:mb-2">
+              <h3 className="text-xs sm:text-sm font-medium text-gray-700">
+                {selectedTags.length > 0 ? 'Related:' : 'Popular:'}
               </h3>
               {selectedTags.length > 0 && (
                 <button
                   onClick={() => onTagsChange([])}
-                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-700 underline"
                 >
-                  Clear tags
+                  Clear
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 flex-wrap max-h-[120px] overflow-y-auto">
-              {availableTags.map((tag) => (
+            <div className="flex items-center gap-1 sm:gap-2 flex-nowrap overflow-x-auto sm:flex-wrap max-h-[60px] sm:max-h-[120px] scrollbar-hide pb-1 sm:pb-0">
+              {availableTags.slice(0, 10).map((tag) => (
                 <button
                   key={tag.id}
                   onClick={() => handleTagClick(tag.slug)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  className={`px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
+                    selectedTags.includes(tag.slug)
+                      ? 'bg-blue-600 text-white font-medium'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              ))}
+              {/* 显示剩余的标签（平板以上） */}
+              {availableTags.slice(10).map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => handleTagClick(tag.slug)}
+                  className={`hidden sm:block px-3 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                     selectedTags.includes(tag.slug)
                       ? 'bg-blue-600 text-white font-medium'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -245,49 +259,49 @@ export default function SearchFilters({
           </div>
         )}
 
-        {/* 第三行：状态筛选 & 排序 */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* 第三行：状态筛选 & 排序 - 移动端更紧凑 */}
+        <div className="flex items-center justify-between gap-2">
           {/* 左侧：状态筛选 */}
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <label className="flex items-center gap-1 sm:gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={selectedStatuses.includes('completed')}
                 onChange={() => handleStatusChange('completed')}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Completed</span>
+              <span className="text-xs sm:text-sm text-gray-700">Done</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-1 sm:gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={selectedStatuses.includes('ongoing')}
                 onChange={() => handleStatusChange('ongoing')}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Ongoing</span>
+              <span className="text-xs sm:text-sm text-gray-700">Ongoing</span>
             </label>
           </div>
 
           {/* 右侧：排序 & 清除筛选 */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {hasFilters && (
               <button
                 onClick={onClearAll}
-                className="text-sm text-gray-600 hover:text-gray-900 underline"
+                className="hidden sm:block text-sm text-gray-600 hover:text-gray-900 underline"
               >
-                Clear all filters
+                Clear all
               </button>
             )}
             <select
               value={selectedSort}
               onChange={(e) => onSortChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option value="hot">Hot</option>
               <option value="new">New</option>
-              <option value="top_rated">Top Rated</option>
-              <option value="most_read">Most Read</option>
+              <option value="top_rated">Top</option>
+              <option value="most_read">Views</option>
             </select>
           </div>
         </div>
