@@ -7,6 +7,7 @@ import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
 import { safeParseJson } from '@/lib/fetch-utils'
+import { compressCoverImage, formatFileSize } from '@/lib/image-compress'
 
 // Category data (Genres)
 const genres = [
@@ -50,7 +51,8 @@ export default function NovelUploadForm() {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [coverPreview, setCoverPreview] = useState<string>('')
-  const [tags, setTags] = useState<string[]>([]) // ⭐ 标签状态
+  const [coverFile, setCoverFile] = useState<File | null>(null)  // ⭐ Store file for compression
+  const [tags, setTags] = useState<string[]>([])
 
   const [formData, setFormData] = useState({
     title: '',
@@ -63,7 +65,7 @@ export default function NovelUploadForm() {
     isPublished: false,
   })
 
-  // Handle cover upload
+  // Handle cover upload - store file for compression on submit
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -97,11 +99,15 @@ export default function NovelUploadForm() {
         return
       }
 
+      // ⭐ Store file reference for compression on submit
+      setCoverFile(file)
+
+      // Create preview
       const reader = new FileReader()
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string
+      reader.onload = (ev) => {
+        const base64 = ev.target?.result as string
         setCoverPreview(base64)
-        setFormData({ ...formData, coverImage: base64 })
+        setFormData({ ...formData, coverImage: 'pending' })  // Mark as pending
       }
       reader.readAsDataURL(file)
     }
@@ -120,7 +126,7 @@ export default function NovelUploadForm() {
     e.preventDefault()
 
     // Validate
-    if (!formData.title.trim() || !formData.coverImage || !formData.categoryId || !formData.blurb.trim()) {
+    if (!formData.title.trim() || !coverFile || !formData.categoryId || !formData.blurb.trim()) {
       alert('Please fill in all required fields')
       return
     }
@@ -128,22 +134,40 @@ export default function NovelUploadForm() {
     setUploading(true)
 
     try {
+      // ⭐ Compress cover image before upload
+      const compressedCover = await compressCoverImage(coverFile)
+      console.log(`[NovelUpload] Cover compressed: ${formatFileSize(coverFile.size)} -> ${formatFileSize(Math.round(compressedCover.length * 0.75))}`)
+
+      // ⭐ Build request body
+      const requestBody = {
+        title: formData.title,
+        coverImage: compressedCover,
+        categoryId: parseInt(formData.categoryId),
+        blurb: formData.blurb,
+        status: formData.status,
+        contentRating: formData.contentRating,
+        rightsType: formData.rightsType,
+        isPublished: false,
+        chapters: [],
+      }
+
+      // ⭐ Check request size (Vercel limit: 4.5MB)
+      const bodyString = JSON.stringify(requestBody)
+      const bodySizeBytes = new Blob([bodyString]).size
+      const bodySizeMB = bodySizeBytes / (1024 * 1024)
+
+      console.log(`[NovelUpload] Request size: ${bodySizeMB.toFixed(2)}MB`)
+
+      if (bodySizeMB > 4.0) {
+        throw new Error(`Request too large (${bodySizeMB.toFixed(2)}MB). Please use a smaller cover image.`)
+      }
+
       const response = await fetch('/api/dashboard/novels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: formData.title,
-          coverImage: formData.coverImage,
-          categoryId: parseInt(formData.categoryId),
-          blurb: formData.blurb,
-          status: formData.status,
-          contentRating: formData.contentRating,
-          rightsType: formData.rightsType,
-          isPublished: false, // Always save as draft initially
-          chapters: [], // No chapters on creation
-        }),
+        body: bodyString,
       })
 
       const data = await safeParseJson(response)
@@ -301,6 +325,7 @@ export default function NovelUploadForm() {
                     type="button"
                     onClick={() => {
                       setCoverPreview('')
+                      setCoverFile(null)  // ⭐ Clear file reference
                       setFormData({ ...formData, coverImage: '' })
                     }}
                     className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
