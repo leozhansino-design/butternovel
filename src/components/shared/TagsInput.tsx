@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { normalizeTag, TAG_LIMITS } from '@/lib/tags'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 interface TagSuggestion {
   name: string
@@ -49,9 +50,9 @@ export default function TagsInput({
       try {
         const response = await fetch(`/api/tags/suggest?q=${encodeURIComponent(inputValue)}`)
         if (response.ok) {
-          const data = await response.json()
+          const data = await safeParseJson(response)
           setSuggestions(data || [])
-          setShowSuggestions(data && data.length > 0)
+          setShowSuggestions(data && data.length > 0 && !data.error)
         }
       } catch (error) {
         console.error('Failed to fetch tag suggestions:', error)

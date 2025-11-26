@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Upload, Save, X } from 'lucide-react'
 import AvatarCropper from './AvatarCropper'
 import React from 'react'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 type Props = {
   adminEmail: string
@@ -29,7 +30,7 @@ export default function AdminProfileForm({ adminEmail }: Props) {
           credentials: 'include' // ✅ 确保 cookie 总是被发送
         })
         if (response.ok) {
-          const data = await response.json()
+          const data = await safeParseJson(response)
           setDisplayName(data.displayName || '')
           setBio(data.bio || '')
           setAvatarPreview(data.avatar || '')
@@ -103,7 +104,7 @@ export default function AdminProfileForm({ adminEmail }: Props) {
         }),
       })
 
-      const data = await response.json()
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to save profile')

@@ -6,6 +6,7 @@ import { Upload, BookOpen, Plus, X, Edit2, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 // 分类数据（Genres）- 匹配数据库种子数据
 const genres = [
@@ -249,7 +250,7 @@ export default function NovelUploadForm() {
         }),
       })
 
-      const data = await response.json()
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed')

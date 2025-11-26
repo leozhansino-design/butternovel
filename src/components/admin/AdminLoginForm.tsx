@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock, Mail } from 'lucide-react'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 export default function AdminLoginForm() {
   const router = useRouter()
@@ -26,7 +27,7 @@ export default function AdminLoginForm() {
         body: JSON.stringify(formData),
       })
 
-      const data = await response.json()
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Login failed')

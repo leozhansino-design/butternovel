@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 type Props = {
   novelId: number
@@ -35,7 +36,7 @@ export default function BanButton({ novelId, isBanned }: Props) {
         body: JSON.stringify({ isBanned: newBannedState })
       })
 
-      const data = await response.json()
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || `Failed to ${action}`)
