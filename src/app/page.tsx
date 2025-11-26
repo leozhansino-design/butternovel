@@ -72,6 +72,8 @@ async function HomeContent() {
               coverImage: novel.coverImage,
               rating: novel.rating,
               blurb: novel.blurb,
+              status: novel.status,
+              categoryName: novel.categoryName,
             }))
 
             // Alternate between different layout styles for visual variety
