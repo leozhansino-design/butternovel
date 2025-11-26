@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 type AuthModalProps = {
   isOpen: boolean
@@ -141,7 +142,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
         }),
       })
 
-      const data = await response.json()
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         setError(data.error || 'Registration failed')

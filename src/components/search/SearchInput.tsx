@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 interface Suggestion {
   id: number
@@ -61,13 +62,9 @@ export default function SearchInput({
         { signal: abortControllerRef.current.signal }
       )
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch suggestions')
-      }
+      const data = await safeParseJson(response)
 
-      const data = await response.json()
-
-      if (data.success) {
+      if (response.ok && data.success) {
         setSuggestions(data.data || [])
         setShowSuggestions(true)
       }

@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 type WriterProfileCardProps = {
   user: {
@@ -42,7 +43,7 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
       try {
         setLoading(true)
         const response = await fetch('/api/profile')
-        const data = await response.json()
+        const data = await safeParseJson(response)
 
         if (response.ok) {
           setProfileData(data.user)
@@ -83,7 +84,7 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
         })
       })
 
-      const data = await res.json()
+      const data = await safeParseJson(res)
 
       if (res.ok) {
         setProfileData(prev => prev ? {
@@ -153,7 +154,7 @@ export default function WriterProfileCard({ user }: WriterProfileCardProps) {
         body: formData
       })
 
-      const data = await res.json()
+      const data = await safeParseJson(res)
 
       if (res.ok) {
         setProfileData(prev => prev ? {

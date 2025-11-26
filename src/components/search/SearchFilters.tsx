@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { CATEGORIES } from '@/lib/constants'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 interface Category {
   id: number
@@ -69,9 +70,9 @@ export default function SearchFilters({
           params.set('limit', '15')
 
           const response = await fetch(`/api/tags/related?${params}`)
-          const data = await response.json()
+          const data = await safeParseJson(response)
 
-          if (data.success) {
+          if (response.ok && data.success) {
             tags = data.data || []
           }
 
@@ -107,8 +108,8 @@ export default function SearchFilters({
               const popularResponse = await fetch(
                 `/api/tags/popular?limit=50${selectedCategory ? `&genre=${selectedCategory}` : ''}`
               )
-              const popularData = await popularResponse.json()
-              if (popularData.success) {
+              const popularData = await safeParseJson(popularResponse)
+              if (popularResponse.ok && popularData.success) {
                 for (const slug of stillMissingSlugs) {
                   const tagInPopular = popularData.data.find((t: Tag) => t.slug === slug)
                   if (tagInPopular) {
@@ -133,9 +134,9 @@ export default function SearchFilters({
           params.set('limit', '15')
 
           const response = await fetch(`/api/tags/popular?${params}`)
-          const data = await response.json()
+          const data = await safeParseJson(response)
 
-          if (data.success) {
+          if (response.ok && data.success) {
             tags = data.data || []
           }
         }

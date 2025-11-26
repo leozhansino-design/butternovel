@@ -6,6 +6,7 @@ import { Upload, X, Plus, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 // Category data (Genres)
 const genres = [
@@ -145,7 +146,7 @@ export default function NovelUploadForm() {
         }),
       })
 
-      const data = await response.json()
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Upload failed')
