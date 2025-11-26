@@ -190,16 +190,16 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
               key={book.id}
               href={`/novels/${book.slug}`}
               className="group block flex-shrink-0"
-              style={{ width: '150px', scrollSnapAlign: 'start' }}
+              style={{ width: '120px', scrollSnapAlign: 'start' }}
             >
-              {/* Cover container */}
+              {/* Cover container - 3:4 ratio matching 300x400 original */}
               <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-shadow"
-                   style={{ aspectRatio: '2/3' }}>
+                   style={{ aspectRatio: '3/4' }}>
                 <Image
                   src={book.coverImage}
                   alt={book.title}
                   fill
-                  sizes="150px"
+                  sizes="120px"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
