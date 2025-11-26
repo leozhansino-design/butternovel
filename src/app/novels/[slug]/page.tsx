@@ -19,6 +19,8 @@ import ClientRatingDisplay from '@/components/novel/ClientRatingDisplay'
 import FollowAuthorButton from '@/components/novel/FollowAuthorButton'
 import AuthorNameButton from '@/components/novel/AuthorNameButton'
 import { getContentRatingLabel, getRightsTypeLabel, getContentRatingColor } from '@/lib/content-rating'
+import ScrollToTop from '@/components/ScrollToTop'
+import MobileExpandableSection from '@/components/novel/MobileExpandableSection'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -284,6 +286,7 @@ export default async function NovelDetailPage({
 
       <ViewTracker novelId={novel.id} />
       <ReadingHistoryTracker novelId={novel.id} />
+      <ScrollToTop />
 
       {/* 预加载第一章完整内容 */}
       {firstChapter && (
@@ -396,31 +399,12 @@ export default async function NovelDetailPage({
                       </div>
                     </div>
 
-                    {/* 移动端：标签区域 */}
-                    <div className="sm:hidden mt-3">
-                      {novel.tags && novel.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {novel.tags.slice(0, 4).map((tag: { id: number; name: string; slug: string }) => (
-                            <Link key={tag.slug} href={`/search?tags=${tag.slug}`}>
-                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
-                                {tag.name}
-                              </span>
-                            </Link>
-                          ))}
-                          {novel.tags.length > 4 && (
-                            <span className="px-2 py-0.5 bg-gray-50 text-gray-500 rounded text-xs">
-                              +{novel.tags.length - 4}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 移动端：简介（可折叠） */}
-                    <div className="sm:hidden mt-3">
-                      <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
-                        {novel.blurb}
-                      </p>
+                    {/* 移动端：标签和简介（可展开/收起） */}
+                    <div className="sm:hidden">
+                      <MobileExpandableSection
+                        blurb={novel.blurb}
+                        tags={novel.tags || []}
+                      />
                     </div>
 
                     {/* 移动端：操作按钮 */}

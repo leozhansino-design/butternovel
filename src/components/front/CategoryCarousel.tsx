@@ -119,17 +119,19 @@ export default function CategoryCarousel({
 
       {/* Carousel Wrapper - extends to screen edge */}
       <div className="relative">
-        {/* Left edge gradient mask - hidden on mobile */}
-        <div className="hidden lg:block absolute left-0 top-0 bottom-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none lg:w-[150px]" />
+        {/* Left edge gradient mask - 只在可以向左滚动时显示 */}
+        {canScrollLeft && (
+          <div className="hidden lg:block absolute left-0 top-0 bottom-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none lg:w-[120px]" />
+        )}
 
         {/* Right edge gradient mask - hidden on mobile */}
-        <div className="hidden lg:block absolute right-0 top-0 bottom-0 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none lg:w-[150px]" />
+        <div className="hidden lg:block absolute right-0 top-0 bottom-0 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none lg:w-[120px]" />
 
         {/* Left navigation button */}
         {canScrollLeft && (
           <button
             onClick={() => scrollByOneCard('left')}
-            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 left-[70px]"
+            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 left-[50px]"
             aria-label="Previous"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +144,7 @@ export default function CategoryCarousel({
         {canScrollRight && (
           <button
             onClick={() => scrollByOneCard('right')}
-            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 right-[70px]"
+            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 right-[50px]"
             aria-label="Next"
           >
             <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,7 +156,7 @@ export default function CategoryCarousel({
         {/* Novel list - horizontal scroll with snap, extends to edge */}
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:pl-[180px] lg:pr-[150px]"
+          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
