@@ -36,7 +36,7 @@ export default function TrendingCarousel({
     if (!trackRef.current) return;
 
     const { scrollLeft, scrollWidth, clientWidth } = trackRef.current;
-    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollLeft(scrollLeft > 10);
     setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
   };
 
@@ -53,7 +53,7 @@ export default function TrendingCarousel({
     }
   }, [novels]);
 
-  // Auto play - smooth scrolling with snap alignment
+  // Auto play with loop
   useEffect(() => {
     if (!isAutoPlaying || !trackRef.current || novels.length === 0) return;
 
@@ -64,7 +64,7 @@ export default function TrendingCarousel({
         const maxScroll = track.scrollWidth - track.clientWidth;
 
         if (currentScroll >= maxScroll - 10) {
-          // Reached end, scroll back to start
+          // Reached end, loop back to start
           track.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
           // Get all card elements
@@ -76,7 +76,6 @@ export default function TrendingCarousel({
           for (let i = 0; i < cards.length; i++) {
             const card = cards[i] as HTMLElement;
             const cardLeft = card.offsetLeft - track.offsetLeft;
-            // Find first card that's beyond current scroll position
             if (cardLeft > currentScroll + 10) {
               nextCard = card;
               break;
@@ -95,35 +94,44 @@ export default function TrendingCarousel({
     return () => clearInterval(timer);
   }, [isAutoPlaying, autoPlayInterval, novels.length]);
 
-  // Manually scroll one card - snap to next/prev card
+  // Scroll by one card with loop support
   const scrollByOneCard = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
 
     const track = trackRef.current;
     const currentScroll = track.scrollLeft;
+    const maxScroll = track.scrollWidth - track.clientWidth;
     const cards = track.children;
 
     if (cards.length === 0) return;
 
     if (direction === 'right') {
+      // 如果已经到末尾，循环回到开头
+      if (currentScroll >= maxScroll - 10) {
+        track.scrollTo({ left: 0, behavior: 'smooth' });
+        return;
+      }
       // Find next card
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i] as HTMLElement;
         const cardLeft = card.offsetLeft - track.offsetLeft;
         if (cardLeft > currentScroll + 10) {
-          const scrollToPosition = cardLeft;
-          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          track.scrollTo({ left: cardLeft, behavior: 'smooth' });
           return;
         }
       }
     } else {
+      // 如果已经在开头，循环到末尾
+      if (currentScroll <= 10) {
+        track.scrollTo({ left: maxScroll, behavior: 'smooth' });
+        return;
+      }
       // Find previous card
       for (let i = cards.length - 1; i >= 0; i--) {
         const card = cards[i] as HTMLElement;
         const cardLeft = card.offsetLeft - track.offsetLeft;
         if (cardLeft < currentScroll - 10) {
-          const scrollToPosition = cardLeft;
-          track.scrollTo({ left: scrollToPosition, behavior: 'smooth' });
+          track.scrollTo({ left: cardLeft, behavior: 'smooth' });
           return;
         }
       }
@@ -159,31 +167,27 @@ export default function TrendingCarousel({
         {/* Right edge gradient mask - hidden on mobile */}
         <div className="hidden lg:block absolute right-0 top-0 bottom-0 bg-gradient-to-l from-blue-50/80 via-blue-50/60 to-transparent z-10 pointer-events-none lg:w-[120px]" />
 
-        {/* Left navigation button */}
-        {canScrollLeft && (
-          <button
-            onClick={() => scrollByOneCard('left')}
-            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 left-[50px]"
-            aria-label="Previous"
-          >
-            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        )}
+        {/* Left navigation button - 循环模式下始终显示 */}
+        <button
+          onClick={() => scrollByOneCard('left')}
+          className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 left-[50px]"
+          aria-label="Previous"
+        >
+          <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
 
-        {/* Right navigation button */}
-        {canScrollRight && (
-          <button
-            onClick={() => scrollByOneCard('right')}
-            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 right-[50px]"
-            aria-label="Next"
-          >
-            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
+        {/* Right navigation button - 循环模式下始终显示 */}
+        <button
+          onClick={() => scrollByOneCard('right')}
+          className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 right-[50px]"
+          aria-label="Next"
+        >
+          <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
 
         {/* Novel list - horizontal scroll with snap */}
         <div
