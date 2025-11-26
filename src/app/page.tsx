@@ -75,8 +75,8 @@ async function HomeContent() {
             }))
 
             // Alternate between different layout styles for visual variety
-            // Pattern: FeaturedGrid -> RankedList -> Carousel -> CompactGrid -> repeat
-            const layoutIndex = index % 4
+            // But only use grid layouts if we have enough books to fill them
+            const bookCount = books.length
 
             // Add spacing wrapper for each section
             const sectionWrapper = (content: React.ReactNode) => (
@@ -85,9 +85,25 @@ async function HomeContent() {
               </div>
             )
 
+            // Smart layout selection based on book count and position
+            // FeaturedGrid needs 4+ books, CompactGrid needs 4+ books
+            // RankedList works with 3+ books, Carousel works with any count
+            const layoutIndex = index % 4
+
+            // If not enough books, fallback to carousel
+            if (bookCount < 4) {
+              return sectionWrapper(
+                <CategoryCarousel
+                  title={cat.name}
+                  books={books}
+                  categorySlug={cat.slug}
+                />
+              )
+            }
+
             switch (layoutIndex) {
               case 0:
-                // Featured Grid - 1 large + grid of smaller
+                // Featured Grid - needs 4+ books (1 featured + 3 grid minimum)
                 return sectionWrapper(
                   <CategoryFeaturedGrid
                     title={cat.name}
@@ -105,7 +121,7 @@ async function HomeContent() {
                   />
                 )
               case 2:
-                // Standard Carousel - Horizontal scroll
+                // Standard Carousel - Horizontal scroll (always works)
                 return sectionWrapper(
                   <CategoryCarousel
                     title={cat.name}
@@ -114,7 +130,7 @@ async function HomeContent() {
                   />
                 )
               case 3:
-                // Compact Grid - Clean 2-row grid with warm background
+                // Compact Grid - needs 4+ books for clean look
                 return sectionWrapper(
                   <CategoryCompactGrid
                     title={cat.name}

@@ -28,7 +28,10 @@ export default function CategoryFeaturedGrid({
   if (books.length === 0) return null;
 
   const featured = books[0];
-  const gridBooks = books.slice(1, 7); // Show up to 6 books in grid
+  // Show 3 or 6 books in grid to ensure full rows (3 columns)
+  const availableGridBooks = books.length - 1;
+  const gridCount = availableGridBooks >= 6 ? 6 : (availableGridBooks >= 3 ? 3 : availableGridBooks);
+  const gridBooks = books.slice(1, 1 + gridCount);
 
   return (
     <section className="w-full px-4 md:px-8 lg:px-[150px]">

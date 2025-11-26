@@ -28,7 +28,10 @@ export default function CategoryCompactGrid({
 }: CategoryCompactGridProps) {
   if (books.length === 0) return null;
 
-  const displayBooks = books.slice(0, 8); // Show 8 books max (4x2 grid)
+  // Determine how many books to show based on available count
+  // Show 4 or 8 books to ensure full rows (2 cols mobile, 4 cols desktop)
+  const maxBooks = books.length >= 8 ? 8 : (books.length >= 4 ? 4 : books.length);
+  const displayBooks = books.slice(0, maxBooks);
 
   const bgStyles = {
     default: 'bg-white',
@@ -63,8 +66,8 @@ export default function CategoryCompactGrid({
           )}
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 md:gap-6">
+        {/* Grid - responsive columns that fill evenly */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
           {displayBooks.map((book) => (
             <Link
               key={book.id}
