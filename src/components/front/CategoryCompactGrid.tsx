@@ -1,5 +1,5 @@
 // src/components/front/CategoryCompactGrid.tsx
-// Compact grid layout - clean 2-row grid display
+// Compact grid layout with frosted glass cards - 2 rows
 'use client';
 
 import Link from 'next/link';
@@ -28,25 +28,24 @@ export default function CategoryCompactGrid({
 }: CategoryCompactGridProps) {
   if (books.length === 0) return null;
 
-  // Determine how many books to show based on available count
-  // Show 4 or 8 books to ensure full rows (2 cols mobile, 4 cols desktop)
+  // Show 4 or 8 books to ensure complete rows (2 cols mobile, 4 cols desktop)
   const maxBooks = books.length >= 8 ? 8 : (books.length >= 4 ? 4 : books.length);
   const displayBooks = books.slice(0, maxBooks);
 
   const bgStyles = {
-    default: 'bg-white',
-    warm: 'bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30',
-    cool: 'bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30'
+    default: 'bg-slate-50/50',
+    warm: 'bg-gradient-to-br from-amber-50/60 via-orange-50/30 to-yellow-50/40',
+    cool: 'bg-gradient-to-br from-blue-50/60 via-indigo-50/30 to-slate-50/40'
   };
 
   const accentColors = {
-    default: 'text-gray-900 hover:text-amber-600',
-    warm: 'text-gray-900 hover:text-orange-600',
-    cool: 'text-gray-900 hover:text-blue-600'
+    default: 'hover:text-amber-600',
+    warm: 'hover:text-orange-600',
+    cool: 'hover:text-blue-600'
   };
 
   return (
-    <section className={`w-full ${bgStyles[variant]} py-10 md:py-14`}>
+    <section className={`w-full ${bgStyles[variant]} py-10 md:py-12`}>
       <div className="px-4 md:px-8 lg:px-[150px]">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-6 md:mb-8">
@@ -56,7 +55,7 @@ export default function CategoryCompactGrid({
           {categorySlug && (
             <Link
               href={`/search?genre=${categorySlug}`}
-              className={`group flex items-center gap-1.5 text-sm sm:text-base text-gray-600 ${accentColors[variant].split(' ')[1]} transition-colors font-medium`}
+              className={`group flex items-center gap-1.5 text-sm sm:text-base text-gray-600 ${accentColors[variant]} transition-colors font-medium`}
             >
               <span>View All</span>
               <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,38 +65,45 @@ export default function CategoryCompactGrid({
           )}
         </div>
 
-        {/* Grid - responsive columns that fill evenly */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
+        {/* Grid - horizontal cards with cover + info */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {displayBooks.map((book) => (
             <Link
               key={book.id}
               href={book.slug ? `/novels/${book.slug}` : `/novels/book-${book.id}`}
               className="group block"
             >
-              <div className="bg-white rounded-xl p-3 shadow-sm hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1 border border-gray-100">
-                {/* Cover */}
-                <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-100">
-                  <Image
-                    src={book.coverImage || `https://images.unsplash.com/photo-${1544947950 + book.id}?w=200&h=300&fit=crop`}
-                    alt={book.title}
-                    fill
-                    sizes="(max-width: 640px) 45vw, (max-width: 1024px) 23vw, 200px"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  {/* Rating */}
+              <div className="flex gap-4 p-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-300 group-hover:-translate-y-0.5 border border-white/50">
+                {/* Cover - Fixed 3:4 ratio, max 90x120 */}
+                <div className="flex-shrink-0">
+                  <div
+                    className="relative rounded-lg overflow-hidden bg-gray-100 shadow-sm"
+                    style={{ width: '72px', height: '96px' }}
+                  >
+                    <Image
+                      src={book.coverImage || '/placeholder-cover.jpg'}
+                      alt={book.title}
+                      fill
+                      sizes="72px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <h3 className={`text-sm font-semibold text-gray-900 ${accentColors[variant]} transition-colors line-clamp-2 mb-1`}>
+                    {book.title}
+                  </h3>
                   {book.rating && book.rating > 0 && (
-                    <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 shadow text-xs font-bold">
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
                       <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      {book.rating.toFixed(1)}
+                      <span className="font-medium">{book.rating.toFixed(1)}</span>
                     </div>
                   )}
                 </div>
-                {/* Title */}
-                <h3 className={`mt-3 text-sm font-semibold ${accentColors[variant]} transition-colors line-clamp-2`}>
-                  {book.title}
-                </h3>
               </div>
             </Link>
           ))}

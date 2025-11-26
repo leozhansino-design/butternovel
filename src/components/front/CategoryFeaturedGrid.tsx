@@ -1,7 +1,8 @@
 // src/components/front/CategoryFeaturedGrid.tsx
-// Featured + Grid layout: 1 large book on left + smaller books on right
+// Featured spotlight + horizontal scroll - 1 hero book with blur bg + scrollable list
 'use client';
 
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -25,18 +26,48 @@ export default function CategoryFeaturedGrid({
   categorySlug,
   books
 }: CategoryFeaturedGridProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScrollPosition = () => {
+    if (!trackRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = trackRef.current;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const track = trackRef.current;
+    if (track) {
+      track.addEventListener('scroll', checkScrollPosition);
+      window.addEventListener('resize', checkScrollPosition);
+      return () => {
+        track.removeEventListener('scroll', checkScrollPosition);
+        window.removeEventListener('resize', checkScrollPosition);
+      };
+    }
+  }, [books]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!trackRef.current) return;
+    const scrollAmount = 300;
+    const newPos = direction === 'left'
+      ? trackRef.current.scrollLeft - scrollAmount
+      : trackRef.current.scrollLeft + scrollAmount;
+    trackRef.current.scrollTo({ left: newPos, behavior: 'smooth' });
+  };
+
   if (books.length === 0) return null;
 
   const featured = books[0];
-  // Show 3 or 6 books in grid to ensure full rows (3 columns)
-  const availableGridBooks = books.length - 1;
-  const gridCount = availableGridBooks >= 6 ? 6 : (availableGridBooks >= 3 ? 3 : availableGridBooks);
-  const gridBooks = books.slice(1, 1 + gridCount);
+  const restBooks = books.slice(1);
 
   return (
-    <section className="w-full px-4 md:px-8 lg:px-[150px]">
+    <section className="w-full">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-6 md:mb-8">
+      <div className="flex items-center justify-between mb-6 md:mb-8 px-4 md:px-8 lg:px-[150px]">
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
           {title}
         </h2>
@@ -53,45 +84,62 @@ export default function CategoryFeaturedGrid({
         )}
       </div>
 
-      {/* Layout: Featured + Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-        {/* Featured Book - Large Card */}
+      {/* Featured Hero Card with Frosted Glass */}
+      <div className="px-4 md:px-8 lg:px-[150px] mb-6">
         <Link
           href={featured.slug ? `/novels/${featured.slug}` : `/novels/book-${featured.id}`}
-          className="lg:col-span-5 group"
+          className="group block"
         >
-          <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
-            <div className="flex flex-col sm:flex-row lg:flex-col">
-              {/* Cover */}
-              <div className="relative w-full sm:w-48 lg:w-full aspect-[2/3] sm:aspect-auto sm:h-64 lg:aspect-[3/4] flex-shrink-0">
-                <Image
-                  src={featured.coverImage || `https://images.unsplash.com/photo-${1544947950 + featured.id}?w=400&h=600&fit=crop`}
-                  alt={featured.title}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 192px, 400px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                {/* Rating Badge */}
-                {featured.rating && featured.rating > 0 && (
-                  <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5">
-                    <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    <span className="font-bold text-gray-900">{featured.rating.toFixed(1)}</span>
-                  </div>
-                )}
+          <div className="relative rounded-2xl overflow-hidden bg-slate-900">
+            {/* Blurred Background Image */}
+            <div className="absolute inset-0">
+              <Image
+                src={featured.coverImage || '/placeholder-cover.jpg'}
+                alt=""
+                fill
+                className="object-cover scale-110 blur-2xl opacity-40"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-900/90" />
+            </div>
+
+            {/* Content */}
+            <div className="relative flex items-center gap-6 p-6 md:p-8">
+              {/* Cover - Fixed size, no scaling beyond 300x400 */}
+              <div className="flex-shrink-0">
+                <div
+                  className="relative rounded-lg overflow-hidden shadow-2xl group-hover:shadow-amber-500/20 transition-shadow"
+                  style={{ width: '120px', height: '160px' }}
+                >
+                  <Image
+                    src={featured.coverImage || '/placeholder-cover.jpg'}
+                    alt={featured.title}
+                    fill
+                    sizes="120px"
+                    className="object-cover"
+                  />
+                  {/* Rating Badge */}
+                  {featured.rating && featured.rating > 0 && (
+                    <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg">
+                      <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <span className="text-xs font-bold">{featured.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+
               {/* Info */}
-              <div className="p-5 sm:flex-1 lg:flex-none">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 group-hover:text-amber-600 transition-colors line-clamp-2 mb-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-2 mb-2">
                   {featured.title}
                 </h3>
                 {featured.blurb && (
-                  <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
+                  <p className="text-sm text-slate-300 line-clamp-2 md:line-clamp-3 leading-relaxed mb-4">
                     {featured.blurb}
                   </p>
                 )}
-                <div className="mt-4 inline-flex items-center gap-2 text-amber-600 font-semibold text-sm group-hover:gap-3 transition-all">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold text-sm rounded-full transition-colors">
                   Read Now
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -101,22 +149,62 @@ export default function CategoryFeaturedGrid({
             </div>
           </div>
         </Link>
+      </div>
 
-        {/* Grid Books */}
-        <div className="lg:col-span-7">
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 lg:grid-cols-3 gap-3 sm:gap-4">
-            {gridBooks.map((book) => (
+      {/* Rest books - Horizontal Scroll */}
+      {restBooks.length > 0 && (
+        <div className="relative">
+          {/* Gradient masks */}
+          {canScrollLeft && (
+            <div className="hidden lg:block absolute left-0 top-0 bottom-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none w-[120px]" />
+          )}
+          <div className="hidden lg:block absolute right-0 top-0 bottom-0 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none w-[120px]" />
+
+          {/* Nav buttons */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll('left')}
+              className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all left-[50px]"
+            >
+              <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+          {canScrollRight && (
+            <button
+              onClick={() => scroll('right')}
+              className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all right-[50px]"
+            >
+              <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Scrollable list */}
+          <div
+            ref={trackRef}
+            className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {restBooks.map((book) => (
               <Link
                 key={book.id}
                 href={book.slug ? `/novels/${book.slug}` : `/novels/book-${book.id}`}
-                className="group block"
+                className="group flex-shrink-0"
+                style={{ width: '120px' }}
               >
-                <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-all">
+                {/* Cover - 3:4 ratio matching 300x400 */}
+                <div
+                  className="relative rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-all"
+                  style={{ aspectRatio: '3/4' }}
+                >
                   <Image
-                    src={book.coverImage || `https://images.unsplash.com/photo-${1544947950 + book.id}?w=200&h=300&fit=crop`}
+                    src={book.coverImage || '/placeholder-cover.jpg'}
                     alt={book.title}
                     fill
-                    sizes="(max-width: 640px) 30vw, 150px"
+                    sizes="120px"
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   {book.rating && book.rating > 0 && (
@@ -135,7 +223,7 @@ export default function CategoryFeaturedGrid({
             ))}
           </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

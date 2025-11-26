@@ -29,11 +29,11 @@ const CompactNovelCard = memo(function CompactNovelCard({
     <Link
       href={bookLink}
       className="group block flex-shrink-0"
-      style={{ width: '150px' }}
+      style={{ width: '120px' }}
     >
-      {/* Cover container */}
+      {/* Cover container - 3:4 ratio matching 300x400 original */}
       <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-shadow"
-           style={{ aspectRatio: '2/3' }}>
+           style={{ aspectRatio: '3/4' }}>
         {/* Rating badge - elegant design */}
         {showRating && (
           <div className="absolute top-2 left-2 z-10 bg-white/95 backdrop-blur-sm text-gray-900 px-2.5 py-1 rounded-md shadow-lg flex items-center gap-1.5 border border-gray-100"
@@ -50,7 +50,7 @@ const CompactNovelCard = memo(function CompactNovelCard({
           src={cover}
           alt={title}
           fill
-          sizes="150px"
+          sizes="120px"
           className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </div>

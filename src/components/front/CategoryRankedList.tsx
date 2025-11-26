@@ -124,30 +124,34 @@ export default function CategoryRankedList({
         {/* Ranked list */}
         <div
           ref={trackRef}
-          className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
+          className="flex gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           {books.slice(0, 10).map((book, index) => (
             <Link
               key={book.id}
               href={book.slug ? `/novels/${book.slug}` : `/novels/book-${book.id}`}
-              className="group flex-shrink-0 w-[200px] sm:w-[220px]"
+              className="group flex-shrink-0"
+              style={{ width: '130px' }}
             >
               <div className="relative">
                 {/* Rank Number */}
-                <div className={`absolute -left-2 -top-2 z-20 w-10 h-10 rounded-full bg-gradient-to-br ${rankColors[Math.min(index, 3)]} flex items-center justify-center shadow-lg`}>
-                  <span className="text-white font-black text-lg" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                <div className={`absolute -left-2 -top-2 z-20 w-8 h-8 rounded-full bg-gradient-to-br ${rankColors[Math.min(index, 3)]} flex items-center justify-center shadow-lg`}>
+                  <span className="text-white font-black text-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
                     {index + 1}
                   </span>
                 </div>
 
-                {/* Cover */}
-                <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-slate-700 shadow-lg group-hover:shadow-2xl transition-all group-hover:-translate-y-1">
+                {/* Cover - 3:4 ratio matching 300x400, max 130x173 */}
+                <div
+                  className="relative rounded-xl overflow-hidden bg-slate-700 shadow-lg group-hover:shadow-2xl transition-all group-hover:-translate-y-1"
+                  style={{ aspectRatio: '3/4' }}
+                >
                   <Image
-                    src={book.coverImage || `https://images.unsplash.com/photo-${1544947950 + book.id}?w=200&h=300&fit=crop`}
+                    src={book.coverImage || '/placeholder-cover.jpg'}
                     alt={book.title}
                     fill
-                    sizes="220px"
+                    sizes="130px"
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   {/* Hover overlay */}
@@ -155,17 +159,17 @@ export default function CategoryRankedList({
 
                   {/* Rating on hover */}
                   {book.rating && book.rating > 0 && (
-                    <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                      <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="absolute bottom-2 left-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-md flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                      <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      <span className="text-sm font-bold text-gray-900">{book.rating.toFixed(1)}</span>
+                      <span className="text-xs font-bold text-gray-900">{book.rating.toFixed(1)}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Title */}
-                <h3 className="mt-3 text-sm font-semibold text-white group-hover:text-amber-400 transition-colors line-clamp-2">
+                <h3 className="mt-2 text-sm font-semibold text-white group-hover:text-amber-400 transition-colors line-clamp-2">
                   {book.title}
                 </h3>
               </div>
