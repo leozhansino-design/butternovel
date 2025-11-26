@@ -45,17 +45,17 @@ export default function CategoryCompactGrid({
   };
 
   return (
-    <section className={`w-full ${bgStyles[variant]} py-10 md:py-12`}>
+    <section className={`w-full ${bgStyles[variant]} py-8 sm:py-10 md:py-12`}>
       <div className="px-4 md:px-8 lg:px-[150px]">
         {/* Section Header */}
-        <div className="flex items-center justify-between mb-6 md:mb-8">
+        <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
           <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
             {title}
           </h2>
           {categorySlug && (
             <Link
               href={`/search?genre=${categorySlug}`}
-              className={`group flex items-center gap-1.5 text-sm sm:text-base text-gray-600 ${accentColors[variant]} transition-colors font-medium`}
+              className={`group flex items-center gap-1 sm:gap-1.5 text-sm sm:text-base text-gray-600 ${accentColors[variant]} transition-colors font-medium`}
             >
               <span>View All</span>
               <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,7 +66,7 @@ export default function CategoryCompactGrid({
         </div>
 
         {/* Grid - horizontal cards with cover + info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {displayBooks.map((book) => (
             <Link
               key={book.id}
