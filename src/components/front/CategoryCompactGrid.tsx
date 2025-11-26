@@ -34,13 +34,13 @@ export default function CategoryCompactGrid({
 
   const bgStyles = {
     default: 'bg-slate-50/50',
-    warm: 'bg-gradient-to-br from-amber-50/60 via-orange-50/30 to-yellow-50/40',
+    warm: 'bg-gradient-to-br from-blue-50/40 via-slate-50/30 to-sky-50/30',
     cool: 'bg-gradient-to-br from-blue-50/60 via-indigo-50/30 to-slate-50/40'
   };
 
   const accentColors = {
-    default: 'hover:text-amber-600',
-    warm: 'hover:text-orange-600',
+    default: 'hover:text-blue-600',
+    warm: 'hover:text-blue-600',
     cool: 'hover:text-blue-600'
   };
 

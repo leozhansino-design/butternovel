@@ -124,7 +124,7 @@ export default function CategoryFeaturedGrid({
           className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {/* Hero Cards - Larger with rich info */}
+          {/* Hero Cards - Larger with rich info, blue theme */}
           {heroBooks.map((book) => (
             <Link
               key={book.id}
@@ -141,7 +141,7 @@ export default function CategoryFeaturedGrid({
                     fill
                     className="object-cover scale-125 blur-2xl opacity-50"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/90" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-950/90 via-slate-900/70 to-slate-900/90" />
                 </div>
 
                 {/* Content */}
@@ -167,7 +167,7 @@ export default function CategoryFeaturedGrid({
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {book.categoryName && (
-                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-medium rounded-full">
+                        <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-medium rounded-full">
                           {book.categoryName}
                         </span>
                       )}
@@ -175,7 +175,7 @@ export default function CategoryFeaturedGrid({
                         <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${
                           book.status === 'COMPLETED'
                             ? 'bg-green-500/20 text-green-300'
-                            : 'bg-blue-500/20 text-blue-300'
+                            : 'bg-sky-500/20 text-sky-300'
                         }`}>
                           {book.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
                         </span>
@@ -191,7 +191,7 @@ export default function CategoryFeaturedGrid({
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 mb-2">
+                    <h3 className="text-base font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2 mb-2">
                       {book.title}
                     </h3>
 
@@ -203,7 +203,7 @@ export default function CategoryFeaturedGrid({
                     )}
 
                     {/* Read button */}
-                    <div className="mt-3 inline-flex items-center gap-1.5 text-amber-400 font-semibold text-xs group-hover:text-amber-300 transition-colors">
+                    <div className="mt-3 inline-flex items-center gap-1.5 text-blue-400 font-semibold text-xs group-hover:text-blue-300 transition-colors">
                       <span>Read Now</span>
                       <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
