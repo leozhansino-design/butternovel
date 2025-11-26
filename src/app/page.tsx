@@ -17,12 +17,13 @@ async function HomeContent() {
 
   const { featured, trending, categories, categoryNovels } = homeData
 
-  // 构造类别数据映射
+  // 构造类别数据映射，按书数量从多到少排序
   const categoryData = categories.map((category) => ({
     name: category.name,
     slug: category.slug,
     novels: categoryNovels[category.slug] || []
   })).filter(cat => cat.novels.length > 0) // 只保留有小说的类别
+    .sort((a, b) => b.novels.length - a.novels.length) // 按书数量排序
 
   const featuredBooks = featured.map(novel => ({
     id: novel.id,

@@ -175,18 +175,18 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
           </svg>
         </button>
 
-        {/* 顶部 - Profile 卡片 (毛玻璃效果) */}
-        <div className="flex-shrink-0 p-6 pb-0">
+        {/* 顶部 - Profile 卡片 (毛玻璃效果) - 移动端优化 */}
+        <div className="flex-shrink-0 p-3 sm:p-6 pb-0">
           <ProfileView user={user} />
         </div>
 
-        {/* 中间 - Tab 导航栏 */}
-        <div className="flex-shrink-0 px-6 pt-4">
-          <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-4">
-            <div className="flex items-center gap-3">
+        {/* 中间 - Tab 导航栏 - 移动端优化 */}
+        <div className="flex-shrink-0 px-3 sm:px-6 pt-3 sm:pt-4">
+          <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg border border-white/20 p-2 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-3 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveTab('novels')}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   activeTab === 'novels'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
@@ -196,7 +196,7 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
               </button>
               <button
                 onClick={() => setActiveTab('library')}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   activeTab === 'library'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
@@ -206,17 +206,17 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   activeTab === 'history'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
                 }`}
               >
-                Reading History
+                History
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
-                className={`px-5 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+                className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   activeTab === 'reviews'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
                     : 'text-gray-600 hover:bg-white/80 hover:text-gray-900'
@@ -228,9 +228,9 @@ export default function LibraryModal({ isOpen, onClose, user, defaultView = 'lib
           </div>
         </div>
 
-        {/* 底部 - Tab 内容 */}
-        <div className="flex-1 overflow-hidden px-6 pt-4 pb-6">
-          <div className="h-full bg-white/40 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
+        {/* 底部 - Tab 内容 - 移动端优化 */}
+        <div className="flex-1 overflow-hidden px-3 sm:px-6 pt-3 sm:pt-4 pb-3 sm:pb-6">
+          <div className="h-full bg-white/40 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-white/20 overflow-hidden">
             {activeTab === 'novels' && <WorksTab onClose={onClose} />}
             {activeTab === 'library' && <MyLibrary onClose={onClose} />}
             {activeTab === 'history' && <ReadingHistory onClose={onClose} />}

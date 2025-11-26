@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
@@ -17,6 +17,25 @@ export default function Header() {
   const user = session?.user;
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // 防止移动端菜单打开时背景滚动
+  useEffect(() => {
+    if (isMenuOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+      document.body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [isMenuOpen]);
   const [authModal, setAuthModal] = useState<{ isOpen: boolean; tab: 'login' | 'register' }>({
     isOpen: false,
     tab: 'login',
@@ -173,7 +192,7 @@ export default function Header() {
 
           {/* Mobile Menu - 📱 优化移动端样式 */}
           {isMenuOpen && (
-            <div className="md:hidden py-3 border-t border-gray-200">
+            <div className="md:hidden py-3 border-t border-gray-200 max-h-[calc(100vh-56px)] overflow-y-auto">
               {/* Mobile Search (with autocomplete) */}
               <div className="mb-3">
                 <SearchInput placeholder="Search novels..." />
