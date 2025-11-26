@@ -15,6 +15,7 @@ interface RatingDisplayProps {
   userRatingScore?: number
   autoOpen?: boolean
   highlightRatingId?: string
+  compact?: boolean  // 移动端紧凑模式
 }
 
 export default function RatingDisplay({
@@ -26,6 +27,7 @@ export default function RatingDisplay({
   userRatingScore,
   autoOpen = false,
   highlightRatingId,
+  compact = false,
 }: RatingDisplayProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -48,12 +50,14 @@ export default function RatingDisplay({
     const color = (!hasUserRated && isHovered) ? '#FFA500' : '#FFB800'
     const emptyColor = (!hasUserRated && isHovered) ? '#FFD700' : '#E5E7EB'
 
+    const starSize = compact ? 'w-4 h-4' : 'w-6 h-6'
+
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         {[...Array(fullStars)].map((_, i) => (
           <svg
             key={`full-${i}`}
-            className={`w-6 h-6 transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
+            className={`${starSize} transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
             fill={color}
             viewBox="0 0 24 24"
           >
@@ -62,18 +66,18 @@ export default function RatingDisplay({
         ))}
         {hasHalfStar && (
           <svg
-            className={`w-6 h-6 transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
+            className={`${starSize} transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
             fill="none"
             viewBox="0 0 24 24"
           >
             <defs>
-              <linearGradient id="half-star">
+              <linearGradient id={`half-star-${compact ? 'compact' : 'normal'}`}>
                 <stop offset="50%" stopColor={color} />
                 <stop offset="50%" stopColor={emptyColor} />
               </linearGradient>
             </defs>
             <path
-              fill="url(#half-star)"
+              fill={`url(#half-star-${compact ? 'compact' : 'normal'})`}
               d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
             />
           </svg>
@@ -81,7 +85,7 @@ export default function RatingDisplay({
         {[...Array(emptyStars)].map((_, i) => (
           <svg
             key={`empty-${i}`}
-            className={`w-6 h-6 transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
+            className={`${starSize} transition-all ${!hasUserRated && isHovered ? 'scale-110' : ''}`}
             fill={emptyColor}
             viewBox="0 0 24 24"
           >
@@ -89,6 +93,35 @@ export default function RatingDisplay({
           </svg>
         ))}
       </div>
+    )
+  }
+
+  // 紧凑模式：单行显示星星和评分
+  if (compact) {
+    return (
+      <>
+        <div
+          className="flex items-center justify-center gap-1.5 cursor-pointer"
+          onClick={() => setIsModalOpen(true)}
+          onMouseEnter={() => !hasUserRated && setIsHovered(true)}
+          onMouseLeave={() => !hasUserRated && setIsHovered(false)}
+        >
+          {renderStars(averageRating)}
+          <span className="text-sm font-bold text-gray-900">
+            {totalRatings > 0 ? averageRating.toFixed(1) : '-'}
+          </span>
+        </div>
+
+        <RatingModal
+          novelId={novelId}
+          averageRating={averageRating}
+          totalRatings={totalRatings}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          userId={userId}
+          highlightRatingId={highlightRatingId}
+        />
+      </>
     )
   }
 
