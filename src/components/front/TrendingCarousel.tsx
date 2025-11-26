@@ -197,7 +197,7 @@ export default function TrendingCarousel({
           }}
         >
           {/* 桌面端左侧占位符 - 让第一本书初始位置在渐变区域之后 */}
-          <div className="hidden lg:block flex-shrink-0 w-[150px]" aria-hidden="true" />
+          <div className="flex-shrink-0 w-0 lg:w-[150px]" aria-hidden="true" />
           {novels.map((novel) => (
             <Link
               key={novel.id}
@@ -280,7 +280,7 @@ export default function TrendingCarousel({
             </Link>
           ))}
           {/* 桌面端右侧占位符 */}
-          <div className="hidden lg:block flex-shrink-0 w-[120px]" aria-hidden="true" />
+          <div className="flex-shrink-0 w-0 lg:w-[120px]" aria-hidden="true" />
         </div>
       </div>
     </section>

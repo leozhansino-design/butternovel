@@ -181,7 +181,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
           }}
         >
           {/* 桌面端左侧占位符 - 让第一本书初始位置在渐变区域之后 */}
-          <div className="hidden lg:block flex-shrink-0 w-[150px]" aria-hidden="true" />
+          <div className="flex-shrink-0 w-0 lg:w-[150px]" aria-hidden="true" />
           {books.map((book) => (
             <Link
               key={book.id}
@@ -220,7 +220,7 @@ export default function FeaturedCarousel({ books }: { books: Book[] }) {
             </Link>
           ))}
           {/* 桌面端右侧占位符 */}
-          <div className="hidden lg:block flex-shrink-0 w-[120px]" aria-hidden="true" />
+          <div className="flex-shrink-0 w-0 lg:w-[120px]" aria-hidden="true" />
         </div>
       </div>
     </div>
