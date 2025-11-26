@@ -5,6 +5,9 @@ import Footer from '@/components/shared/Footer'
 import TrendingCarousel from '@/components/front/TrendingCarousel'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategoryCarousel from '@/components/front/CategoryCarousel'
+import CategoryFeaturedGrid from '@/components/front/CategoryFeaturedGrid'
+import CategoryRankedList from '@/components/front/CategoryRankedList'
+import CategoryCompactGrid from '@/components/front/CategoryCompactGrid'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 import { getHomePageData } from '@/lib/cache-optimized'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -60,24 +63,75 @@ async function HomeContent() {
 
       <div className="bg-white">
         {/* 移除container限制，让轮播可以延伸到屏幕边缘 */}
-        <div className="py-8 sm:py-12 md:py-16 space-y-12 sm:space-y-16 md:space-y-20">
-          {categoryData.map(cat => {
+        <div className="py-8 sm:py-12 md:py-16">
+          {categoryData.map((cat, index) => {
             const books = cat.novels.map(novel => ({
               id: novel.id,
               title: novel.title,
               slug: novel.slug,
               coverImage: novel.coverImage,
               rating: novel.rating,
+              blurb: novel.blurb,
             }))
 
-            return (
-              <CategoryCarousel
-                key={cat.slug}
-                title={cat.name}
-                books={books}
-                categorySlug={cat.slug}
-              />
+            // Alternate between different layout styles for visual variety
+            // Pattern: FeaturedGrid -> RankedList -> Carousel -> CompactGrid -> repeat
+            const layoutIndex = index % 4
+
+            // Add spacing wrapper for each section
+            const sectionWrapper = (content: React.ReactNode) => (
+              <div key={cat.slug} className="mb-12 sm:mb-16 md:mb-20 last:mb-0">
+                {content}
+              </div>
             )
+
+            switch (layoutIndex) {
+              case 0:
+                // Featured Grid - 1 large + grid of smaller
+                return sectionWrapper(
+                  <CategoryFeaturedGrid
+                    title={cat.name}
+                    books={books}
+                    categorySlug={cat.slug}
+                  />
+                )
+              case 1:
+                // Ranked List - Dark background with numbered ranking
+                return sectionWrapper(
+                  <CategoryRankedList
+                    title={cat.name}
+                    books={books}
+                    categorySlug={cat.slug}
+                  />
+                )
+              case 2:
+                // Standard Carousel - Horizontal scroll
+                return sectionWrapper(
+                  <CategoryCarousel
+                    title={cat.name}
+                    books={books}
+                    categorySlug={cat.slug}
+                  />
+                )
+              case 3:
+                // Compact Grid - Clean 2-row grid with warm background
+                return sectionWrapper(
+                  <CategoryCompactGrid
+                    title={cat.name}
+                    books={books}
+                    categorySlug={cat.slug}
+                    variant="warm"
+                  />
+                )
+              default:
+                return sectionWrapper(
+                  <CategoryCarousel
+                    title={cat.name}
+                    books={books}
+                    categorySlug={cat.slug}
+                  />
+                )
+            }
           })}
 
           {featuredBooks.length === 0 && categoryData.length === 0 && (

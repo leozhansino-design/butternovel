@@ -51,6 +51,7 @@ export interface HomePageData {
     title: string;
     slug: string;
     coverImage: string;
+    blurb: string;
     categoryName: string;
     status: string;
     chaptersCount: number;
@@ -120,6 +121,7 @@ export async function getHomePageData(): Promise<HomePageData> {
           title: string;
           slug: string;
           coverImage: string;
+          blurb: string;
           categoryName: string;
           status: string;
           chaptersCount: number;
@@ -135,6 +137,7 @@ export async function getHomePageData(): Promise<HomePageData> {
               n.title,
               n.slug,
               n."coverImage",
+              n.blurb,
               n.status,
               c.name as "categoryName",
               (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
@@ -158,6 +161,7 @@ export async function getHomePageData(): Promise<HomePageData> {
               n.title,
               n.slug,
               n."coverImage",
+              n.blurb,
               n.status,
               c.name as "categoryName",
               (SELECT COUNT(*) FROM "Chapter" ch WHERE ch."novelId" = n.id AND ch."isPublished" = true) as "chaptersCount",
