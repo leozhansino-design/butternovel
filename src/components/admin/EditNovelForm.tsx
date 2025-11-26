@@ -148,7 +148,15 @@ export default function EditNovelForm({ novel, categories }: Props) {
         body: JSON.stringify(updates)
       })
 
-      const data = await response.json()
+      // ✅ 安全解析 JSON - 处理非 JSON 响应
+      let data
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        data = { error: text || `Server error: ${response.status}` }
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update novel')
@@ -229,7 +237,15 @@ export default function EditNovelForm({ novel, categories }: Props) {
         body: JSON.stringify({ isPublished: !currentStatus })
       })
 
-      const data = await response.json()
+      // ✅ 安全解析 JSON
+      let data
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        data = { error: text || `Server error: ${response.status}` }
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update chapter')
@@ -264,7 +280,15 @@ export default function EditNovelForm({ novel, categories }: Props) {
         credentials: 'include' // ✅ 确保 cookie 总是被发送
       })
 
-      const data = await response.json()
+      // ✅ 安全解析 JSON
+      let data
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        data = { error: text || `Server error: ${response.status}` }
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to delete novel')
