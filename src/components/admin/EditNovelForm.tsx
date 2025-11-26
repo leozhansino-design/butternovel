@@ -8,6 +8,8 @@ import Link from 'next/link'
 import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
 import { ContentRating, RightsType } from '@prisma/client'
+import { compressCoverImage, formatFileSize } from '@/lib/image-compress'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 type Category = {
   id: number
@@ -70,19 +72,49 @@ export default function EditNovelForm({ novel, categories }: Props) {
   // 追踪改动
   const [hasChanges, setHasChanges] = useState(false)
 
-  // 处理封面上传
-  function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // 封面上传状态
+  const [compressing, setCompressing] = useState(false)
+
+  // 处理封面上传 (带压缩)
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64 = reader.result as string
-      setCoverPreview(base64)
-      setNewCoverImage(base64)
-      setHasChanges(true)
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      setMessage({ type: 'error', text: 'Please select an image file' })
+      return
     }
-    reader.readAsDataURL(file)
+
+    // 验证原始文件大小 (最大 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Image size must be less than 10MB' })
+      return
+    }
+
+    setCompressing(true)
+    setMessage(null)
+
+    try {
+      // 压缩图片
+      const compressedBase64 = await compressCoverImage(file)
+      setCoverPreview(compressedBase64)
+      setNewCoverImage(compressedBase64)
+      setHasChanges(true)
+
+      // 显示压缩信息
+      const originalSize = formatFileSize(file.size)
+      const compressedSize = formatFileSize(Math.round(compressedBase64.length * 0.75)) // Base64 to binary estimate
+      setMessage({
+        type: 'success',
+        text: `Image compressed: ${originalSize} → ${compressedSize}`
+      })
+    } catch (error) {
+      console.error('Image compression failed:', error)
+      setMessage({ type: 'error', text: 'Failed to compress image. Please try a different image.' })
+    } finally {
+      setCompressing(false)
+    }
   }
 
   // ✅ Auto-detect changes whenever any field changes (fixes async state update issue)
@@ -141,22 +173,30 @@ export default function EditNovelForm({ novel, categories }: Props) {
       // ⭐ 根据按钮设置发布状态
       updates.isPublished = publish
 
+      // ⭐ 检查请求体大小 (Vercel 限制 4.5MB)
+      const bodyString = JSON.stringify(updates)
+      const bodySizeBytes = new Blob([bodyString]).size
+      const bodySizeMB = bodySizeBytes / (1024 * 1024)
+      const MAX_SIZE_MB = 4.0  // 留一些余量
+
+      if (bodySizeMB > MAX_SIZE_MB) {
+        throw new Error(
+          `Request too large (${bodySizeMB.toFixed(2)}MB). ` +
+          `Please use a smaller cover image. Maximum size: ${MAX_SIZE_MB}MB`
+        )
+      }
+
+      console.log(`[EditNovel] Request size: ${bodySizeMB.toFixed(2)}MB`)
+
       const response = await fetch(`/api/admin/novels/${novel.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // ✅ 确保 cookie 总是被发送
-        body: JSON.stringify(updates)
+        body: bodyString
       })
 
-      // ✅ 安全解析 JSON - 处理非 JSON 响应
-      let data
-      const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json()
-      } else {
-        const text = await response.text()
-        data = { error: text || `Server error: ${response.status}` }
-      }
+      // ✅ 使用 safeParseJson 安全解析响应
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update novel')
@@ -237,23 +277,16 @@ export default function EditNovelForm({ novel, categories }: Props) {
         body: JSON.stringify({ isPublished: !currentStatus })
       })
 
-      // ✅ 安全解析 JSON
-      let data
-      const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json()
-      } else {
-        const text = await response.text()
-        data = { error: text || `Server error: ${response.status}` }
-      }
+      // ✅ 使用 safeParseJson 安全解析响应
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update chapter')
       }
 
-      setMessage({ 
-        type: 'success', 
-        text: !currentStatus ? '✅ Chapter published!' : '📝 Chapter unpublished' 
+      setMessage({
+        type: 'success',
+        text: !currentStatus ? '✅ Chapter published!' : '📝 Chapter unpublished'
       })
       
       router.refresh()
@@ -280,15 +313,8 @@ export default function EditNovelForm({ novel, categories }: Props) {
         credentials: 'include' // ✅ 确保 cookie 总是被发送
       })
 
-      // ✅ 安全解析 JSON
-      let data
-      const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json()
-      } else {
-        const text = await response.text()
-        data = { error: text || `Server error: ${response.status}` }
-      }
+      // ✅ 使用 safeParseJson 安全解析响应
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to delete novel')
@@ -501,11 +527,22 @@ export default function EditNovelForm({ novel, categories }: Props) {
               type="file"
               accept="image/*"
               onChange={handleCoverChange}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              disabled={compressing}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
             />
-            <p className="text-sm text-gray-500 mt-2">
-              Recommended: 300x400px, max 2MB
-            </p>
+            {compressing ? (
+              <div className="flex items-center gap-2 mt-2 text-blue-600">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-sm">Compressing image...</span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 mt-2">
+                Recommended: 300x400px. Images will be auto-compressed.
+              </p>
+            )}
           </div>
         </div>
       </div>

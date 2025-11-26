@@ -8,6 +8,12 @@ import { validateWithSchema, novelUpdateSchema } from '@/lib/validators'
 import { invalidateNovelRelatedCache } from '@/lib/cache'
 import { checkNovelTitleExists } from '@/lib/novel-queries'
 
+// Next.js App Router - Route Segment Config
+// Note: Vercel serverless functions have a 4.5MB body limit that cannot be increased
+// Images must be compressed client-side before upload
+export const maxDuration = 60  // 60 seconds timeout for large uploads
+export const dynamic = 'force-dynamic'
+
 // PUT /api/admin/novels/[id] - 更新小说（增量更新）
 export const PUT = withAdminAuth(async (
   session,
