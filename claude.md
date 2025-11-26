@@ -2,9 +2,10 @@
 
 > **快速参考**: 每次开发前必读,帮助 Claude 快速理解项目上下文
 
-**最后更新**: 2025-11-19
+**最后更新**: 2025-11-26
 **项目版本**: MVP v2.0 (终极简化完成)
 **架构**: ISR + Supabase (完全移除Redis) ✨
+**下一阶段**: 付费系统 + 反爬虫
 
 ---
 
@@ -21,7 +22,8 @@
 9. [常见任务参考](#9-常见任务参考)
 10. [环境变量](#10-环境变量)
 11. [已完成功能](#11-已完成功能)
-12. [测试指南](#12-测试指南) ⭐ NEW!
+12. [测试指南](#12-测试指南)
+13. [付费系统规划](#13-付费系统规划-重要) ⭐ NEW!
 
 ---
 
@@ -1189,6 +1191,714 @@ NODE_ENV="development"
 
 ---
 
+## 13. 付费系统规划 ⭐ 重要!
+
+> **目标**: 实现小说内容付费机制，支持免费区域和付费区域，作家可自主定价
+
+### 13.1 商业模式设计
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                    内容分层模式                              │
+├────────────────────────────────────────────────────────────┤
+│ 免费章节 (前5章左右)                                        │
+│ ├── 任何人可阅读                                           │
+│ ├── 吸引读者入坑                                           │
+│ └── 展示内容质量                                           │
+├────────────────────────────────────────────────────────────┤
+│ 付费章节 (第6章起)                                          │
+│ ├── 需要购买/订阅                                          │
+│ ├── 防止爬虫抓取                                           │
+│ └── 作家获得分成                                           │
+└────────────────────────────────────────────────────────────┘
+```
+
+**定价策略** (USD - US/EU Market):
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Chapter Price Range: $0.10 - $1.00 USD (platform limit)     │
+│ Suggested pricing:                                          │
+│   - Short chapters (<3000 chars): $0.10 - $0.30            │
+│   - Medium chapters (3000-6000 chars): $0.30 - $0.50       │
+│   - Long chapters (>6000 chars): $0.50 - $1.00             │
+│                                                             │
+│ Revenue Split: Writer 70% / Platform 30%                    │
+│                                                             │
+│ Note: Stripe processing fees (~2.9% + $0.30) are absorbed  │
+│ by the platform, not deducted from writer earnings.         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 13.2 数据库设计
+
+#### 新增表结构
+
+```prisma
+// 用户钱包
+model UserWallet {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  balance      Decimal  @default(0) @db.Decimal(10, 2)  // 余额 (元)
+  totalSpent   Decimal  @default(0) @db.Decimal(10, 2)  // 累计消费
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 关系
+  transactions WalletTransaction[]
+  purchases    ChapterPurchase[]
+}
+
+// 钱包交易记录
+model WalletTransaction {
+  id           String          @id @default(cuid())
+  walletId     String
+  wallet       UserWallet      @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  type         TransactionType // RECHARGE(充值) / PURCHASE(购买) / REWARD(打赏) / WITHDRAW(提现)
+  amount       Decimal         @db.Decimal(10, 2)
+  description  String?
+
+  // 支付信息 (充值时)
+  paymentMethod String?        // WECHAT / ALIPAY
+  paymentId     String?        // 第三方支付订单号
+
+  createdAt    DateTime @default(now())
+
+  @@index([walletId, createdAt])
+}
+
+enum TransactionType {
+  RECHARGE    // 充值
+  PURCHASE    // 购买章节
+  REWARD      // 打赏作家
+  WITHDRAW    // 提现
+  REFUND      // 退款
+}
+
+// 章节购买记录
+model ChapterPurchase {
+  id           String     @id @default(cuid())
+  userId       String
+  walletId     String
+  wallet       UserWallet @relation(fields: [walletId], references: [id])
+
+  novelId      Int
+  novel        Novel      @relation(fields: [novelId], references: [id])
+  chapterId    Int
+  chapter      Chapter    @relation(fields: [chapterId], references: [id])
+
+  price        Decimal    @db.Decimal(10, 2)  // 购买时价格
+  purchasedAt  DateTime   @default(now())
+
+  @@unique([userId, chapterId])
+  @@index([userId, novelId])
+}
+
+// 作家收益
+model WriterEarnings {
+  id           String   @id @default(cuid())
+  userId       String   // 作家用户ID
+  user         User     @relation(fields: [userId], references: [id])
+
+  totalEarned  Decimal  @default(0) @db.Decimal(10, 2)  // 累计收益
+  withdrawn    Decimal  @default(0) @db.Decimal(10, 2)  // 已提现
+  pending      Decimal  @default(0) @db.Decimal(10, 2)  // 待结算
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 关系
+  earningRecords EarningRecord[]
+}
+
+// 收益明细
+model EarningRecord {
+  id           String         @id @default(cuid())
+  earningsId   String
+  earnings     WriterEarnings @relation(fields: [earningsId], references: [id])
+
+  novelId      Int
+  chapterId    Int
+  purchaseId   String         // 关联的购买记录
+
+  amount       Decimal        @db.Decimal(10, 2)  // 作家分成金额
+  platformFee  Decimal        @db.Decimal(10, 2)  // 平台抽成
+
+  status       EarningStatus  @default(PENDING)
+  settledAt    DateTime?
+
+  createdAt    DateTime @default(now())
+
+  @@index([earningsId, status])
+}
+
+enum EarningStatus {
+  PENDING     // 待结算
+  SETTLED     // 已结算
+  WITHDRAWN   // 已提现
+}
+```
+
+#### 修改现有表
+
+```prisma
+// Novel 表新增字段
+model Novel {
+  // ... 现有字段 ...
+
+  // 付费设置
+  isPaid           Boolean  @default(false)      // 是否付费小说
+  freeChapters     Int      @default(5)          // 免费章节数
+  chapterPrice     Decimal? @db.Decimal(10, 2)   // 默认章节价格
+
+  // 关系
+  purchases        ChapterPurchase[]
+}
+
+// Chapter 表新增字段
+model Chapter {
+  // ... 现有字段 ...
+
+  // 付费设置
+  isPaid           Boolean  @default(false)      // 此章节是否付费
+  price            Decimal? @db.Decimal(10, 2)   // 章节价格 (可覆盖小说默认)
+
+  // 关系
+  purchases        ChapterPurchase[]
+}
+
+// User 表新增关系
+model User {
+  // ... 现有字段 ...
+
+  // 关系
+  wallet           UserWallet?
+  earnings         WriterEarnings?
+}
+```
+
+### 13.3 API 设计
+
+#### 钱包 API
+
+| 路由 | 方法 | 说明 | 需要认证 |
+|------|------|------|----------|
+| `/api/wallet` | GET | 获取钱包信息 | ✅ |
+| `/api/wallet/recharge` | POST | 发起充值 | ✅ |
+| `/api/wallet/recharge/callback` | POST | 支付回调 | ❌ (验签) |
+
+#### 购买 API
+
+| 路由 | 方法 | 说明 | 需要认证 |
+|------|------|------|----------|
+| `/api/chapters/[id]/purchase` | POST | 购买章节 | ✅ |
+| `/api/chapters/[id]/check-access` | GET | 检查访问权限 | ✅ |
+| `/api/novels/[id]/purchase-all` | POST | 批量购买剩余章节 | ✅ |
+
+#### 作家收益 API
+
+| 路由 | 方法 | 说明 | 需要认证 |
+|------|------|------|----------|
+| `/api/dashboard/earnings` | GET | 查看收益 | ✅ (作家) |
+| `/api/dashboard/earnings/withdraw` | POST | 申请提现 | ✅ (作家) |
+| `/api/dashboard/novels/[id]/pricing` | PUT | 设置定价 | ✅ (作家) |
+
+### 13.4 实现步骤
+
+#### Phase 1: 基础架构 (1-2周)
+
+```
+□ 1.1 数据库迁移
+  □ 创建 UserWallet 表
+  □ 创建 WalletTransaction 表
+  □ 创建 ChapterPurchase 表
+  □ 创建 WriterEarnings 表
+  □ 创建 EarningRecord 表
+  □ 修改 Novel 表 (添加付费字段)
+  □ 修改 Chapter 表 (添加付费字段)
+  □ 添加必要索引
+
+□ 1.2 核心模型
+  □ 钱包服务 (WalletService)
+  □ 购买服务 (PurchaseService)
+  □ 收益服务 (EarningsService)
+```
+
+#### Phase 2: 支付集成 (1-2周)
+
+```
+□ 2.1 支付接口
+  □ 微信支付 H5/JSAPI
+  □ 支付宝 H5
+  □ 支付回调处理
+  □ 订单状态同步
+
+□ 2.2 充值流程
+  □ 充值页面 UI
+  □ 充值金额选择 (6/18/68/168元等)
+  □ 支付二维码/跳转
+  □ 充值成功提示
+```
+
+#### Phase 3: 购买流程 (1周)
+
+```
+□ 3.1 阅读器改造
+  □ 检测付费章节
+  □ 显示购买提示
+  □ 余额不足提示
+  □ 购买确认弹窗
+  □ 购买成功解锁
+
+□ 3.2 批量购买
+  □ "购买全部" 功能
+  □ 折扣计算
+  □ 批量解锁
+```
+
+#### Phase 4: 作家后台 (1周)
+
+```
+□ 4.1 定价设置
+  □ 设置小说为付费/免费
+  □ 设置免费章节数
+  □ 设置章节价格
+  □ 价格范围限制
+
+□ 4.2 收益管理
+  □ 收益统计面板
+  □ 收益明细列表
+  □ 提现申请
+  □ 提现记录
+```
+
+#### Phase 5: 反爬虫系统 (1-2周)
+
+```
+□ 5.1 内容保护
+  □ 付费内容不在 HTML 中直接渲染
+  □ 内容通过 API 动态加载
+  □ 内容分片传输 + 客户端组装
+  □ 内容加密传输
+
+□ 5.2 访问控制
+  □ Token 验证 (每次请求)
+  □ 请求频率限制
+  □ 异常访问检测
+  □ IP 黑名单
+
+□ 5.3 前端保护
+  □ 禁止右键/选择/复制
+  □ 禁止开发者工具
+  □ 内容水印 (用户ID)
+  □ 截图检测 (可选)
+```
+
+### 13.5 反爬虫技术方案
+
+#### 方案1: 内容动态加载
+
+```typescript
+// ❌ 错误: 付费内容直接在 HTML 中
+<div className="chapter-content">
+  {chapter.content}  // 爬虫可以直接抓取
+</div>
+
+// ✅ 正确: 通过 API 动态加载
+// 1. 页面只渲染骨架
+// 2. 客户端请求内容 API
+// 3. API 验证权限后返回内容
+// 4. 内容加密传输
+
+// API 端
+export async function GET(request: NextRequest) {
+  // 1. 验证用户身份
+  const session = await auth()
+  if (!session) return unauthorized()
+
+  // 2. 验证购买记录
+  const hasPurchased = await checkPurchase(userId, chapterId)
+  if (!hasPurchased) return forbidden()
+
+  // 3. 生成时间戳 Token
+  const token = generateToken(userId, chapterId, Date.now())
+
+  // 4. 内容加密
+  const encryptedContent = encrypt(chapter.content, token)
+
+  return NextResponse.json({
+    content: encryptedContent,
+    token: token,
+    expiresAt: Date.now() + 5 * 60 * 1000  // 5分钟有效
+  })
+}
+
+// 客户端
+function ChapterContent({ chapterId }) {
+  const [content, setContent] = useState('')
+
+  useEffect(() => {
+    async function loadContent() {
+      const res = await fetch(`/api/chapters/${chapterId}/content`)
+      const data = await res.json()
+
+      // 客户端解密
+      const decrypted = decrypt(data.content, data.token)
+      setContent(decrypted)
+    }
+    loadContent()
+  }, [chapterId])
+
+  return <div dangerouslySetInnerHTML={{ __html: content }} />
+}
+```
+
+#### 方案2: 内容分片传输
+
+```typescript
+// 将内容分成多个片段
+// 每个片段单独加密
+// 客户端按顺序请求并组装
+
+// 服务端
+function splitContent(content: string, chunks: number = 5) {
+  const chunkSize = Math.ceil(content.length / chunks)
+  const parts = []
+
+  for (let i = 0; i < chunks; i++) {
+    parts.push({
+      index: i,
+      data: encrypt(content.slice(i * chunkSize, (i + 1) * chunkSize)),
+      hash: generateHash(i, userId)
+    })
+  }
+
+  return parts
+}
+
+// 客户端需要按顺序请求所有片段
+// 并在内存中组装 (不存储到 DOM)
+```
+
+#### 方案3: 请求频率限制
+
+```typescript
+// src/lib/rate-limiter.ts
+const LIMITS = {
+  CHAPTER_READ: { window: 60, max: 10 },    // 每分钟最多读10章
+  CONTENT_API: { window: 1, max: 2 },        // 每秒最多2次内容请求
+  BATCH_READ: { window: 3600, max: 100 },    // 每小时最多100章
+}
+
+// 使用 IP + UserID 作为限制 key
+async function checkRateLimit(userId: string, ip: string, type: string) {
+  const key = `rate:${type}:${userId}:${ip}`
+  const count = await redis.incr(key)
+
+  if (count === 1) {
+    await redis.expire(key, LIMITS[type].window)
+  }
+
+  return count <= LIMITS[type].max
+}
+```
+
+#### 方案4: 内容水印
+
+```typescript
+// 在内容中嵌入用户标识
+// 如果内容泄露可以追溯
+
+function addWatermark(content: string, userId: string) {
+  // 1. 可见水印 (用户名淡色显示)
+  // 2. 不可见水印 (零宽字符编码用户ID)
+
+  const encoded = encodeUserId(userId)  // 转为零宽字符
+
+  // 在内容中随机位置插入
+  return insertWatermark(content, encoded)
+}
+
+function encodeUserId(userId: string): string {
+  // 使用零宽字符编码
+  // \u200B (零宽空格)
+  // \u200C (零宽非连接符)
+  // \u200D (零宽连接符)
+  // \uFEFF (零宽非断空格)
+
+  return userId
+    .split('')
+    .map(char => char.charCodeAt(0).toString(2).padStart(8, '0'))
+    .map(binary => binary.replace(/0/g, '\u200B').replace(/1/g, '\u200C'))
+    .join('\u200D')
+}
+```
+
+### 13.6 前端保护措施
+
+```typescript
+// src/components/reader/ProtectedContent.tsx
+'use client'
+
+import { useEffect } from 'react'
+
+export default function ProtectedContent({ children }) {
+  useEffect(() => {
+    // 1. 禁止右键菜单
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault()
+    document.addEventListener('contextmenu', handleContextMenu)
+
+    // 2. 禁止选择文本
+    const handleSelectStart = (e: Event) => e.preventDefault()
+    document.addEventListener('selectstart', handleSelectStart)
+
+    // 3. 禁止复制
+    const handleCopy = (e: ClipboardEvent) => {
+      e.preventDefault()
+      e.clipboardData?.setData('text/plain', '本内容受版权保护，禁止复制')
+    }
+    document.addEventListener('copy', handleCopy)
+
+    // 4. 检测开发者工具 (可选)
+    const checkDevTools = () => {
+      const threshold = 160
+      if (
+        window.outerWidth - window.innerWidth > threshold ||
+        window.outerHeight - window.innerHeight > threshold
+      ) {
+        // 检测到开发者工具
+        document.body.innerHTML = '<h1>请关闭开发者工具</h1>'
+      }
+    }
+    const devToolsInterval = setInterval(checkDevTools, 1000)
+
+    // 5. 禁止打印
+    const style = document.createElement('style')
+    style.textContent = '@media print { body { display: none !important; } }'
+    document.head.appendChild(style)
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('selectstart', handleSelectStart)
+      document.removeEventListener('copy', handleCopy)
+      clearInterval(devToolsInterval)
+      style.remove()
+    }
+  }, [])
+
+  return (
+    <div
+      className="protected-content"
+      style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        MozUserSelect: 'none',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+```
+
+### 13.7 支付集成 (International - US/EU Market)
+
+> **Target Market**: US/EU users (English-speaking international audience)
+> **Payment Providers**: Stripe (primary), PayPal (secondary)
+> **Currency**: USD (primary), EUR (optional)
+
+#### Stripe Integration (Recommended)
+
+```typescript
+// src/lib/stripe.ts
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20',
+})
+
+// Create a checkout session for wallet recharge
+export async function createRechargeSession(
+  userId: string,
+  amount: number,  // in USD
+  email: string
+) {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    mode: 'payment',
+    customer_email: email,
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'ButterNovel Wallet Recharge',
+            description: `Add $${amount.toFixed(2)} to your wallet`,
+          },
+          unit_amount: Math.round(amount * 100),  // cents
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      userId,
+      type: 'wallet_recharge',
+    },
+    success_url: `${process.env.NEXT_PUBLIC_URL}/wallet?success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_URL}/wallet?canceled=true`,
+  })
+
+  return session.url
+}
+
+// Webhook handler for payment confirmation
+export async function handleStripeWebhook(
+  payload: string,
+  signature: string
+) {
+  const event = stripe.webhooks.constructEvent(
+    payload,
+    signature,
+    process.env.STRIPE_WEBHOOK_SECRET!
+  )
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const { userId } = session.metadata!
+
+    // Credit user's wallet
+    await creditUserWallet(
+      userId,
+      session.amount_total! / 100,  // convert cents to dollars
+      session.id
+    )
+  }
+
+  return { received: true }
+}
+```
+
+#### PayPal Integration (Alternative)
+
+```typescript
+// src/lib/paypal.ts
+import paypal from '@paypal/checkout-server-sdk'
+
+const environment = process.env.NODE_ENV === 'production'
+  ? new paypal.core.LiveEnvironment(
+      process.env.PAYPAL_CLIENT_ID!,
+      process.env.PAYPAL_SECRET!
+    )
+  : new paypal.core.SandboxEnvironment(
+      process.env.PAYPAL_CLIENT_ID!,
+      process.env.PAYPAL_SECRET!
+    )
+
+const client = new paypal.core.PayPalHttpClient(environment)
+
+export async function createPayPalOrder(amount: number, userId: string) {
+  const request = new paypal.orders.OrdersCreateRequest()
+  request.prefer('return=representation')
+  request.requestBody({
+    intent: 'CAPTURE',
+    purchase_units: [{
+      amount: {
+        currency_code: 'USD',
+        value: amount.toFixed(2),
+      },
+      description: 'ButterNovel Wallet Recharge',
+      custom_id: userId,
+    }],
+    application_context: {
+      return_url: `${process.env.NEXT_PUBLIC_URL}/api/wallet/paypal/capture`,
+      cancel_url: `${process.env.NEXT_PUBLIC_URL}/wallet?canceled=true`,
+    },
+  })
+
+  const response = await client.execute(request)
+  return response.result.links.find((l: any) => l.rel === 'approve').href
+}
+```
+
+### 13.8 关键注意事项 (International)
+
+```
+⚠️ Legal Compliance (US/EU)
+├── GDPR compliance (EU users)
+├── CCPA compliance (California users)
+├── Terms of Service
+├── Privacy Policy
+├── COPPA (children's privacy)
+└── DMCA (copyright protection)
+
+⚠️ Tax Considerations
+├── Sales tax (varies by US state)
+├── VAT (EU customers)
+├── 1099 reporting for US writers earning >$600
+├── W-8BEN for non-US writers
+└── Stripe/PayPal automatic tax reporting
+
+⚠️ Security Best Practices
+├── Stripe/PayPal webhook signature verification
+├── Idempotency keys for payment operations
+├── PCI DSS compliance (handled by Stripe/PayPal)
+├── Encrypted data storage
+└── Regular security audits
+
+⚠️ User Experience
+├── Simple checkout flow
+├── Multiple payment options
+├── Clear refund policy (14-day EU requirement)
+├── Transaction history
+└── Customer support channel
+```
+
+### 13.9 技术栈补充 (International)
+
+```json
+{
+  "Payment SDKs": {
+    "stripe": "Primary payment processor",
+    "@paypal/checkout-server-sdk": "Alternative payment"
+  },
+  "Security": {
+    "crypto-js": "Content encryption",
+    "jsonwebtoken": "Token generation"
+  },
+  "Compliance": {
+    "@next/third-parties": "Cookie consent",
+    "react-cookie-consent": "GDPR cookie banner"
+  },
+  "Monitoring": {
+    "Custom rate limiting": "Anti-scraping",
+    "User-agent detection": "Bot protection"
+  }
+}
+```
+
+### 13.10 环境变量 (Payment)
+
+```bash
+# Stripe
+STRIPE_SECRET_KEY="sk_live_..."
+STRIPE_PUBLISHABLE_KEY="pk_live_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+
+# PayPal (optional)
+PAYPAL_CLIENT_ID="..."
+PAYPAL_SECRET="..."
+
+# Pricing
+NEXT_PUBLIC_MIN_CHAPTER_PRICE="0.10"  # $0.10 USD minimum
+NEXT_PUBLIC_MAX_CHAPTER_PRICE="1.00"  # $1.00 USD maximum
+NEXT_PUBLIC_PLATFORM_FEE="0.30"       # 30% platform fee
+```
+
+---
+
 ## 🚨 重要提醒
 
 ### 开发前必读
@@ -1573,7 +2283,7 @@ const [novel, chapter] = await Promise.all([
 ---
 
 **文档维护**: 每次重大功能更新后,请同步更新本文档
-**最后更新**: 2025-11-19
+**最后更新**: 2025-11-26
 **维护者**: Claude + Leo
 
-**🦋 让阅读更轻松,让创作更简单**
+**🦋 让阅读更轻松,让创作更简单,让创作有回报**

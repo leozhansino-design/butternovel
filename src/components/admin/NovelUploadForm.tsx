@@ -7,6 +7,7 @@ import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
 import { safeParseJson } from '@/lib/fetch-utils'
+import { compressCoverImage, formatFileSize } from '@/lib/image-compress'
 
 // 分类数据（Genres）- 匹配数据库种子数据
 const genres = [
@@ -58,6 +59,7 @@ export default function NovelUploadForm() {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [coverPreview, setCoverPreview] = useState<string>('')
+  const [coverFile, setCoverFile] = useState<File | null>(null)  // Store original file for compression
   const [showChapterForm, setShowChapterForm] = useState(false)
   const [editingChapterId, setEditingChapterId] = useState<string | null>(null) // ⭐ 编辑状态
 
@@ -85,7 +87,7 @@ export default function NovelUploadForm() {
   const currentWordCount = currentChapter.content.trim().length
   const isOverLimit = currentWordCount > LIMITS.CHAPTER_CHARS_MAX
 
-  // 处理封面上传
+  // 处理封面上传 - 保存文件引用，提交时压缩
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -104,36 +106,41 @@ export default function NovelUploadForm() {
 
     const img = new window.Image()
     const objectUrl = URL.createObjectURL(file)
-    
+
     img.onload = () => {
       const width = img.width
       const height = img.height
-      
+
       URL.revokeObjectURL(objectUrl)
-      
+
       if (width !== IMAGE_LIMITS.REQUIRED_WIDTH || height !== IMAGE_LIMITS.REQUIRED_HEIGHT) {
         alert(`❌ Invalid image size.\nRequired: ${IMAGE_LIMITS.REQUIRED_WIDTH}x${IMAGE_LIMITS.REQUIRED_HEIGHT}px (exactly)\nYour image: ${width}x${height}px\n\nPlease resize your image to exactly 300x400 pixels.`)
         e.target.value = ''
         return
       }
-      
+
+      // Store file reference for later compression
+      setCoverFile(file)
+
+      // Create preview from object URL
       const reader = new FileReader()
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string
+      reader.onload = (ev) => {
+        const base64 = ev.target?.result as string
         setCoverPreview(base64)
-        setFormData({ ...formData, coverImage: base64 })
+        // Don't store full base64 in formData yet - will compress on submit
+        setFormData({ ...formData, coverImage: 'pending' })
       }
       reader.readAsDataURL(file)
-      
-      alert(`✅ Image validated successfully!\nSize: ${width}x${height}px\nFile size: ${(file.size / 1024).toFixed(0)}KB`)
+
+      alert(`✅ Image validated successfully!\nSize: ${width}x${height}px\nFile size: ${(file.size / 1024).toFixed(0)}KB\n\n(Image will be compressed on upload)`)
     }
-    
+
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl)
       alert('❌ Failed to load image. Please try another file.')
       e.target.value = ''
     }
-    
+
     img.src = objectUrl
   }
 
@@ -204,17 +211,17 @@ export default function NovelUploadForm() {
       alert('Please enter a title')
       return
     }
-    
-    if (!formData.coverImage) {
+
+    if (!coverFile && !coverPreview) {
       alert('Please upload a cover image')
       return
     }
-    
+
     if (!formData.categoryId) {
       alert('Please select a category')
       return
     }
-    
+
     if (!formData.blurb.trim()) {
       alert('Please enter a description')
       return
@@ -228,26 +235,54 @@ export default function NovelUploadForm() {
     setUploading(true)
 
     try {
+      // ⭐ 压缩封面图片
+      let compressedCover: string
+      if (coverFile) {
+        compressedCover = await compressCoverImage(coverFile)
+        console.log(`[NovelUpload] Cover compressed: ${formatFileSize(coverFile.size)} -> ${formatFileSize(Math.round(compressedCover.length * 0.75))}`)
+      } else {
+        // 如果没有新文件但有预览，使用预览（可能是已有图片）
+        compressedCover = coverPreview
+      }
+
+      // ⭐ 构建请求体
+      const requestBody = {
+        title: formData.title,
+        coverImage: compressedCover,
+        categoryId: parseInt(formData.categoryId),
+        blurb: formData.blurb,
+        status: formData.status,
+        isPublished: formData.isPublished,
+        contentRating: formData.contentRating,
+        rightsType: formData.rightsType,
+        chapters: chapters.map(ch => ({
+          title: ch.title,
+          content: ch.content,
+        })),
+      }
+
+      // ⭐ 检查请求体大小 (Vercel 限制 4.5MB)
+      const bodyString = JSON.stringify(requestBody)
+      const bodySizeBytes = new Blob([bodyString]).size
+      const bodySizeMB = bodySizeBytes / (1024 * 1024)
+      const MAX_SIZE_MB = 4.0
+
+      console.log(`[NovelUpload] Request size: ${bodySizeMB.toFixed(2)}MB`)
+
+      if (bodySizeMB > MAX_SIZE_MB) {
+        throw new Error(
+          `Request too large (${bodySizeMB.toFixed(2)}MB). ` +
+          `Try reducing chapters or use a smaller cover image. Max: ${MAX_SIZE_MB}MB`
+        )
+      }
+
       const response = await fetch('/api/admin/novels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // ✅ 确保 cookie 总是被发送
-        body: JSON.stringify({
-          title: formData.title,
-          coverImage: formData.coverImage,
-          categoryId: parseInt(formData.categoryId), // ✅ 转换为number
-          blurb: formData.blurb,
-          status: formData.status,
-          isPublished: formData.isPublished,
-          contentRating: formData.contentRating,
-          rightsType: formData.rightsType,
-          chapters: chapters.map(ch => ({
-            title: ch.title,
-            content: ch.content,
-          })),
-        }),
+        credentials: 'include',
+        body: bodyString,
       })
 
       const data = await safeParseJson(response)
@@ -293,8 +328,9 @@ export default function NovelUploadForm() {
         chapters: [],
       })
       setChapters([])
-      setTags([]) // ⭐ 重置标签
+      setTags([])
       setCoverPreview('')
+      setCoverFile(null)  // ⭐ 重置文件引用
 
       // ⭐ 重定向到管理页面
       router.push('/admin/novels')
@@ -365,6 +401,7 @@ export default function NovelUploadForm() {
                   type="button"
                   onClick={() => {
                     setCoverPreview('')
+                    setCoverFile(null)  // ⭐ 清除文件引用
                     setFormData({ ...formData, coverImage: '' })
                   }}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
