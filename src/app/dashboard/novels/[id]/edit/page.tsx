@@ -290,19 +290,19 @@ export default function EditNovelPage() {
             {/* Cover Image */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cover Image {newCoverImage && <span className="text-indigo-600">(New)</span>}
+                Cover Image {coverFile && <span className="text-indigo-600">(New)</span>}
               </label>
               <p className="text-xs text-gray-500 mb-3">Required size: 300x400px, Max 2MB</p>
 
               <div className="flex items-start gap-4">
                 <div className="relative w-40 h-52 rounded-lg overflow-hidden border-2 border-gray-300">
                   <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
-                  {newCoverImage && (
+                  {coverFile && (
                     <button
                       type="button"
                       onClick={() => {
                         setCoverPreview(novel.coverImage)
-                        setNewCoverImage('')
+                        setCoverFile(null)
                       }}
                       className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
                     >
