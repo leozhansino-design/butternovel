@@ -1879,7 +1879,170 @@ export async function createPayPalOrder(amount: number, userId: string) {
 }
 ```
 
-### 13.10 环境变量 (Payment)
+### 13.10 Multi-Currency Support (欧美多货币)
+
+> **Supported Currencies**: USD, EUR, GBP, CAD, AUD
+> **Base Currency**: USD (all writer earnings stored in USD)
+> **Auto-Detection**: Based on user IP/browser locale
+
+#### 支持的货币
+
+| Currency | Region | Symbol | Min Price | Max Price |
+|----------|--------|--------|-----------|-----------|
+| USD | United States | $ | $0.10 | $1.00 |
+| EUR | European Union | € | €0.10 | €1.00 |
+| GBP | United Kingdom | £ | £0.10 | £1.00 |
+| CAD | Canada | C$ | C$0.15 | C$1.50 |
+| AUD | Australia | A$ | A$0.15 | A$1.50 |
+
+#### Currency Detection & Conversion
+
+```typescript
+// src/lib/currency.ts
+
+// Supported currencies
+export const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD'] as const
+export type Currency = typeof SUPPORTED_CURRENCIES[number]
+
+// Currency configuration
+export const CURRENCY_CONFIG: Record<Currency, {
+  symbol: string
+  locale: string
+  minPrice: number
+  maxPrice: number
+}> = {
+  USD: { symbol: '$', locale: 'en-US', minPrice: 0.10, maxPrice: 1.00 },
+  EUR: { symbol: '€', locale: 'de-DE', minPrice: 0.10, maxPrice: 1.00 },
+  GBP: { symbol: '£', locale: 'en-GB', minPrice: 0.10, maxPrice: 1.00 },
+  CAD: { symbol: 'C$', locale: 'en-CA', minPrice: 0.15, maxPrice: 1.50 },
+  AUD: { symbol: 'A$', locale: 'en-AU', minPrice: 0.15, maxPrice: 1.50 },
+}
+
+// Detect currency based on browser locale or IP
+export function detectUserCurrency(): Currency {
+  if (typeof window === 'undefined') return 'USD'
+
+  const locale = navigator.language || 'en-US'
+  const region = locale.split('-')[1]?.toUpperCase()
+
+  const regionToCurrency: Record<string, Currency> = {
+    US: 'USD',
+    GB: 'GBP',
+    UK: 'GBP',
+    CA: 'CAD',
+    AU: 'AUD',
+    // EU countries
+    DE: 'EUR', FR: 'EUR', IT: 'EUR', ES: 'EUR', NL: 'EUR',
+    BE: 'EUR', AT: 'EUR', PT: 'EUR', IE: 'EUR', FI: 'EUR',
+  }
+
+  return regionToCurrency[region] || 'USD'
+}
+
+// Format price with currency
+export function formatPrice(amount: number, currency: Currency): string {
+  const config = CURRENCY_CONFIG[currency]
+  return new Intl.NumberFormat(config.locale, {
+    style: 'currency',
+    currency: currency,
+  }).format(amount)
+}
+```
+
+#### Stripe Multi-Currency Checkout
+
+```typescript
+// src/lib/stripe.ts
+
+export async function createMultiCurrencyCheckout(
+  userId: string,
+  amount: number,
+  currency: Currency,
+  email: string
+) {
+  // Stripe handles currency conversion automatically
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    mode: 'payment',
+    customer_email: email,
+    line_items: [
+      {
+        price_data: {
+          currency: currency.toLowerCase(),  // 'usd', 'eur', 'gbp', etc.
+          product_data: {
+            name: 'ButterNovel Wallet Recharge',
+            description: `Add ${formatPrice(amount, currency)} to your wallet`,
+          },
+          unit_amount: Math.round(amount * 100),  // cents/pence/etc.
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      userId,
+      type: 'wallet_recharge',
+      originalCurrency: currency,
+      originalAmount: amount.toString(),
+    },
+    // Convert to USD for internal accounting
+    automatic_tax: { enabled: true },
+    success_url: `${process.env.NEXT_PUBLIC_URL}/wallet?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_URL}/wallet?canceled=true`,
+  })
+
+  return session.url
+}
+```
+
+#### Writer Earnings (Always in USD)
+
+```typescript
+// src/lib/earnings.ts
+
+// All writer earnings are stored and calculated in USD
+// We use Stripe's exchange rate at time of purchase
+
+export async function calculateWriterEarning(
+  purchaseAmountCents: number,
+  originalCurrency: Currency
+): Promise<number> {
+  // Stripe automatically converts to your account's default currency
+  // If your Stripe account is in USD, you receive USD
+
+  const amountUSD = purchaseAmountCents / 100  // Already in USD from Stripe
+  const platformFee = amountUSD * 0.30  // 30% platform fee
+  const writerEarning = amountUSD - platformFee  // 70% to writer
+
+  return writerEarning
+}
+
+// Writer payout is always in USD via Stripe Connect or PayPal
+```
+
+#### Database Schema Update
+
+```prisma
+// Add currency field to relevant tables
+
+model UserWallet {
+  // ... existing fields ...
+  preferredCurrency String @default("USD")  // User's preferred currency
+}
+
+model ChapterPurchase {
+  // ... existing fields ...
+  currency         String   @default("USD")  // Currency used for purchase
+  originalAmount   Decimal  @db.Decimal(10, 2)  // Amount in original currency
+  usdAmount        Decimal  @db.Decimal(10, 2)  // Converted to USD for records
+}
+
+model WalletTransaction {
+  // ... existing fields ...
+  currency         String   @default("USD")
+}
+```
+
+### 13.11 环境变量 (Payment)
 
 ```bash
 # Stripe
@@ -1891,10 +2054,11 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 PAYPAL_CLIENT_ID="..."
 PAYPAL_SECRET="..."
 
-# Pricing
-NEXT_PUBLIC_MIN_CHAPTER_PRICE="0.10"  # $0.10 USD minimum
-NEXT_PUBLIC_MAX_CHAPTER_PRICE="1.00"  # $1.00 USD maximum
-NEXT_PUBLIC_PLATFORM_FEE="0.30"       # 30% platform fee
+# Pricing (in base units - cents for USD, pence for GBP, etc.)
+NEXT_PUBLIC_DEFAULT_CURRENCY="USD"
+NEXT_PUBLIC_MIN_CHAPTER_PRICE_CENTS="10"   # $0.10 minimum
+NEXT_PUBLIC_MAX_CHAPTER_PRICE_CENTS="100"  # $1.00 maximum
+NEXT_PUBLIC_PLATFORM_FEE_PERCENT="30"      # 30% platform fee
 ```
 
 ---
