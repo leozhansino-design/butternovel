@@ -7,6 +7,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
+import { compressCoverImage, formatFileSize } from '@/lib/image-compress'
+import { safeParseJson } from '@/lib/fetch-utils'
 
 const genres = [
   { id: 1, name: 'Fantasy' },
@@ -47,8 +49,9 @@ export default function EditNovelPage() {
   const [saving, setSaving] = useState(false)
   const [novel, setNovel] = useState<any>(null)
   const [coverPreview, setCoverPreview] = useState<string>('')
-  const [newCoverImage, setNewCoverImage] = useState<string>('')
-  const [tags, setTags] = useState<string[]>([]) // ⭐ 标签状态
+  const [coverFile, setCoverFile] = useState<File | null>(null)  // ⭐ Store file for compression
+  const [tags, setTags] = useState<string[]>([])
+  const [compressing, setCompressing] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -95,7 +98,8 @@ export default function EditNovelPage() {
     }
   }
 
-  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ⭐ Handle cover upload with compression
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -105,45 +109,29 @@ export default function EditNovelPage() {
       return
     }
 
-    if (file.size > IMAGE_LIMITS.MAX_SIZE) {
-      alert(`File too large. Maximum size is ${IMAGE_LIMITS.MAX_SIZE / 1024 / 1024}MB.`)
+    // Allow larger files since we'll compress them
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large. Maximum size is 10MB.')
       e.target.value = ''
       return
     }
 
-    const img = new window.Image()
-    const objectUrl = URL.createObjectURL(file)
+    setCompressing(true)
 
-    img.onload = () => {
-      const width = img.width
-      const height = img.height
+    try {
+      // ⭐ Compress the image immediately
+      const compressedBase64 = await compressCoverImage(file)
+      setCoverPreview(compressedBase64)
+      setCoverFile(file)  // Keep reference for logging
 
-      URL.revokeObjectURL(objectUrl)
-
-      if (width !== IMAGE_LIMITS.REQUIRED_WIDTH || height !== IMAGE_LIMITS.REQUIRED_HEIGHT) {
-        alert(
-          `Invalid image size.\nRequired: ${IMAGE_LIMITS.REQUIRED_WIDTH}x${IMAGE_LIMITS.REQUIRED_HEIGHT}px\nYour image: ${width}x${height}px`
-        )
-        e.target.value = ''
-        return
-      }
-
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string
-        setCoverPreview(base64)
-        setNewCoverImage(base64)
-      }
-      reader.readAsDataURL(file)
-    }
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      alert('Failed to load image. Please try another file.')
+      console.log(`[EditNovel] Cover compressed: ${formatFileSize(file.size)} -> ${formatFileSize(Math.round(compressedBase64.length * 0.75))}`)
+    } catch (error) {
+      console.error('Image compression failed:', error)
+      alert('Failed to compress image. Please try a different image.')
       e.target.value = ''
+    } finally {
+      setCompressing(false)
     }
-
-    img.src = objectUrl
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,24 +145,41 @@ export default function EditNovelPage() {
     setSaving(true)
 
     try {
+      // ⭐ Use coverPreview (already compressed) if a new file was uploaded
+      const newCoverImage = coverFile ? coverPreview : undefined
+
+      // ⭐ Build request body
+      const requestBody = {
+        title: formData.title,
+        blurb: formData.blurb,
+        categoryId: parseInt(formData.categoryId),
+        status: formData.status,
+        contentRating: formData.contentRating,
+        rightsType: formData.rightsType,
+        isPublished: formData.isPublished,
+        coverImage: newCoverImage,
+      }
+
+      // ⭐ Check request size (Vercel limit: 4.5MB)
+      const bodyString = JSON.stringify(requestBody)
+      const bodySizeBytes = new Blob([bodyString]).size
+      const bodySizeMB = bodySizeBytes / (1024 * 1024)
+
+      console.log(`[EditNovel] Request size: ${bodySizeMB.toFixed(2)}MB`)
+
+      if (bodySizeMB > 4.0) {
+        throw new Error(`Request too large (${bodySizeMB.toFixed(2)}MB). Please use a smaller cover image.`)
+      }
+
       const response = await fetch(`/api/dashboard/novels/${novelId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: formData.title,
-          blurb: formData.blurb,
-          categoryId: parseInt(formData.categoryId),
-          status: formData.status,
-          contentRating: formData.contentRating,
-          rightsType: formData.rightsType,
-          isPublished: formData.isPublished,
-          coverImage: newCoverImage || undefined,
-        }),
+        body: bodyString,
       })
 
-      const data = await response.json()
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
         throw new Error(data.error || 'Update failed')
