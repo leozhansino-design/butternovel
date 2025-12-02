@@ -74,6 +74,8 @@ async function HomeContent() {
               blurb: novel.blurb,
               status: novel.status,
               categoryName: novel.categoryName,
+              authorName: novel.authorName,
+              chaptersCount: novel.chaptersCount,
             }))
 
             // Alternate between different layout styles for visual variety

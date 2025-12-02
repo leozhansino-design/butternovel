@@ -15,6 +15,8 @@ interface Book {
   blurb?: string;
   status?: string;
   categoryName?: string;
+  authorName?: string;
+  chaptersCount?: number;
 }
 
 interface CategoryFeaturedGridProps {
@@ -52,13 +54,28 @@ export default function CategoryFeaturedGrid({
     }
   }, [books]);
 
+  // Scroll with infinite loop support
   const scroll = (direction: 'left' | 'right') => {
     if (!trackRef.current) return;
-    const scrollAmount = 350;
-    const newPos = direction === 'left'
-      ? trackRef.current.scrollLeft - scrollAmount
-      : trackRef.current.scrollLeft + scrollAmount;
-    trackRef.current.scrollTo({ left: newPos, behavior: 'smooth' });
+    const track = trackRef.current;
+    const currentScroll = track.scrollLeft;
+    const maxScroll = track.scrollWidth - track.clientWidth;
+
+    if (direction === 'right') {
+      // If at end, loop to start
+      if (currentScroll >= maxScroll - 10) {
+        track.scrollTo({ left: 0, behavior: 'smooth' });
+        return;
+      }
+      track.scrollTo({ left: currentScroll + 350, behavior: 'smooth' });
+    } else {
+      // If at start, loop to end
+      if (currentScroll <= 10) {
+        track.scrollTo({ left: maxScroll, behavior: 'smooth' });
+        return;
+      }
+      track.scrollTo({ left: currentScroll - 350, behavior: 'smooth' });
+    }
   };
 
   if (books.length === 0) return null;
@@ -96,27 +113,23 @@ export default function CategoryFeaturedGrid({
         )}
         <div className="hidden lg:block absolute right-0 top-0 bottom-0 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none w-[120px]" />
 
-        {/* Nav buttons - desktop only */}
-        {canScrollLeft && (
-          <button
-            onClick={() => scroll('left')}
-            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all left-[50px]"
-          >
-            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        )}
-        {canScrollRight && (
-          <button
-            onClick={() => scroll('right')}
-            className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all right-[50px]"
-          >
-            <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
+        {/* Nav buttons - always show for infinite loop */}
+        <button
+          onClick={() => scroll('left')}
+          className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all left-[50px]"
+        >
+          <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          onClick={() => scroll('right')}
+          className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center bg-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all right-[50px]"
+        >
+          <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
 
         {/* Scrollable list */}
         <div
@@ -172,40 +185,50 @@ export default function CategoryFeaturedGrid({
 
                   {/* Info */}
                   <div className="flex-1 min-w-0 flex flex-col">
+                    {/* Title */}
+                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2 mb-1">
+                      {book.title}
+                    </h3>
+
+                    {/* Author */}
+                    {book.authorName && (
+                      <p className="text-[10px] sm:text-xs text-slate-400 mb-1.5 truncate">
+                        by {book.authorName}
+                      </p>
+                    )}
+
                     {/* Tags */}
-                    <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 mb-1.5 text-[9px] sm:text-[10px]">
                       {book.categoryName && (
-                        <span className="px-1.5 sm:px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] sm:text-[10px] font-medium rounded-full">
+                        <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 font-medium rounded-full">
                           {book.categoryName}
                         </span>
                       )}
+                      {book.chaptersCount !== undefined && book.chaptersCount > 0 && (
+                        <span className="text-slate-400">
+                          {book.chaptersCount} Chapters
+                        </span>
+                      )}
                       {book.status && (
-                        <span className={`px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium rounded-full ${
-                          book.status === 'COMPLETED'
-                            ? 'bg-green-500/20 text-green-300'
-                            : 'bg-sky-500/20 text-sky-300'
+                        <span className={`${
+                          book.status === 'COMPLETED' ? 'text-green-400' : 'text-sky-400'
                         }`}>
-                          {book.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
+                          · {book.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
                         </span>
                       )}
                     </div>
 
-                    {/* Title */}
-                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2 mb-1.5 sm:mb-2">
-                      {book.title}
-                    </h3>
-
                     {/* Description */}
                     {book.blurb && (
-                      <p className="text-[11px] sm:text-xs text-slate-300/90 line-clamp-2 sm:line-clamp-3 leading-relaxed flex-1">
+                      <p className="text-[11px] sm:text-xs text-slate-300/90 line-clamp-2 leading-relaxed flex-1">
                         {book.blurb}
                       </p>
                     )}
 
                     {/* Read button */}
-                    <div className="mt-2 sm:mt-3 inline-flex items-center gap-1 sm:gap-1.5 text-blue-400 font-semibold text-xs group-hover:text-blue-300 transition-colors">
+                    <div className="mt-2 inline-flex items-center gap-1 text-blue-400 font-semibold text-xs group-hover:text-blue-300 transition-colors">
                       <span>Read Now</span>
-                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -220,7 +243,7 @@ export default function CategoryFeaturedGrid({
             <Link
               key={book.id}
               href={book.slug ? `/novels/${book.slug}` : `/novels/book-${book.id}`}
-              className="group flex-shrink-0 w-[100px] sm:w-[110px] md:w-[120px]"
+              className="group flex-shrink-0 w-[110px] sm:w-[120px] md:w-[130px]"
             >
               <div
                 className="relative rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-all"
@@ -230,21 +253,39 @@ export default function CategoryFeaturedGrid({
                   src={book.coverImage || '/placeholder-cover.jpg'}
                   alt={book.title}
                   fill
-                  sizes="(max-width: 640px) 100px, 120px"
+                  sizes="(max-width: 640px) 110px, 130px"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 {book.rating && book.rating > 0 && (
-                  <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-bold flex items-center gap-0.5 shadow-lg">
-                    <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-lg">
+                    <svg className="w-2.5 h-2.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                     <span>{book.rating.toFixed(1)}</span>
                   </div>
                 )}
               </div>
-              <h3 className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                {book.title}
-              </h3>
+              {/* Book info */}
+              <div className="mt-2 space-y-0.5">
+                <h3 className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                  {book.title}
+                </h3>
+                {book.authorName && (
+                  <p className="text-[10px] text-gray-500 truncate">
+                    {book.authorName}
+                  </p>
+                )}
+                <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                  {book.categoryName && (
+                    <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full truncate max-w-[60px]">
+                      {book.categoryName}
+                    </span>
+                  )}
+                  {book.chaptersCount !== undefined && book.chaptersCount > 0 && (
+                    <span>{book.chaptersCount} Ch</span>
+                  )}
+                </div>
+              </div>
             </Link>
           ))}
         </div>
