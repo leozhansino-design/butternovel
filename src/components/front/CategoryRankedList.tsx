@@ -140,23 +140,23 @@ export default function CategoryRankedList({
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
 
-                {/* Rank badge - inside cover, top-left */}
-                <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10">
-                  <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg flex items-center justify-center shadow-lg ${
+                {/* Rank badge - inside cover, positioned away from rounded corners */}
+                <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-10">
+                  <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center shadow-lg ${
                     index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600' :
                     index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400' :
                     index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800' :
                     'bg-gradient-to-br from-blue-500 to-blue-700'
                   }`}>
-                    <span className="text-white font-bold text-[10px] sm:text-xs">
+                    <span className="text-white font-bold text-[9px] sm:text-[10px]">
                       {index + 1}
                     </span>
                   </div>
                 </div>
 
-                {/* Rating badge - inside cover, top-right */}
+                {/* Rating badge - inside cover, top-right, away from rounded corner */}
                 {book.rating && book.rating > 0 && (
-                  <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-white/95 backdrop-blur-sm px-1 sm:px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-lg">
+                  <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 bg-white/95 backdrop-blur-sm px-1 sm:px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-lg">
                     <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
