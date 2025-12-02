@@ -12,9 +12,6 @@ interface Book {
   slug?: string;
   coverImage?: string;
   rating?: number | null;
-  authorName?: string;
-  categoryName?: string;
-  chaptersCount?: number;
 }
 
 interface CategoryRankedListProps {
@@ -139,9 +136,9 @@ export default function CategoryRankedList({
             <Link
               key={book.id}
               href={book.slug ? `/novels/${book.slug}` : `/novels/book-${book.id}`}
-              className="group flex-shrink-0 w-[110px] sm:w-[120px] md:w-[140px]"
+              className="group flex-shrink-0 w-[110px] sm:w-[120px] md:w-[130px]"
             >
-              {/* Cover - all elements inside overflow:hidden container */}
+              {/* Cover */}
               <div
                 className="relative rounded-lg sm:rounded-xl overflow-hidden bg-slate-700 shadow-lg group-hover:shadow-2xl group-hover:shadow-blue-500/20 transition-all group-hover:-translate-y-1"
                 style={{ aspectRatio: '3/4' }}
@@ -150,13 +147,13 @@ export default function CategoryRankedList({
                   src={book.coverImage || '/placeholder-cover.jpg'}
                   alt={book.title}
                   fill
-                  sizes="(max-width: 640px) 110px, 140px"
+                  sizes="(max-width: 640px) 110px, 130px"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
 
-                {/* Rating badge - top-right */}
+                {/* Rating badge - unified style */}
                 {book.rating && book.rating > 0 && (
-                  <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-lg">
+                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded shadow-lg flex items-center gap-0.5">
                     <svg className="w-2.5 h-2.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -165,30 +162,10 @@ export default function CategoryRankedList({
                 )}
               </div>
 
-              {/* Book info */}
-              <div className="mt-2 space-y-0.5">
-                {/* Title */}
-                <h3 className="text-xs sm:text-sm font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-2">
-                  {book.title}
-                </h3>
-                {/* Author */}
-                {book.authorName && (
-                  <p className="text-[10px] sm:text-xs text-slate-400 truncate">
-                    {book.authorName}
-                  </p>
-                )}
-                {/* Category & Chapters */}
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                  {book.categoryName && (
-                    <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 rounded-full truncate max-w-[60px]">
-                      {book.categoryName}
-                    </span>
-                  )}
-                  {book.chaptersCount !== undefined && book.chaptersCount > 0 && (
-                    <span className="text-slate-400">{book.chaptersCount} Ch</span>
-                  )}
-                </div>
-              </div>
+              {/* Title only */}
+              <h3 className="mt-2 text-xs sm:text-sm font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-2">
+                {book.title}
+              </h3>
             </Link>
           ))}
         </div>

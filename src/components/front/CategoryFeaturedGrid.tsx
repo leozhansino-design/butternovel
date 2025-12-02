@@ -13,10 +13,6 @@ interface Book {
   coverImage?: string;
   rating?: number | null;
   blurb?: string;
-  status?: string;
-  categoryName?: string;
-  authorName?: string;
-  chaptersCount?: number;
 }
 
 interface CategoryFeaturedGridProps {
@@ -62,14 +58,12 @@ export default function CategoryFeaturedGrid({
     const maxScroll = track.scrollWidth - track.clientWidth;
 
     if (direction === 'right') {
-      // If at end, loop to start
       if (currentScroll >= maxScroll - 10) {
         track.scrollTo({ left: 0, behavior: 'smooth' });
         return;
       }
       track.scrollTo({ left: currentScroll + 350, behavior: 'smooth' });
     } else {
-      // If at start, loop to end
       if (currentScroll <= 10) {
         track.scrollTo({ left: maxScroll, behavior: 'smooth' });
         return;
@@ -137,7 +131,7 @@ export default function CategoryFeaturedGrid({
           className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide scroll-smooth px-4 md:px-8 lg:px-[150px]"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {/* Hero Cards - responsive width */}
+          {/* Hero Cards - with blurb */}
           {heroBooks.map((book) => (
             <Link
               key={book.id}
@@ -159,7 +153,7 @@ export default function CategoryFeaturedGrid({
                 {/* Content */}
                 <div className="relative flex gap-3 sm:gap-4 p-4 sm:p-5">
                   {/* Cover with rating badge */}
-                  <div className="flex-shrink-0 relative">
+                  <div className="flex-shrink-0">
                     <div
                       className="relative rounded-lg sm:rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/20"
                       style={{ width: '90px', height: '120px' }}
@@ -171,9 +165,9 @@ export default function CategoryFeaturedGrid({
                         sizes="90px"
                         className="object-cover"
                       />
-                      {/* Rating badge - top right of cover, away from rounded corner */}
+                      {/* Rating badge - unified style */}
                       {book.rating && book.rating > 0 && (
-                        <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-lg">
+                        <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded shadow-lg flex items-center gap-0.5">
                           <svg className="w-2.5 h-2.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
@@ -183,50 +177,22 @@ export default function CategoryFeaturedGrid({
                     </div>
                   </div>
 
-                  {/* Info */}
+                  {/* Info - Title + Blurb only */}
                   <div className="flex-1 min-w-0 flex flex-col">
                     {/* Title */}
-                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2 mb-1">
+                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2 mb-2">
                       {book.title}
                     </h3>
 
-                    {/* Author */}
-                    {book.authorName && (
-                      <p className="text-[10px] sm:text-xs text-slate-400 mb-1.5 truncate">
-                        by {book.authorName}
-                      </p>
-                    )}
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 mb-1.5 text-[9px] sm:text-[10px]">
-                      {book.categoryName && (
-                        <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-300 font-medium rounded-full">
-                          {book.categoryName}
-                        </span>
-                      )}
-                      {book.chaptersCount !== undefined && book.chaptersCount > 0 && (
-                        <span className="text-slate-400">
-                          {book.chaptersCount} Chapters
-                        </span>
-                      )}
-                      {book.status && (
-                        <span className={`${
-                          book.status === 'COMPLETED' ? 'text-green-400' : 'text-sky-400'
-                        }`}>
-                          · {book.status === 'COMPLETED' ? 'Completed' : 'Ongoing'}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Description */}
+                    {/* Blurb - 1-2 lines */}
                     {book.blurb && (
                       <p className="text-[11px] sm:text-xs text-slate-300/90 line-clamp-2 leading-relaxed flex-1">
-                        {book.blurb}
+                        {book.blurb.length > 100 ? book.blurb.substring(0, 100) + '...' : book.blurb}
                       </p>
                     )}
 
                     {/* Read button */}
-                    <div className="mt-2 inline-flex items-center gap-1 text-blue-400 font-semibold text-xs group-hover:text-blue-300 transition-colors">
+                    <div className="mt-auto pt-2 inline-flex items-center gap-1 text-blue-400 font-semibold text-xs group-hover:text-blue-300 transition-colors">
                       <span>Read Now</span>
                       <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -238,7 +204,7 @@ export default function CategoryFeaturedGrid({
             </Link>
           ))}
 
-          {/* Regular book cards */}
+          {/* Regular book cards - cover + rating + title only */}
           {restBooks.map((book) => (
             <Link
               key={book.id}
@@ -256,36 +222,20 @@ export default function CategoryFeaturedGrid({
                   sizes="(max-width: 640px) 110px, 130px"
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                {/* Rating badge - unified style */}
                 {book.rating && book.rating > 0 && (
-                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-lg">
+                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded shadow-lg flex items-center gap-0.5">
                     <svg className="w-2.5 h-2.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    <span>{book.rating.toFixed(1)}</span>
+                    <span className="text-[10px] font-bold text-gray-900">{book.rating.toFixed(1)}</span>
                   </div>
                 )}
               </div>
-              {/* Book info */}
-              <div className="mt-2 space-y-0.5">
-                <h3 className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                  {book.title}
-                </h3>
-                {book.authorName && (
-                  <p className="text-[10px] text-gray-500 truncate">
-                    {book.authorName}
-                  </p>
-                )}
-                <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                  {book.categoryName && (
-                    <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full truncate max-w-[60px]">
-                      {book.categoryName}
-                    </span>
-                  )}
-                  {book.chaptersCount !== undefined && book.chaptersCount > 0 && (
-                    <span>{book.chaptersCount} Ch</span>
-                  )}
-                </div>
-              </div>
+              {/* Title only */}
+              <h3 className="mt-2 text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                {book.title}
+              </h3>
             </Link>
           ))}
         </div>

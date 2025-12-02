@@ -15,9 +15,6 @@ interface CategoryCarouselProps {
     slug?: string;
     coverImage?: string;
     rating?: number | null;
-    authorName?: string;
-    categoryName?: string;
-    chaptersCount?: number;
   }>;
 }
 
@@ -180,9 +177,6 @@ export default function CategoryCarousel({
                 slug={book.slug}
                 coverImage={book.coverImage}
                 rating={book.rating}
-                authorName={book.authorName}
-                categoryName={book.categoryName}
-                chaptersCount={book.chaptersCount}
               />
             </div>
           ))}
