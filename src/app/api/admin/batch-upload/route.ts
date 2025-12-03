@@ -13,6 +13,10 @@ import {
   type ParsedNovel
 } from '@/lib/batch-upload-utils'
 
+// 路由配置：增加超时时间（适用于大文件上传）
+export const maxDuration = 60 // 60秒超时
+export const dynamic = 'force-dynamic'
+
 // 配置Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
