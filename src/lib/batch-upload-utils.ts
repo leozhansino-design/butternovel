@@ -667,14 +667,14 @@ export async function parseIndividualFiles(data: IndividualFilesUploadData): Pro
     throw new Error('简介不能为空（blurb.txt 和 _full_outline.txt 都没有简介）')
   }
 
-  // 读取分类（支持从 _full_outline.txt 回退）
+  // 读取分类（优先使用 _full_outline.txt，因为 category.txt 可能显示 unknown）
   let genre = ''
-  if (data.categoryFile) {
-    genre = (await data.categoryFile.text()).trim()
-  }
-  if (!genre && fullOutlineData.category) {
-    console.log('⚠️ [批量上传] category.txt 为空，使用 _full_outline.txt 中的 CATEGORY')
+  if (fullOutlineData.category) {
     genre = fullOutlineData.category
+    console.log('📌 [批量上传] 使用 _full_outline.txt 中的 CATEGORY')
+  } else if (data.categoryFile) {
+    genre = (await data.categoryFile.text()).trim()
+    console.log('📌 [批量上传] 使用 category.txt')
   }
   console.log(`📌 [批量上传] 分类: ${genre}`)
 
