@@ -261,7 +261,7 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
 }
 
 /**
- * 验证封面图片尺寸
+ * 验证封面图片（允许任意尺寸，Cloudinary会自动调整为300x400）
  */
 export async function validateCoverImage(file: File): Promise<ValidationResult> {
   const errors: string[] = []
@@ -284,21 +284,20 @@ export async function validateCoverImage(file: File): Promise<ValidationResult> 
     errors.push(`封面大小超过限制（最大${BATCH_UPLOAD_LIMITS.MAX_COVER_SIZE / 1024 / 1024}MB）`)
   }
 
-  // 检查图片尺寸
+  // 检查图片尺寸（仅警告，不阻止上传，Cloudinary会自动调整）
   try {
     const dimensions = await getImageDimensions(file)
     console.log(`📐 [批量上传] 实际尺寸: ${dimensions.width}x${dimensions.height}`)
-    console.log(`📐 [批量上传] 要求尺寸: ${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}`)
+    console.log(`📐 [批量上传] 目标尺寸: ${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}`)
 
     if (dimensions.width !== BATCH_UPLOAD_LIMITS.COVER_WIDTH ||
         dimensions.height !== BATCH_UPLOAD_LIMITS.COVER_HEIGHT) {
-      console.error('❌ [批量上传] 图片尺寸不符合要求')
-      errors.push(
-        `封面尺寸必须是${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}，` +
-        `当前为${dimensions.width}x${dimensions.height}`
+      console.warn('⚠️ [批量上传] 图片尺寸将被自动调整为 300x400')
+      warnings.push(
+        `封面尺寸 ${dimensions.width}x${dimensions.height} 将自动调整为 300x400`
       )
     } else {
-      console.log('✅ [批量上传] 图片尺寸检查通过')
+      console.log('✅ [批量上传] 图片尺寸完美匹配')
     }
   } catch (error) {
     console.error('❌ [批量上传] 无法读取图片尺寸:', error)
@@ -667,14 +666,14 @@ export async function parseIndividualFiles(data: IndividualFilesUploadData): Pro
     throw new Error('简介不能为空（blurb.txt 和 _full_outline.txt 都没有简介）')
   }
 
-  // 读取分类（支持从 _full_outline.txt 回退）
+  // 读取分类（优先使用 _full_outline.txt，因为 category.txt 可能显示 unknown）
   let genre = ''
-  if (data.categoryFile) {
-    genre = (await data.categoryFile.text()).trim()
-  }
-  if (!genre && fullOutlineData.category) {
-    console.log('⚠️ [批量上传] category.txt 为空，使用 _full_outline.txt 中的 CATEGORY')
+  if (fullOutlineData.category) {
     genre = fullOutlineData.category
+    console.log('📌 [批量上传] 使用 _full_outline.txt 中的 CATEGORY')
+  } else if (data.categoryFile) {
+    genre = (await data.categoryFile.text()).trim()
+    console.log('📌 [批量上传] 使用 category.txt')
   }
   console.log(`📌 [批量上传] 分类: ${genre}`)
 
