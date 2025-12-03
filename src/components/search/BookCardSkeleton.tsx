@@ -8,15 +8,15 @@
 export default function BookCardSkeleton() {
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 animate-pulse">
-      {/* 横向卡片：封面在左，所有信息在右 */}
-      <div className="flex h-64 sm:h-72 md:h-80">
-        {/* 左侧：封面骨架（占满整个高度） */}
-        <div className="flex-shrink-0 w-44 sm:w-52 md:w-56 bg-gray-200" />
+      {/* 横向卡片：封面在左，所有信息在右 - 自适应高度 */}
+      <div className="flex">
+        {/* 左侧：封面骨架 - 固定宽高比 */}
+        <div className="flex-shrink-0 w-24 sm:w-32 md:w-40 lg:w-44 aspect-[3/4] bg-gray-200" />
 
         {/* 右侧：所有文字信息骨架 */}
-        <div className="flex-1 p-5 sm:p-6 md:p-8 flex flex-col justify-between min-w-0">
+        <div className="flex-1 p-2.5 sm:p-4 md:p-5 lg:p-6 flex flex-col min-w-0">
           {/* 上部分：标题、作者、统计信息、简介 */}
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex flex-col">
             {/* 标题骨架 - 2行，更小的高度 */}
             <div className="h-6 sm:h-7 bg-gray-200 rounded w-full mb-1.5" />
             <div className="h-6 sm:h-7 bg-gray-200 rounded w-3/4 mb-1.5" />
@@ -39,7 +39,7 @@ export default function BookCardSkeleton() {
           </div>
 
           {/* 底部：标签骨架 - 智能显示2-3个 + more */}
-          <div className="flex gap-2 items-center flex-wrap pt-2.5 min-w-0">
+          <div className="flex gap-2 items-center flex-wrap mt-2 md:mt-3 min-w-0">
             <div className="h-7 bg-gray-200 rounded-full w-20 shrink-0" />
             <div className="h-7 bg-gray-200 rounded-full w-24 shrink-0" />
             <div className="h-7 bg-gray-200 rounded-full w-16 shrink-0" />

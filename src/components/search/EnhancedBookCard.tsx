@@ -89,23 +89,23 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
 
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-      {/* 移动端竖屏：紧凑水平布局 */}
-      <div className="flex h-32 sm:h-48 md:h-56 lg:h-64">
-        {/* 左侧：封面图片 - 移动端更小 */}
-        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-20 sm:w-32 md:w-40 lg:w-44">
+      {/* 水平卡片布局 - 自适应高度 */}
+      <div className="flex">
+        {/* 左侧：封面图片 - 固定宽高比 */}
+        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-24 sm:w-32 md:w-40 lg:w-44 aspect-[3/4]">
           <Image
             src={coverImage}
             alt={title}
             fill
             className="object-cover group-hover:opacity-90 transition-opacity"
-            sizes="(max-width: 640px) 80px, (max-width: 768px) 128px, (max-width: 1024px) 160px, 176px"
+            sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, (max-width: 1024px) 160px, 176px"
           />
         </Link>
 
-        {/* 右侧：所有文字信息 */}
-        <div className="flex-1 p-2.5 sm:p-4 md:p-5 lg:p-6 flex flex-col justify-between min-w-0">
+        {/* 右侧：所有文字信息 - 自然流式布局 */}
+        <div className="flex-1 p-2.5 sm:p-4 md:p-5 lg:p-6 flex flex-col min-w-0">
           {/* 上部分：标题、作者、统计信息 */}
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex flex-col">
             {/* 标题 - 移动端更紧凑 */}
             <Link
               href={`/novels/${slug}`}
@@ -129,17 +129,17 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
               <span className={`font-semibold ${statusColor}`}>{statusText}</span>
             </div>
 
-            {/* 简介 - 移动端1行，平板以上2-3行 */}
-            <p className="text-[11px] sm:text-sm md:text-base text-gray-600 sm:text-gray-700 leading-snug sm:leading-relaxed line-clamp-1 sm:line-clamp-2 md:line-clamp-3">
+            {/* 简介 - 移动端2行，平板以上3行 */}
+            <p className="text-[11px] sm:text-sm md:text-base text-gray-600 sm:text-gray-700 leading-snug sm:leading-relaxed line-clamp-2 sm:line-clamp-2 md:line-clamp-3">
               {blurb}
             </p>
           </div>
 
-          {/* 底部：标签 - 移动端更紧凑 */}
+          {/* 标签区域 - 自然排列，顶部间距 */}
           {tags.length > 0 && (
             <>
               {/* 移动端标签 */}
-              <div className="flex sm:hidden gap-1 items-center flex-wrap pt-1 min-w-0">
+              <div className="flex sm:hidden gap-1 items-center flex-wrap mt-2 min-w-0">
                 {displayedTagsMobile.map((tag) => (
                   <Link
                     key={tag.id}
@@ -159,7 +159,7 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
               </div>
 
               {/* 平板以上标签 */}
-              <div className="hidden sm:flex gap-1.5 md:gap-2 items-center flex-wrap pt-2 min-w-0">
+              <div className="hidden sm:flex gap-1.5 md:gap-2 items-center flex-wrap mt-2 md:mt-3 min-w-0">
                 {displayedTagsDesktop.map((tag) => (
                   <Link
                     key={tag.id}
