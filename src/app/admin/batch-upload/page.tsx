@@ -412,8 +412,28 @@ export default function BatchUploadPage() {
       updateStatus({ progress: 80 })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || `上传失败: HTTP ${response.status}`)
+        // 尝试解析 JSON 错误，如果失败则使用文本内容
+        let errorMessage = `上传失败: HTTP ${response.status}`
+        try {
+          const contentType = response.headers.get('content-type')
+          if (contentType?.includes('application/json')) {
+            const error = await response.json()
+            errorMessage = error.error || errorMessage
+          } else {
+            const text = await response.text()
+            // 常见错误处理
+            if (text.includes('Request Entity Too Large') || response.status === 413) {
+              errorMessage = '文件太大，请减少章节数量或压缩封面图片'
+            } else if (text.includes('timeout') || response.status === 504) {
+              errorMessage = '上传超时，请稍后重试'
+            } else {
+              errorMessage = text.substring(0, 100) || errorMessage
+            }
+          }
+        } catch {
+          // JSON 解析失败，使用默认错误消息
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
