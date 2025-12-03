@@ -88,11 +88,11 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
   const statusColor = status === 'COMPLETED' ? 'text-green-600' : 'text-blue-600'
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-      {/* 水平卡片布局 - 自适应高度 */}
-      <div className="flex">
-        {/* 左侧：封面图片 - 固定宽高比 */}
-        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-24 sm:w-32 md:w-40 lg:w-44 aspect-[3/4]">
+    <div className="h-full bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+      {/* 水平卡片布局 - 填满网格单元高度 */}
+      <div className="flex h-full">
+        {/* 左侧：封面图片 - 宽度固定，高度跟随卡片 */}
+        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-24 sm:w-32 md:w-40 lg:w-44">
           <Image
             src={coverImage}
             alt={title}

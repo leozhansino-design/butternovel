@@ -7,11 +7,11 @@
  */
 export default function BookCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 animate-pulse">
-      {/* 横向卡片：封面在左，所有信息在右 - 自适应高度 */}
-      <div className="flex">
-        {/* 左侧：封面骨架 - 固定宽高比 */}
-        <div className="flex-shrink-0 w-24 sm:w-32 md:w-40 lg:w-44 aspect-[3/4] bg-gray-200" />
+    <div className="h-full bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 animate-pulse">
+      {/* 横向卡片：封面在左，所有信息在右 - 填满网格单元高度 */}
+      <div className="flex h-full">
+        {/* 左侧：封面骨架 - 宽度固定，高度跟随卡片 */}
+        <div className="flex-shrink-0 w-24 sm:w-32 md:w-40 lg:w-44 bg-gray-200" />
 
         {/* 右侧：所有文字信息骨架 */}
         <div className="flex-1 p-2.5 sm:p-4 md:p-5 lg:p-6 flex flex-col min-w-0">
