@@ -1,5 +1,5 @@
 // src/components/front/CategoryCompactGrid.tsx
-// Compact grid layout with frosted glass cards
+// Compact grid layout with horizontal cards
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +11,7 @@ interface Book {
   slug?: string;
   coverImage?: string;
   rating?: number | null;
+  blurb?: string;
 }
 
 interface CategoryCompactGridProps {
@@ -59,7 +60,7 @@ export default function CategoryCompactGrid({
           )}
         </div>
 
-        {/* Grid - horizontal cards with cover + title */}
+        {/* Grid - horizontal cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {displayBooks.map((book) => (
             <Link
@@ -68,36 +69,45 @@ export default function CategoryCompactGrid({
               className="group block"
             >
               <div className="flex gap-3 p-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-300 group-hover:-translate-y-0.5 border border-white/50">
-                {/* Cover with rating badge */}
+                {/* Cover */}
                 <div className="flex-shrink-0">
                   <div
                     className="relative rounded-lg overflow-hidden bg-gray-100 shadow-sm"
-                    style={{ width: '72px', height: '96px' }}
+                    style={{ width: '64px', height: '85px' }}
                   >
                     <Image
                       src={book.coverImage || '/placeholder-cover.jpg'}
                       alt={book.title}
                       fill
-                      sizes="72px"
+                      sizes="64px"
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    {/* Rating badge - unified style */}
-                    {book.rating && book.rating > 0 && (
-                      <div className="absolute top-1 right-1 bg-white/95 backdrop-blur-sm px-1 py-0.5 rounded shadow flex items-center gap-0.5">
-                        <svg className="w-2 h-2 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span className="text-[9px] font-bold text-gray-900">{book.rating.toFixed(1)}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
-                {/* Title only */}
-                <div className="flex-1 min-w-0 flex items-center">
-                  <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {book.title}
-                  </h3>
+                {/* Content */}
+                <div className="flex-1 min-w-0 flex flex-col">
+                  {/* Title + Rating row */}
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 flex-1">
+                      {book.title}
+                    </h3>
+                    {book.rating && book.rating > 0 && (
+                      <div className="flex-shrink-0 flex items-center gap-0.5">
+                        <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span className="text-xs font-bold text-amber-600">{book.rating.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Blurb */}
+                  {book.blurb && (
+                    <p className="mt-1 text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                      {book.blurb}
+                    </p>
+                  )}
                 </div>
               </div>
             </Link>
