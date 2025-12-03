@@ -261,7 +261,7 @@ export async function parseContentFile(file: File): Promise<ParsedNovel> {
 }
 
 /**
- * 验证封面图片尺寸
+ * 验证封面图片（允许任意尺寸，Cloudinary会自动调整为300x400）
  */
 export async function validateCoverImage(file: File): Promise<ValidationResult> {
   const errors: string[] = []
@@ -284,21 +284,20 @@ export async function validateCoverImage(file: File): Promise<ValidationResult> 
     errors.push(`封面大小超过限制（最大${BATCH_UPLOAD_LIMITS.MAX_COVER_SIZE / 1024 / 1024}MB）`)
   }
 
-  // 检查图片尺寸
+  // 检查图片尺寸（仅警告，不阻止上传，Cloudinary会自动调整）
   try {
     const dimensions = await getImageDimensions(file)
     console.log(`📐 [批量上传] 实际尺寸: ${dimensions.width}x${dimensions.height}`)
-    console.log(`📐 [批量上传] 要求尺寸: ${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}`)
+    console.log(`📐 [批量上传] 目标尺寸: ${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}`)
 
     if (dimensions.width !== BATCH_UPLOAD_LIMITS.COVER_WIDTH ||
         dimensions.height !== BATCH_UPLOAD_LIMITS.COVER_HEIGHT) {
-      console.error('❌ [批量上传] 图片尺寸不符合要求')
-      errors.push(
-        `封面尺寸必须是${BATCH_UPLOAD_LIMITS.COVER_WIDTH}x${BATCH_UPLOAD_LIMITS.COVER_HEIGHT}，` +
-        `当前为${dimensions.width}x${dimensions.height}`
+      console.warn('⚠️ [批量上传] 图片尺寸将被自动调整为 300x400')
+      warnings.push(
+        `封面尺寸 ${dimensions.width}x${dimensions.height} 将自动调整为 300x400`
       )
     } else {
-      console.log('✅ [批量上传] 图片尺寸检查通过')
+      console.log('✅ [批量上传] 图片尺寸完美匹配')
     }
   } catch (error) {
     console.error('❌ [批量上传] 无法读取图片尺寸:', error)
