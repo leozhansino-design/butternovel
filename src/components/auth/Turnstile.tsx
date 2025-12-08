@@ -35,6 +35,10 @@ interface TurnstileProps {
   className?: string
 }
 
+// Global flag to track if script is being loaded
+let isScriptLoading = false
+let isScriptLoaded = false
+
 export default function Turnstile({
   onVerify,
   onExpire,
@@ -45,15 +49,19 @@ export default function Turnstile({
 }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
-  const scriptLoadedRef = useRef(false)
+  const isRenderedRef = useRef(false)
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
   const renderWidget = useCallback(() => {
+    // Multiple checks to prevent duplicate rendering
     if (!window.turnstile || !containerRef.current || !siteKey) return
-    if (widgetIdRef.current) return // Already rendered
+    if (widgetIdRef.current) return // Already have a widget ID
+    if (isRenderedRef.current) return // Already rendered flag
+    if (containerRef.current.hasChildNodes()) return // Container already has children
 
     try {
+      isRenderedRef.current = true
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
         callback: onVerify,
@@ -64,6 +72,7 @@ export default function Turnstile({
       })
     } catch (error) {
       console.error('Turnstile render error:', error)
+      isRenderedRef.current = false
     }
   }, [siteKey, onVerify, onExpire, onError, theme, size])
 
@@ -74,31 +83,53 @@ export default function Turnstile({
       return
     }
 
-    // Check if script is already loaded
-    if (window.turnstile) {
+    // Reset rendered flag when component mounts
+    isRenderedRef.current = false
+
+    // If script is already loaded, render immediately
+    if (isScriptLoaded && window.turnstile) {
       renderWidget()
       return
     }
 
+    // If script is loading, set up callback
+    if (isScriptLoading) {
+      const originalCallback = window.onTurnstileLoad
+      window.onTurnstileLoad = () => {
+        isScriptLoaded = true
+        originalCallback?.()
+        renderWidget()
+      }
+      return
+    }
+
     // Check if script tag already exists
-    if (document.querySelector('script[src*="turnstile"]')) {
-      // Script exists but not loaded yet, wait for it
-      window.onTurnstileLoad = renderWidget
+    const existingScript = document.querySelector('script[src*="turnstile"]')
+    if (existingScript) {
+      isScriptLoading = true
+      const originalCallback = window.onTurnstileLoad
+      window.onTurnstileLoad = () => {
+        isScriptLoaded = true
+        originalCallback?.()
+        renderWidget()
+      }
       return
     }
 
     // Load the script
-    if (!scriptLoadedRef.current) {
-      scriptLoadedRef.current = true
-      const script = document.createElement('script')
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
-      script.async = true
-      script.defer = true
+    isScriptLoading = true
+    const script = document.createElement('script')
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
+    script.async = true
+    script.defer = true
 
-      window.onTurnstileLoad = renderWidget
-
-      document.head.appendChild(script)
+    window.onTurnstileLoad = () => {
+      isScriptLoaded = true
+      isScriptLoading = false
+      renderWidget()
     }
+
+    document.head.appendChild(script)
 
     return () => {
       // Cleanup widget on unmount
@@ -109,6 +140,7 @@ export default function Turnstile({
           // Ignore cleanup errors
         }
         widgetIdRef.current = null
+        isRenderedRef.current = false
       }
     }
   }, [siteKey, renderWidget])
@@ -122,7 +154,6 @@ export default function Turnstile({
     <div
       ref={containerRef}
       className={`cf-turnstile ${className}`}
-      data-sitekey={siteKey}
     />
   )
 }
