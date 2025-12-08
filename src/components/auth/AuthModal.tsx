@@ -1,11 +1,12 @@
 // src/components/auth/AuthModal.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import { safeParseJson } from '@/lib/fetch-utils'
+import Turnstile from './Turnstile'
 
 type AuthModalProps = {
   isOpen: boolean
@@ -55,6 +56,27 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
     password: '',
     confirmPassword: '',
   })
+
+  // Turnstile verification state
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileError, setTurnstileError] = useState(false)
+
+  // Check if Turnstile is enabled (site key is configured)
+  const isTurnstileEnabled = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token)
+    setTurnstileError(false)
+  }, [])
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken(null)
+  }, [])
+
+  const handleTurnstileError = useCallback(() => {
+    setTurnstileError(true)
+    setTurnstileToken(null)
+  }, [])
 
   if (!isOpen) return null
 
@@ -131,6 +153,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
       return
     }
 
+    // Check Turnstile verification if enabled
+    if (isTurnstileEnabled && !turnstileToken) {
+      setError('Please complete the verification challenge')
+      setLoading(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -139,6 +168,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
           name: registerData.name,
           email: registerData.email,
           password: registerData.password,
+          turnstileToken: turnstileToken, // Include Turnstile token
         }),
       })
 
@@ -371,9 +401,26 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
                   />
                 </div>
 
+                {/* Turnstile verification */}
+                {isTurnstileEnabled && (
+                  <div className="flex flex-col items-center">
+                    <Turnstile
+                      onVerify={handleTurnstileVerify}
+                      onExpire={handleTurnstileExpire}
+                      onError={handleTurnstileError}
+                      theme="light"
+                    />
+                    {turnstileError && (
+                      <p className="text-red-500 text-sm mt-2">
+                        Verification failed. Please try again.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (isTurnstileEnabled && !turnstileToken)}
                   className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
                 >
                   {loading ? 'Creating account...' : 'Create Account'}

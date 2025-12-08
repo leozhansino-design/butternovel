@@ -1,8 +1,10 @@
 // src/app/api/auth/register/route.ts
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { validateWithSchema, registerSchema } from '@/lib/validators'
+import { verifyTurnstileToken } from '@/lib/turnstile'
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +20,21 @@ export async function POST(req: Request) {
     }
 
     const { name, email, password } = validation.data
+
+    // ✅ Verify Turnstile token (if enabled)
+    const turnstileToken = body.turnstileToken
+    const headersList = await headers()
+    const clientIp = headersList.get('x-forwarded-for')?.split(',')[0] ||
+                     headersList.get('x-real-ip') ||
+                     undefined
+
+    const turnstileResult = await verifyTurnstileToken(turnstileToken, clientIp)
+    if (!turnstileResult.success) {
+      return NextResponse.json(
+        { error: turnstileResult.error || 'Bot verification failed' },
+        { status: 400 }
+      )
+    }
 
     // ⚠️ CRITICAL: Reserve "butterpicks" name for admin/official accounts only
     if (name) {
