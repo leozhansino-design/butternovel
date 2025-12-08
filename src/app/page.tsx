@@ -11,6 +11,7 @@ import CategoryCompactGrid from '@/components/front/CategoryCompactGrid'
 import HomePageSkeleton from '@/components/front/HomePageSkeleton'
 import { getHomePageData } from '@/lib/cache-optimized'
 import ScrollToTop from '@/components/ScrollToTop'
+import HomePageJsonLd from '@/components/seo/HomePageJsonLd'
 
 async function HomeContent() {
   // ✅ 优化：使用单个缓存键获取所有首页数据
@@ -187,6 +188,8 @@ export const fetchCache = 'force-cache'
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
+      {/* SEO: Structured data for Google */}
+      <HomePageJsonLd />
       <ScrollToTop />
       {/* ✅ 性能优化：使用Suspense流式渲染，立刻显示骨架屏 */}
       <Suspense fallback={<HomePageSkeleton />}>

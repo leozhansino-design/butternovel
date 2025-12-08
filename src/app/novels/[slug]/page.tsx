@@ -74,23 +74,49 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? novel.blurb.substring(0, 152) + '...'
     : novel.blurb
 
+  // SEO optimized title - include key search terms
+  const seoTitle = `${novel.title} - Read Free Online | ${novel.category.name} Novel by ${novel.authorName}`
+
+  // Enhanced description with more context
+  const seoDescription = `Read "${novel.title}" by ${novel.authorName} for free on ButterNovel. ${chapterCount} chapters available. Rating: ${rating}. ${description}`
+
   return {
-    title: `${novel.title} by ${novel.authorName} - Free Online Novel`,
-    description: description,
+    title: seoTitle,
+    description: seoDescription.slice(0, 160),
     keywords: [
+      // Book title variations (MOST IMPORTANT for searching by book name)
       novel.title,
+      `${novel.title} novel`,
+      `${novel.title} free`,
+      `${novel.title} online`,
+      `read ${novel.title}`,
+      `${novel.title} read online`,
+      `${novel.title} free online`,
+      `${novel.title} ${novel.authorName}`,
+      // Author name variations
       novel.authorName,
+      `${novel.authorName} novels`,
+      `${novel.authorName} books`,
+      // Category & genre
       novel.category.name,
-      ...novel.tags.map((t: { name: string }) => t.name),
       `${novel.category.name} novel`,
+      `${novel.category.name} novels`,
+      `free ${novel.category.name} novel`,
+      // Tags
+      ...novel.tags.map((t: { name: string }) => t.name),
+      ...novel.tags.map((t: { name: string }) => `${t.name} novel`),
+      // General keywords
       'free novel',
-      'read online',
-      'web novel'
+      'read online free',
+      'web novel',
+      'online novel',
+      'butternovel',
+      'butter novel',
     ],
     authors: [{ name: novel.authorName }],
     openGraph: {
       type: 'book',
-      title: novel.title,
+      title: `${novel.title} by ${novel.authorName} - Free on ButterNovel`,
       description: description,
       url: `https://butternovel.com/novels/${slug}`,
       siteName: 'ButterNovel',
@@ -99,19 +125,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           url: novel.coverImage,
           width: 800,
           height: 1200,
-          alt: `${novel.title} cover`,
+          alt: `${novel.title} - ${novel.category.name} Novel Cover`,
         },
       ],
       authors: [novel.authorName],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${novel.title} by ${novel.authorName}`,
-      description: description,
+      title: `${novel.title} by ${novel.authorName} - Free`,
+      description: `Read ${novel.title} free online. ${chapterCount} chapters. ${novel.category.name}.`,
       images: [novel.coverImage],
     },
     alternates: {
       canonical: `https://butternovel.com/novels/${slug}`,
+    },
+    // Ensure Google indexes this page
+    robots: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   }
 }
