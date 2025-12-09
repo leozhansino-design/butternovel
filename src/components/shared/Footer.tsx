@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 // 🔧 FIX: Use static categories to avoid hydration mismatch
 // Footer can be imported by client components, so we use static data
@@ -24,7 +25,13 @@ export default function Footer() {
           {/* About */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="text-2xl">🧈</div>
+              <Image
+                src="/logo.png"
+                alt="ButterNovel"
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
               <span className="text-lg font-bold text-gray-900">ButterNovel</span>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">

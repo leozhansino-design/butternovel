@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import AuthModal from '@/components/auth/AuthModal';
@@ -74,7 +75,14 @@ export default function Header() {
             <div className="flex items-center gap-6">
               {/* Logo */}
               <Link href="/" className="flex items-center gap-2 hover:opacity-70 transition-opacity flex-shrink-0">
-                <div className="text-xl">🧈</div>
+                <Image
+                  src="/logo.png"
+                  alt="ButterNovel"
+                  width={28}
+                  height={28}
+                  className="w-7 h-7"
+                  priority
+                />
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent tracking-tight">ButterNovel</span>
                   <span className="text-[10px] text-blue-600/70 font-medium tracking-wide">100% Free Forever</span>
