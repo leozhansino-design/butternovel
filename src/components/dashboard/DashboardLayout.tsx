@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { LayoutDashboard, BookOpen, PenLine, LogOut } from 'lucide-react'
@@ -54,7 +55,13 @@ export default function DashboardLayout({ children, userName, userEmail, userIma
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-gray-200">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="text-xl">🧈</span>
+            <Image
+              src="/logo.png"
+              alt="ButterNovel"
+              width={56}
+              height={56}
+              className="w-14 h-14"
+            />
             <span className="text-lg font-semibold text-gray-900">ButterNovel</span>
           </Link>
         </div>
