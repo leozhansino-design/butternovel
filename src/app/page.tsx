@@ -191,10 +191,33 @@ export default function HomePage() {
       {/* SEO: Structured data for Google */}
       <HomePageJsonLd />
       <ScrollToTop />
+
+      {/* SEO: Hidden H1 for search engines */}
+      <h1 className="sr-only">ButterNovel - Butter Novel - Free Novels Online</h1>
+
       {/* ✅ 性能优化：使用Suspense流式渲染，立刻显示骨架屏 */}
       <Suspense fallback={<HomePageSkeleton />}>
         <HomeContent />
       </Suspense>
+
+      {/* SEO Section - Visible text for search engines */}
+      <section className="bg-gradient-to-b from-gray-50 to-white py-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Welcome to Butter Novel
+          </h2>
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            <strong>ButterNovel</strong> (also known as <strong>Butter Novel</strong>) is your destination for free online novels.
+            Whether you&apos;re searching for &quot;butternovel&quot;, &quot;butter novel&quot;, or &quot;butter-novel&quot;,
+            you&apos;ve found the right place. Read millions of free stories across all genres including
+            fantasy, romance, sci-fi, mystery, horror, werewolf, and vampire novels.
+          </p>
+          <p className="text-gray-500 text-sm">
+            Butter Novel - Read Free Books Online | ButterNovel.com
+          </p>
+        </div>
+      </section>
+
       <Footer />
     </div>
   )

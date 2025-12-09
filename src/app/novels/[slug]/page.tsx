@@ -285,12 +285,25 @@ export default async function NovelDetailPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Book',
+    '@id': `https://butternovel.com/novels/${novel.slug}`,
     name: novel.title,
+    alternateName: [
+      `${novel.title} novel`,
+      `${novel.title} free`,
+      `Read ${novel.title}`,
+    ],
     author: {
       '@type': 'Person',
       name: novel.authorName,
     },
+    publisher: {
+      '@type': 'Organization',
+      name: 'ButterNovel',
+      alternateName: ['Butter Novel', 'butternovel.com'],
+      url: 'https://butternovel.com',
+    },
     genre: novel.category.name,
+    keywords: novel.tags.map((t: { name: string }) => t.name).join(', '),
     description: novel.blurb,
     image: novel.coverImage,
     url: `https://butternovel.com/novels/${novel.slug}`,
@@ -301,12 +314,18 @@ export default async function NovelDetailPage({
         ratingValue: novel.averageRating,
         ratingCount: novel.totalRatings,
         bestRating: 10,
-        worstRating: 2,
+        worstRating: 1,
       },
     }),
     numberOfPages: novel.chapters.length,
     bookFormat: 'EBook',
     isAccessibleForFree: true,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+    },
   }
 
   return (
