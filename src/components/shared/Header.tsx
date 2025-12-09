@@ -78,9 +78,9 @@ export default function Header() {
                 <Image
                   src="/logo.png"
                   alt="ButterNovel"
-                  width={28}
-                  height={28}
-                  className="w-7 h-7"
+                  width={56}
+                  height={56}
+                  className="w-14 h-14"
                   priority
                 />
                 <div className="flex flex-col">

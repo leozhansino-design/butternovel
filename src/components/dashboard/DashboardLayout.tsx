@@ -58,9 +58,9 @@ export default function DashboardLayout({ children, userName, userEmail, userIma
             <Image
               src="/logo.png"
               alt="ButterNovel"
-              width={28}
-              height={28}
-              className="w-7 h-7"
+              width={56}
+              height={56}
+              className="w-14 h-14"
             />
             <span className="text-lg font-semibold text-gray-900">ButterNovel</span>
           </Link>

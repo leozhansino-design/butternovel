@@ -28,9 +28,9 @@ export default function Footer() {
               <Image
                 src="/logo.png"
                 alt="ButterNovel"
-                width={32}
-                height={32}
-                className="w-8 h-8"
+                width={64}
+                height={64}
+                className="w-16 h-16"
               />
               <span className="text-lg font-bold text-gray-900">ButterNovel</span>
             </div>
