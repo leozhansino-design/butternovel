@@ -14,28 +14,57 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://butternovel.com'),
 
   title: {
-    default: 'ButterNovel - Free Novels Online',
+    default: 'ButterNovel - Free Novels Online | Read Web Novels Free',
     template: '%s | ButterNovel',
   },
 
-  description: 'Discover millions of novels for free. Read fantasy, romance, sci-fi, and more. Join our community of readers and writers.',
+  // SEO optimized description with brand variations
+  description: 'ButterNovel (Butter Novel) - Read millions of free novels online. Discover fantasy, romance, sci-fi, adventure and more web novels. Join our community of readers and writers at butternovel.com.',
 
   keywords: [
+    // Brand variations (CRITICAL for Google recognition)
+    'butternovel',
+    'butter novel',
+    'butter-novel',
+    'butternovel.com',
+    'butter novel website',
+    'butter novel app',
+    // Core keywords
     'free novels',
-    'online novels',
+    'free novels online',
+    'read novels online',
+    'read novels free',
+    'read free novels',
     'web novels',
+    'online novels',
+    'free web novels',
+    'light novels',
+    // Genre keywords
     'fantasy novels',
     'romance novels',
     'sci-fi novels',
-    'read novels online',
-    'free reading',
-    'butternovel',
+    'adventure novels',
+    'mystery novels',
+    'action novels',
+    // Long-tail keywords
+    'free novel reading website',
+    'best free novel site',
+    'read light novels free',
+    'free story reading',
+    'novel reading platform',
+    'free online book reading',
   ],
 
   authors: [{ name: 'ButterNovel' }],
 
   creator: 'ButterNovel',
   publisher: 'ButterNovel',
+
+  // Additional metadata for better SEO
+  applicationName: 'ButterNovel',
+  generator: 'Next.js',
+  referrer: 'origin-when-cross-origin',
+  category: 'literature',
 
   formatDetection: {
     email: false,
@@ -48,11 +77,11 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'ButterNovel',
-    title: 'ButterNovel - Free Novels Online',
-    description: 'Discover millions of novels for free. Read fantasy, romance, sci-fi, and more.',
+    title: 'ButterNovel - Free Novels Online | Butter Novel',
+    description: 'ButterNovel (Butter Novel) - Read millions of free novels online. Fantasy, romance, sci-fi, adventure and more.',
     images: [
       {
-        url: '/og-image.png', // 需要在 /public 目录添加此图片
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'ButterNovel - Free Novels Online',
@@ -65,7 +94,7 @@ export const metadata: Metadata = {
     site: '@butternovel',
     creator: '@butternovel',
     title: 'ButterNovel - Free Novels Online',
-    description: 'Discover millions of novels for free. Read fantasy, romance, sci-fi, and more.',
+    description: 'Read millions of free novels online. Fantasy, romance, sci-fi, and more.',
     images: ['/og-image.png'],
   },
 
@@ -82,16 +111,26 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48.png', sizes: '48x48', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 
   manifest: '/site.webmanifest',
 
+  // Canonical URL
+  alternates: {
+    canonical: 'https://butternovel.com',
+  },
+
   verification: {
-    google: 'your-google-verification-code', // 需要在 Google Search Console 获取
-    // yandex: 'your-yandex-verification-code',
-    // bing: 'your-bing-verification-code',
+    google: 'your-google-verification-code',
   },
 }
 
