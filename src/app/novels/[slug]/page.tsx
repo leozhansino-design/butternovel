@@ -21,6 +21,8 @@ import AuthorNameButton from '@/components/novel/AuthorNameButton'
 import { getContentRatingLabel, getRightsTypeLabel, getContentRatingColor } from '@/lib/content-rating'
 import ScrollToTop from '@/components/ScrollToTop'
 import MobileExpandableSection from '@/components/novel/MobileExpandableSection'
+import BreadcrumbJsonLd, { getNovelBreadcrumbs } from '@/components/seo/BreadcrumbJsonLd'
+import FAQJsonLd, { getNovelFAQs } from '@/components/seo/FAQJsonLd'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -46,7 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       isPublished: true,
       isBanned: true,
       category: {
-        select: { name: true }
+        select: { name: true, slug: true }
       },
       tags: {
         select: { name: true },
@@ -328,6 +330,17 @@ export default async function NovelDetailPage({
     },
   }
 
+  // SEO: Breadcrumb data
+  const breadcrumbItems = getNovelBreadcrumbs(
+    novel.category.name,
+    novel.category.slug,
+    novel.title,
+    novel.slug
+  )
+
+  // SEO: FAQ data for this novel
+  const novelFaqs = getNovelFAQs(novel.title, novel.authorName, novel.chapters.length)
+
   return (
     <>
       {/* JSON-LD for SEO */}
@@ -335,6 +348,12 @@ export default async function NovelDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {/* SEO: Breadcrumb structured data */}
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+
+      {/* SEO: FAQ structured data for novel */}
+      <FAQJsonLd faqs={novelFaqs} />
 
       <ViewTracker novelId={novel.id} />
       <ReadingHistoryTracker novelId={novel.id} />
