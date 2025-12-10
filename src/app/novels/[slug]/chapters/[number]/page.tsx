@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import ChapterReader from '@/components/reader/ChapterReader'
 import ViewTracker from '@/components/ViewTracker'
+import BreadcrumbJsonLd, { getChapterBreadcrumbs } from '@/components/seo/BreadcrumbJsonLd'
 
 interface PageProps {
   params: Promise<{
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   try {
-    const [novel, chapter] = await Promise.all([
+    const [novel, chapter, totalChapters] = await Promise.all([
       prisma.novel.findUnique({
         where: { slug },
         select: {
@@ -35,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           slug: true,
           authorName: true,
           blurb: true,
-          category: { select: { name: true } },
+          category: { select: { name: true, slug: true } },
         }
       }),
       prisma.chapter.findFirst({
@@ -49,6 +50,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           chapterNumber: true,
           wordCount: true,
           content: true,
+        }
+      }),
+      prisma.chapter.count({
+        where: {
+          novel: { slug },
+          isPublished: true
         }
       })
     ])
@@ -95,6 +102,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       alternates: {
         canonical: `https://butternovel.com/novels/${slug}/chapters/${chapterNumber}`,
       },
+      // SEO: Chapter navigation hints for search engines
+      other: {
+        ...(chapterNumber > 1 && {
+          'prev': `https://butternovel.com/novels/${slug}/chapters/${chapterNumber - 1}`,
+        }),
+        ...(chapterNumber < totalChapters && {
+          'next': `https://butternovel.com/novels/${slug}/chapters/${chapterNumber + 1}`,
+        }),
+      },
     }
   } catch (error) {
     return {
@@ -116,6 +132,7 @@ async function getChapterData(slug: string, chapterNumber: number) {
             title: true,
             slug: true,
             status: true,
+            category: { select: { name: true, slug: true } },
             _count: {
               select: { chapters: true }
             }
@@ -235,10 +252,23 @@ export default async function ChapterPage({ params }: PageProps) {
     notFound()
   }
 
+  // SEO: Breadcrumb data for chapter page
+  const breadcrumbItems = getChapterBreadcrumbs(
+    data.novel.category?.name || 'Novel',
+    data.novel.category?.slug || 'novel',
+    data.novel.title,
+    data.novel.slug,
+    data.chapter.chapterNumber,
+    data.chapter.title
+  )
+
   return (
     <>
+      {/* SEO: Breadcrumb structured data */}
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+
       <ViewTracker novelId={data.novel.id} />
-      
+
       {data.nextChapterContent && (
         <link
           rel="prefetch"
@@ -246,7 +276,7 @@ export default async function ChapterPage({ params }: PageProps) {
           as="document"
         />
       )}
-      
+
       <ChapterReader
         novel={data.novel}
         chapter={data.chapter}

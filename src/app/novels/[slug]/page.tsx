@@ -21,6 +21,8 @@ import AuthorNameButton from '@/components/novel/AuthorNameButton'
 import { getContentRatingLabel, getRightsTypeLabel, getContentRatingColor } from '@/lib/content-rating'
 import ScrollToTop from '@/components/ScrollToTop'
 import MobileExpandableSection from '@/components/novel/MobileExpandableSection'
+import BreadcrumbJsonLd, { getNovelBreadcrumbs } from '@/components/seo/BreadcrumbJsonLd'
+import FAQJsonLd, { getNovelFAQs } from '@/components/seo/FAQJsonLd'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -46,7 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       isPublished: true,
       isBanned: true,
       category: {
-        select: { name: true }
+        select: { name: true, slug: true }
       },
       tags: {
         select: { name: true },
@@ -285,12 +287,25 @@ export default async function NovelDetailPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Book',
+    '@id': `https://butternovel.com/novels/${novel.slug}`,
     name: novel.title,
+    alternateName: [
+      `${novel.title} novel`,
+      `${novel.title} free`,
+      `Read ${novel.title}`,
+    ],
     author: {
       '@type': 'Person',
       name: novel.authorName,
     },
+    publisher: {
+      '@type': 'Organization',
+      name: 'ButterNovel',
+      alternateName: ['Butter Novel', 'butternovel.com'],
+      url: 'https://butternovel.com',
+    },
     genre: novel.category.name,
+    keywords: novel.tags.map((t: { name: string }) => t.name).join(', '),
     description: novel.blurb,
     image: novel.coverImage,
     url: `https://butternovel.com/novels/${novel.slug}`,
@@ -301,13 +316,30 @@ export default async function NovelDetailPage({
         ratingValue: novel.averageRating,
         ratingCount: novel.totalRatings,
         bestRating: 10,
-        worstRating: 2,
+        worstRating: 1,
       },
     }),
     numberOfPages: novel.chapters.length,
     bookFormat: 'EBook',
     isAccessibleForFree: true,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+    },
   }
+
+  // SEO: Breadcrumb data
+  const breadcrumbItems = getNovelBreadcrumbs(
+    novel.category.name,
+    novel.category.slug,
+    novel.title,
+    novel.slug
+  )
+
+  // SEO: FAQ data for this novel
+  const novelFaqs = getNovelFAQs(novel.title, novel.authorName, novel.chapters.length)
 
   return (
     <>
@@ -316,6 +348,12 @@ export default async function NovelDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {/* SEO: Breadcrumb structured data */}
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+
+      {/* SEO: FAQ structured data for novel */}
+      <FAQJsonLd faqs={novelFaqs} />
 
       <ViewTracker novelId={novel.id} />
       <ReadingHistoryTracker novelId={novel.id} />
