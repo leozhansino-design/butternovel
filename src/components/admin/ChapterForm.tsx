@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { countWords, WORD_LIMITS } from '@/lib/validators'
+import FormattingToolbar from '@/components/editor/FormattingToolbar'
 
 interface ChapterFormProps {
   mode: 'create' | 'edit'
@@ -35,6 +36,7 @@ export default function ChapterForm({
   const [isPublished, setIsPublished] = useState(initialData?.isPublished ?? true)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // ✅ 计算字符数
   const wordCount = countWords(content)
@@ -182,14 +184,55 @@ export default function ChapterForm({
           <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
             Chapter Content <span className="text-red-500">*</span>
           </label>
+
+          {/* Formatting Toolbar */}
+          <FormattingToolbar
+            textareaRef={textareaRef}
+            value={content}
+            onChange={setContent}
+          />
+
           <textarea
+            ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Enter chapter content..."
+            placeholder="Enter chapter content... Use **text** for bold, *text* for italic"
             rows={20}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-t-none rounded-b-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             required
             disabled={loading}
+            onKeyDown={(e) => {
+              // Ctrl+B for bold
+              if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault()
+                const start = e.currentTarget.selectionStart
+                const end = e.currentTarget.selectionEnd
+                const selected = content.substring(start, end) || 'text'
+                const newContent = content.substring(0, start) + '**' + selected + '**' + content.substring(end)
+                setContent(newContent)
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus()
+                    textareaRef.current.setSelectionRange(start + 2, start + 2 + selected.length)
+                  }
+                }, 0)
+              }
+              // Ctrl+I for italic
+              if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                e.preventDefault()
+                const start = e.currentTarget.selectionStart
+                const end = e.currentTarget.selectionEnd
+                const selected = content.substring(start, end) || 'text'
+                const newContent = content.substring(0, start) + '*' + selected + '*' + content.substring(end)
+                setContent(newContent)
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus()
+                    textareaRef.current.setSelectionRange(start + 1, start + 1 + selected.length)
+                  }
+                }, 0)
+              }
+            }}
           />
 
           {/* Character count and progress bar */}
