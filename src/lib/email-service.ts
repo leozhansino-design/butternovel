@@ -4,7 +4,7 @@
  */
 
 import nodemailer from 'nodemailer';
-import { NotificationType } from '@prisma/client';
+import type { NotificationType } from '@/lib/prisma-types';
 
 // ============================================
 // Nodemailer 配置

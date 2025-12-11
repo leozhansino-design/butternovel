@@ -69,7 +69,7 @@ async function main() {
 
     if (orphanedTags.length > 0) {
       console.log(`   Found ${orphanedTags.length} orphaned tags:`)
-      orphanedTags.forEach(tag => {
+      orphanedTags.forEach((tag: { name: string; slug: string }) => {
         console.log(`   - ${tag.name} (${tag.slug})`)
       })
 
@@ -89,7 +89,7 @@ async function main() {
     console.log(`   - Total tags: ${tags.length}`)
     console.log(`   - Tags synced: ${syncedCount}`)
     console.log(`   - Orphaned tags: ${orphanedTags.length}`)
-    console.log(`   - Active tags: ${tags.filter(t => t._count.novels > 0).length}`)
+    console.log(`   - Active tags: ${tags.filter((t: { _count: { novels: number } }) => t._count.novels > 0).length}`)
 
     console.log('\n✅ Tag cleanup completed successfully!')
 

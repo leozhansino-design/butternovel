@@ -2,7 +2,6 @@
 // 🛡️ 统一的 API 错误处理
 
 import { NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
 
 /**
  * API 错误类型
@@ -105,8 +104,8 @@ export function withErrorHandling<T extends any[], R>(
         )
       }
 
-      // Prisma Error
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // Prisma Error - check by error name and code pattern (P1xxx, P2xxx, etc.)
+      if (error.name === 'PrismaClientKnownRequestError' || (error.code && /^P\d{4}$/.test(error.code))) {
         const { status, message, code } = handlePrismaError(error)
         return NextResponse.json(
           {

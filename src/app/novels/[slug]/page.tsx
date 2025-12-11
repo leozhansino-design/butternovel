@@ -394,6 +394,7 @@ export default async function NovelDetailPage({
                               priority
                               placeholder="blur"
                               blurDataURL={getCloudinaryBlurUrl(novel.coverImage)}
+                              sizes="100px"
                             />
                           </div>
                         </div>
@@ -515,6 +516,7 @@ export default async function NovelDetailPage({
                               priority
                               placeholder="blur"
                               blurDataURL={getCloudinaryBlurUrl(novel.coverImage)}
+                              sizes="(max-width: 640px) 200px, (max-width: 1024px) 240px, 280px"
                             />
                           </div>
                         </div>

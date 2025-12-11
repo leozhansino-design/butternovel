@@ -98,7 +98,7 @@ function createPrismaClient() {
   return basePrisma.$extends({
     query: {
       $allModels: {
-        async $allOperations({ operation, model, args, query }) {
+        async $allOperations({ operation, model, args, query }: { operation: string; model: string; args: unknown; query: (args: unknown) => Promise<unknown> }) {
           queryCount++
 
           // Reset counter every second

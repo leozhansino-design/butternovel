@@ -3,7 +3,7 @@
  * 处理通知的聚合、格式化、生成等功能
  */
 
-import { NotificationType, NotificationPriority } from '@prisma/client';
+import type { NotificationType, NotificationPriority } from '@/lib/prisma-types';
 
 // ============================================
 // 聚合阈值配置（工业界标准实践）
