@@ -2,11 +2,10 @@
 import type { Metadata } from 'next'
 // import { Inter } from 'next/font/google'  // ⚠️ 暂时禁用 Google Fonts（网络限制）
 import './globals.css'
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { SessionProvider } from 'next-auth/react'
 import ClientHeaderWrapper from '@/components/shared/ClientHeaderWrapper'
 import ConditionalHeader from '@/components/shared/ConditionalHeader'
+import LazyAnalytics from '@/components/LazyAnalytics'
 
 // const inter = Inter({ subsets: ['latin'] })
 
@@ -169,7 +168,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://challenges.cloudflare.com" />
       </head>
       <body className="font-sans">{/* 使用系统字体 */}
-        <SessionProvider>
+        {/* ⚡ Performance: Disable auto-refetch to reduce API calls */}
+        <SessionProvider refetchOnWindowFocus={false}>
           {/* ✅ Client-side header - doesn't force dynamic rendering */}
           <ConditionalHeader>
             <ClientHeaderWrapper />
@@ -177,8 +177,8 @@ export default function RootLayout({
 
           {children}
 
-          <Analytics />
-          <SpeedInsights />
+          {/* ⚡ Deferred analytics - loads after page is interactive */}
+          <LazyAnalytics />
         </SessionProvider>
       </body>
     </html>

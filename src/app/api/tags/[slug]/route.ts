@@ -83,7 +83,8 @@ export async function GET(
     const tagIds = tagRecords.map(t => t.id)
 
     // 构建排序条件
-    let orderBy: Prisma.NovelOrderByWithRelationInput
+    type OrderByOption = { hotScore: 'desc' } | { bookmarkCount: 'desc' } | { viewCount: 'desc' }
+    let orderBy: OrderByOption
     switch (sort) {
       case 'hot':
         orderBy = { hotScore: 'desc' }

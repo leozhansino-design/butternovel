@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { NotificationType, NotificationPriority, Prisma } from '@prisma/client';
+import type { NotificationType, NotificationPriority } from '@/lib/prisma-types';
 import {
   createNotificationTitle,
   createNotificationContent,

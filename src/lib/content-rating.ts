@@ -1,7 +1,7 @@
 // src/lib/content-rating.ts
 // 内容分级和版权许可辅助函数
 
-import { ContentRating, RightsType } from '@prisma/client'
+import type { ContentRating, RightsType } from '@/lib/prisma-types'
 
 // 内容分级选项（带描述）
 export const CONTENT_RATING_OPTIONS = [

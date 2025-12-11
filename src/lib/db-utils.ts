@@ -1,8 +1,6 @@
 // src/lib/db-utils.ts
 // 数据库查询工具 - 带重试和错误处理
 
-import { Prisma } from '@prisma/client'
-
 /**
  * 重试配置
  */
@@ -32,17 +30,19 @@ function getBackoffDelay(attempt: number, baseDelay: number, maxDelay: number): 
  * 判断错误是否可以重试
  */
 function isRetryableError(error: any): boolean {
-  // Prisma 连接错误
-  if (error instanceof Prisma.PrismaClientInitializationError) {
+  // Prisma 连接错误 (check by error name)
+  if (error?.name === 'PrismaClientInitializationError') {
     return true
   }
 
-  // Prisma 连接超时
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  // Prisma 连接超时 (check by error code pattern)
+  if (error?.code && typeof error.code === 'string') {
     // P1001: Can't reach database server
     // P1002: Database server timeout
     // P1008: Operations timed out
-    return ['P1001', 'P1002', 'P1008'].includes(error.code)
+    if (['P1001', 'P1002', 'P1008'].includes(error.code)) {
+      return true
+    }
   }
 
   // 通用连接错误

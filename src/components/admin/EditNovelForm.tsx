@@ -7,7 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
-import { ContentRating, RightsType } from '@prisma/client'
+import type { ContentRating, RightsType } from '@/lib/prisma-types'
 import { compressCoverImage, formatFileSize } from '@/lib/image-compress'
 import { safeParseJson } from '@/lib/fetch-utils'
 

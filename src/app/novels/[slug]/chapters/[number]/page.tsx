@@ -231,9 +231,10 @@ async function getChapterData(slug: string, chapterNumber: number) {
   }
 }
 
-// ✅ 修复：页面必须是 dynamic 的，因为 layout 中的 HeaderWrapper 调用了 auth()
-// auth() 会使用 cookies/headers，导致页面变成动态的
-export const dynamic = 'force-dynamic'
+// ✅ 性能优化：使用 ISR 缓存章节页面
+// 章节内容很少变化，可以缓存 1 小时
+// 之前的 force-dynamic 导致每次请求都查询数据库，现在改为 ISR
+export const revalidate = 3600 // 缓存 1 小时
 
 // 🔧 修复 build 连接池超时：允许动态参数，不强制预渲染所有章节
 export const dynamicParams = true

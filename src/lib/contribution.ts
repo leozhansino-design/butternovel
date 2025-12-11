@@ -1,7 +1,7 @@
 // 贡献度计算逻辑
 
 import { prisma } from '@/lib/prisma'
-import { ContributionType } from '@prisma/client'
+import type { ContributionType } from '@/lib/prisma-types'
 import { CONTRIBUTION_POINTS, getUserLevel } from './badge-system'
 
 /**

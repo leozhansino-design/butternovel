@@ -8,7 +8,7 @@ import {
   shouldSendEmail,
   createEmailContent,
 } from '@/lib/email-service';
-import { NotificationType } from '@prisma/client';
+import type { NotificationType } from '@/lib/prisma-types';
 
 // Mock nodemailer
 jest.mock('nodemailer', () => ({
