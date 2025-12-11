@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ParagraphCommentButton from './ParagraphCommentButton'
 import ParagraphCommentPanel from './ParagraphCommentPanel'
+import { FormattedParagraph } from './FormattedText'
 
 interface Chapter {
   id: number
@@ -501,7 +502,8 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                   {paragraphs.map((paragraph, index) => (
                     <div key={index} className="group relative">
                       <div className="leading-loose whitespace-pre-wrap inline">
-                        {paragraph}
+                        {/* 使用 FormattedParagraph 渲染带格式的文本 */}
+                        <FormattedParagraph content={paragraph} />
                         {/* 段落评论按钮 - 内联显示在段落最后一个字符右侧 */}
                         <span className="inline-block align-middle ml-2">
                           <ParagraphCommentButton
@@ -516,9 +518,9 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
                   ))}
                 </div>
               ) : (
-                // 普通模式：显示完整内容
+                // 普通模式：显示完整内容（带格式渲染）
                 <div className="leading-loose whitespace-pre-wrap">
-                  {currentContent}
+                  <FormattedParagraph content={currentContent} />
                 </div>
               )}
             </div>
