@@ -575,16 +575,21 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-12 pt-8 border-t border-gray-200">
+          <div className="flex items-center justify-between mt-12 pt-8 border-t border-gray-200/50">
             {hasPrev ? (
               <button
                 onClick={goToPrevChapter}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg"
+                className="group flex items-center gap-3 px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/80 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Previous Chapter
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
+                  <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </span>
+                <div className="text-left">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Previous</div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Chapter {chapter.chapterNumber - 1}</div>
+                </div>
               </button>
             ) : (
               <div></div>
@@ -593,12 +598,17 @@ export default function ChapterReader({ novel, chapter, chapters, totalChapters 
             {hasNext && (
               <button
                 onClick={goToNextChapter}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#f4d03f] via-[#e8b923] to-[#d4a017] hover:from-[#f5d85a] hover:via-[#f4d03f] hover:to-[#e8b923] text-white font-semibold rounded-lg transition-all shadow-lg ml-auto"
+                className="group flex items-center gap-3 px-5 py-3 bg-gray-900 dark:bg-white border border-gray-900 dark:border-white rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-all duration-200 shadow-sm hover:shadow-md ml-auto"
               >
-                Next Chapter
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <div className="text-right">
+                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">Next</div>
+                  <div className="text-sm font-semibold text-white dark:text-gray-900">Chapter {chapter.chapterNumber + 1}</div>
+                </div>
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 dark:bg-gray-200 group-hover:bg-gray-700 dark:group-hover:bg-gray-300 transition-colors">
+                  <svg className="w-4 h-4 text-white dark:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
               </button>
             )}
           </div>
