@@ -252,8 +252,8 @@ export async function invalidateHomePageCache(): Promise<void> {
  * 获取热门推荐小说
  *
  * 用于首页轮播展示
- * - 获取18本最热小说
- * - 按热度排序(浏览量 + 点赞数 * 10)
+ * - 获取18本随机小说
+ * - 随机排序（因为书籍数量少，固定排序会重复）
  * - 只选择有封面和简介的小说
  */
 export async function getTrendingNovels(): Promise<Array<{
@@ -300,7 +300,7 @@ export async function getTrendingNovels(): Promise<Array<{
           AND n."coverImage" != ''
           AND n.blurb IS NOT NULL
           AND n.blurb != ''
-        ORDER BY (n."viewCount" + n."likeCount" * 10) DESC
+        ORDER BY RANDOM()
         LIMIT 18
       `
     ) as any[];
