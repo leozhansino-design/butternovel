@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         select: { name: true, writerName: true },
       }),
       { operationName: 'Get user info' }
-    )
+    ) as { name: string | null; writerName: string | null } | null
 
     const authorName = user?.writerName || user?.name || 'Anonymous'
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     const defaultCategory = await withRetry(
       () => prisma.category.findFirst({ orderBy: { order: 'asc' } }),
       { operationName: 'Get default category' }
-    )
+    ) as { id: number } | null
 
     if (!defaultCategory) {
       return NextResponse.json({ error: 'No categories found' }, { status: 500 })
