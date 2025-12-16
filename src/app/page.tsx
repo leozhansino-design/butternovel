@@ -3,6 +3,7 @@
 import { Suspense } from 'react'
 import Footer from '@/components/shared/Footer'
 import TrendingCarousel from '@/components/front/TrendingCarousel'
+import ShortsTrending from '@/components/front/ShortsTrending'
 import FeaturedCarousel from '@/components/front/FeaturedCarousel'
 import CategoryCarousel from '@/components/front/CategoryCarousel'
 import CategoryFeaturedGrid from '@/components/front/CategoryFeaturedGrid'
@@ -20,7 +21,7 @@ async function HomeContent() {
   // 节省：94% Redis commands
   const homeData = await getHomePageData()
 
-  const { featured, trending, categories, categoryNovels } = homeData
+  const { featured, trending, shortsTrending, categories, categoryNovels } = homeData
 
   // 构造类别数据映射，按书数量从多到少排序
   const categoryData = categories.map((category) => ({
@@ -45,6 +46,11 @@ async function HomeContent() {
 
   return (
     <main className="flex-1">
+      {/* Shorts Trending - 短篇小说热门区（在 Trending 上方） */}
+      {shortsTrending.length > 0 && (
+        <ShortsTrending novels={shortsTrending} />
+      )}
+
       {/* Trending Carousel - 热门推荐轮播区 */}
       {trending.length > 0 && (
         <TrendingCarousel novels={trending} />

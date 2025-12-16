@@ -14,6 +14,7 @@ type Props = {
     page?: string
     category?: string
     status?: string
+    type?: string  // 'all' | 'regular' | 'short'
   }>
 }
 
@@ -47,6 +48,14 @@ export default async function ManageNovelsPage(props: Props) {
     where.status = searchParams.status
   }
 
+  // 短篇/普通小说筛选
+  const novelType = searchParams.type || 'all'
+  if (novelType === 'short') {
+    where.isShortNovel = true
+  } else if (novelType === 'regular') {
+    where.isShortNovel = false
+  }
+
   // 🔄 添加数据库重试机制，解决连接超时问题
   const [novels, total] = await Promise.all([
     withRetry(
@@ -61,6 +70,8 @@ export default async function ManageNovelsPage(props: Props) {
           status: true,
           createdAt: true,
           isBanned: true,
+          isShortNovel: true,
+          shortNovelGenre: true,
           category: {
             select: {
               id: true,
@@ -104,11 +115,67 @@ export default async function ManageNovelsPage(props: Props) {
           <h1 className="text-3xl font-bold text-gray-900">Manage Novels</h1>
           <p className="text-gray-600 mt-1">Search, edit, and manage all novels</p>
         </div>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/batch-upload-shorts"
+            className="px-4 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
+          >
+            + Batch Upload Shorts
+          </Link>
+          <Link
+            href="/admin/novels/new"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            + Upload New Novel
+          </Link>
+        </div>
+      </div>
+
+      {/* Type Filter Tabs */}
+      <div className="flex gap-2 mb-6">
         <Link
-          href="/admin/novels/new"
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          href={`/admin/novels?${new URLSearchParams({
+            ...(query && { q: query }),
+            ...(searchParams.category && { category: searchParams.category }),
+            ...(searchParams.status && { status: searchParams.status }),
+          }).toString()}`}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            novelType === 'all'
+              ? 'bg-gray-900 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
         >
-          + Upload New Novel
+          All Novels
+        </Link>
+        <Link
+          href={`/admin/novels?${new URLSearchParams({
+            ...(query && { q: query }),
+            ...(searchParams.category && { category: searchParams.category }),
+            ...(searchParams.status && { status: searchParams.status }),
+            type: 'regular',
+          }).toString()}`}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            novelType === 'regular'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          Regular Novels
+        </Link>
+        <Link
+          href={`/admin/novels?${new URLSearchParams({
+            ...(query && { q: query }),
+            ...(searchParams.category && { category: searchParams.category }),
+            ...(searchParams.status && { status: searchParams.status }),
+            type: 'short',
+          }).toString()}`}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            novelType === 'short'
+              ? 'bg-amber-500 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          Short Novels
         </Link>
       </div>
 
@@ -170,24 +237,47 @@ export default async function ManageNovelsPage(props: Props) {
                 <tr key={novel.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 max-w-xs">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-16 flex-shrink-0">
-                        <Image
-                          src={novel.coverImage}
-                          alt={novel.title}
-                          fill
-                          sizes="48px"
-                          className="rounded object-cover"
-                        />
-                      </div>
+                      {novel.isShortNovel ? (
+                        <div className="w-12 h-16 flex-shrink-0 rounded bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="relative w-12 h-16 flex-shrink-0">
+                          {novel.coverImage ? (
+                            <Image
+                              src={novel.coverImage}
+                              alt={novel.title}
+                              fill
+                              sizes="48px"
+                              className="rounded object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full rounded bg-gray-200 flex items-center justify-center">
+                              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="font-medium text-gray-900 truncate max-w-[200px]">
                           {novel.title}
                         </div>
-                        {novel.isBanned && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
-                            BANNED
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          {novel.isShortNovel && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                              SHORT
+                            </span>
+                          )}
+                          {novel.isBanned && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                              BANNED
+                            </span>
+                          )}
+                        </div>
                         <div className="text-sm text-gray-500">
                           ID: {novel.id}
                         </div>
@@ -238,7 +328,7 @@ export default async function ManageNovelsPage(props: Props) {
                         Edit
                       </Link>
                       <Link
-                        href={`/novels/${novel.slug}`}
+                        href={novel.isShortNovel ? `/shorts/${novel.slug}` : `/novels/${novel.slug}`}
                         target="_blank"
                         className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors whitespace-nowrap"
                       >

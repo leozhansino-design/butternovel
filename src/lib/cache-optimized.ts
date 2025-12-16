@@ -39,6 +39,19 @@ export interface HomePageData {
     chaptersCount: number;
     rating: number | null;
   }>;
+  // ⭐ 短篇小说 Trending
+  shortsTrending: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    blurb: string;
+    readingPreview: string | null;
+    shortNovelGenre: string | null;
+    wordCount: number;
+    viewCount: number;
+    likeCount: number;
+    averageRating: number | null;
+  }>;
   categories: Array<{
     id: number;
     name: string;
@@ -77,8 +90,11 @@ export async function getHomePageData(): Promise<HomePageData> {
   try {
     console.log('[Homepage] 📊 Fetching fresh data from database');
 
-    // 1. 获取热门推荐小说（用于轮播）
+    // 1. 获取热门推荐小说（用于轮播）- 排除短篇小说
     const trending = await getTrendingNovels();
+
+    // 1.5 获取短篇小说 Trending
+    const shortsTrending = await getShortsTrendingNovels();
 
     // 2. 获取精选小说
     const featured = await withRetry(() =>
@@ -211,12 +227,13 @@ export async function getHomePageData(): Promise<HomePageData> {
     const data: HomePageData = {
       featured,
       trending,
+      shortsTrending,
       categories,
       categoryNovels,
       timestamp: Date.now()
     };
 
-    console.log(`[Homepage] ✅ Data prepared: ${trending.length} trending, ${featured.length} featured, ${categories.length} categories`);
+    console.log(`[Homepage] ✅ Data prepared: ${trending.length} trending, ${shortsTrending.length} shorts, ${featured.length} featured, ${categories.length} categories`);
 
     const totalDuration = Date.now() - totalStartTime;
     console.log(`[Homepage] 🏁 getHomePageData complete (total: ${totalDuration}ms)`);
@@ -229,6 +246,7 @@ export async function getHomePageData(): Promise<HomePageData> {
     return {
       featured: [],
       trending: [],
+      shortsTrending: [],
       categories: [],
       categoryNovels: {},
       timestamp: Date.now()
@@ -249,12 +267,13 @@ export async function invalidateHomePageCache(): Promise<void> {
 }
 
 /**
- * 获取热门推荐小说
+ * 获取热门推荐小说（排除短篇小说）
  *
  * 用于首页轮播展示
  * - 获取18本随机小说
  * - 随机排序（因为书籍数量少，固定排序会重复）
  * - 只选择有封面和简介的小说
+ * - 排除短篇小说
  */
 export async function getTrendingNovels(): Promise<Array<{
   id: number;
@@ -296,6 +315,7 @@ export async function getTrendingNovels(): Promise<Array<{
         INNER JOIN "Category" c ON n."categoryId" = c.id
         WHERE n."isPublished" = true
           AND n."isBanned" = false
+          AND n."isShortNovel" = false
           AND n."coverImage" IS NOT NULL
           AND n."coverImage" != ''
           AND n.blurb IS NOT NULL
@@ -309,6 +329,72 @@ export async function getTrendingNovels(): Promise<Array<{
     return trending;
   } catch (error) {
     console.error('[Trending] 🚨 Error fetching trending novels:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取短篇小说 Trending
+ *
+ * 用于首页 Shorts Trending 区域
+ * - 获取12本随机短篇小说
+ * - 随机排序
+ * - 只选择已发布的短篇小说
+ */
+export async function getShortsTrendingNovels(): Promise<Array<{
+  id: number;
+  title: string;
+  slug: string;
+  blurb: string;
+  readingPreview: string | null;
+  shortNovelGenre: string | null;
+  wordCount: number;
+  viewCount: number;
+  likeCount: number;
+  averageRating: number | null;
+}>> {
+  try {
+    console.log('[ShortsTrending] 📚 Fetching shorts trending novels');
+
+    const shorts = await withRetry(() =>
+      prisma.$queryRaw<Array<{
+        id: number;
+        title: string;
+        slug: string;
+        blurb: string;
+        readingPreview: string | null;
+        shortNovelGenre: string | null;
+        wordCount: number;
+        viewCount: number;
+        likeCount: number;
+        averageRating: number | null;
+      }>>`
+        SELECT
+          n.id,
+          n.title,
+          n.slug,
+          n.blurb,
+          n."readingPreview",
+          n."shortNovelGenre",
+          n."wordCount",
+          n."viewCount",
+          n."likeCount",
+          n."averageRating"
+        FROM "Novel" n
+        WHERE n."isPublished" = true
+          AND n."isBanned" = false
+          AND n."isShortNovel" = true
+          AND n.blurb IS NOT NULL
+          AND n.blurb != ''
+        ORDER BY RANDOM()
+        LIMIT 12
+      `
+    ) as any[];
+
+    console.log(`[ShortsTrending] ✅ Fetched ${shorts.length} shorts trending novels`);
+    return shorts;
+  } catch (error) {
+    console.error('[ShortsTrending] 🚨 Error fetching shorts trending novels:', error);
     return [];
   }
 }
