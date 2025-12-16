@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { withRetry } from '@/lib/db-retry'
+import { Prisma } from '@prisma/client'
 import {
   SHORT_NOVEL_LIMITS,
   validateShortNovelLength,
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Create novel and chapter in a transaction
     const novel = await withRetry(
-      () => prisma.$transaction(async (tx) => {
+      () => prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Create the short novel
         const newNovel = await tx.novel.create({
           data: {
