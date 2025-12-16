@@ -4,44 +4,271 @@ import { useState, useRef } from 'react'
 import Link from 'next/link'
 import {
   SHORT_NOVEL_GENRES,
-  SHORT_NOVEL_LIMITS,
-  validateShortNovelLength,
   getShortNovelGenreName,
   formatReadingTime,
   estimateReadingTime,
 } from '@/lib/short-novel'
-import { CONTENT_RATING_OPTIONS } from '@/lib/content-rating'
 
 interface ShortNovelData {
   id: string
+  folderName: string
   title: string
   shortNovelGenre: string
+  age: string
   blurb: string
   content: string
-  contentRating: string
   status: 'pending' | 'uploading' | 'success' | 'error'
   error?: string
   novelId?: number
+}
+
+// Genre mapping from Chinese/English to slug
+const GENRE_MAPPING: Record<string, string> = {
+  // English
+  'sweet romance': 'sweet-romance',
+  'billionaire romance': 'billionaire-romance',
+  'face slapping': 'face-slapping',
+  'face-slapping': 'face-slapping',
+  'rebirth': 'rebirth',
+  'revenge': 'revenge',
+  'regret': 'regret',
+  'substitute': 'substitute',
+  'true fake identity': 'true-fake-identity',
+  'age gap': 'age-gap',
+  'entertainment circle': 'entertainment-circle',
+  'group pet': 'group-pet',
+  'healing': 'healing-redemption',
+  'redemption': 'healing-redemption',
+  'lgbtq': 'lgbtq',
+  'lgbtq+': 'lgbtq',
+  'quick transmigration': 'quick-transmigration',
+  'survival': 'survival-apocalypse',
+  'apocalypse': 'survival-apocalypse',
+  'system': 'system',
+  // Chinese
+  '甜宠': 'sweet-romance',
+  '霸总': 'billionaire-romance',
+  '打脸': 'face-slapping',
+  '重生': 'rebirth',
+  '复仇': 'revenge',
+  '追悔': 'regret',
+  '替身': 'substitute',
+  '真假千金': 'true-fake-identity',
+  '年龄差': 'age-gap',
+  '娱乐圈': 'entertainment-circle',
+  '团宠': 'group-pet',
+  '治愈': 'healing-redemption',
+  '救赎': 'healing-redemption',
+  '快穿': 'quick-transmigration',
+  '末日': 'survival-apocalypse',
+  '系统': 'system',
+}
+
+function parseGenre(genreText: string): string {
+  const normalized = genreText.toLowerCase().trim()
+
+  // Direct match
+  if (GENRE_MAPPING[normalized]) {
+    return GENRE_MAPPING[normalized]
+  }
+
+  // Try to find partial match
+  for (const [key, value] of Object.entries(GENRE_MAPPING)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return value
+    }
+  }
+
+  // Check if it's already a valid slug
+  const validSlugs = SHORT_NOVEL_GENRES.map(g => g.id)
+  if (validSlugs.includes(normalized)) {
+    return normalized
+  }
+
+  // Default
+  return 'sweet-romance'
+}
+
+// Parse full_response.txt to extract fields
+function parseFullResponse(content: string): { title: string; genre: string; age: string; story: string } {
+  const result = { title: '', genre: '', age: '', story: '' }
+
+  // Try to find title
+  const titleMatch = content.match(/(?:title|标题)[：:]\s*(.+)/i)
+  if (titleMatch) {
+    result.title = titleMatch[1].trim()
+  }
+
+  // Try to find genre
+  const genreMatch = content.match(/(?:genre|类型|分类)[：:]\s*(.+)/i)
+  if (genreMatch) {
+    result.genre = genreMatch[1].trim()
+  }
+
+  // Try to find age
+  const ageMatch = content.match(/(?:age|年龄|适龄)[：:]\s*(.+)/i)
+  if (ageMatch) {
+    result.age = ageMatch[1].trim()
+  }
+
+  // Story is usually the main content after headers
+  // Try to find content after a separator or just use most of the text
+  const storyMatch = content.match(/(?:story|内容|正文)[：:]\s*([\s\S]+)/i)
+  if (storyMatch) {
+    result.story = storyMatch[1].trim()
+  } else {
+    // Use everything after the first 500 chars as potential story
+    result.story = content.length > 500 ? content.substring(500).trim() : content
+  }
+
+  return result
 }
 
 export default function BatchUploadShortsPage() {
   const [novels, setNovels] = useState<ShortNovelData[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanProgress, setScanProgress] = useState('')
+  const folderInputRef = useRef<HTMLInputElement>(null)
 
-  // Add new empty short novel
-  const addNovel = () => {
-    const newNovel: ShortNovelData = {
-      id: `novel-${Date.now()}`,
-      title: '',
-      shortNovelGenre: 'sweet-romance',
-      blurb: '',
-      content: '',
-      contentRating: 'ALL_AGES',
-      status: 'pending',
+  // Parse folder structure
+  const handleFolderImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsScanning(true)
+    setScanProgress('Scanning folders...')
+
+    // Group files by folder
+    const folderMap = new Map<string, Map<string, File>>()
+
+    for (const file of Array.from(files)) {
+      // Get folder path (remove filename)
+      const pathParts = file.webkitRelativePath.split('/')
+      if (pathParts.length < 2) continue
+
+      // Get immediate parent folder name
+      const folderPath = pathParts.slice(0, -1).join('/')
+      const fileName = pathParts[pathParts.length - 1].toLowerCase()
+
+      if (!folderMap.has(folderPath)) {
+        folderMap.set(folderPath, new Map())
+      }
+      folderMap.get(folderPath)!.set(fileName, file)
     }
-    setNovels([...novels, newNovel])
+
+    setScanProgress(`Found ${folderMap.size} folders, processing...`)
+
+    const newNovels: ShortNovelData[] = []
+    let processed = 0
+
+    for (const [folderPath, filesMap] of folderMap) {
+      processed++
+      if (processed % 50 === 0) {
+        setScanProgress(`Processing ${processed}/${folderMap.size} folders...`)
+        // Allow UI to update
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+
+      try {
+        // Read individual files
+        let title = ''
+        let genre = ''
+        let age = ''
+        let story = ''
+
+        // Try to read title.txt
+        const titleFile = filesMap.get('title.txt')
+        if (titleFile) {
+          title = (await titleFile.text()).trim()
+        }
+
+        // Try to read genre.txt
+        const genreFile = filesMap.get('genre.txt')
+        if (genreFile) {
+          genre = (await genreFile.text()).trim()
+        }
+
+        // Try to read age.txt
+        const ageFile = filesMap.get('age.txt')
+        if (ageFile) {
+          age = (await ageFile.text()).trim()
+        }
+
+        // Try to read story.txt
+        const storyFile = filesMap.get('story.txt')
+        if (storyFile) {
+          story = (await storyFile.text()).trim()
+        }
+
+        // If any field is empty, try full_response.txt
+        if (!title || !genre || !story) {
+          const fullResponseFile = filesMap.get('full_response.txt')
+          if (fullResponseFile) {
+            const fullContent = await fullResponseFile.text()
+            const parsed = parseFullResponse(fullContent)
+
+            if (!title) title = parsed.title
+            if (!genre) genre = parsed.genre
+            if (!age) age = parsed.age
+            if (!story) story = parsed.story
+          }
+        }
+
+        // If still no story, try to find any large .txt file
+        if (!story) {
+          for (const [fileName, file] of filesMap) {
+            if (fileName.endsWith('.txt') && !['title.txt', 'genre.txt', 'age.txt', 'full_response.txt'].includes(fileName)) {
+              const content = await file.text()
+              if (content.length > story.length) {
+                story = content.trim()
+                // If no title, use filename
+                if (!title) {
+                  title = fileName.replace('.txt', '').trim()
+                }
+              }
+            }
+          }
+        }
+
+        // Use folder name as title if still empty
+        if (!title) {
+          const folderName = folderPath.split('/').pop() || ''
+          title = folderName
+        }
+
+        // Skip if no content
+        if (!story || story.length < 100) {
+          console.log(`Skipping ${folderPath}: no valid story content`)
+          continue
+        }
+
+        // Create blurb from first 300 chars of story
+        const blurb = story.substring(0, 300).trim() + (story.length > 300 ? '...' : '')
+
+        newNovels.push({
+          id: `novel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          folderName: folderPath.split('/').pop() || folderPath,
+          title,
+          shortNovelGenre: parseGenre(genre),
+          age,
+          blurb,
+          content: story,
+          status: 'pending',
+        })
+      } catch (error) {
+        console.error(`Failed to parse folder ${folderPath}:`, error)
+      }
+    }
+
+    setScanProgress(`Done! Found ${newNovels.length} valid novels`)
+    setNovels(prev => [...prev, ...newNovels])
+    setIsScanning(false)
+
+    if (folderInputRef.current) {
+      folderInputRef.current.value = ''
+    }
   }
 
   // Update novel field
@@ -56,80 +283,14 @@ export default function BatchUploadShortsPage() {
     setNovels(novels.filter(n => n.id !== id))
   }
 
-  // Import from text files
-  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files) return
-
-    const newNovels: ShortNovelData[] = []
-
-    for (const file of Array.from(files)) {
-      try {
-        const content = await file.text()
-        // Parse the file - expected format:
-        // Title: ...
-        // Genre: ...
-        // Blurb: ...
-        // ---
-        // (content)
-
-        const lines = content.split('\n')
-        let title = ''
-        let genre = 'sweet-romance'
-        let blurb = ''
-        let storyContent = ''
-        let inContent = false
-
-        for (const line of lines) {
-          if (line.startsWith('Title:')) {
-            title = line.replace('Title:', '').trim()
-          } else if (line.startsWith('Genre:')) {
-            const genreValue = line.replace('Genre:', '').trim().toLowerCase()
-            // Find matching genre ID
-            const matchedGenre = SHORT_NOVEL_GENRES.find(
-              g => g.name.toLowerCase() === genreValue || g.id === genreValue
-            )
-            if (matchedGenre) genre = matchedGenre.id
-          } else if (line.startsWith('Blurb:')) {
-            blurb = line.replace('Blurb:', '').trim()
-          } else if (line.trim() === '---') {
-            inContent = true
-          } else if (inContent) {
-            storyContent += line + '\n'
-          }
-        }
-
-        // Use filename as title if not found
-        if (!title) {
-          title = file.name.replace(/\.txt$/i, '').trim()
-        }
-
-        // Use first 200 chars as blurb if not found
-        if (!blurb && storyContent) {
-          blurb = storyContent.substring(0, 200).trim() + '...'
-        }
-
-        newNovels.push({
-          id: `novel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title,
-          shortNovelGenre: genre,
-          blurb,
-          content: storyContent.trim(),
-          contentRating: 'ALL_AGES',
-          status: 'pending',
-        })
-      } catch (error) {
-        console.error(`Failed to parse file ${file.name}:`, error)
-      }
-    }
-
-    setNovels([...novels, ...newNovels])
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+  // Clear all pending
+  const clearPending = () => {
+    if (confirm('Clear all pending novels?')) {
+      setNovels(novels.filter(n => n.status !== 'pending'))
     }
   }
 
-  // Upload all novels
+  // Upload all novels with concurrency control
   const handleUploadAll = async () => {
     const pendingNovels = novels.filter(n => n.status === 'pending')
     if (pendingNovels.length === 0) {
@@ -137,71 +298,67 @@ export default function BatchUploadShortsPage() {
       return
     }
 
-    // Validate all novels
-    for (const novel of pendingNovels) {
-      if (!novel.title.trim()) {
-        alert(`Novel "${novel.id}" is missing a title`)
-        return
-      }
-      if (!novel.content.trim()) {
-        alert(`Novel "${novel.title}" is missing content`)
-        return
-      }
-      const validation = validateShortNovelLength(novel.content.length)
-      if (!validation.valid) {
-        alert(`Novel "${novel.title}": ${validation.message}`)
-        return
-      }
-    }
-
     setIsUploading(true)
     setUploadProgress(0)
 
     let successCount = 0
     let errorCount = 0
+    const concurrency = 5 // Upload 5 at a time
 
-    for (let i = 0; i < pendingNovels.length; i++) {
-      const novel = pendingNovels[i]
+    for (let i = 0; i < pendingNovels.length; i += concurrency) {
+      const batch = pendingNovels.slice(i, i + concurrency)
 
-      // Update status to uploading
+      // Mark batch as uploading
       setNovels(prev => prev.map(n =>
-        n.id === novel.id ? { ...n, status: 'uploading' as const } : n
+        batch.find(b => b.id === n.id) ? { ...n, status: 'uploading' as const } : n
       ))
 
-      try {
-        const response = await fetch('/api/admin/batch-upload-shorts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: novel.title,
-            shortNovelGenre: novel.shortNovelGenre,
-            blurb: novel.blurb,
-            content: novel.content,
-            contentRating: novel.contentRating,
-          }),
+      // Upload batch concurrently
+      const results = await Promise.allSettled(
+        batch.map(async (novel) => {
+          const response = await fetch('/api/admin/batch-upload-shorts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: novel.title,
+              shortNovelGenre: novel.shortNovelGenre,
+              blurb: novel.blurb,
+              content: novel.content,
+            }),
+          })
+          const data = await response.json()
+          return { novel, response, data }
         })
+      )
 
-        const data = await response.json()
-
-        if (response.ok) {
-          setNovels(prev => prev.map(n =>
-            n.id === novel.id ? { ...n, status: 'success' as const, novelId: data.novel.id } : n
-          ))
-          successCount++
+      // Process results
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const { novel, response, data } = result.value
+          if (response.ok) {
+            setNovels(prev => prev.map(n =>
+              n.id === novel.id ? { ...n, status: 'success' as const, novelId: data.novel?.id } : n
+            ))
+            successCount++
+          } else {
+            setNovels(prev => prev.map(n =>
+              n.id === novel.id ? { ...n, status: 'error' as const, error: data.error || 'Upload failed' } : n
+            ))
+            errorCount++
+          }
         } else {
-          setNovels(prev => prev.map(n =>
-            n.id === novel.id ? { ...n, status: 'error' as const, error: data.error } : n
-          ))
-          errorCount++
+          // Find which novel failed
+          const failedNovel = batch[results.indexOf(result)]
+          if (failedNovel) {
+            setNovels(prev => prev.map(n =>
+              n.id === failedNovel.id ? { ...n, status: 'error' as const, error: 'Network error' } : n
+            ))
+            errorCount++
+          }
         }
-      } catch (error: any) {
-        setNovels(prev => prev.map(n =>
-          n.id === novel.id ? { ...n, status: 'error' as const, error: error.message } : n
-        ))
-        errorCount++
       }
 
-      setUploadProgress(Math.round(((i + 1) / pendingNovels.length) * 100))
+      setUploadProgress(Math.round(((i + batch.length) / pendingNovels.length) * 100))
     }
 
     setIsUploading(false)
@@ -218,7 +375,7 @@ export default function BatchUploadShortsPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Batch Upload Short Novels</h1>
-          <p className="text-gray-600 mt-1">Upload multiple short novels at once</p>
+          <p className="text-gray-600 mt-1">Upload up to 1000+ short novels from folder structure</p>
         </div>
         <Link
           href="/admin/batch-upload"
@@ -249,41 +406,61 @@ export default function BatchUploadShortsPage() {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-4 mb-8">
-        <button
-          onClick={addNovel}
-          className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium"
-        >
-          + Add Novel Manually
-        </button>
-
-        <label className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium cursor-pointer">
-          Import from Files (.txt)
+      <div className="flex flex-wrap gap-4 mb-8">
+        <label className="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium cursor-pointer">
+          📁 Select Folder
           <input
-            ref={fileInputRef}
+            ref={folderInputRef}
             type="file"
-            accept=".txt"
+            /* @ts-expect-error webkitdirectory is non-standard */
+            webkitdirectory=""
+            /* @ts-expect-error directory is non-standard */
+            directory=""
             multiple
-            onChange={handleFileImport}
+            onChange={handleFolderImport}
             className="hidden"
+            disabled={isScanning}
           />
         </label>
 
         {pendingCount > 0 && (
-          <button
-            onClick={handleUploadAll}
-            disabled={isUploading}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 ml-auto"
-          >
-            {isUploading ? `Uploading... ${uploadProgress}%` : `Upload All (${pendingCount})`}
-          </button>
+          <>
+            <button
+              onClick={clearPending}
+              disabled={isUploading}
+              className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium disabled:opacity-50"
+            >
+              Clear Pending
+            </button>
+            <button
+              onClick={handleUploadAll}
+              disabled={isUploading}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 ml-auto"
+            >
+              {isUploading ? `Uploading... ${uploadProgress}%` : `Upload All (${pendingCount})`}
+            </button>
+          </>
         )}
       </div>
 
-      {/* Progress Bar */}
+      {/* Scanning Progress */}
+      {isScanning && (
+        <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+            <span className="text-blue-700">{scanProgress}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Progress Bar */}
       {isUploading && (
         <div className="mb-8">
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="flex justify-between text-sm text-gray-600 mb-1">
+            <span>Uploading...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-green-500 transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
@@ -292,19 +469,27 @@ export default function BatchUploadShortsPage() {
         </div>
       )}
 
-      {/* Import Format Help */}
+      {/* Folder Structure Help */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-        <h3 className="font-semibold text-blue-900 mb-2">File Format for Import</h3>
-        <pre className="text-sm text-blue-800 font-mono">
-{`Title: Your Short Novel Title
-Genre: sweet-romance
-Blurb: A brief description of your story...
----
-Your story content goes here...
-The entire story in one file.`}
+        <h3 className="font-semibold text-blue-900 mb-2">📂 Expected Folder Structure</h3>
+        <pre className="text-sm text-blue-800 font-mono bg-blue-100 p-3 rounded">
+{`parent-folder/
+├── novel-1/
+│   ├── title.txt      (标题)
+│   ├── genre.txt      (类型: sweet-romance, rebirth, etc.)
+│   ├── age.txt        (年龄分级)
+│   ├── story.txt      (故事内容)
+│   └── full_response.txt (备用，如果上面为空则从这里提取)
+├── novel-2/
+│   └── ...
+└── novel-1000/
+    └── ...`}
         </pre>
         <p className="text-sm text-blue-600 mt-2">
-          Available genres: {SHORT_NOVEL_GENRES.map(g => g.id).join(', ')}
+          <strong>支持的类型：</strong> {SHORT_NOVEL_GENRES.map(g => g.id).join(', ')}
+        </p>
+        <p className="text-sm text-blue-600 mt-1">
+          <strong>中文类型：</strong> 甜宠, 霸总, 打脸, 重生, 复仇, 追悔, 替身, 真假千金, 娱乐圈, 团宠, 治愈, 快穿, 末日, 系统
         </p>
       </div>
 
@@ -313,18 +498,28 @@ The entire story in one file.`}
         <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
           <div className="text-6xl mb-4">📚</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">No short novels added yet</h2>
-          <p className="text-gray-500">Add novels manually or import from text files</p>
+          <p className="text-gray-500">Select a folder containing novel subfolders</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {novels.map((novel, index) => {
-            const contentValidation = validateShortNovelLength(novel.content.length)
+        <div className="space-y-4">
+          {/* Quick Stats Table for large batches */}
+          {novels.length > 20 && (
+            <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+              <h3 className="font-semibold text-gray-900 mb-2">Quick Overview (showing first 100)</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                {novels.length} total novels loaded. Displaying first 100 for performance.
+              </p>
+            </div>
+          )}
+
+          {/* Novel Cards - limit display for performance */}
+          {novels.slice(0, 100).map((novel, index) => {
             const readingTime = estimateReadingTime(novel.content.length)
 
             return (
               <div
                 key={novel.id}
-                className={`bg-white rounded-lg border-2 p-6 ${
+                className={`bg-white rounded-lg border p-4 ${
                   novel.status === 'success'
                     ? 'border-green-300 bg-green-50'
                     : novel.status === 'error'
@@ -334,146 +529,80 @@ The entire story in one file.`}
                     : 'border-gray-200'
                 }`}
               >
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      novel.status === 'success'
-                        ? 'bg-green-200 text-green-800'
-                        : novel.status === 'error'
-                        ? 'bg-red-200 text-red-800'
-                        : novel.status === 'uploading'
-                        ? 'bg-amber-200 text-amber-800'
-                        : 'bg-gray-200 text-gray-800'
-                    }`}>
-                      {novel.status === 'success' && `Uploaded (ID: ${novel.novelId})`}
-                      {novel.status === 'error' && `Error: ${novel.error}`}
-                      {novel.status === 'uploading' && 'Uploading...'}
-                      {novel.status === 'pending' && 'Pending'}
-                    </span>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-bold text-gray-400">#{index + 1}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        novel.status === 'success'
+                          ? 'bg-green-200 text-green-800'
+                          : novel.status === 'error'
+                          ? 'bg-red-200 text-red-800'
+                          : novel.status === 'uploading'
+                          ? 'bg-amber-200 text-amber-800'
+                          : 'bg-gray-200 text-gray-800'
+                      }`}>
+                        {novel.status === 'success' && `✓ ID: ${novel.novelId}`}
+                        {novel.status === 'error' && `✗ ${novel.error}`}
+                        {novel.status === 'uploading' && '⏳ Uploading...'}
+                        {novel.status === 'pending' && 'Pending'}
+                      </span>
+                    </div>
+
+                    {novel.status === 'pending' ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={novel.title}
+                          onChange={(e) => updateNovel(novel.id, 'title', e.target.value)}
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm font-medium"
+                          placeholder="Title"
+                        />
+                        <div className="flex gap-2">
+                          <select
+                            value={novel.shortNovelGenre}
+                            onChange={(e) => updateNovel(novel.id, 'shortNovelGenre', e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded text-sm"
+                          >
+                            {SHORT_NOVEL_GENRES.map((genre) => (
+                              <option key={genre.id} value={genre.id}>
+                                {genre.name}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-sm text-gray-500 py-1">
+                            {novel.content.length.toLocaleString()} chars (~{formatReadingTime(readingTime)})
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-medium text-gray-900 truncate">{novel.title}</p>
+                        <p className="text-sm text-gray-500">
+                          {getShortNovelGenreName(novel.shortNovelGenre)} · {novel.content.length.toLocaleString()} chars
+                        </p>
+                      </div>
+                    )}
                   </div>
+
                   {novel.status === 'pending' && (
                     <button
                       onClick={() => removeNovel(novel.id)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 text-sm"
                     >
                       Remove
                     </button>
                   )}
                 </div>
-
-                {novel.status === 'pending' ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column */}
-                    <div className="space-y-4">
-                      {/* Title */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Title *
-                        </label>
-                        <input
-                          type="text"
-                          value={novel.title}
-                          onChange={(e) => updateNovel(novel.id, 'title', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                          placeholder="Short novel title"
-                          maxLength={SHORT_NOVEL_LIMITS.TITLE_MAX}
-                        />
-                        <div className="text-xs text-gray-400 mt-1">
-                          {novel.title.length} / {SHORT_NOVEL_LIMITS.TITLE_MAX}
-                        </div>
-                      </div>
-
-                      {/* Genre */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Genre *
-                        </label>
-                        <select
-                          value={novel.shortNovelGenre}
-                          onChange={(e) => updateNovel(novel.id, 'shortNovelGenre', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        >
-                          {SHORT_NOVEL_GENRES.map((genre) => (
-                            <option key={genre.id} value={genre.id}>
-                              {genre.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Content Rating */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Content Rating
-                        </label>
-                        <select
-                          value={novel.contentRating}
-                          onChange={(e) => updateNovel(novel.id, 'contentRating', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                        >
-                          {CONTENT_RATING_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Blurb */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Blurb *
-                        </label>
-                        <textarea
-                          value={novel.blurb}
-                          onChange={(e) => updateNovel(novel.id, 'blurb', e.target.value)}
-                          rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
-                          placeholder="Short description"
-                          maxLength={1000}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Right Column - Content */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Content * ({SHORT_NOVEL_LIMITS.MIN_CHARACTERS.toLocaleString()} - {SHORT_NOVEL_LIMITS.MAX_CHARACTERS.toLocaleString()} chars)
-                      </label>
-                      <textarea
-                        value={novel.content}
-                        onChange={(e) => updateNovel(novel.id, 'content', e.target.value)}
-                        rows={12}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 resize-none font-serif ${
-                          contentValidation.valid
-                            ? 'border-gray-300 focus:ring-amber-500'
-                            : 'border-red-300 focus:ring-red-500'
-                        }`}
-                        placeholder="Paste your short novel content here..."
-                      />
-                      <div className="flex justify-between mt-1">
-                        <span className={`text-sm ${contentValidation.valid ? 'text-green-600' : 'text-red-600'}`}>
-                          {novel.content.length.toLocaleString()} characters
-                          {novel.content.length > 0 && ` (~${formatReadingTime(readingTime)})`}
-                        </span>
-                        {!contentValidation.valid && novel.content.length > 0 && (
-                          <span className="text-sm text-red-600">{contentValidation.message}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-gray-600">
-                    <p><strong>Title:</strong> {novel.title}</p>
-                    <p><strong>Genre:</strong> {getShortNovelGenreName(novel.shortNovelGenre)}</p>
-                    <p><strong>Characters:</strong> {novel.content.length.toLocaleString()}</p>
-                  </div>
-                )}
               </div>
             )
           })}
+
+          {novels.length > 100 && (
+            <div className="text-center py-4 text-gray-500">
+              ... and {novels.length - 100} more novels
+            </div>
+          )}
         </div>
       )}
     </div>
