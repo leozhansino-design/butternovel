@@ -80,7 +80,7 @@ function parseGenre(genreText: string): string {
   }
 
   // Check if it's already a valid slug
-  const validSlugs = SHORT_NOVEL_GENRES.map(g => g.id)
+  const validSlugs = SHORT_NOVEL_GENRES.map(g => g.id) as string[]
   if (validSlugs.includes(normalized)) {
     return normalized
   }
