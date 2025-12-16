@@ -31,6 +31,11 @@ const menuItems = [
     icon: Upload,
   },
   {
+    title: 'Batch Upload Shorts',
+    href: '/admin/batch-upload-shorts',
+    icon: Upload,
+  },
+  {
     title: 'Manage Novels',
     href: '/admin/novels',
     icon: BookOpen,
