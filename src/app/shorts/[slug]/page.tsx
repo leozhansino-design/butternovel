@@ -179,11 +179,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ShortNovelPage({ params }: Props) {
   const { slug } = await params
-  const novel = await getShortNovel(slug)
+  const novelData = await getShortNovel(slug)
 
-  if (!novel || novel.chapters.length === 0) {
+  if (!novelData || novelData.chapters.length === 0) {
     notFound()
   }
+
+  // TypeScript now knows novelData is not null after the check
+  const novel = novelData as ShortNovelData
 
   // 获取相关推荐
   const relatedNovels = await getRelatedShorts(novel.id, novel.shortNovelGenre)

@@ -18,7 +18,26 @@ interface Props {
   }>
 }
 
-async function getShortNovels(genre?: string, page: number = 1, sort: string = 'popular') {
+interface ShortNovelListItem {
+  id: number
+  title: string
+  slug: string
+  blurb: string
+  readingPreview: string | null
+  shortNovelGenre: string | null
+  wordCount: number
+  viewCount: number
+  likeCount: number
+  averageRating: number | null
+  createdAt: Date
+}
+
+async function getShortNovels(genre?: string, page: number = 1, sort: string = 'popular'): Promise<{
+  novels: ShortNovelListItem[]
+  total: number
+  totalPages: number
+  currentPage: number
+}> {
   const pageSize = 20
   const skip = (page - 1) * pageSize
 
@@ -60,11 +79,11 @@ async function getShortNovels(genre?: string, page: number = 1, sort: string = '
         take: pageSize,
       }),
       { operationName: 'Get short novels list' }
-    ),
+    ) as Promise<ShortNovelListItem[]>,
     withRetry(
       () => prisma.novel.count({ where }),
       { operationName: 'Count short novels' }
-    ),
+    ) as Promise<number>,
   ])
 
   return {
