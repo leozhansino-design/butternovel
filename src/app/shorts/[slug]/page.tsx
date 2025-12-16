@@ -10,8 +10,43 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
+// Short novel type
+interface ShortNovelData {
+  id: number
+  title: string
+  slug: string
+  blurb: string
+  shortNovelGenre: string | null
+  wordCount: number
+  viewCount: number
+  likeCount: number
+  averageRating: number | null
+  authorName: string
+  status: string
+  chapters: Array<{
+    id: number
+    content: string
+  }>
+  ratings: Array<{
+    id: string
+    score: number
+    review: string | null
+    createdAt: Date
+    user: {
+      id: string
+      name: string | null
+      avatar: string | null
+    }
+  }>
+  _count: {
+    ratings: number
+    comments: number
+    likes: number
+  }
+}
+
 // 获取短篇小说数据
-async function getShortNovel(slug: string) {
+async function getShortNovel(slug: string): Promise<ShortNovelData | null> {
   const novel = await withRetry(
     () => prisma.novel.findFirst({
       where: {
@@ -49,13 +84,26 @@ async function getShortNovel(slug: string) {
       }
     }),
     { operationName: 'Get short novel by slug' }
-  )
+  ) as ShortNovelData | null
 
   return novel
 }
 
+// Related short novel type
+interface RelatedShortNovel {
+  id: number
+  title: string
+  slug: string
+  blurb: string
+  shortNovelGenre: string | null
+  wordCount: number
+  viewCount: number
+  likeCount: number
+  averageRating: number | null
+}
+
 // 获取相关推荐短篇小说
-async function getRelatedShorts(currentNovelId: number, genre: string | null) {
+async function getRelatedShorts(currentNovelId: number, genre: string | null): Promise<RelatedShortNovel[]> {
   const related = await withRetry(
     () => prisma.novel.findMany({
       where: {
@@ -80,7 +128,7 @@ async function getRelatedShorts(currentNovelId: number, genre: string | null) {
       take: 6,
     }),
     { operationName: 'Get related short novels' }
-  )
+  ) as RelatedShortNovel[]
 
   return related
 }
