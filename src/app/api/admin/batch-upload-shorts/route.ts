@@ -149,7 +149,7 @@ export const POST = withAdminAuth(async (session, request: Request) => {
     // 4. Get default category for short novels
     const defaultCategory = await withRetry(() =>
       prisma.category.findFirst({ orderBy: { order: 'asc' } })
-    )
+    ) as { id: number; name: string; slug: string } | null
 
     if (!defaultCategory) {
       return NextResponse.json(
