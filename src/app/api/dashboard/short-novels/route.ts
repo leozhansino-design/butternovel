@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
         return newNovel
       }),
       { operationName: 'Create short novel' }
-    )
+    ) as { id: number; title: string; slug: string }
 
     return NextResponse.json({
       success: true,
