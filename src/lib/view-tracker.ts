@@ -16,32 +16,27 @@ function generateGuestId(ipAddress: string, userAgent: string): string {
   return crypto.createHash('md5').update(data).digest('hex')
 }
 
-// ✅ 2. 检查是否今天已浏览（每天计数一次）
-async function hasViewedRecently(
+// ✅ 2. 检查是否已达到最大浏览次数（每IP/用户最多5次）
+const MAX_VIEWS_PER_USER = 5
+
+async function hasReachedMaxViews(
   novelId: number,
-  userId: string | null | undefined,  // ✅ 修复：允许 null
+  userId: string | null | undefined,
   guestId: string
 ): Promise<boolean> {
-  // 获取今天的开始时间（00:00:00）
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-
   try {
-    // ✅ 优化: 使用 findFirst 代替 count，更快
-    const recentView = await prisma.novelView.findFirst({
+    // Count total views for this user/guest on this novel
+    const viewCount = await prisma.novelView.count({
       where: {
         novelId,
-        ...(userId
-          ? { userId, viewedAt: { gte: todayStart } }
-          : { guestId, viewedAt: { gte: todayStart } }
-        )
-      },
-      select: { id: true }
+        ...(userId ? { userId } : { guestId })
+      }
     })
 
-    return !!recentView
+    // If already viewed 5 times, don't count more
+    return viewCount >= MAX_VIEWS_PER_USER
   } catch (error) {
-    console.error('❌ [ViewTracker] Error checking recent view:', error)
+    console.error('❌ [ViewTracker] Error checking view count:', error)
     // 出错时返回true，避免重复记录
     return true
   }
@@ -108,8 +103,8 @@ export async function trackView(params: TrackViewParams): Promise<{
   const guestId = generateGuestId(ipAddress, userAgent)
 
   try {
-    // ✅ 1. 检查是否最近浏览过
-    const hasViewed = await hasViewedRecently(novelId, userId, guestId)
+    // ✅ 1. 检查是否已达到最大浏览次数（每IP/用户最多5次）
+    const hasViewed = await hasReachedMaxViews(novelId, userId, guestId)
     
     if (hasViewed) {
       // 已浏览过，返回当前计数

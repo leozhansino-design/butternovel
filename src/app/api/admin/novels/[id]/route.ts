@@ -108,6 +108,11 @@ export const PUT = withAdminAuth(async (
       data.isDraft = !updates.isPublished
     }
 
+    // 7.5. 更新短篇小说分类
+    if (updates.shortNovelGenre !== undefined) {
+      data.shortNovelGenre = updates.shortNovelGenre
+    }
+
     // 8. 更新封面（如果有新图片）
     if (updates.newCoverImage) {
 

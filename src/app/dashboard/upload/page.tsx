@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import NovelUploadForm from '@/components/dashboard/NovelUploadForm'
 import ShortNovelUploadForm from '@/components/dashboard/ShortNovelUploadForm'
 import { ArrowLeft, BookOpen, Zap } from 'lucide-react'
@@ -9,7 +10,17 @@ import Link from 'next/link'
 type NovelType = 'regular' | 'short' | null
 
 export default function UploadPage() {
+  const searchParams = useSearchParams()
+  const typeParam = searchParams.get('type')
+
   const [novelType, setNovelType] = useState<NovelType>(null)
+
+  // Set initial type from URL parameter
+  useEffect(() => {
+    if (typeParam === 'short' || typeParam === 'regular') {
+      setNovelType(typeParam)
+    }
+  }, [typeParam])
 
   // Show type selection if not selected
   if (!novelType) {

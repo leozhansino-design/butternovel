@@ -114,7 +114,7 @@ export default function ShortNovelComments({
           disabled={!interactive}
         >
           <svg
-            className={`${size} ${filled ? 'text-amber-500' : halfFilled ? 'text-amber-300' : 'text-gray-300'} ${
+            className={`${size} ${filled ? 'text-yellow-500' : halfFilled ? 'text-yellow-300' : 'text-gray-300'} ${
               interactive ? 'cursor-pointer hover:scale-110 transition-transform' : ''
             }`}
             fill="currentColor"
@@ -158,7 +158,7 @@ export default function ShortNovelComments({
               value={newReview}
               onChange={(e) => setNewReview(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               placeholder="Share your thoughts about this story..."
               maxLength={1000}
             />
@@ -167,17 +167,17 @@ export default function ShortNovelComments({
           <button
             type="submit"
             disabled={isSubmitting || newRating === 0}
-            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Rating'}
           </button>
         </form>
       ) : (
-        <div className="bg-amber-50 rounded-xl p-5 border border-amber-200">
+        <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-medium text-amber-700">Your Rating:</span>
+            <span className="text-sm font-medium text-blue-700">Your Rating:</span>
             {renderStars(userRating.score, false, 'w-4 h-4')}
-            <span className="text-sm text-amber-600">({userRating.score / 2}/5)</span>
+            <span className="text-sm text-blue-600">({userRating.score / 2}/5)</span>
           </div>
           {userRating.review && (
             <p className="text-sm text-gray-600">{userRating.review}</p>
@@ -206,7 +206,7 @@ export default function ShortNovelComments({
                       className="rounded-full"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white font-semibold">
                       {(rating.user.name || 'U')[0].toUpperCase()}
                     </div>
                   )}

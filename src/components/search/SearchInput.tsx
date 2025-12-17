@@ -10,6 +10,7 @@ interface Suggestion {
   slug: string
   coverImage: string
   category: string
+  isShortNovel: boolean
 }
 
 interface SearchInputProps {
@@ -106,9 +107,10 @@ export default function SearchInput({
     }
   }
 
-  // 处理建议选择
+  // Handle suggestion selection - navigate to correct URL based on novel type
   const handleSuggestionClick = (suggestion: Suggestion) => {
-    router.push(`/novels/${suggestion.slug}`)
+    const path = suggestion.isShortNovel ? `/shorts/${suggestion.slug}` : `/novels/${suggestion.slug}`
+    router.push(path)
     setShowSuggestions(false)
   }
 

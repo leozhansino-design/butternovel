@@ -35,6 +35,9 @@ export default async function EditNovelPage(props: Props) {  // ⭐ 改这里
         category: true,
         chapters: {
           orderBy: { chapterNumber: 'asc' }
+        },
+        tags: {
+          select: { name: true }
         }
       }
     }),

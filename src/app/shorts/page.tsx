@@ -98,8 +98,8 @@ async function getShortNovels(genre?: string, page: number = 1, sort: string = '
 
   const orderBy: any = sort === 'latest'
     ? { createdAt: 'desc' }
-    : sort === 'rating'
-    ? { averageRating: 'desc' }
+    : sort === 'recommend'
+    ? { likeCount: 'desc' } // Recommend uses likeCount (will be replaced with recommendCount)
     : { viewCount: 'desc' } // popular (default)
 
   const [novels, total] = await Promise.all([
@@ -166,60 +166,58 @@ export default async function ShortsPage({ searchParams }: Props) {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            {/* Genre Filter */}
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Genre</label>
-              <div className="flex flex-wrap gap-2">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 mb-8">
+          {/* Genre Filter */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-3">Genre</label>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/shorts?sort=${sort}`}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  !genre
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                All
+              </Link>
+              {SHORT_NOVEL_GENRES.map((g) => (
                 <Link
-                  href={`/shorts?sort=${sort}`}
+                  key={g.id}
+                  href={`/shorts?genre=${g.id}&sort=${sort}`}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    !genre
+                    genre === g.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  All
+                  {g.name}
                 </Link>
-                {SHORT_NOVEL_GENRES.map((g) => (
-                  <Link
-                    key={g.id}
-                    href={`/shorts?genre=${g.id}&sort=${sort}`}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      genre === g.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {g.name}
-                  </Link>
-                ))}
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* Sort Filter */}
-            <div className="md:w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
-              <div className="flex gap-2">
-                {[
-                  { value: 'popular', label: 'Popular' },
-                  { value: 'latest', label: 'Latest' },
-                  { value: 'rating', label: 'Top Rated' },
-                ].map((option) => (
-                  <Link
-                    key={option.value}
-                    href={`/shorts?${genre ? `genre=${genre}&` : ''}sort=${option.value}`}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      sort === option.value
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                ))}
-              </div>
+          {/* Sort Filter - Separate Row */}
+          <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+            <label className="text-sm font-medium text-gray-700">Sort by</label>
+            <div className="flex gap-2">
+              {[
+                { value: 'popular', label: 'Popular' },
+                { value: 'latest', label: 'Latest' },
+                { value: 'recommend', label: 'Recommended' },
+              ].map((option) => (
+                <Link
+                  key={option.value}
+                  href={`/shorts?${genre ? `genre=${genre}&` : ''}sort=${option.value}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    sort === option.value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {option.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

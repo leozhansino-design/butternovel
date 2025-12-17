@@ -5,7 +5,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Footer from '@/components/shared/Footer'
 import SearchInput from '@/components/search/SearchInput'
-import SearchFilters from '@/components/search/SearchFilters'
+import SearchFilters, { type NovelType } from '@/components/search/SearchFilters'
 import EnhancedBookCard from '@/components/search/EnhancedBookCard'
 import { BookCardSkeletonList } from '@/components/search/BookCardSkeleton'
 
@@ -34,9 +34,10 @@ interface Novel {
   totalRatings: number
   category: Category
   tags: Tag[]
-  tagsCount: number // 添加tags总数
+  tagsCount: number
   chaptersCount: number
-  likesCount: number
+  likesCount: number // For shorts, this represents recommendCount
+  isShortNovel?: boolean
 }
 
 interface SearchResponse {
@@ -70,6 +71,7 @@ function SearchContent() {
   const statusParam = searchParams.get('status') || ''
   const sortParam = searchParams.get('sort') || 'hot'
   const pageParam = parseInt(searchParams.get('page') || '1')
+  const typeParam = (searchParams.get('type') || 'novels') as NovelType
 
   // 状态
   const [searchQuery, setSearchQuery] = useState(queryParam)
@@ -82,6 +84,7 @@ function SearchContent() {
   )
   const [selectedSort, setSelectedSort] = useState(sortParam)
   const [currentPage, setCurrentPage] = useState(pageParam)
+  const [selectedType, setSelectedType] = useState<NovelType>(typeParam)
 
   const [novels, setNovels] = useState<Novel[]>([])
   const [loading, setLoading] = useState(false)
@@ -107,7 +110,8 @@ function SearchContent() {
     setSelectedStatuses(statusParam ? statusParam.split(',').filter(Boolean) : [])
     setSelectedSort(sortParam)
     setCurrentPage(pageParam)
-  }, [queryParam, categoryParam, tagsParam, statusParam, sortParam, pageParam])
+    setSelectedType(typeParam)
+  }, [queryParam, categoryParam, tagsParam, statusParam, sortParam, pageParam, typeParam])
 
   // 执行搜索
   useEffect(() => {
@@ -124,6 +128,7 @@ function SearchContent() {
         if (sortParam) params.set('sort', sortParam)
         params.set('page', pageParam.toString())
         params.set('limit', '20')
+        params.set('type', typeParam) // Add type filter
 
         const response = await fetch(`/api/search?${params.toString()}`)
         const data: SearchResponse = await response.json()
@@ -145,7 +150,7 @@ function SearchContent() {
     }
 
     fetchResults()
-  }, [queryParam, categoryParam, tagsParam, statusParam, sortParam, pageParam])
+  }, [queryParam, categoryParam, tagsParam, statusParam, sortParam, pageParam, typeParam])
 
   // 更新URL参数
   const updateSearchParams = (updates: Record<string, string>) => {
@@ -203,13 +208,20 @@ function SearchContent() {
     updateSearchParams({ sort, page: '1' })
   }
 
+  // 处理类型变更
+  const handleTypeChange = (type: NovelType) => {
+    setSelectedType(type)
+    setSelectedCategory('') // Clear category when switching types
+    updateSearchParams({ type, genre: '', page: '1' })
+  }
+
   // 清除所有筛选
   const handleClearAll = () => {
     setSelectedCategory('')
     setSelectedTags([])
     setSelectedStatuses([])
     setSearchQuery('')
-    router.push('/search')
+    router.push(`/search?type=${selectedType}`)
   }
 
   // 处理分页
@@ -243,10 +255,12 @@ function SearchContent() {
         selectedTags={selectedTags}
         selectedStatuses={selectedStatuses}
         selectedSort={selectedSort}
+        selectedType={selectedType}
         onCategoryChange={handleCategoryChange}
         onTagsChange={handleTagsChange}
         onStatusesChange={handleStatusesChange}
         onSortChange={handleSortChange}
+        onTypeChange={handleTypeChange}
         onClearAll={handleClearAll}
       />
 
@@ -299,6 +313,8 @@ function SearchContent() {
                   tags={novel.tags}
                   tagsCount={novel.tagsCount}
                   chaptersCount={novel.chaptersCount}
+                  likesCount={novel.likesCount}
+                  isShortNovel={novel.isShortNovel}
                 />
               ))}
             </div>

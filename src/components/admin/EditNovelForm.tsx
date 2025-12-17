@@ -10,6 +10,7 @@ import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-ratin
 import type { ContentRating, RightsType } from '@/lib/prisma-types'
 import { compressCoverImage, formatFileSize } from '@/lib/image-compress'
 import { safeParseJson } from '@/lib/fetch-utils'
+import { SHORT_NOVEL_GENRES } from '@/lib/short-novel'
 
 type Category = {
   id: number
@@ -41,6 +42,8 @@ type Novel = {
   category: Category
   chapters: Chapter[]
   tags?: { name: string }[]
+  isShortNovel?: boolean
+  shortNovelGenre?: string | null
 }
 
 type Props = {
@@ -61,6 +64,8 @@ export default function EditNovelForm({ novel, categories }: Props) {
   const [isPublished, setIsPublished] = useState(novel.isPublished)
   const [contentRating, setContentRating] = useState<ContentRating>(novel.contentRating)
   const [rightsType, setRightsType] = useState<RightsType>(novel.rightsType)
+  const [shortNovelGenre, setShortNovelGenre] = useState(novel.shortNovelGenre || '')
+  const isShortNovel = novel.isShortNovel || false
 
   // 封面状态
   const [coverPreview, setCoverPreview] = useState(novel.coverImage)
@@ -133,10 +138,11 @@ export default function EditNovelForm({ novel, categories }: Props) {
       contentRating !== novel.contentRating ||
       rightsType !== novel.rightsType ||
       newCoverImage !== null ||
-      tagsChanged
+      tagsChanged ||
+      (isShortNovel && shortNovelGenre !== (novel.shortNovelGenre || ''))
 
     setHasChanges(changed)
-  }, [title, blurb, categoryId, status, isPublished, contentRating, rightsType, newCoverImage, tags, novel])
+  }, [title, blurb, categoryId, status, isPublished, contentRating, rightsType, newCoverImage, tags, novel, isShortNovel, shortNovelGenre])
 
   // ⭐ 保存为草稿 (不发布)
   async function handleSaveDraft() {
@@ -169,6 +175,11 @@ export default function EditNovelForm({ novel, categories }: Props) {
       if (contentRating !== novel.contentRating) updates.contentRating = contentRating
       if (rightsType !== novel.rightsType) updates.rightsType = rightsType
       if (newCoverImage) updates.newCoverImage = newCoverImage
+
+      // Short novel genre update
+      if (isShortNovel && shortNovelGenre !== (novel.shortNovelGenre || '')) {
+        updates.shortNovelGenre = shortNovelGenre
+      }
 
       // ⭐ 根据按钮设置发布状态
       updates.isPublished = publish
@@ -420,17 +431,36 @@ export default function EditNovelForm({ novel, categories }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category <span className="text-red-500">*</span>
+                {isShortNovel ? 'Genre' : 'Category'} <span className="text-red-500">*</span>
               </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+              {isShortNovel ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {SHORT_NOVEL_GENRES.map((genre) => (
+                    <button
+                      key={genre.id}
+                      type="button"
+                      onClick={() => setShortNovelGenre(genre.id)}
+                      className={`px-3 py-2 text-sm rounded-lg border-2 transition-all ${
+                        shortNovelGenre === genre.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                          : 'border-gray-200 hover:border-blue-300 text-gray-700'
+                      }`}
+                    >
+                      {genre.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
@@ -504,48 +534,50 @@ export default function EditNovelForm({ novel, categories }: Props) {
         </div>
       </div>
 
-      {/* 封面 */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Cover Image</h2>
-        
-        <div className="flex gap-6">
-          <div className="flex-shrink-0">
-            {coverPreview && (
-              <div className="relative w-48 h-64 rounded-lg overflow-hidden border-2 border-gray-200">
-                <Image
-                  src={coverPreview}
-                  alt="Cover preview"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-          </div>
+      {/* 封面 - Hide for short novels */}
+      {!isShortNovel && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Cover Image</h2>
 
-          <div className="flex-1">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleCoverChange}
-              disabled={compressing}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
-            />
-            {compressing ? (
-              <div className="flex items-center gap-2 mt-2 text-blue-600">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <span className="text-sm">Compressing image...</span>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 mt-2">
-                Recommended: 300x400px. Images will be auto-compressed.
-              </p>
-            )}
+          <div className="flex gap-6">
+            <div className="flex-shrink-0">
+              {coverPreview && (
+                <div className="relative w-48 h-64 rounded-lg overflow-hidden border-2 border-gray-200">
+                  <Image
+                    src={coverPreview}
+                    alt="Cover preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCoverChange}
+                disabled={compressing}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+              />
+              {compressing ? (
+                <div className="flex items-center gap-2 mt-2 text-blue-600">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span className="text-sm">Compressing image...</span>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 mt-2">
+                  Recommended: 300x400px. Images will be auto-compressed.
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 章节列表 */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">

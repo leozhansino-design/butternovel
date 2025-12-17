@@ -11,6 +11,7 @@ import LibraryModal from '@/components/shared/LibraryModal';
 import SearchInput from '@/components/search/SearchInput';
 import NotificationBell from '@/components/notification/NotificationBell';
 import { CATEGORIES } from '@/lib/constants';
+import { SHORT_NOVEL_GENRES } from '@/lib/short-novel';
 
 export default function Header() {
   // ✅ Use useSession to get real-time session updates
@@ -129,21 +130,46 @@ export default function Header() {
                   </div>
                 </div>
 
-                {user ? (
+                {/* Shorts Dropdown */}
+                <div className="relative group">
                   <Link
-                    href="/dashboard"
-                    className="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all"
+                    href="/shorts"
+                    className="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all flex items-center gap-1"
                   >
-                    Dashboard
+                    Shorts
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </Link>
-                ) : (
-                  <Link
-                    href="/writer"
-                    className="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all"
-                  >
-                    Writer
-                  </Link>
-                )}
+
+                  {/* Dropdown Menu */}
+                  <div className="absolute left-0 mt-1 w-52 glass-effect-strong rounded-lg card-shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="py-1.5 max-h-80 overflow-y-auto">
+                      <Link
+                        href="/shorts"
+                        className="block px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors border-b border-gray-100"
+                      >
+                        All Shorts
+                      </Link>
+                      {SHORT_NOVEL_GENRES.map((genre) => (
+                        <Link
+                          key={genre.id}
+                          href={`/shorts/search?genre=${genre.slug}`}
+                          className="block px-3 py-1.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        >
+                          {genre.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  href="/writer"
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all"
+                >
+                  Writer
+                </Link>
               </nav>
             </div>
 
@@ -235,23 +261,34 @@ export default function Header() {
                   </Link>
                 ))}
 
-                {user ? (
+                <div className="px-3 py-2 text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">
+                  Short Novels
+                </div>
+                <Link
+                  href="/shorts"
+                  className="block px-3 py-1.5 pl-6 text-sm font-medium text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  All Shorts
+                </Link>
+                {SHORT_NOVEL_GENRES.slice(0, 8).map((genre) => (
                   <Link
-                    href="/dashboard"
-                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mt-2"
+                    key={genre.id}
+                    href={`/shorts/search?genre=${genre.slug}`}
+                    className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Writer Dashboard
+                    {genre.name}
                   </Link>
-                ) : (
-                  <Link
-                    href="/writer"
-                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mt-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Become a Writer
-                  </Link>
-                )}
+                ))}
+
+                <Link
+                  href="/writer"
+                  className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mt-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Writer
+                </Link>
 
                 <div className="pt-3 mt-3 border-t border-gray-200 space-y-1">
                   {user ? (
