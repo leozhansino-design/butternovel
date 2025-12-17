@@ -362,7 +362,7 @@ export default function ParagraphCommentPanel({
   if (loading) {
     return (
       <div className={`flex items-center justify-center h-full ${bgColor}`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     )
   }
@@ -397,7 +397,7 @@ export default function ParagraphCommentPanel({
               key={comment.id}
               id={`comment-${comment.id}`}
               className={`${cardBg} rounded-lg p-4 transition-colors ${
-                highlightCommentId === comment.id ? 'ring-2 ring-amber-500 bg-amber-50/50' : ''
+                highlightCommentId === comment.id ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
               }`}
             >
               {/* Comment header */}
@@ -452,7 +452,7 @@ export default function ParagraphCommentPanel({
                   <div className="flex items-center gap-4 mt-3">
                     <button
                       onClick={() => handleLike(comment.id)}
-                      className={`flex items-center gap-1 text-sm ${mutedText} hover:text-amber-600 transition-colors`}
+                      className={`flex items-center gap-1 text-sm ${mutedText} hover:text-blue-600 transition-colors`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
@@ -462,7 +462,7 @@ export default function ParagraphCommentPanel({
 
                     <button
                       onClick={() => setReplyingTo(comment.id)}
-                      className={`flex items-center gap-1 text-sm ${mutedText} hover:text-amber-600 transition-colors`}
+                      className={`flex items-center gap-1 text-sm ${mutedText} hover:text-blue-600 transition-colors`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -498,12 +498,12 @@ export default function ParagraphCommentPanel({
 
                   {/* Reply form */}
                   {replyingTo === comment.id && (
-                    <div className="mt-3 pl-4 border-l-2 border-amber-500">
+                    <div className="mt-3 pl-4 border-l-2 border-blue-500">
                       <textarea
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
                         placeholder="Write a reply..."
-                        className={`w-full p-2 border ${inputBorder} ${inputBg} ${inputText} rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-gray-400`}
+                        className={`w-full p-2 border ${inputBorder} ${inputBg} ${inputText} rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400`}
                         rows={2}
                       />
 
@@ -593,7 +593,7 @@ export default function ParagraphCommentPanel({
                           <button
                             onClick={() => handleSubmitReply(comment.id)}
                             disabled={submitting || !replyContent.trim()}
-                            className="px-3 py-1.5 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                           >
                             {submitting ? 'Posting...' : 'Reply'}
                           </button>
@@ -673,7 +673,7 @@ export default function ParagraphCommentPanel({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="💭 Share your thoughts..."
-            className={`w-full p-3 border ${inputBorder} ${inputBg} ${inputText} rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400 transition-all`}
+            className={`w-full p-3 border ${inputBorder} ${inputBg} ${inputText} rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent placeholder-gray-400 transition-all`}
             rows={2}
           />
 
@@ -710,7 +710,7 @@ export default function ParagraphCommentPanel({
                 className={`p-2 ${hoverBg} rounded-lg transition-all hover:scale-110`}
                 title="Upload image"
               >
-                <svg className={`w-5 h-5 ${mutedText} hover:text-amber-500 transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 ${mutedText} hover:text-blue-500 transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </button>
@@ -729,7 +729,7 @@ export default function ParagraphCommentPanel({
                   className={`p-2 ${hoverBg} rounded-lg transition-all hover:scale-110`}
                   title="Add emoji"
                 >
-                  <svg className={`w-5 h-5 ${mutedText} hover:text-amber-500 transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-5 h-5 ${mutedText} hover:text-blue-500 transition-colors`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </button>
@@ -756,7 +756,7 @@ export default function ParagraphCommentPanel({
             <button
               onClick={handleSubmit}
               disabled={submitting || !content.trim()}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:via-orange-600 hover:to-amber-700 text-white rounded-xl font-semibold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-700 hover:via-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
