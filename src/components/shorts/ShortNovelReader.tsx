@@ -220,12 +220,10 @@ export default function ShortNovelReader({
         </div>
       )}
 
-      {/* Main container - content shifts left when comments open */}
+      {/* Main container */}
       <div className="relative">
         <article
-          className={`rounded-2xl shadow-lg overflow-hidden ${bgColors[bgColor].bg} ${bgColors[bgColor].border} border transition-all duration-300 ease-in-out ${
-            isCommentPanelOpen ? 'lg:mr-[400px]' : ''
-          }`}
+          className={`rounded-2xl shadow-lg overflow-hidden ${bgColors[bgColor].bg} ${bgColors[bgColor].border} border`}
         >
         {/* Header */}
         <header ref={headerRef} className="px-6 py-8 border-b border-gray-100">
@@ -243,9 +241,12 @@ export default function ShortNovelReader({
         {/* Genre & Reading Time */}
         <div className="flex items-center gap-3 mb-4">
           {novel.shortNovelGenre && (
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+            <Link
+              href={`/search?type=shorts&genre=${novel.shortNovelGenre}`}
+              className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold hover:bg-blue-200 transition-colors"
+            >
               {getShortNovelGenreName(novel.shortNovelGenre)}
-            </span>
+            </Link>
           )}
           <span className="flex items-center gap-1 text-sm text-gray-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,12 +263,15 @@ export default function ShortNovelReader({
 
         {/* Author & Stats */}
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-          <span className="flex items-center gap-1">
+          <Link
+            href={`/search?author=${encodeURIComponent(novel.authorName)}`}
+            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+          >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
             </svg>
             {novel.authorName}
-          </span>
+          </Link>
           <span className="flex items-center gap-1">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
