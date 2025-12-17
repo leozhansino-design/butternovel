@@ -103,35 +103,98 @@ interface RelatedShortNovel {
   averageRating: number | null
 }
 
-// 获取相关推荐短篇小说
+// 获取相关推荐短篇小说 - 混合推荐算法
+// 4 novels from same genre + 6 novels from other genres (random)
 async function getRelatedShorts(currentNovelId: number, genre: string | null): Promise<RelatedShortNovel[]> {
-  const related = await withRetry(
-    () => prisma.novel.findMany({
-      where: {
-        isShortNovel: true,
-        isPublished: true,
-        isBanned: false,
-        id: { not: currentNovelId },
-        ...(genre ? { shortNovelGenre: genre } : {}),
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        blurb: true,
-        shortNovelGenre: true,
-        wordCount: true,
-        viewCount: true,
-        likeCount: true,
-        averageRating: true,
-      },
-      orderBy: { viewCount: 'desc' },
-      take: 10, // Get more for both sidebar and bottom
-    }),
-    { operationName: 'Get related short novels' }
-  ) as RelatedShortNovel[]
+  // Get same genre novels (up to 4)
+  const sameGenrePromise = genre
+    ? withRetry(
+        () => prisma.novel.findMany({
+          where: {
+            isShortNovel: true,
+            isPublished: true,
+            isBanned: false,
+            id: { not: currentNovelId },
+            shortNovelGenre: genre,
+          },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            blurb: true,
+            shortNovelGenre: true,
+            wordCount: true,
+            viewCount: true,
+            likeCount: true,
+            averageRating: true,
+          },
+          orderBy: { viewCount: 'desc' },
+          take: 4,
+        }),
+        { operationName: 'Get same genre short novels' }
+      )
+    : Promise.resolve([])
 
-  return related
+  // Get random novels from other genres (using raw query for RANDOM())
+  const otherGenresPromise = genre
+    ? withRetry(
+        () => prisma.$queryRaw<RelatedShortNovel[]>`
+          SELECT
+            id,
+            title,
+            slug,
+            blurb,
+            "shortNovelGenre",
+            "wordCount",
+            "viewCount",
+            "likeCount",
+            "averageRating"
+          FROM "Novel"
+          WHERE "isShortNovel" = true
+            AND "isPublished" = true
+            AND "isBanned" = false
+            AND id != ${currentNovelId}
+            AND "shortNovelGenre" != ${genre}
+          ORDER BY RANDOM()
+          LIMIT 6
+        `,
+        { operationName: 'Get other genre short novels' }
+      )
+    : withRetry(
+        () => prisma.$queryRaw<RelatedShortNovel[]>`
+          SELECT
+            id,
+            title,
+            slug,
+            blurb,
+            "shortNovelGenre",
+            "wordCount",
+            "viewCount",
+            "likeCount",
+            "averageRating"
+          FROM "Novel"
+          WHERE "isShortNovel" = true
+            AND "isPublished" = true
+            AND "isBanned" = false
+            AND id != ${currentNovelId}
+          ORDER BY RANDOM()
+          LIMIT 6
+        `,
+        { operationName: 'Get random short novels' }
+      )
+
+  const [sameGenre, otherGenres] = await Promise.all([sameGenrePromise, otherGenresPromise])
+
+  // Combine and return (same genre first, then others)
+  const combined = [...(sameGenre as RelatedShortNovel[]), ...(otherGenres as RelatedShortNovel[])]
+
+  // Remove duplicates (in case any)
+  const seen = new Set<number>()
+  return combined.filter(novel => {
+    if (seen.has(novel.id)) return false
+    seen.add(novel.id)
+    return true
+  })
 }
 
 // 增加浏览次数
