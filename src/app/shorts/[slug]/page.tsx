@@ -125,7 +125,7 @@ async function getRelatedShorts(currentNovelId: number, genre: string | null): P
         averageRating: true,
       },
       orderBy: { viewCount: 'desc' },
-      take: 6,
+      take: 10, // Get more for both sidebar and bottom
     }),
     { operationName: 'Get related short novels' }
   ) as RelatedShortNovel[]
@@ -197,8 +197,12 @@ export default async function ShortNovelPage({ params }: Props) {
   const chapter = novel.chapters[0]
   const readingTime = estimateReadingTime(novel.wordCount)
 
+  // Split related novels - some for sidebar, some for bottom
+  const sidebarNovels = relatedNovels.slice(0, 4)
+  const bottomNovels = relatedNovels.slice(0, 6)
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30">
       {/* Main Content Area with Sidebar */}
       <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -229,13 +233,20 @@ export default async function ShortNovelPage({ params }: Props) {
             />
           </main>
 
-          {/* Sidebar - You May Like */}
-          <aside className="lg:w-80 flex-shrink-0">
+          {/* Sidebar - You May Like (Desktop) */}
+          <aside className="hidden lg:block lg:w-80 flex-shrink-0">
             <div className="lg:sticky lg:top-24">
-              <YouMayLike novels={relatedNovels} />
+              <YouMayLike novels={sidebarNovels} variant="sidebar" />
             </div>
           </aside>
         </div>
+
+        {/* Bottom Recommendations */}
+        {bottomNovels.length > 0 && (
+          <div className="mt-12">
+            <YouMayLike novels={bottomNovels} variant="bottom" />
+          </div>
+        )}
       </div>
     </div>
   )
