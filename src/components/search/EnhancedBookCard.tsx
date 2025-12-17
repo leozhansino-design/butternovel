@@ -203,6 +203,15 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
                     +{remainingTagsCountMobile}
                   </span>
                 )}
+                {/* Rating next to tags - mobile */}
+                {averageRating && totalRatings > 0 && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-[10px] font-medium whitespace-nowrap shrink-0 ml-auto">
+                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    {averageRating.toFixed(1)}
+                  </span>
+                )}
               </div>
 
               {/* 平板以上标签 */}
@@ -222,6 +231,15 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
                 {remainingTagsCountDesktop > 0 && (
                   <span className="inline-block px-2 py-0.5 md:px-3 md:py-1 bg-gray-50 text-gray-500 rounded-full text-xs md:text-sm font-medium whitespace-nowrap shrink-0">
                     +{remainingTagsCountDesktop} more
+                  </span>
+                )}
+                {/* Rating next to tags - desktop */}
+                {averageRating && totalRatings > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1 bg-amber-50 text-amber-700 rounded-full text-xs md:text-sm font-medium whitespace-nowrap shrink-0 ml-auto">
+                    <svg className="w-3 h-3 md:w-3.5 md:h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    {averageRating.toFixed(1)}
                   </span>
                 )}
               </div>
