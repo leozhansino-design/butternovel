@@ -385,6 +385,31 @@ export default function ShortNovelReader({
               </svg>
               {novel.commentsCount} Comments
             </button>
+
+            {/* Recommend Button - Bottom */}
+            <button
+              onClick={handleRecommend}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
+                isRecommended
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+              }`}
+            >
+              <svg
+                className={`w-5 h-5 ${isRecommended ? 'fill-current' : ''}`}
+                fill={isRecommended ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                />
+              </svg>
+              {recommendCount.toLocaleString()}
+            </button>
           </div>
 
           {/* Share Button */}
@@ -427,28 +452,23 @@ export default function ShortNovelReader({
         )}
       </article>
 
-      {/* Paragraph Comment Panel - Slide from right */}
-      {activeParagraphIndex !== null && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={() => setActiveParagraphIndex(null)}
+      {/* Paragraph Comment Panel - Fixed side panel without backdrop */}
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl border-l border-gray-200 z-40 transition-transform duration-300 ease-in-out ${
+          activeParagraphIndex !== null ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {activeParagraphIndex !== null && (
+          <ParagraphCommentPanel
+            novelId={novel.id}
+            chapterId={chapter.id}
+            paragraphIndex={activeParagraphIndex}
+            onClose={() => setActiveParagraphIndex(null)}
+            bgColor="bg-white"
+            textColor="text-gray-900"
           />
-
-          {/* Panel */}
-          <div className={`relative w-full max-w-md h-full ${bgColors[bgColor].bg} shadow-2xl animate-slide-in-right`}>
-            <ParagraphCommentPanel
-              novelId={novel.id}
-              chapterId={chapter.id}
-              paragraphIndex={activeParagraphIndex}
-              onClose={() => setActiveParagraphIndex(null)}
-              bgColor={bgColors[bgColor].bg}
-              textColor={bgColors[bgColor].text}
-            />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   )
 }

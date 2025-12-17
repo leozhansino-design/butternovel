@@ -67,21 +67,39 @@ export default function ShortNovelComments({
       })
 
       const data = await response.json()
-      if (data.success) {
+
+      // Handle different response statuses
+      if (response.status === 401) {
+        alert('Please sign in to rate this story')
+        return
+      }
+
+      if (response.status === 409) {
+        alert('You have already rated this story')
+        // Try to refresh to get their existing rating
+        const userRatingRes = await fetch(`/api/novels/${novelId}/user-rating`)
+        const userRatingData = await userRatingRes.json()
+        if (userRatingData.success && userRatingData.rating) {
+          setUserRating(userRatingData.rating)
+        }
+        return
+      }
+
+      if (response.ok && data.rating) {
         setUserRating(data.rating)
         setNewReview('')
-        // Refresh ratings
+        // Refresh ratings list
         const ratingsRes = await fetch(`/api/novels/${novelId}/ratings`)
         const ratingsData = await ratingsRes.json()
         if (ratingsData.success) {
           setRatings(ratingsData.ratings)
         }
       } else {
-        alert(data.error || 'Failed to submit rating')
+        alert(data.error || 'Failed to submit rating. Please try again.')
       }
     } catch (error) {
       console.error('Failed to submit rating:', error)
-      alert('Failed to submit rating')
+      alert('Network error. Please check your connection and try again.')
     } finally {
       setIsSubmitting(false)
     }
