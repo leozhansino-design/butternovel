@@ -41,9 +41,9 @@ export async function POST(
     // Check if user already liked/recommended this novel
     const existingLike = await prisma.novelLike.findUnique({
       where: {
-        novelId_userId: {
-          novelId,
-          userId: session.user.id
+        userId_novelId: {
+          userId: session.user.id,
+          novelId
         }
       }
     })
@@ -56,9 +56,9 @@ export async function POST(
       await prisma.$transaction([
         prisma.novelLike.delete({
           where: {
-            novelId_userId: {
-              novelId,
-              userId: session.user.id
+            userId_novelId: {
+              userId: session.user.id,
+              novelId
             }
           }
         }),
