@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 
 interface Rating {
   id: string
@@ -222,20 +221,21 @@ export default function ShortNovelComments({
             <div key={rating.id} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
               <div className="flex items-start gap-3">
                 {/* Avatar */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white font-semibold overflow-hidden">
                   {rating.user.avatar ? (
-                    <Image
+                    <img
                       src={rating.user.avatar}
                       alt={rating.user.name || 'User'}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Hide broken image and show initial
+                        e.currentTarget.style.display = 'none'
+                      }}
                     />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                      {(rating.user.name || 'U')[0].toUpperCase()}
-                    </div>
-                  )}
+                  ) : null}
+                  <span className={rating.user.avatar ? 'hidden' : ''}>
+                    {(rating.user.name || 'U')[0].toUpperCase()}
+                  </span>
                 </div>
 
                 {/* Content */}
