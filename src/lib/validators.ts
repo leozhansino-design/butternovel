@@ -54,6 +54,7 @@ export const novelUpdateSchema = z.object({
   coverImage: z.string().optional(),
   isPublished: z.boolean().optional(),
   isDraft: z.boolean().optional(),
+  shortNovelGenre: z.string().optional(),
 })
 
 // Tags update schema

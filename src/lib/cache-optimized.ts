@@ -113,7 +113,7 @@ export async function getHomePageData(): Promise<HomePageData> {
     const trendingIds = shortsTrending.map(s => s.id);
     const shortsFeatured = await getFeaturedShorts(trendingIds);
 
-    // 2. 获取精选小说
+    // 2. 获取精选小说 - 排除短篇小说
     const featured = await withRetry(() =>
       prisma.$queryRaw<Array<{
         id: number;
@@ -132,7 +132,9 @@ export async function getHomePageData(): Promise<HomePageData> {
           c.name as "categoryName"
         FROM "Novel" n
         INNER JOIN "Category" c ON n."categoryId" = c.id
-        WHERE n."isPublished" = true AND n."isBanned" = false
+        WHERE n."isPublished" = true
+          AND n."isBanned" = false
+          AND n."isShortNovel" = false
         ORDER BY RANDOM()
         LIMIT 24
       `
@@ -164,7 +166,7 @@ export async function getHomePageData(): Promise<HomePageData> {
           rating: number | null;
         };
 
-        // 获取15本热门（按点赞数+浏览量排序）
+        // 获取15本热门（按点赞数+浏览量排序）- 排除短篇小说
         const hotNovels = await withRetry(() =>
           prisma.$queryRaw<NovelData[]>`
             SELECT
@@ -183,13 +185,14 @@ export async function getHomePageData(): Promise<HomePageData> {
             INNER JOIN "Category" c ON n."categoryId" = c.id
             WHERE n."isPublished" = true
               AND n."isBanned" = false
+              AND n."isShortNovel" = false
               AND c.slug = ${category.slug}
             ORDER BY (n."viewCount" + n."likeCount" * 10) DESC
             LIMIT 15
           `
         ) as NovelData[];
 
-        // 获取15本最新
+        // 获取15本最新 - 排除短篇小说
         const newNovels = await withRetry(() =>
           prisma.$queryRaw<NovelData[]>`
             SELECT
@@ -208,6 +211,7 @@ export async function getHomePageData(): Promise<HomePageData> {
             INNER JOIN "Category" c ON n."categoryId" = c.id
             WHERE n."isPublished" = true
               AND n."isBanned" = false
+              AND n."isShortNovel" = false
               AND c.slug = ${category.slug}
             ORDER BY n."createdAt" DESC
             LIMIT 15
