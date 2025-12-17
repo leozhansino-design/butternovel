@@ -134,9 +134,14 @@ model Novel {
   id         Int    @id @default(autoincrement())
   title      String
   slug       String @unique
-  coverImage String
+  coverImage String?  // 普通小说必需，短篇小说可选
   coverImagePublicId  String? // ⭐ 新增字段
   blurb      String @db.Text
+
+  // ⭐ 短篇小说标识
+  isShortNovel Boolean @default(false)  // 是否为短篇小说
+  shortNovelGenre String?  // 短篇小说分类 (Age Gap, Billionaire Romance, etc.)
+  readingPreview String? @db.Text  // 短篇小说预览内容 (几百字符)
 
   // 作者（暂时移除外键）
   authorId   String
@@ -206,6 +211,8 @@ model Novel {
   @@index([isApproved])
   @@index([isPublished, isBanned, likeCount])
   @@index([categoryId, isPublished, isBanned])
+  @@index([isShortNovel, isPublished, isBanned])  // 短篇小说查询优化
+  @@index([isShortNovel, shortNovelGenre])  // 短篇小说分类查询
 }
 
 enum NovelStatus {
