@@ -32,6 +32,7 @@ interface EnhancedBookCardProps {
   tags: Tag[]
   tagsCount: number
   chaptersCount: number
+  likesCount?: number // For shorts, this represents recommendCount
   isShortNovel?: boolean
 }
 
@@ -129,6 +130,7 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
   tags,
   tagsCount,
   chaptersCount,
+  likesCount = 0,
   isShortNovel = false,
 }: EnhancedBookCardProps) {
   // Determine the correct URL path based on novel type
@@ -208,6 +210,15 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
 
             {/* 统计信息 - 移动端单行紧凑 */}
             <div className="flex items-center flex-wrap gap-x-2 sm:gap-x-3 gap-y-0.5 text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
+              {/* Recommend count for shorts */}
+              {isShortNovel && likesCount > 0 && (
+                <span className="flex items-center gap-0.5 text-blue-600 font-medium">
+                  <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                  </svg>
+                  {formatNumber(likesCount)}
+                </span>
+              )}
               <span>{formatNumber(viewCount)}</span>
               {averageRating && totalRatings > 0 && (
                 <span>★{averageRating.toFixed(1)}</span>

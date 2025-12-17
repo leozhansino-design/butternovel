@@ -36,7 +36,7 @@ interface Novel {
   tags: Tag[]
   tagsCount: number
   chaptersCount: number
-  likesCount: number
+  likesCount: number // For shorts, this represents recommendCount
   isShortNovel?: boolean
 }
 
@@ -313,6 +313,7 @@ function SearchContent() {
                   tags={novel.tags}
                   tagsCount={novel.tagsCount}
                   chaptersCount={novel.chaptersCount}
+                  likesCount={novel.likesCount}
                   isShortNovel={novel.isShortNovel}
                 />
               ))}

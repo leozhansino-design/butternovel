@@ -1,7 +1,7 @@
 // src/components/search/SearchFilters.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { CATEGORIES } from '@/lib/constants'
 import { SHORT_NOVEL_GENRES } from '@/lib/short-novel'
 import { safeParseJson } from '@/lib/fetch-utils'
@@ -198,11 +198,48 @@ export default function SearchFilters({
 
   const hasFilters = selectedCategory || selectedTags.length > 0 || selectedStatuses.length > 0
 
+  // Ref for genre carousel scroll
+  const genreScrollRef = useRef<HTMLDivElement>(null)
+  const [showLeftArrow, setShowLeftArrow] = useState(false)
+  const [showRightArrow, setShowRightArrow] = useState(true)
+
+  // Check scroll position to show/hide arrows
+  const checkScrollPosition = () => {
+    if (genreScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = genreScrollRef.current
+      setShowLeftArrow(scrollLeft > 0)
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10)
+    }
+  }
+
+  // Scroll genre carousel
+  const scrollGenres = (direction: 'left' | 'right') => {
+    if (genreScrollRef.current) {
+      const scrollAmount = 200
+      genreScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      })
+    }
+  }
+
+  // Check scroll position on mount and when genres change
+  useEffect(() => {
+    checkScrollPosition()
+    // Also check after a short delay to ensure DOM has updated
+    const timer = setTimeout(checkScrollPosition, 100)
+    return () => clearTimeout(timer)
+  }, [selectedType, displayGenres])
+
   // Handle type change - clear category when switching types
   const handleTypeChange = (type: NovelType) => {
     if (type !== selectedType) {
       onCategoryChange('') // Clear category when switching types
       onTypeChange(type)
+      // Reset scroll position when changing types
+      if (genreScrollRef.current) {
+        genreScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' })
+      }
     }
   }
 
@@ -235,9 +272,27 @@ export default function SearchFilters({
           </div>
         </div>
 
-        {/* Genre filters - 移动端水平滚动 */}
-        <div className="mb-2 sm:mb-4">
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto sm:flex-wrap scrollbar-hide pb-1 sm:pb-0">
+        {/* Genre filters with carousel arrows */}
+        <div className="mb-2 sm:mb-4 relative">
+          {/* Left Arrow */}
+          {showLeftArrow && (
+            <button
+              onClick={() => scrollGenres('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/95 shadow-md rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all border border-gray-200"
+              aria-label="Scroll left"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Genre buttons container */}
+          <div
+            ref={genreScrollRef}
+            onScroll={checkScrollPosition}
+            className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto scrollbar-hide pb-1 sm:pb-0 px-1"
+          >
             <button
               onClick={() => onCategoryChange('')}
               className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
@@ -262,6 +317,19 @@ export default function SearchFilters({
               </button>
             ))}
           </div>
+
+          {/* Right Arrow */}
+          {showRightArrow && (
+            <button
+              onClick={() => scrollGenres('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/95 shadow-md rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all border border-gray-200"
+              aria-label="Scroll right"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* 第二行：热门标签（智能联动）- 移动端隐藏或简化 */}
