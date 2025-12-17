@@ -129,21 +129,12 @@ export default function Header() {
                   </div>
                 </div>
 
-                {user ? (
-                  <Link
-                    href="/dashboard"
-                    className="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all"
-                  >
-                    Dashboard
-                  </Link>
-                ) : (
-                  <Link
-                    href="/writer"
-                    className="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all"
-                  >
-                    Writer
-                  </Link>
-                )}
+                <Link
+                  href="/writer"
+                  className="px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-md transition-all"
+                >
+                  Writer
+                </Link>
               </nav>
             </div>
 
@@ -235,23 +226,13 @@ export default function Header() {
                   </Link>
                 ))}
 
-                {user ? (
-                  <Link
-                    href="/dashboard"
-                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mt-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Writer Dashboard
-                  </Link>
-                ) : (
-                  <Link
-                    href="/writer"
-                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mt-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Become a Writer
-                  </Link>
-                )}
+                <Link
+                  href="/writer"
+                  className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mt-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Writer
+                </Link>
 
                 <div className="pt-3 mt-3 border-t border-gray-200 space-y-1">
                   {user ? (

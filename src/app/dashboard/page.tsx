@@ -1,4 +1,4 @@
-import { BookOpen, FileText, Eye, Star, TrendingUp, Plus } from 'lucide-react'
+import { BookOpen, FileText, Eye, Star, TrendingUp, Plus, Zap } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { auth } from '@/lib/auth'
@@ -152,7 +152,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <Link
             href="/dashboard/upload"
             className="bg-indigo-600 text-white rounded-lg p-6 hover:bg-indigo-700 transition-colors"
@@ -160,6 +160,15 @@ export default async function DashboardPage() {
             <Plus size={24} className="mb-2" />
             <h3 className="text-lg font-semibold mb-1">Start New Story</h3>
             <p className="text-sm text-indigo-100">Create a new novel and start writing</p>
+          </Link>
+
+          <Link
+            href="/dashboard/upload?type=short"
+            className="bg-blue-600 text-white rounded-lg p-6 hover:bg-blue-700 transition-colors"
+          >
+            <Zap size={24} className="mb-2" />
+            <h3 className="text-lg font-semibold mb-1">Create Short Story</h3>
+            <p className="text-sm text-blue-100">Quick read in 10-30 minutes</p>
           </Link>
 
           <Link

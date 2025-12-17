@@ -1,7 +1,7 @@
 'use client'
 
 // src/app/error.tsx
-// 🛡️ 全局错误边界 - 捕获服务器端异常并显示友好错误页面
+// Global Error Boundary - Catches server-side errors and displays a friendly error page
 
 import { useEffect } from 'react'
 import Link from 'next/link'
@@ -14,11 +14,11 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // 记录错误到控制台（生产环境可以发送到错误追踪服务）
+    // Log error to console (in production, you could send this to an error tracking service)
     console.error('Application Error:', error)
   }, [error])
 
-  // 检查是否是数据库连接错误
+  // Check if this is a database connection error
   const isDatabaseError =
     error.message?.includes('database') ||
     error.message?.includes('prisma') ||
@@ -26,13 +26,13 @@ export default function Error({
     error.message?.includes("Can't reach database")
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 p-4">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 md:p-12">
-        {/* 错误图标 */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-sky-50 to-white p-4">
+      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-blue-100">
+        {/* Error Icon */}
         <div className="flex justify-center mb-6">
-          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
             <svg
-              className="w-12 h-12 text-red-600"
+              className="w-12 h-12 text-blue-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -47,55 +47,41 @@ export default function Error({
           </div>
         </div>
 
-        {/* 错误标题 */}
+        {/* Error Title */}
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-4">
-          {isDatabaseError ? '数据库连接错误' : '服务器错误'}
+          {isDatabaseError ? 'Database Connection Error' : 'Something Went Wrong'}
         </h1>
 
-        {/* 错误描述 */}
+        {/* Error Description */}
         {isDatabaseError ? (
           <div className="space-y-4 mb-8">
             <p className="text-gray-600 text-center">
-              应用无法连接到数据库。这通常是因为环境变量配置错误。
+              The application cannot connect to the database. This is usually caused by incorrect environment configuration.
             </p>
 
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-              <p className="text-red-800 font-semibold">可能的原因：</p>
+              <p className="text-red-800 font-semibold">Possible Causes:</p>
               <ul className="list-disc list-inside text-red-700 space-y-1 text-sm">
-                <li>DATABASE_URL 未设置或格式错误</li>
-                <li>数据库服务器不可达或未启动</li>
-                <li>网络连接问题</li>
-                <li>数据库凭证已过期</li>
+                <li>DATABASE_URL is not set or has incorrect format</li>
+                <li>Database server is unreachable or not running</li>
+                <li>Network connection issues</li>
+                <li>Database credentials have expired</li>
               </ul>
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-              <p className="text-blue-800 font-semibold">修复步骤：</p>
+              <p className="text-blue-800 font-semibold">Steps to Fix:</p>
               <ol className="list-decimal list-inside text-blue-700 space-y-1 text-sm">
-                <li>检查 <code className="bg-blue-100 px-2 py-0.5 rounded">.env</code> 文件是否存在</li>
-                <li>确认 DATABASE_URL 配置正确</li>
-                <li>重启开发服务器</li>
+                <li>Check if <code className="bg-blue-100 px-2 py-0.5 rounded">.env</code> file exists</li>
+                <li>Verify DATABASE_URL is correctly configured</li>
+                <li>Restart the development server</li>
               </ol>
-            </div>
-
-            <div className="text-center">
-              <a
-                href="https://github.com/YOUR_USERNAME/butternovel/blob/main/DATABASE_FIX.md"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                查看完整修复指南
-              </a>
             </div>
           </div>
         ) : (
           <div className="space-y-4 mb-8">
             <p className="text-gray-600 text-center">
-              抱歉，服务器遇到了一个意外错误。我们已经记录了这个问题。
+              Sorry, the server encountered an unexpected error. We have logged this issue and are working on it.
             </p>
 
             {process.env.NODE_ENV === 'development' && (
@@ -113,32 +99,32 @@ export default function Error({
           </div>
         )}
 
-        {/* 操作按钮 */}
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={reset}
-            className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl"
           >
-            重试
+            Try Again
           </button>
 
           <Link
             href="/"
-            className="px-6 py-3 bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-semibold rounded-lg transition-all text-center"
+            className="px-6 py-3 bg-white border-2 border-blue-200 hover:border-blue-300 text-blue-700 font-semibold rounded-lg transition-all text-center hover:bg-blue-50"
           >
-            返回首页
+            Go to Homepage
           </Link>
         </div>
 
-        {/* 帮助链接 */}
+        {/* Help Link */}
         <div className="mt-8 pt-6 border-t border-gray-200 text-center">
           <p className="text-sm text-gray-500">
-            问题仍然存在？{' '}
+            Still having issues?{' '}
             <a
               href="mailto:support@butternovel.com"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              联系技术支持
+              Contact Support
             </a>
           </p>
         </div>
