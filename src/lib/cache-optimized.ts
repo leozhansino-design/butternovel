@@ -462,7 +462,7 @@ export async function getFeaturedShorts(excludeIds: number[]): Promise<Array<{
           AND n.blurb != ''
           ${excludeClause}
         ORDER BY RANDOM()
-        LIMIT 12
+        LIMIT 30
       `)
     ) as Array<{
       id: number;

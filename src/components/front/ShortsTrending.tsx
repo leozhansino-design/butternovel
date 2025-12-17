@@ -209,10 +209,10 @@ export default function ShortsTrending({
                 className="group block flex-shrink-0 w-[320px] sm:w-[380px] md:w-[420px] lg:w-[460px]"
                 style={{ scrollSnapAlign: 'start' }}
               >
-                {/* Frosted Glass Card */}
-                <div className="relative h-full bg-white/80 backdrop-blur-md rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1">
-                  <div className="relative p-5 sm:p-6">
-                    {/* Genre & Reading Time */}
+                {/* Frosted Glass Card - Fixed Height with Flex Layout */}
+                <div className="relative h-[340px] sm:h-[380px] flex flex-col bg-white/80 backdrop-blur-md rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1">
+                  <div className="relative p-5 sm:p-6 flex flex-col h-full">
+                    {/* Genre & Reading Time - Fixed */}
                     <div className="flex items-center justify-between mb-4">
                       {novel.shortNovelGenre && (
                         <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
@@ -227,18 +227,18 @@ export default function ShortsTrending({
                       </span>
                     </div>
 
-                    {/* Title */}
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-4 line-clamp-2 leading-tight">
+                    {/* Title - Fixed Height (2 lines max) */}
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-4 line-clamp-2 leading-tight h-[56px] sm:h-[64px]">
                       {novel.title.length > 80 ? novel.title.substring(0, 80) + '...' : novel.title}
                     </h3>
 
-                    {/* Preview Text with "more" indicator */}
-                    <div className="mb-5">
-                      <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                    {/* Preview Text - Flexible, fills remaining space */}
+                    <div className="flex-1 overflow-hidden mb-4">
+                      <p className="text-sm sm:text-base text-gray-600 leading-relaxed line-clamp-5">
                         {previewText.length > maxPreviewLength ? (
                           <>
                             {previewText.substring(0, maxPreviewLength)}
-                            <span className="text-blue-600 font-medium cursor-pointer hover:text-blue-700"> ...more</span>
+                            <span className="text-blue-600 font-medium"> ...more</span>
                           </>
                         ) : (
                           previewText
@@ -246,8 +246,8 @@ export default function ShortsTrending({
                       </p>
                     </div>
 
-                    {/* Stats & Read More */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    {/* Stats & Read More - Fixed at bottom */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
                       <div className="flex items-center gap-4 text-xs text-gray-400">
                         <span className="flex items-center gap-1">
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -256,14 +256,6 @@ export default function ShortsTrending({
                           </svg>
                           {novel.viewCount.toLocaleString()}
                         </span>
-                        {novel.averageRating && novel.averageRating > 0 && (
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {novel.averageRating.toFixed(1)}
-                          </span>
-                        )}
                       </div>
 
                       <span className="inline-flex items-center gap-1.5 text-blue-600 font-semibold text-sm group-hover:gap-2 transition-all">
