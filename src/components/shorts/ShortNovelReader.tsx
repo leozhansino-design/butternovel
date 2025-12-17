@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { getShortNovelGenreName, formatReadingTime } from '@/lib/short-novel'
 import { FormattedParagraph } from '@/components/reader/FormattedText'
 import ShortNovelComments from './ShortNovelComments'
 import ParagraphCommentButton from '@/components/reader/ParagraphCommentButton'
 import ParagraphCommentPanel from '@/components/reader/ParagraphCommentPanel'
+import LoginModal from '@/components/shared/LoginModal'
 
 interface Novel {
   id: number
@@ -69,6 +71,7 @@ export default function ShortNovelReader({
   ratings,
   readingTime,
 }: ShortNovelReaderProps) {
+  const { data: session } = useSession()
   const [bgColor, setBgColor] = useState<BgColor>('white')
   const [fontSize, setFontSize] = useState<FontSize>('medium')
   const [showSettings, setShowSettings] = useState(false)
@@ -78,6 +81,7 @@ export default function ShortNovelReader({
   const [showFloatingButton, setShowFloatingButton] = useState(false)
   const [activeParagraphIndex, setActiveParagraphIndex] = useState<number | null>(null)
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({})
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement>(null)
 
@@ -138,6 +142,12 @@ export default function ShortNovelReader({
 
   // Handle recommend
   const handleRecommend = async () => {
+    // Show login modal if user is not logged in
+    if (!session?.user) {
+      setShowLoginModal(true)
+      return
+    }
+
     try {
       const response = await fetch(`/api/shorts/${novel.id}/recommend`, {
         method: 'POST',
@@ -146,10 +156,6 @@ export default function ShortNovelReader({
       if (data.success) {
         setIsRecommended(data.isRecommended)
         setRecommendCount(data.recommendCount)
-        // Show message for guest users
-        if (data.message) {
-          alert(data.message)
-        }
       } else {
         alert(data.message || 'Failed to recommend')
       }
@@ -180,10 +186,13 @@ export default function ShortNovelReader({
     ? chapter.content.split(/\n/).map(p => p.trim()).filter(p => p.length > 0)
     : paragraphs
 
+  // Whether comment panel is open
+  const isCommentPanelOpen = activeParagraphIndex !== null
+
   return (
     <>
       {/* Floating Recommend Button */}
-      {showFloatingButton && (
+      {showFloatingButton && !isCommentPanelOpen && (
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={handleRecommend}
@@ -211,7 +220,11 @@ export default function ShortNovelReader({
         </div>
       )}
 
-      <article className={`rounded-2xl shadow-lg overflow-hidden ${bgColors[bgColor].bg} ${bgColors[bgColor].border} border`}>
+      {/* Main container */}
+      <div className="relative">
+        <article
+          className={`rounded-2xl shadow-lg overflow-hidden ${bgColors[bgColor].bg} ${bgColors[bgColor].border} border`}
+        >
         {/* Header */}
         <header ref={headerRef} className="px-6 py-8 border-b border-gray-100">
         {/* Back to Shorts */}
@@ -228,9 +241,12 @@ export default function ShortNovelReader({
         {/* Genre & Reading Time */}
         <div className="flex items-center gap-3 mb-4">
           {novel.shortNovelGenre && (
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+            <Link
+              href={`/search?type=shorts&genre=${novel.shortNovelGenre}`}
+              className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold hover:bg-blue-200 transition-colors"
+            >
               {getShortNovelGenreName(novel.shortNovelGenre)}
-            </span>
+            </Link>
           )}
           <span className="flex items-center gap-1 text-sm text-gray-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,12 +263,15 @@ export default function ShortNovelReader({
 
         {/* Author & Stats */}
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-          <span className="flex items-center gap-1">
+          <Link
+            href={`/search?author=${encodeURIComponent(novel.authorName)}`}
+            className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+          >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
             </svg>
             {novel.authorName}
-          </span>
+          </Link>
           <span className="flex items-center gap-1">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -474,25 +493,43 @@ export default function ShortNovelReader({
             />
           </div>
         )}
-      </article>
+        </article>
 
-      {/* Paragraph Comment Panel - Fixed side panel without backdrop */}
-      <div
-        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl border-l border-gray-200 z-[60] transition-transform duration-300 ease-in-out ${
-          activeParagraphIndex !== null ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        {activeParagraphIndex !== null && (
-          <ParagraphCommentPanel
-            novelId={novel.id}
-            chapterId={chapter.id}
-            paragraphIndex={activeParagraphIndex}
-            onClose={() => setActiveParagraphIndex(null)}
-            bgColor="bg-white"
-            textColor="text-gray-900"
-          />
-        )}
+        {/* Paragraph Comment Panel - Qidian-style (slides in from right, content shifts left) */}
+        <div
+          className={`fixed top-0 right-0 h-full w-[400px] bg-white shadow-2xl border-l border-gray-200 z-[60] transition-transform duration-300 ease-in-out ${
+            isCommentPanelOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {/* Close button at top */}
+          <button
+            onClick={() => setActiveParagraphIndex(null)}
+            className="absolute top-3 right-3 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors z-10"
+            aria-label="Close comments"
+          >
+            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {activeParagraphIndex !== null && (
+            <ParagraphCommentPanel
+              novelId={novel.id}
+              chapterId={chapter.id}
+              paragraphIndex={activeParagraphIndex}
+              onClose={() => setActiveParagraphIndex(null)}
+              bgColor="bg-white"
+              textColor="text-gray-900"
+            />
+          )}
+        </div>
       </div>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </>
   )
 }
