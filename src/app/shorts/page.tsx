@@ -247,9 +247,9 @@ export default async function ShortsPage({ searchParams }: Props) {
                 <Link
                   key={novel.id}
                   href={`/shorts/${novel.slug}`}
-                  className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all"
+                  className="group flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all h-full"
                 >
-                  <div className="p-5">
+                  <div className="p-5 flex flex-col flex-1">
                     {/* Genre & Time */}
                     <div className="flex items-center justify-between mb-3">
                       {novel.shortNovelGenre && (
@@ -271,12 +271,12 @@ export default async function ShortsPage({ searchParams }: Props) {
                     </h3>
 
                     {/* Preview */}
-                    <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                    <p className="text-sm text-gray-600 line-clamp-3 mb-4 flex-1">
                       {preview}
                     </p>
 
                     {/* Stats */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
                       <div className="flex items-center gap-3 text-xs text-gray-400">
                         <span className="flex items-center gap-1">
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">

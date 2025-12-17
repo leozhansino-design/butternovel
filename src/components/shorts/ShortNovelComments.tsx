@@ -39,7 +39,7 @@ export default function ShortNovelComments({
       try {
         const response = await fetch(`/api/novels/${novelId}/user-rating`)
         const data = await response.json()
-        if (data.success && data.rating) {
+        if (data.rating) {
           setUserRating(data.rating)
           setNewRating(data.rating.score)
         }
