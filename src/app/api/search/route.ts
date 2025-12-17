@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { rateLimit, getIdentifier } from '@/lib/rate-limit'
+import { SHORT_NOVEL_GENRES } from '@/lib/short-novel'
 
 /**
  * 计算质量分数（贝叶斯平均）
@@ -293,6 +294,9 @@ export async function GET(request: Request) {
       status: true,
       createdAt: true,
       updatedAt: true,
+      // Short novel fields
+      isShortNovel: true,
+      shortNovelGenre: true,
       // 热度相关字段
       viewCount: true,
       likeCount: true,
@@ -374,25 +378,38 @@ export async function GET(request: Request) {
     }
 
     // 格式化结果
-    const formattedNovels = novels.map((novel) => ({
-      id: novel.id,
-      title: novel.title,
-      slug: novel.slug,
-      blurb: novel.blurb,
-      coverImage: novel.coverImage,
-      authorName: novel.authorName,
-      status: novel.status,
-      createdAt: novel.createdAt,
-      updatedAt: novel.updatedAt,
-      viewCount: novel.viewCount,
-      averageRating: novel.averageRating,
-      totalRatings: novel.totalRatings,
-      category: novel.category,
-      tags: novel.tags || [],
-      tagsCount: novel._count.tags, // 添加tags总数
-      chaptersCount: novel._count.chapters,
-      likesCount: novel._count.likes,
-    }))
+    const formattedNovels = novels.map((novel) => {
+      // For short novels, get genre info from SHORT_NOVEL_GENRES
+      let category = novel.category
+      if (novel.isShortNovel && novel.shortNovelGenre) {
+        const genre = SHORT_NOVEL_GENRES.find(g => g.id === novel.shortNovelGenre)
+        if (genre) {
+          category = { id: novel.shortNovelGenre, name: genre.name, slug: novel.shortNovelGenre }
+        }
+      }
+
+      return {
+        id: novel.id,
+        title: novel.title,
+        slug: novel.slug,
+        blurb: novel.blurb,
+        coverImage: novel.coverImage,
+        authorName: novel.authorName,
+        status: novel.status,
+        createdAt: novel.createdAt,
+        updatedAt: novel.updatedAt,
+        viewCount: novel.viewCount,
+        averageRating: novel.averageRating,
+        totalRatings: novel.totalRatings,
+        category,
+        tags: novel.tags || [],
+        tagsCount: novel._count.tags,
+        chaptersCount: novel._count.chapters,
+        likesCount: novel._count.likes,
+        isShortNovel: novel.isShortNovel || false,
+        shortNovelGenre: novel.shortNovelGenre,
+      }
+    })
 
     return NextResponse.json({
       success: true,

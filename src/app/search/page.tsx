@@ -34,9 +34,10 @@ interface Novel {
   totalRatings: number
   category: Category
   tags: Tag[]
-  tagsCount: number // 添加tags总数
+  tagsCount: number
   chaptersCount: number
   likesCount: number
+  isShortNovel?: boolean
 }
 
 interface SearchResponse {
@@ -299,6 +300,7 @@ function SearchContent() {
                   tags={novel.tags}
                   tagsCount={novel.tagsCount}
                   chaptersCount={novel.chaptersCount}
+                  isShortNovel={novel.isShortNovel}
                 />
               ))}
             </div>

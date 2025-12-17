@@ -30,8 +30,9 @@ interface EnhancedBookCardProps {
   status: string
   category: Category
   tags: Tag[]
-  tagsCount: number // 添加tags总数
+  tagsCount: number
   chaptersCount: number
+  isShortNovel?: boolean
 }
 
 const EnhancedBookCard = memo(function EnhancedBookCard({
@@ -49,7 +50,10 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
   tags,
   tagsCount,
   chaptersCount,
+  isShortNovel = false,
 }: EnhancedBookCardProps) {
+  // Determine the correct URL path based on novel type
+  const novelUrl = isShortNovel ? `/shorts/${slug}` : `/novels/${slug}`
   // 格式化数字（K/M）
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -92,7 +96,7 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
       {/* 水平卡片布局 - 填满网格单元高度 */}
       <div className="flex h-full">
         {/* 左侧：封面图片 - 宽度固定，高度跟随卡片 */}
-        <Link href={`/novels/${slug}`} className="flex-shrink-0 relative group w-24 sm:w-32 md:w-40 lg:w-44">
+        <Link href={novelUrl} className="flex-shrink-0 relative group w-24 sm:w-32 md:w-40 lg:w-44">
           <Image
             src={coverImage}
             alt={title}
@@ -108,7 +112,7 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
           <div className="flex flex-col">
             {/* 标题 - 移动端更紧凑 */}
             <Link
-              href={`/novels/${slug}`}
+              href={novelUrl}
               className="font-bold text-gray-900 text-sm sm:text-base md:text-lg lg:text-xl hover:text-blue-600 transition-colors mb-0.5 sm:mb-1 line-clamp-2 leading-tight"
             >
               {title}
