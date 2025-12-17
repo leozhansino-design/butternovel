@@ -3,11 +3,56 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import { SHORT_NOVEL_GENRES, getShortNovelGenreName, estimateReadingTime, formatReadingTime } from '@/lib/short-novel'
+import ShortsPageJsonLd from '@/components/seo/ShortsPageJsonLd'
+
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://butternovel.com'
 
 export const metadata: Metadata = {
-  title: 'Short Novels | Quick Reads in 10-30 Minutes | ButterNovel',
-  description: 'Discover amazing short novels you can finish in one sitting. Quick reads in 10-30 minutes across romance, face-slapping, rebirth, and more genres.',
-  keywords: ['short novel', 'quick read', 'romance', 'face-slapping', 'rebirth', 'butternovel'],
+  title: 'Short Novels - Quick Reads in 10-30 Minutes | Free Short Stories Online',
+  description: 'Browse free short novels you can finish in one sitting. Complete stories in 10-30 minutes. Fantasy, romance, thriller, horror, mystery, sci-fi, and more genres. No subscription required.',
+  keywords: [
+    'short novel',
+    'short story',
+    'quick read',
+    'free short story',
+    'short story online',
+    'complete story',
+    'one-shot novel',
+    'fantasy short story',
+    'romance short story',
+    'thriller short story',
+    'horror short story',
+    'mystery short story',
+    'butternovel',
+    'butter novel',
+    'free reading',
+  ],
+  openGraph: {
+    title: 'Short Novels - Free Quick Reads | ButterNovel',
+    description: 'Discover free short novels you can finish in one sitting. Browse by genre: fantasy, romance, thriller, horror, mystery, and more.',
+    type: 'website',
+    url: `${baseUrl}/shorts`,
+    siteName: 'ButterNovel',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Short Novels - Quick Reads in 10-30 Minutes',
+    description: 'Free short stories you can finish in one sitting. No subscription needed.',
+    site: '@butternovel',
+  },
+  alternates: {
+    canonical: `${baseUrl}/shorts`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+    },
+  },
 }
 
 interface Props {
@@ -104,13 +149,16 @@ export default async function ShortsPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* SEO: Structured Data */}
+      <ShortsPageJsonLd />
+
       {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-500 py-12 px-4">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-12 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
             Short Novels
           </h1>
-          <p className="text-amber-100 text-lg">
+          <p className="text-blue-100 text-lg">
             Quick reads you can finish in 10-30 minutes
           </p>
         </div>
@@ -128,7 +176,7 @@ export default async function ShortsPage({ searchParams }: Props) {
                   href={`/shorts?sort=${sort}`}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     !genre
-                      ? 'bg-amber-500 text-white'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -140,7 +188,7 @@ export default async function ShortsPage({ searchParams }: Props) {
                     href={`/shorts?genre=${g.id}&sort=${sort}`}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                       genre === g.id
-                        ? 'bg-amber-500 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -201,13 +249,13 @@ export default async function ShortsPage({ searchParams }: Props) {
                 <Link
                   key={novel.id}
                   href={`/shorts/${novel.slug}`}
-                  className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:border-amber-200 transition-all"
+                  className="group block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-200 transition-all"
                 >
                   <div className="p-5">
                     {/* Genre & Time */}
                     <div className="flex items-center justify-between mb-3">
                       {novel.shortNovelGenre && (
-                        <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
                           {getShortNovelGenreName(novel.shortNovelGenre)}
                         </span>
                       )}
@@ -220,7 +268,7 @@ export default async function ShortsPage({ searchParams }: Props) {
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-amber-600 transition-colors mb-2 line-clamp-2">
+                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 line-clamp-2">
                       {novel.title}
                     </h3>
 
@@ -239,15 +287,9 @@ export default async function ShortsPage({ searchParams }: Props) {
                           </svg>
                           {novel.viewCount.toLocaleString()}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                          </svg>
-                          {novel.likeCount.toLocaleString()}
-                        </span>
                         {novel.averageRating && novel.averageRating > 0 && (
                           <span className="flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                             {novel.averageRating.toFixed(1)}
@@ -255,8 +297,8 @@ export default async function ShortsPage({ searchParams }: Props) {
                         )}
                       </div>
 
-                      <span className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold rounded-full">
-                        Read
+                      <span className="text-blue-600 font-semibold text-sm">
+                        Read →
                       </span>
                     </div>
                   </div>
@@ -289,7 +331,7 @@ export default async function ShortsPage({ searchParams }: Props) {
                       href={`/shorts?${genre ? `genre=${genre}&` : ''}sort=${sort}&page=${page}`}
                       className={`px-4 py-2 rounded-lg transition-colors ${
                         page === currentPage
-                          ? 'bg-amber-500 text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-white border border-gray-200 hover:bg-gray-50'
                       }`}
                     >

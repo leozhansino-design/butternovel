@@ -52,6 +52,19 @@ export interface HomePageData {
     likeCount: number;
     averageRating: number | null;
   }>;
+  // ⭐ Featured Shorts (随机抽取，与 trending 不重复)
+  shortsFeatured: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    blurb: string;
+    readingPreview: string | null;
+    shortNovelGenre: string | null;
+    wordCount: number;
+    viewCount: number;
+    likeCount: number;
+    averageRating: number | null;
+  }>;
   categories: Array<{
     id: number;
     name: string;
@@ -95,6 +108,10 @@ export async function getHomePageData(): Promise<HomePageData> {
 
     // 1.5 获取短篇小说 Trending
     const shortsTrending = await getShortsTrendingNovels();
+
+    // 1.6 获取 Featured Shorts (排除 trending 中的 IDs)
+    const trendingIds = shortsTrending.map(s => s.id);
+    const shortsFeatured = await getFeaturedShorts(trendingIds);
 
     // 2. 获取精选小说
     const featured = await withRetry(() =>
@@ -228,12 +245,13 @@ export async function getHomePageData(): Promise<HomePageData> {
       featured,
       trending,
       shortsTrending,
+      shortsFeatured,
       categories,
       categoryNovels,
       timestamp: Date.now()
     };
 
-    console.log(`[Homepage] ✅ Data prepared: ${trending.length} trending, ${shortsTrending.length} shorts, ${featured.length} featured, ${categories.length} categories`);
+    console.log(`[Homepage] ✅ Data prepared: ${trending.length} trending, ${shortsTrending.length} shorts trending, ${shortsFeatured.length} shorts featured, ${featured.length} featured, ${categories.length} categories`);
 
     const totalDuration = Date.now() - totalStartTime;
     console.log(`[Homepage] 🏁 getHomePageData complete (total: ${totalDuration}ms)`);
@@ -247,6 +265,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       featured: [],
       trending: [],
       shortsTrending: [],
+      shortsFeatured: [],
       categories: [],
       categoryNovels: {},
       timestamp: Date.now()
@@ -395,6 +414,73 @@ export async function getShortsTrendingNovels(): Promise<Array<{
     return shorts;
   } catch (error) {
     console.error('[ShortsTrending] 🚨 Error fetching shorts trending novels:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取 Featured Shorts (随机抽取，排除已在 trending 中的)
+ */
+export async function getFeaturedShorts(excludeIds: number[]): Promise<Array<{
+  id: number;
+  title: string;
+  slug: string;
+  blurb: string;
+  readingPreview: string | null;
+  shortNovelGenre: string | null;
+  wordCount: number;
+  viewCount: number;
+  likeCount: number;
+  averageRating: number | null;
+}>> {
+  try {
+    console.log('[FeaturedShorts] 📚 Fetching featured shorts');
+
+    // Build exclude clause
+    const excludeClause = excludeIds.length > 0
+      ? `AND n.id NOT IN (${excludeIds.join(',')})`
+      : '';
+
+    const shorts = await withRetry(() =>
+      prisma.$queryRawUnsafe(`
+        SELECT
+          n.id,
+          n.title,
+          n.slug,
+          n.blurb,
+          n."readingPreview",
+          n."shortNovelGenre",
+          n."wordCount",
+          n."viewCount",
+          n."likeCount",
+          n."averageRating"
+        FROM "Novel" n
+        WHERE n."isPublished" = true
+          AND n."isBanned" = false
+          AND n."isShortNovel" = true
+          AND n.blurb IS NOT NULL
+          AND n.blurb != ''
+          ${excludeClause}
+        ORDER BY RANDOM()
+        LIMIT 12
+      `)
+    ) as Array<{
+      id: number;
+      title: string;
+      slug: string;
+      blurb: string;
+      readingPreview: string | null;
+      shortNovelGenre: string | null;
+      wordCount: number;
+      viewCount: number;
+      likeCount: number;
+      averageRating: number | null;
+    }>;
+
+    console.log(`[FeaturedShorts] ✅ Fetched ${shorts.length} featured shorts`);
+    return shorts;
+  } catch (error) {
+    console.error('[FeaturedShorts] 🚨 Error fetching featured shorts:', error);
     return [];
   }
 }

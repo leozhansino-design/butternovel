@@ -51,7 +51,7 @@ type FontSize = 'small' | 'medium' | 'large'
 
 const bgColors = {
   white: { bg: 'bg-white', text: 'text-gray-900', border: 'border-gray-200' },
-  beige: { bg: 'bg-[#f5f1e8]', text: 'text-gray-900', border: 'border-amber-200' },
+  beige: { bg: 'bg-[#f5f1e8]', text: 'text-gray-900', border: 'border-blue-100' },
   dark: { bg: 'bg-[#1a1a1a]', text: 'text-gray-100', border: 'border-gray-700' },
 }
 
@@ -70,8 +70,6 @@ export default function ShortNovelReader({
   const [bgColor, setBgColor] = useState<BgColor>('white')
   const [fontSize, setFontSize] = useState<FontSize>('medium')
   const [showSettings, setShowSettings] = useState(false)
-  const [isLiked, setIsLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(novel.likeCount)
   const [showComments, setShowComments] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -93,22 +91,6 @@ export default function ShortNovelReader({
     localStorage.setItem('shortsFontSize', size)
   }
 
-  // Handle like
-  const handleLike = async () => {
-    try {
-      const response = await fetch(`/api/novels/${novel.id}/like`, {
-        method: 'POST',
-      })
-      const data = await response.json()
-      if (data.success) {
-        setIsLiked(data.isLiked)
-        setLikeCount(data.likeCount)
-      }
-    } catch (error) {
-      console.error('Failed to like:', error)
-    }
-  }
-
   // Split content into paragraphs
   const paragraphs = chapter.content
     .split(/\n\n+/)
@@ -127,7 +109,7 @@ export default function ShortNovelReader({
         {/* Back to Shorts */}
         <Link
           href="/shorts"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-amber-600 transition-colors mb-4"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -138,7 +120,7 @@ export default function ShortNovelReader({
         {/* Genre & Reading Time */}
         <div className="flex items-center gap-3 mb-4">
           {novel.shortNovelGenre && (
-            <span className="px-3 py-1 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 rounded-full text-sm font-semibold">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
               {getShortNovelGenreName(novel.shortNovelGenre)}
             </span>
           )}
@@ -147,9 +129,6 @@ export default function ShortNovelReader({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             {formatReadingTime(readingTime)}
-          </span>
-          <span className="text-sm text-gray-400">
-            {novel.wordCount.toLocaleString()} characters
           </span>
         </div>
 
@@ -175,7 +154,7 @@ export default function ShortNovelReader({
           </span>
           {novel.averageRating && novel.averageRating > 0 && (
             <span className="flex items-center gap-1">
-              <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
               {novel.averageRating.toFixed(1)}
@@ -209,7 +188,7 @@ export default function ShortNovelReader({
                     key={color}
                     onClick={() => updateBgColor(color)}
                     className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                      bgColor === color ? 'border-amber-500 ring-2 ring-amber-200' : 'border-gray-300'
+                      bgColor === color ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
                     } ${bgColors[color].bg}`}
                     aria-label={`${color} background`}
                   />
@@ -227,7 +206,7 @@ export default function ShortNovelReader({
                     onClick={() => updateFontSize(size)}
                     className={`px-4 py-2 rounded-lg border-2 transition-all capitalize ${
                       fontSize === size
-                        ? 'border-amber-500 bg-amber-50 text-amber-700'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -269,37 +248,12 @@ export default function ShortNovelReader({
       <div className="px-6 py-6 border-t border-gray-100 bg-gray-50/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Like Button */}
-            <button
-              onClick={handleLike}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
-                isLiked
-                  ? 'bg-pink-100 text-pink-600 hover:bg-pink-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <svg
-                className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`}
-                fill={isLiked ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-              {likeCount.toLocaleString()}
-            </button>
-
             {/* Comment Button */}
             <button
               onClick={() => setShowComments(!showComments)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
                 showComments
-                  ? 'bg-amber-100 text-amber-700'
+                  ? 'bg-blue-100 text-blue-700'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -329,7 +283,7 @@ export default function ShortNovelReader({
                 alert('Link copied to clipboard!')
               }
             }}
-            className="flex items-center gap-2 px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-gray-500 hover:text-blue-600 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-retry'
 import ShortNovelReader from '@/components/shorts/ShortNovelReader'
 import YouMayLike from '@/components/shorts/YouMayLike'
+import ShortNovelJsonLd from '@/components/seo/ShortNovelJsonLd'
 import { getShortNovelGenreName, estimateReadingTime, formatReadingTime } from '@/lib/short-novel'
 
 interface Props {
@@ -148,31 +149,77 @@ async function incrementViewCount(novelId: number) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const novel = await getShortNovel(slug)
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://butternovel.com'
 
   if (!novel) {
     return {
-      title: 'Short Novel Not Found',
+      title: 'Short Novel Not Found | ButterNovel',
+      description: 'The requested short novel could not be found. Browse our collection of free short stories.',
     }
   }
 
   const readingTime = estimateReadingTime(novel.wordCount)
-  const genreName = novel.shortNovelGenre ? getShortNovelGenreName(novel.shortNovelGenre) : ''
+  const genreName = novel.shortNovelGenre ? getShortNovelGenreName(novel.shortNovelGenre) : 'Short Novel'
+  const fullDescription = novel.blurb.length > 155
+    ? novel.blurb.substring(0, 155) + '...'
+    : novel.blurb
+
+  // Generate optimized title with genre and reading time
+  const seoTitle = `${novel.title} - ${genreName} | ${formatReadingTime(readingTime)} Read`
 
   return {
-    title: `${novel.title} | Short Novel`,
-    description: novel.blurb.substring(0, 160),
+    title: seoTitle,
+    description: fullDescription,
     keywords: [
       'short novel',
+      'short story',
       'quick read',
-      genreName,
+      `${formatReadingTime(readingTime)} read`,
+      genreName.toLowerCase(),
+      `${genreName.toLowerCase()} short story`,
       novel.title,
+      novel.authorName,
+      'free short novel',
+      'free short story online',
       'butternovel',
+      'butter novel',
+      'complete story',
+      'one-shot novel',
     ].filter(Boolean),
+    authors: [{ name: novel.authorName }],
     openGraph: {
-      title: novel.title,
-      description: novel.blurb.substring(0, 160),
+      title: `${novel.title} | Free ${genreName} Short Novel`,
+      description: fullDescription,
       type: 'article',
-      url: `/shorts/${novel.slug}`,
+      url: `${baseUrl}/shorts/${novel.slug}`,
+      siteName: 'ButterNovel',
+      locale: 'en_US',
+      authors: [novel.authorName],
+      tags: [genreName, 'Short Novel', 'Free Reading'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${novel.title} - ${genreName} Short Novel`,
+      description: fullDescription,
+      site: '@butternovel',
+    },
+    alternates: {
+      canonical: `${baseUrl}/shorts/${novel.slug}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-snippet': -1,
+        'max-image-preview': 'large',
+      },
+    },
+    other: {
+      'reading-time': `${readingTime} min`,
+      'word-count': novel.wordCount.toString(),
+      'article:section': genreName,
     },
   }
 }
@@ -196,13 +243,32 @@ export default async function ShortNovelPage({ params }: Props) {
 
   const chapter = novel.chapters[0]
   const readingTime = estimateReadingTime(novel.wordCount)
+  const genreName = novel.shortNovelGenre ? getShortNovelGenreName(novel.shortNovelGenre) : ''
 
   // Split related novels - some for sidebar, some for bottom
   const sidebarNovels = relatedNovels.slice(0, 4)
   const bottomNovels = relatedNovels.slice(0, 6)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+      {/* SEO: Structured Data */}
+      <ShortNovelJsonLd
+        novel={{
+          id: novel.id,
+          title: novel.title,
+          slug: novel.slug,
+          blurb: novel.blurb,
+          shortNovelGenre: novel.shortNovelGenre,
+          wordCount: novel.wordCount,
+          viewCount: novel.viewCount,
+          authorName: novel.authorName,
+          averageRating: novel.averageRating,
+          ratingsCount: novel._count.ratings,
+        }}
+        readingTime={readingTime}
+        genreName={genreName}
+      />
+
       {/* Main Content Area with Sidebar */}
       <div className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
