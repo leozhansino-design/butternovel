@@ -414,8 +414,6 @@ export default function BatchUploadShortsPage() {
             type="file"
             /* @ts-expect-error webkitdirectory is non-standard */
             webkitdirectory=""
-            /* @ts-expect-error directory is non-standard */
-            directory=""
             multiple
             onChange={handleFolderImport}
             className="hidden"
