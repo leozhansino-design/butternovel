@@ -146,9 +146,16 @@ export default function ShortNovelReader({
       if (data.success) {
         setIsRecommended(data.isRecommended)
         setRecommendCount(data.recommendCount)
+        // Show message for guest users
+        if (data.message) {
+          alert(data.message)
+        }
+      } else {
+        alert(data.message || 'Failed to recommend')
       }
     } catch (error) {
       console.error('Failed to recommend:', error)
+      alert('Network error. Please try again.')
     }
   }
 
@@ -471,7 +478,7 @@ export default function ShortNovelReader({
 
       {/* Paragraph Comment Panel - Fixed side panel without backdrop */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl border-l border-gray-200 z-40 transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl border-l border-gray-200 z-[60] transition-transform duration-300 ease-in-out ${
           activeParagraphIndex !== null ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
