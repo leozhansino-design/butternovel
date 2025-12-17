@@ -9,8 +9,10 @@ import TagsInput from '@/components/shared/TagsInput'
 import { CONTENT_RATING_OPTIONS, RIGHTS_TYPE_OPTIONS } from '@/lib/content-rating'
 import { compressCoverImage, formatFileSize } from '@/lib/image-compress'
 import { safeParseJson } from '@/lib/fetch-utils'
+import { SHORT_NOVEL_GENRES } from '@/lib/short-novel'
 
-const genres = [
+// Regular novel categories
+const regularGenres = [
   { id: 1, name: 'Fantasy' },
   { id: 2, name: 'Romance' },
   { id: 3, name: 'Urban' },
@@ -53,10 +55,12 @@ export default function EditNovelPage() {
   const [tags, setTags] = useState<string[]>([])
   const [compressing, setCompressing] = useState(false)
 
+  const [isShortNovel, setIsShortNovel] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     blurb: '',
     categoryId: '',
+    shortNovelGenre: '',
     status: 'ONGOING',
     contentRating: 'ALL_AGES',
     rightsType: 'ALL_RIGHTS_RESERVED',
@@ -73,16 +77,18 @@ export default function EditNovelPage() {
       if (response.ok) {
         const data = await response.json()
         setNovel(data.novel)
+        setIsShortNovel(data.novel.isShortNovel || false)
         setFormData({
           title: data.novel.title,
           blurb: data.novel.blurb,
-          categoryId: data.novel.categoryId.toString(),
+          categoryId: data.novel.categoryId?.toString() || '',
+          shortNovelGenre: data.novel.shortNovelGenre || '',
           status: data.novel.status,
           contentRating: data.novel.contentRating || 'ALL_AGES',
           rightsType: data.novel.rightsType || 'ALL_RIGHTS_RESERVED',
           isPublished: data.novel.isPublished,
         })
-        setCoverPreview(data.novel.coverImage)
+        setCoverPreview(data.novel.coverImage || '')
         // ⭐ 加载标签
         setTags(data.novel.tags?.map((t: any) => t.name) || [])
       } else {
@@ -148,16 +154,22 @@ export default function EditNovelPage() {
       // ⭐ Use coverPreview (already compressed) if a new file was uploaded
       const newCoverImage = coverFile ? coverPreview : undefined
 
-      // ⭐ Build request body
-      const requestBody = {
+      // ⭐ Build request body (different for short novels)
+      const requestBody: any = {
         title: formData.title,
         blurb: formData.blurb,
-        categoryId: parseInt(formData.categoryId),
         status: formData.status,
         contentRating: formData.contentRating,
         rightsType: formData.rightsType,
         isPublished: formData.isPublished,
         coverImage: newCoverImage,
+      }
+
+      // Short novels use shortNovelGenre, regular novels use categoryId
+      if (isShortNovel) {
+        requestBody.shortNovelGenre = formData.shortNovelGenre
+      } else {
+        requestBody.categoryId = parseInt(formData.categoryId)
       }
 
       // ⭐ Check request size (Vercel limit: 4.5MB)
@@ -287,62 +299,90 @@ export default function EditNovelPage() {
               </div>
             </div>
 
-            {/* Cover Image */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cover Image {coverFile && <span className="text-indigo-600">(New)</span>}
-              </label>
-              <p className="text-xs text-gray-500 mb-3">Required size: 300x400px, Max 2MB</p>
-
-              <div className="flex items-start gap-4">
-                <div className="relative w-40 h-52 rounded-lg overflow-hidden border-2 border-gray-300">
-                  <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
-                  {coverFile && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCoverPreview(novel.coverImage)
-                        setCoverFile(null)
-                      }}
-                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-
-                <label className="flex flex-col items-center justify-center w-40 h-52 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
-                  <Upload className="text-gray-400 mb-2" size={28} />
-                  <span className="text-sm text-gray-600 font-medium">Change Cover</span>
-                  <span className="text-xs text-gray-400 mt-2">300x400px</span>
-                  <span className="text-xs text-gray-400">Max 2MB</span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    onChange={handleCoverUpload}
-                    className="hidden"
-                  />
+            {/* Cover Image - Only for regular novels */}
+            {!isShortNovel && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cover Image {coverFile && <span className="text-indigo-600">(New)</span>}
                 </label>
-              </div>
-            </div>
+                <p className="text-xs text-gray-500 mb-3">Required size: 300x400px, Max 2MB</p>
 
-            {/* Category */}
+                <div className="flex items-start gap-4">
+                  <div className="relative w-40 h-52 rounded-lg overflow-hidden border-2 border-gray-300">
+                    <Image src={coverPreview} alt="Cover preview" fill className="object-cover" />
+                    {coverFile && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCoverPreview(novel.coverImage)
+                          setCoverFile(null)
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="flex flex-col items-center justify-center w-40 h-52 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
+                    <Upload className="text-gray-400 mb-2" size={28} />
+                    <span className="text-sm text-gray-600 font-medium">Change Cover</span>
+                    <span className="text-xs text-gray-400 mt-2">300x400px</span>
+                    <span className="text-xs text-gray-400">Max 2MB</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleCoverUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Genre - Different for short novels vs regular novels */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Genre <span className="text-red-500">*</span>
+                {isShortNovel && (
+                  <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    Short Novel
+                  </span>
+                )}
               </label>
-              <select
-                required
-                value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                {genres.map((genre) => (
-                  <option key={genre.id} value={genre.id}>
-                    {genre.name}
-                  </option>
-                ))}
-              </select>
+              {isShortNovel ? (
+                // Short novel genres - button grid like upload form
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {SHORT_NOVEL_GENRES.map((genre) => (
+                    <button
+                      key={genre.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, shortNovelGenre: genre.id })}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                        formData.shortNovelGenre === genre.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      {genre.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                // Regular novel categories - dropdown
+                <select
+                  required
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  {regularGenres.map((genre) => (
+                    <option key={genre.id} value={genre.id}>
+                      {genre.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Tags */}

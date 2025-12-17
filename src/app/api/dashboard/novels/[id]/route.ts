@@ -145,19 +145,31 @@ export async function PUT(
       categoryId = parsed
     }
 
+    // Build update data
+    const updateData: any = {
+      title: body.title || existingNovel.title,
+      blurb: body.blurb || existingNovel.blurb,
+      coverImage: coverImageUrl,
+      coverImagePublicId,
+      status: body.status || existingNovel.status,
+      isPublished: body.isPublished !== undefined ? body.isPublished : existingNovel.isPublished,
+      isDraft: body.isPublished !== undefined ? !body.isPublished : existingNovel.isDraft,
+    }
+
+    // Handle categoryId for regular novels
+    if (!existingNovel.isShortNovel && body.categoryId) {
+      updateData.categoryId = categoryId
+    }
+
+    // Handle shortNovelGenre for short novels
+    if (existingNovel.isShortNovel && body.shortNovelGenre) {
+      updateData.shortNovelGenre = body.shortNovelGenre
+    }
+
     // Update novel
     const updatedNovel = await prisma.novel.update({
       where: { id: novelId },
-      data: {
-        title: body.title || existingNovel.title,
-        blurb: body.blurb || existingNovel.blurb,
-        coverImage: coverImageUrl,
-        coverImagePublicId,
-        categoryId,
-        status: body.status || existingNovel.status,
-        isPublished: body.isPublished !== undefined ? body.isPublished : existingNovel.isPublished,
-        isDraft: body.isPublished !== undefined ? !body.isPublished : existingNovel.isDraft,
-      },
+      data: updateData,
       include: {
         category: {
           select: { slug: true }

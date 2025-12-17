@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { getShortNovelGenreName, formatReadingTime } from '@/lib/short-novel'
 import { FormattedParagraph } from '@/components/reader/FormattedText'
 import ShortNovelComments from './ShortNovelComments'
+import ParagraphCommentButton from '@/components/reader/ParagraphCommentButton'
+import ParagraphCommentPanel from '@/components/reader/ParagraphCommentPanel'
 
 interface Novel {
   id: number
@@ -71,7 +73,13 @@ export default function ShortNovelReader({
   const [fontSize, setFontSize] = useState<FontSize>('medium')
   const [showSettings, setShowSettings] = useState(false)
   const [showComments, setShowComments] = useState(false)
+  const [isRecommended, setIsRecommended] = useState(false)
+  const [recommendCount, setRecommendCount] = useState(novel.likeCount)
+  const [showFloatingButton, setShowFloatingButton] = useState(false)
+  const [activeParagraphIndex, setActiveParagraphIndex] = useState<number | null>(null)
+  const [commentCounts, setCommentCounts] = useState<Record<number, number>>({})
   const contentRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -80,6 +88,52 @@ export default function ShortNovelReader({
     if (savedBg && bgColors[savedBg]) setBgColor(savedBg)
     if (savedSize && fontSizes[savedSize]) setFontSize(savedSize)
   }, [])
+
+  // Show floating button when header is out of view
+  useEffect(() => {
+    const handleScroll = () => {
+      if (headerRef.current) {
+        const headerRect = headerRef.current.getBoundingClientRect()
+        setShowFloatingButton(headerRect.bottom < 0)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Fetch paragraph comment counts
+  useEffect(() => {
+    const fetchCommentCounts = async () => {
+      try {
+        const res = await fetch(`/api/paragraph-comments/batch-count?chapterId=${chapter.id}`)
+        const data = await res.json()
+        if (data.success) {
+          setCommentCounts(data.data || {})
+        }
+      } catch (error) {
+        console.error('Failed to fetch comment counts:', error)
+      }
+    }
+
+    fetchCommentCounts()
+  }, [chapter.id])
+
+  // Handle recommend
+  const handleRecommend = async () => {
+    try {
+      const response = await fetch(`/api/shorts/${novel.id}/recommend`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (data.success) {
+        setIsRecommended(data.isRecommended)
+        setRecommendCount(data.recommendCount)
+      }
+    } catch (error) {
+      console.error('Failed to recommend:', error)
+    }
+  }
 
   const updateBgColor = (color: BgColor) => {
     setBgColor(color)
@@ -103,9 +157,39 @@ export default function ShortNovelReader({
     : paragraphs
 
   return (
-    <article className={`rounded-2xl shadow-lg overflow-hidden ${bgColors[bgColor].bg} ${bgColors[bgColor].border} border`}>
-      {/* Header */}
-      <header className="px-6 py-8 border-b border-gray-100">
+    <>
+      {/* Floating Recommend Button */}
+      {showFloatingButton && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={handleRecommend}
+            className={`flex items-center gap-2 px-5 py-3 rounded-full shadow-lg font-medium transition-all ${
+              isRecommended
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
+            }`}
+          >
+            <svg
+              className={`w-5 h-5 ${isRecommended ? 'fill-current' : ''}`}
+              fill={isRecommended ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+              />
+            </svg>
+            {recommendCount.toLocaleString()}
+          </button>
+        </div>
+      )}
+
+      <article className={`rounded-2xl shadow-lg overflow-hidden ${bgColors[bgColor].bg} ${bgColors[bgColor].border} border`}>
+        {/* Header */}
+        <header ref={headerRef} className="px-6 py-8 border-b border-gray-100">
         {/* Back to Shorts */}
         <Link
           href="/shorts"
@@ -162,8 +246,8 @@ export default function ShortNovelReader({
           )}
         </div>
 
-        {/* Settings Toggle */}
-        <div className="mt-6 flex items-center gap-4">
+        {/* Settings & Recommend Buttons */}
+        <div className="mt-6 flex items-center gap-3">
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
@@ -173,6 +257,31 @@ export default function ShortNovelReader({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             Reader Settings
+          </button>
+
+          {/* Recommend Button */}
+          <button
+            onClick={handleRecommend}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              isRecommended
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+            }`}
+          >
+            <svg
+              className={`w-4 h-4 ${isRecommended ? 'fill-current' : ''}`}
+              fill={isRecommended ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+              />
+            </svg>
+            {isRecommended ? 'Recommended' : 'Recommend'} ({recommendCount.toLocaleString()})
           </button>
         </div>
 
@@ -225,6 +334,15 @@ export default function ShortNovelReader({
           {finalParagraphs.map((paragraph, index) => (
             <p key={index} className="mb-6 whitespace-pre-wrap">
               <FormattedParagraph content={paragraph} />
+              {/* Paragraph comment button - inline at end of paragraph */}
+              <span className="inline-block align-middle ml-2">
+                <ParagraphCommentButton
+                  paragraphIndex={index}
+                  onClick={() => setActiveParagraphIndex(activeParagraphIndex === index ? null : index)}
+                  isActive={activeParagraphIndex === index}
+                  commentCount={commentCounts[index] || 0}
+                />
+              </span>
             </p>
           ))}
         </div>
@@ -298,15 +416,39 @@ export default function ShortNovelReader({
         </div>
       </div>
 
-      {/* Comments Section */}
-      {showComments && (
-        <div className="px-6 py-6 border-t border-gray-100">
-          <ShortNovelComments
-            novelId={novel.id}
-            initialRatings={ratings}
+        {/* Comments Section */}
+        {showComments && (
+          <div className="px-6 py-6 border-t border-gray-100">
+            <ShortNovelComments
+              novelId={novel.id}
+              initialRatings={ratings}
+            />
+          </div>
+        )}
+      </article>
+
+      {/* Paragraph Comment Panel - Slide from right */}
+      {activeParagraphIndex !== null && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={() => setActiveParagraphIndex(null)}
           />
+
+          {/* Panel */}
+          <div className={`relative w-full max-w-md h-full ${bgColors[bgColor].bg} shadow-2xl animate-slide-in-right`}>
+            <ParagraphCommentPanel
+              novelId={novel.id}
+              chapterId={chapter.id}
+              paragraphIndex={activeParagraphIndex}
+              onClose={() => setActiveParagraphIndex(null)}
+              bgColor={bgColors[bgColor].bg}
+              textColor={bgColors[bgColor].text}
+            />
+          </div>
         </div>
       )}
-    </article>
+    </>
   )
 }
