@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { CATEGORIES } from '@/lib/constants'
+import { SHORT_NOVEL_GENRES } from '@/lib/short-novel'
 import { safeParseJson } from '@/lib/fetch-utils'
 
 interface Category {
@@ -19,15 +20,20 @@ interface Tag {
   coOccurrence?: number
 }
 
+// Novel type: 'novels' or 'shorts'
+export type NovelType = 'novels' | 'shorts'
+
 interface SearchFiltersProps {
   selectedCategory: string
   selectedTags: string[]
   selectedStatuses: string[]
   selectedSort: string
+  selectedType: NovelType
   onCategoryChange: (category: string) => void
   onTagsChange: (tags: string[]) => void
   onStatusesChange: (statuses: string[]) => void
   onSortChange: (sort: string) => void
+  onTypeChange: (type: NovelType) => void
   onClearAll: () => void
 }
 
@@ -36,10 +42,12 @@ export default function SearchFilters({
   selectedTags,
   selectedStatuses,
   selectedSort,
+  selectedType,
   onCategoryChange,
   onTagsChange,
   onStatusesChange,
   onSortChange,
+  onTypeChange,
   onClearAll,
 }: SearchFiltersProps) {
   // Use static categories from constants to ensure consistency with Header/Footer
@@ -50,6 +58,16 @@ export default function SearchFilters({
       slug: cat.slug,
     }))
   )
+
+  // Short novel genres
+  const shortNovelGenres = SHORT_NOVEL_GENRES.map((g) => ({
+    id: g.order,
+    name: g.name,
+    slug: g.slug,
+  }))
+
+  // Get genres based on selected type
+  const displayGenres = selectedType === 'shorts' ? shortNovelGenres : categories
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [loadingTags, setLoadingTags] = useState(false)
 
@@ -180,10 +198,44 @@ export default function SearchFilters({
 
   const hasFilters = selectedCategory || selectedTags.length > 0 || selectedStatuses.length > 0
 
+  // Handle type change - clear category when switching types
+  const handleTypeChange = (type: NovelType) => {
+    if (type !== selectedType) {
+      onCategoryChange('') // Clear category when switching types
+      onTypeChange(type)
+    }
+  }
+
   return (
     <div className="bg-white sticky top-0 z-10 shadow-sm">
       <div className="container mx-auto px-3 sm:px-4 max-w-7xl py-2 sm:py-4">
-        {/* Category filters - 移动端水平滚动 */}
+        {/* Type selector - Novels vs Shorts */}
+        <div className="mb-3 sm:mb-4">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleTypeChange('novels')}
+              className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-semibold transition-all ${
+                selectedType === 'novels'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              📚 Novels
+            </button>
+            <button
+              onClick={() => handleTypeChange('shorts')}
+              className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-semibold transition-all ${
+                selectedType === 'shorts'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              ⚡ Short Stories
+            </button>
+          </div>
+        </div>
+
+        {/* Genre filters - 移动端水平滚动 */}
         <div className="mb-2 sm:mb-4">
           <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap overflow-x-auto sm:flex-wrap scrollbar-hide pb-1 sm:pb-0">
             <button
@@ -196,7 +248,7 @@ export default function SearchFilters({
             >
               All
             </button>
-            {categories.map((cat) => (
+            {displayGenres.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.slug)}

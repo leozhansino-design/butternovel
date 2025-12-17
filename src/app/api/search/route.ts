@@ -155,11 +155,19 @@ export async function GET(request: Request) {
     const sortParam = searchParams.get('sort') || 'hot'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50) // 最大50条
+    const typeParam = searchParams.get('type') || 'novels' // 'novels' or 'shorts'
 
     // 构建搜索条件
     const where: any = {
       isPublished: true, // 只搜索已发布的小说
       isBanned: false,   // 排除被禁用的小说
+    }
+
+    // Filter by type (novels or shorts)
+    if (typeParam === 'shorts') {
+      where.isShortNovel = true
+    } else {
+      where.isShortNovel = false
     }
 
     // 搜索关键词（标题、作者名、简介）
@@ -173,28 +181,42 @@ export async function GET(request: Request) {
 
     // 分类筛选（支持分类 slug、名称或ID）
     if (category) {
-      // 检查是否为数字ID
-      if (/^\d+$/.test(category)) {
-        where.categoryId = parseInt(category)
-      } else {
-        // 优先按 slug 查找，如果找不到再按名称查找
-        const categoryRecord = await withRetry(
-          () => prisma.category.findFirst({
-            where: {
-              OR: [
-                { slug: { equals: category, mode: 'insensitive' } },
-                { name: { equals: category, mode: 'insensitive' } }
-              ]
-            },
-            select: { id: true }
-          }),
-          { operationName: 'Find category by slug or name' }
-        ) as { id: number } | null
-        if (categoryRecord) {
-          where.categoryId = categoryRecord.id
+      if (typeParam === 'shorts') {
+        // For shorts, filter by shortNovelGenre (using slug)
+        const genre = SHORT_NOVEL_GENRES.find(
+          g => g.slug === category || g.id === category || g.name.toLowerCase() === category.toLowerCase()
+        )
+        if (genre) {
+          where.shortNovelGenre = genre.id
         } else {
-          // 分类不存在，设置不可能的ID确保返回空结果
-          where.categoryId = -1
+          // Genre not found, ensure no results
+          where.shortNovelGenre = 'invalid-genre'
+        }
+      } else {
+        // For regular novels, filter by category
+        // 检查是否为数字ID
+        if (/^\d+$/.test(category)) {
+          where.categoryId = parseInt(category)
+        } else {
+          // 优先按 slug 查找，如果找不到再按名称查找
+          const categoryRecord = await withRetry(
+            () => prisma.category.findFirst({
+              where: {
+                OR: [
+                  { slug: { equals: category, mode: 'insensitive' } },
+                  { name: { equals: category, mode: 'insensitive' } }
+                ]
+              },
+              select: { id: true }
+            }),
+            { operationName: 'Find category by slug or name' }
+          ) as { id: number } | null
+          if (categoryRecord) {
+            where.categoryId = categoryRecord.id
+          } else {
+            // 分类不存在，设置不可能的ID确保返回空结果
+            where.categoryId = -1
+          }
         }
       }
     }

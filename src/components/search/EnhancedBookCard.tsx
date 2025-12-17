@@ -35,6 +35,85 @@ interface EnhancedBookCardProps {
   isShortNovel?: boolean
 }
 
+// Default cover component for short novels without covers
+const ShortNovelDefaultCover = ({ title }: { title: string }) => {
+  // Generate a consistent color based on title
+  const getColorFromTitle = (str: string) => {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    // Generate vibrant colors in blue/purple/pink range
+    const hue = (Math.abs(hash) % 60) + 200 // 200-260 range (blue to purple)
+    return {
+      primary: `hsl(${hue}, 70%, 55%)`,
+      secondary: `hsl(${(hue + 40) % 360}, 75%, 45%)`,
+      accent: `hsl(${(hue + 80) % 360}, 65%, 60%)`,
+    }
+  }
+
+  const colors = getColorFromTitle(title)
+
+  return (
+    <div
+      className="w-full h-full flex flex-col items-center justify-center p-3 text-white relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 50%, ${colors.accent} 100%)`,
+      }}
+    >
+      {/* Decorative elements */}
+      <div
+        className="absolute top-2 right-2 w-8 h-8 rounded-full opacity-20"
+        style={{ background: 'white' }}
+      />
+      <div
+        className="absolute bottom-4 left-2 w-12 h-12 rounded-full opacity-15"
+        style={{ background: 'white' }}
+      />
+      <div
+        className="absolute top-1/3 left-1/4 w-6 h-6 rounded-full opacity-10"
+        style={{ background: 'white' }}
+      />
+
+      {/* Short story icon */}
+      <div className="mb-2 opacity-90">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="drop-shadow-md"
+        >
+          <path
+            d="M4 4C4 2.89543 4.89543 2 6 2H14L20 8V20C20 21.1046 19.1046 22 18 22H6C4.89543 22 4 21.1046 4 20V4Z"
+            fill="white"
+            fillOpacity="0.9"
+          />
+          <path
+            d="M14 2V8H20"
+            stroke="currentColor"
+            strokeOpacity="0.3"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M8 13H16M8 17H13"
+            stroke="currentColor"
+            strokeOpacity="0.4"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
+
+      {/* Short label */}
+      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-95 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm">
+        Short Story
+      </span>
+    </div>
+  )
+}
+
 const EnhancedBookCard = memo(function EnhancedBookCard({
   id,
   title,
@@ -97,13 +176,17 @@ const EnhancedBookCard = memo(function EnhancedBookCard({
       <div className="flex h-full">
         {/* 左侧：封面图片 - 宽度固定，高度跟随卡片 */}
         <Link href={novelUrl} className="flex-shrink-0 relative group w-24 sm:w-32 md:w-40 lg:w-44">
-          <Image
-            src={coverImage}
-            alt={title}
-            fill
-            className="object-cover group-hover:opacity-90 transition-opacity"
-            sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, (max-width: 1024px) 160px, 176px"
-          />
+          {isShortNovel && !coverImage ? (
+            <ShortNovelDefaultCover title={title} />
+          ) : (
+            <Image
+              src={coverImage}
+              alt={title}
+              fill
+              className="object-cover group-hover:opacity-90 transition-opacity"
+              sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, (max-width: 1024px) 160px, 176px"
+            />
+          )}
         </Link>
 
         {/* 右侧：所有文字信息 - 自然流式布局 */}
