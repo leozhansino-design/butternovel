@@ -28,9 +28,9 @@ export async function GET(
 
     const existingLike = await prisma.novelLike.findUnique({
       where: {
-        novelId_userId: {
-          novelId,
-          userId: session.user.id
+        userId_novelId: {
+          userId: session.user.id,
+          novelId
         }
       }
     })
