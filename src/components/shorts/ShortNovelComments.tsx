@@ -30,10 +30,12 @@ export default function ShortNovelComments({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [userRating, setUserRating] = useState<Rating | null>(null)
   const [hoverRating, setHoverRating] = useState(0)
+  const [isCheckingRating, setIsCheckingRating] = useState(true)
 
   // Check if user has already rated
   useEffect(() => {
     const checkUserRating = async () => {
+      setIsCheckingRating(true)
       try {
         const response = await fetch(`/api/novels/${novelId}/user-rating`)
         const data = await response.json()
@@ -43,6 +45,8 @@ export default function ShortNovelComments({
         }
       } catch (error) {
         console.error('Failed to check user rating:', error)
+      } finally {
+        setIsCheckingRating(false)
       }
     }
     checkUserRating()
@@ -152,7 +156,11 @@ export default function ShortNovelComments({
       <h3 className="text-lg font-bold text-gray-900">Ratings & Reviews</h3>
 
       {/* Rating Form */}
-      {!userRating ? (
+      {isCheckingRating ? (
+        <div className="bg-gray-50 rounded-xl p-5 flex items-center justify-center">
+          <div className="animate-pulse text-gray-500">Loading...</div>
+        </div>
+      ) : !userRating ? (
         <form onSubmit={handleSubmitRating} className="bg-gray-50 rounded-xl p-5 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

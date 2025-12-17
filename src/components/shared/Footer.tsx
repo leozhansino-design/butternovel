@@ -14,6 +14,15 @@ const FOOTER_CATEGORIES = [
   { slug: 'vampire', name: 'Vampire' },
 ];
 
+const FOOTER_SHORT_GENRES = [
+  { slug: 'sweet-romance', name: 'Sweet Romance' },
+  { slug: 'ceo-billionaire', name: 'CEO/Billionaire' },
+  { slug: 'horror-thriller', name: 'Horror/Thriller' },
+  { slug: 'comedy-humor', name: 'Comedy/Humor' },
+  { slug: 'family-drama', name: 'Family Drama' },
+  { slug: 'paranormal-fantasy', name: 'Paranormal' },
+];
+
 export default function Footer() {
   const categories = FOOTER_CATEGORIES;
 
@@ -61,17 +70,42 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Categories - 占用2列空间 */}
-          <div className="md:col-span-2">
+          {/* Categories */}
+          <div>
             <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
-              {categories.map((category) => (
+            <ul className="space-y-2">
+              {categories.slice(0, 6).map((category) => (
                 <li key={category.slug}>
                   <Link
                     href={`/search?category=${category.slug}`}
                     className="text-sm text-gray-600 hover:text-sky-600 transition-colors"
                   >
                     {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Short Novels */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">Short Novels</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/shorts"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  All Shorts
+                </Link>
+              </li>
+              {FOOTER_SHORT_GENRES.map((genre) => (
+                <li key={genre.slug}>
+                  <Link
+                    href={`/search?type=shorts&genre=${genre.slug}`}
+                    className="text-sm text-gray-600 hover:text-sky-600 transition-colors"
+                  >
+                    {genre.name}
                   </Link>
                 </li>
               ))}

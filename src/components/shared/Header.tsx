@@ -154,7 +154,7 @@ export default function Header() {
                       {SHORT_NOVEL_GENRES.map((genre) => (
                         <Link
                           key={genre.id}
-                          href={`/shorts/search?genre=${genre.slug}`}
+                          href={`/search?type=shorts&genre=${genre.slug}`}
                           className="block px-3 py-1.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                         >
                           {genre.name}
@@ -274,7 +274,7 @@ export default function Header() {
                 {SHORT_NOVEL_GENRES.slice(0, 8).map((genre) => (
                   <Link
                     key={genre.id}
-                    href={`/shorts/search?genre=${genre.slug}`}
+                    href={`/search?type=shorts&genre=${genre.slug}`}
                     className="block px-3 py-1.5 pl-6 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
