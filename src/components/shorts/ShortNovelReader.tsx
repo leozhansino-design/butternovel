@@ -78,6 +78,7 @@ export default function ShortNovelReader({
   const [showComments, setShowComments] = useState(false)
   const [isRecommended, setIsRecommended] = useState(false)
   const [recommendCount, setRecommendCount] = useState(novel.likeCount)
+  const [isRecommending, setIsRecommending] = useState(false)
   const [showFloatingButton, setShowFloatingButton] = useState(false)
   const [activeParagraphIndex, setActiveParagraphIndex] = useState<number | null>(null)
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({})
@@ -140,7 +141,7 @@ export default function ShortNovelReader({
     checkRecommendStatus()
   }, [novel.id])
 
-  // Handle recommend
+  // Handle recommend with optimistic update
   const handleRecommend = async () => {
     // Show login modal if user is not logged in
     if (!session?.user) {
@@ -148,20 +149,38 @@ export default function ShortNovelReader({
       return
     }
 
+    // Prevent multiple clicks while loading
+    if (isRecommending) return
+
+    // Optimistic update - immediately toggle UI state
+    const wasRecommended = isRecommended
+    const oldCount = recommendCount
+    setIsRecommended(!wasRecommended)
+    setRecommendCount(wasRecommended ? oldCount - 1 : oldCount + 1)
+    setIsRecommending(true)
+
     try {
       const response = await fetch(`/api/shorts/${novel.id}/recommend`, {
         method: 'POST',
       })
       const data = await response.json()
       if (data.success) {
+        // Update with actual server values
         setIsRecommended(data.isRecommended)
         setRecommendCount(data.recommendCount)
       } else {
-        alert(data.message || 'Failed to recommend')
+        // Revert optimistic update on failure
+        setIsRecommended(wasRecommended)
+        setRecommendCount(oldCount)
+        console.error('Recommend failed:', data.message)
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setIsRecommended(wasRecommended)
+      setRecommendCount(oldCount)
       console.error('Failed to recommend:', error)
-      alert('Network error. Please try again.')
+    } finally {
+      setIsRecommending(false)
     }
   }
 
@@ -196,25 +215,33 @@ export default function ShortNovelReader({
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={handleRecommend}
+            disabled={isRecommending}
             className={`flex items-center gap-2 px-5 py-3 rounded-full shadow-lg font-medium transition-all ${
               isRecommended
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
-            }`}
+            } ${isRecommending ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            <svg
-              className={`w-5 h-5 ${isRecommended ? 'fill-current' : ''}`}
-              fill={isRecommended ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-              />
-            </svg>
+            {isRecommending ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <svg
+                className={`w-5 h-5 ${isRecommended ? 'fill-current' : ''}`}
+                fill={isRecommended ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                />
+              </svg>
+            )}
             {isRecommended ? 'Recommended' : 'Recommend'} ({recommendCount.toLocaleString()})
           </button>
         </div>
@@ -305,25 +332,33 @@ export default function ShortNovelReader({
           {/* Recommend Button */}
           <button
             onClick={handleRecommend}
+            disabled={isRecommending}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               isRecommended
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600'
-            }`}
+            } ${isRecommending ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            <svg
-              className={`w-4 h-4 ${isRecommended ? 'fill-current' : ''}`}
-              fill={isRecommended ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-              />
-            </svg>
+            {isRecommending ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <svg
+                className={`w-4 h-4 ${isRecommended ? 'fill-current' : ''}`}
+                fill={isRecommended ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                />
+              </svg>
+            )}
             {isRecommended ? 'Recommended' : 'Recommend'} ({recommendCount.toLocaleString()})
           </button>
         </div>
@@ -432,25 +467,33 @@ export default function ShortNovelReader({
             {/* Recommend Button - Bottom */}
             <button
               onClick={handleRecommend}
+              disabled={isRecommending}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all ${
                 isRecommended
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-              }`}
+              } ${isRecommending ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              <svg
-                className={`w-5 h-5 ${isRecommended ? 'fill-current' : ''}`}
-                fill={isRecommended ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-                />
-              </svg>
+              {isRecommending ? (
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg
+                  className={`w-5 h-5 ${isRecommended ? 'fill-current' : ''}`}
+                  fill={isRecommended ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                  />
+                </svg>
+              )}
               {isRecommended ? 'Recommended' : 'Recommend'} ({recommendCount.toLocaleString()})
             </button>
           </div>

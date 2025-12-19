@@ -1,6 +1,6 @@
 // src/app/sitemap.ts
-// Generate sitemap dynamically for Google
-// SEO optimized sitemap with novels, chapters, categories, and tags
+// Generate sitemap dynamically for Google & AI search engines
+// SEO optimized sitemap with novels, shorts, chapters, categories, and tags
 import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
@@ -10,7 +10,15 @@ interface NovelSitemapData {
   title: string
   updatedAt: Date
   viewCount: number
+  isShortNovel: boolean
   _count: { chapters: number }
+}
+
+interface ShortNovelSitemapData {
+  slug: string
+  updatedAt: Date
+  viewCount: number
+  shortNovelGenre: string | null
 }
 
 interface CategorySitemapData {
@@ -35,6 +43,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/novels`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/shorts`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
@@ -78,17 +92,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    // Fetch all published novels with their chapter info (limit to 10,000 for sitemap size)
+    // Fetch all published regular novels (not short novels)
     const novels = await prisma.novel.findMany({
       where: {
         isPublished: true,
         isBanned: false,
+        isShortNovel: false,
       },
       select: {
         slug: true,
         title: true,
         updatedAt: true,
         viewCount: true,
+        isShortNovel: true,
         _count: {
           select: { chapters: true }
         }
@@ -97,6 +113,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         viewCount: 'desc', // Most popular first - these are most important for SEO
       },
       take: 10000,
+    })
+
+    // Fetch all published short novels
+    const shortNovels = await prisma.novel.findMany({
+      where: {
+        isPublished: true,
+        isBanned: false,
+        isShortNovel: true,
+      },
+      select: {
+        slug: true,
+        updatedAt: true,
+        viewCount: true,
+        shortNovelGenre: true,
+      },
+      orderBy: {
+        viewCount: 'desc',
+      },
+      take: 5000,
     })
 
     // Novel pages - higher priority for popular novels
@@ -163,7 +198,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: index < 50 ? 0.7 : 0.6,
     }))
 
-    return [...staticPages, ...novelPages, ...chapterPages, ...categoryPages, ...tagPages]
+    // Short novel pages - important for AI search traffic (complete stories)
+    const shortNovelPages: MetadataRoute.Sitemap = shortNovels.map((novel: ShortNovelSitemapData, index: number) => ({
+      url: `${baseUrl}/shorts/${novel.slug}`,
+      lastModified: novel.updatedAt,
+      changeFrequency: 'weekly' as const,
+      // Short novels are high-quality complete content - higher priority
+      priority: index < 50 ? 0.85 : index < 200 ? 0.8 : 0.75,
+    }))
+
+    // Short novel genre filter pages for SEO
+    const shortGenres = ['fantasy', 'romance', 'thriller', 'horror', 'sci-fi', 'mystery',
+                         'drama', 'comedy', 'historical', 'urban', 'wuxia', 'xuanhuan',
+                         'slice-of-life', 'adventure', 'paranormal', 'inspirational']
+    const shortGenrePages: MetadataRoute.Sitemap = shortGenres.map(genre => ({
+      url: `${baseUrl}/shorts?genre=${genre}`,
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    }))
+
+    return [...staticPages, ...novelPages, ...chapterPages, ...categoryPages, ...tagPages, ...shortNovelPages, ...shortGenrePages]
   } catch (error) {
     // If database is not available during build, return static pages only
     console.warn('Sitemap: Database not available, returning static pages only')
