@@ -78,6 +78,7 @@ export default function ShortNovelReader({
   const [showComments, setShowComments] = useState(false)
   const [isRecommended, setIsRecommended] = useState(false)
   const [recommendCount, setRecommendCount] = useState(novel.likeCount)
+  const [ratingsCount, setRatingsCount] = useState(novel.ratingsCount || ratings.length)
   const [isRecommending, setIsRecommending] = useState(false)
   const [showFloatingButton, setShowFloatingButton] = useState(false)
   const [activeParagraphIndex, setActiveParagraphIndex] = useState<number | null>(null)
@@ -461,7 +462,7 @@ export default function ShortNovelReader({
                   d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                 />
               </svg>
-              {novel.commentsCount} Comments
+              {ratingsCount} Comments
             </button>
 
             {/* Recommend Button - Bottom */}
@@ -533,6 +534,7 @@ export default function ShortNovelReader({
             <ShortNovelComments
               novelId={novel.id}
               initialRatings={ratings}
+              onRatingAdded={() => setRatingsCount(prev => prev + 1)}
             />
           </div>
         )}
