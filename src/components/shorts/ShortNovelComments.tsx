@@ -17,11 +17,13 @@ interface Rating {
 interface ShortNovelCommentsProps {
   novelId: number
   initialRatings: Rating[]
+  onRatingAdded?: () => void
 }
 
 export default function ShortNovelComments({
   novelId,
   initialRatings,
+  onRatingAdded,
 }: ShortNovelCommentsProps) {
   const [ratings, setRatings] = useState<Rating[]>(initialRatings)
   const [newRating, setNewRating] = useState(0)
@@ -97,6 +99,8 @@ export default function ShortNovelComments({
         if (ratingsData.success) {
           setRatings(ratingsData.ratings)
         }
+        // 通知父组件评分数量增加
+        onRatingAdded?.()
       } else {
         alert(data.error || 'Failed to submit rating. Please try again.')
       }
