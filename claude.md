@@ -1,557 +1,373 @@
 # ButterNovel - Claude 开发参考文档
 
-> **快速参考**: 每次开发前必读，帮助 Claude 快速理解项目上下文
+> **快速参考**: 每次开发前必读
 
 **最后更新**: 2025-12-23
-**项目版本**: MVP v3.0 (移动端开发)
 **当前阶段**: 📱 手机版 App 开发
 **目标平台**: Google Play + App Store
 
 ---
 
-## 📋 目录
+## 目录
 
 1. [项目概述](#1-项目概述)
-2. [移动端 App 规划](#2-移动端-app-规划) ⭐ 重要
-3. [技术栈](#3-技术栈)
-4. [项目结构](#4-项目结构)
-5. [数据库设计](#5-数据库设计)
-6. [开发规范](#6-开发规范)
-7. [API 路由](#7-api-路由)
-8. [核心功能模块](#8-核心功能模块)
-9. [环境变量](#9-环境变量)
+2. [移动端 App 规划](#2-移动端-app-规划)
+3. [现有 API 详细列表](#3-现有-api-详细列表)
+4. [数据库模型](#4-数据库模型)
+5. [开发流程](#5-开发流程)
+6. [新手测试指南](#6-新手测试指南)
 
 ---
 
 ## 1. 项目概述
 
-### 1.1 项目定位
+### 1.1 产品定位
 
-**ButterNovel** 是一个短篇小说阅读与创作平台。
+**ButterNovel 手机版** - 短篇小说阅读与创作 App
 
-**手机版核心特征**:
-- 📱 只做短篇小说（暂不做长篇）
-- 🎯 抖音式推荐体验（For You）
-- ✍️ 用户即作者（一个账号双身份）
-- 🌍 目标市场：全球英语用户
+**核心特点**:
+| 特点 | 说明 |
+|------|------|
+| 只做短篇 | 15,000-50,000 字符 |
+| 不要封面 | 纯文字卡片展示 |
+| 抖音式推荐 | For You 垂直滑动 |
+| 人人可创作 | 一个账号 = 读者 + 作者 |
+| 保留评论 | 段落评论 + 书籍评分 |
 
-**平台**:
-- Google Play (Android)
-- App Store (iOS)
-
-### 1.2 用户角色
+### 1.2 与 Web 端共享
 
 ```
-一个账号 = 读者 + 作者
+✅ 共享的:
+├── 数据库（同一个 PostgreSQL）
+├── API 端点（同一个后端）
+├── 用户账号（同一套认证）
+├── 小说数据
+├── 评论/评分数据
+└── 关注关系
 
-┌─────────────────────────────────────────┐
-│ 读者模式                                │
-│ - 浏览 For You 推荐                     │
-│ - 阅读短篇小说                          │
-│ - 收藏/点赞/评分/评论                   │
-│ - 关注喜欢的作者                        │
-│ - 查看关注作者的更新                    │
-└─────────────────────────────────────────┘
+❌ 不共享的:
+├── UI 组件（需要用 React Native 重写）
+└── 样式（需要用 NativeWind 重写）
+```
 
-┌─────────────────────────────────────────┐
-│ 作者模式                                │
-│ - 创作/上传短篇小说                     │
-│ - 管理自己的作品                        │
-│ - 查看阅读/点赞统计                     │
-│ - 回复读者评论                          │
-└─────────────────────────────────────────┘
+### 1.3 仓库结构建议
+
+用户想新建仓库，iOS 和 Android 放一起：
+
+```
+butternovel-mobile/          # 新仓库
+├── app/                     # Expo Router 页面
+├── components/              # RN 组件
+├── lib/                     # 工具库
+├── hooks/                   # 自定义 Hooks
+├── stores/                  # Zustand 状态
+├── assets/                  # 图片/字体
+├── app.json                 # Expo 配置
+├── eas.json                 # EAS 构建配置
+├── package.json
+└── README.md
+
+butternovel/                 # 现有仓库（作为参考）
+├── src/                     # Web 端代码
+├── prisma/                  # 数据库 Schema
+└── ...
 ```
 
 ---
 
-## 2. 移动端 App 规划 ⭐ 重要
+## 2. 移动端 App 规划
 
-### 2.1 核心功能区（Bottom Tab）
+### 2.1 底部导航 (5 Tabs)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│                    [内容区域]                            │
-│                                                         │
-├─────────┬─────────┬─────────┬─────────┬─────────────────┤
-│ For You │Following│   ➕    │ Bookshelf│    Profile     │
-│  推荐   │  关注   │  创作   │   书架   │      我的      │
-└─────────┴─────────┴─────────┴─────────┴─────────────────┘
+┌─────────┬─────────┬─────────┬─────────┬─────────┐
+│ For You │Following│   ➕    │Bookshelf│ Profile │
+│  推荐   │  关注   │  创作   │   书架   │   我的  │
+└─────────┴─────────┴─────────┴─────────┴─────────┘
 ```
 
 ### 2.2 功能详细设计
 
-#### Tab 1: For You（推荐页）⭐ 核心
+#### Tab 1: For You（推荐）
 
-**交互方式**: 类似抖音的沉浸式体验
-
-```
-┌─────────────────────────────────┐
-│ [小说封面 + 标题 + 简介预览]    │
-│                                 │
-│ 上滑 → 下一个推荐               │
-│ 下滑 → 上一个推荐               │
-│ 点击 → 进入阅读器               │
-│                                 │
-│ ❤️ 点赞                         │
-│ 💬 评论                         │
-│ 📚 收藏                         │
-│ ↗️ 分享                         │
-└─────────────────────────────────┘
-```
-
-**功能点**:
-- 垂直滑动浏览推荐小说
-- 智能推荐算法（基于阅读历史、点赞、收藏）
-- 快速预览（封面 + 标题 + 前几段内容）
-- 一键进入阅读
-- 右侧操作栏（点赞、评论、收藏、分享）
-- 标签筛选（言情、悬疑、科幻等）
-- 下拉刷新获取新推荐
-
-#### Tab 2: Following（关注页）
-
-**功能点**:
-- 关注作者的最新作品更新
-- 时间线形式展示
-- 未读标记提醒
-- 作者头像 + 新作品信息
-- 点击直接进入阅读
+**交互**: 抖音式垂直滑动
 
 ```
 ┌─────────────────────────────────┐
-│ Following                       │
+│ 🔍 Search                       │  ← 顶部搜索入口
 ├─────────────────────────────────┤
+│                                 │
+│   [无封面，纯文字卡片]           │
+│                                 │
+│   「Story Title」               │
+│   By Author Name                │
+│                                 │
+│   Preview of the story content  │
+│   showing first few lines...    │
+│                                 │
+│   ⭐ 4.5  ·  15 min read        │
+│                                 │
+│ ────────────────────────────────│
+│ ❤️ 89    💬 12    ↗️ Share      │  ← 底部操作栏
+└─────────────────────────────────┘
+     ↑ 上滑下一个 / 下滑上一个
+```
+
+**功能**:
+- 不显示封面，用文字卡片
+- 显示标题、作者、预览内容
+- 显示评分和阅读时间
+- 点击进入阅读器
+- 点赞/评论/分享
+
+#### Tab 2: Following（关注）
+
+```
+┌─────────────────────────────────┐
 │ 👤 Author A          2h ago    │
 │    「New Story Title」          │
-│    Chapter 1 · 3.2K words      │
+│    15,000 chars · Romance      │
+│    ❤️ 89  💬 12                 │
 ├─────────────────────────────────┤
 │ 👤 Author B         Yesterday  │
 │    「Another Story」            │
-│    Complete · 5.1K words       │
+│    32,000 chars · Revenge      │
 └─────────────────────────────────┘
 ```
 
-#### Tab 3: Create（创作页）➕
-
-**功能点**:
-- 创建新短篇小说
-- 管理已创作的作品
-- 作品数据统计（阅读量、点赞、收藏）
-- 草稿箱功能
-- 富文本编辑器
-- 封面上传
-- 标签选择
-- 发布/存草稿
-
-```
-┌─────────────────────────────────┐
-│ My Works                        │
-├─────────────────────────────────┤
-│ [+ Create New Story]           │
-├─────────────────────────────────┤
-│ 📖 Story Title 1    Published  │
-│    👁️ 1.2K  ❤️ 89  📚 45       │
-├─────────────────────────────────┤
-│ 📝 Draft Title      Draft      │
-│    Last edited 2 days ago      │
-└─────────────────────────────────┘
-```
+#### Tab 3: Create（创作）➕
 
 **创作流程**:
 ```
-1. 点击 ➕ Create New Story
-2. 填写标题
-3. 选择分类/标签
-4. 上传封面（可选，有默认封面）
-5. 编写内容（富文本编辑器）
-6. 预览
-7. 发布 / 存为草稿
+1. 填写标题（最多80字符）
+2. 选择分类（16个短篇分类）
+3. 编写内容（15,000-50,000字符）
+4. 预览
+5. 发布/存草稿
 ```
+
+**不需要封面**！
 
 #### Tab 4: Bookshelf（书架）
 
-**功能点**:
-- 收藏的小说列表
+- 收藏的故事
 - 阅读历史
-- 阅读进度显示
-- 继续阅读入口
-- 分类筛选（收藏/历史/下载）
+- 阅读进度
 
 #### Tab 5: Profile（我的）
 
-**功能点**:
-- 个人资料编辑
-- 头像/昵称/简介
-- 阅读统计（读了多少本/字数）
-- 创作统计（发布了多少本/获得多少赞）
-- 设置入口
-- 通知中心入口
-- 深色模式切换
-- 语言设置
-- 登出
+- 个人资料
+- 阅读/创作统计
+- 设置
+- 通知中心
 
-### 2.3 阅读器设计
-
-**短篇专用阅读器**:
+### 2.3 阅读器
 
 ```
 ┌─────────────────────────────────┐
 │ ← Back          Story Title    │
 ├─────────────────────────────────┤
 │                                 │
-│  [沉浸式阅读内容区]              │
+│   [沉浸式阅读内容]              │
 │                                 │
-│  支持手势:                       │
-│  - 点击中间：显示/隐藏菜单       │
-│  - 点击左侧：上一页              │
-│  - 点击右侧：下一页              │
-│  - 长按：复制/标注               │
+│   每个段落末尾有评论按钮 💬     │  ← 段落评论
 │                                 │
 ├─────────────────────────────────┤
-│ Aa   🌙   📖   💬              │
-│ 字体  夜间  进度  评论          │
+│ Aa   🌙   📖   💬   ⭐         │
+│ 字体  夜间  进度  评论  评分    │  ← 底部菜单
 └─────────────────────────────────┘
 ```
 
-**阅读器设置**:
-- 字体大小调节
-- 背景色切换（白/米/黑/护眼）
-- 行间距调节
-- 夜间模式
-- 阅读进度条
-- 自动翻页（可选）
+**评分入口**:
+1. 阅读器底部菜单的 ⭐ 按钮
+2. 读完故事后的评分弹窗
 
-### 2.4 补充功能
-
-#### 登录/注册
+### 2.4 登录方式
 
 ```
-支持登录方式:
-├── Google 登录 ⭐ 必须
-├── Apple 登录 ⭐ iOS 必须
-├── Email + Password
-└── 游客模式（有限功能）
+✅ 必须实现:
+├── Google 登录
+├── Apple 登录（iOS 上架必须）
+└── 邮箱密码登录
+
+❌ 游客限制:
+├── 可以浏览 For You
+├── 可以阅读
+├── 不能评论/点赞/收藏/创作
+└── 提示登录
 ```
 
-**游客限制**:
-- 可以浏览 For You
-- 可以阅读
-- 不能评论/点赞/收藏
-- 不能创作
-- 提示登录获得完整体验
-
-#### 搜索功能
-
-```
-搜索入口: For You 页面顶部
-├── 按标题搜索
-├── 按作者搜索
-├── 按标签搜索
-├── 搜索历史
-└── 热门搜索推荐
-```
-
-#### 推送通知
-
-```
-通知类型:
-├── 关注作者发布新作品
-├── 收藏作品有更新
-├── 收到评论回复
-├── 作品被点赞/收藏（作者）
-└── 系统公告
-```
-
-#### 分享功能
-
-```
-分享渠道:
-├── 系统分享（调用系统分享面板）
-├── 复制链接
-├── 生成分享卡片图片
-└── 社交媒体（Twitter/Facebook/WhatsApp）
-```
-
-#### 举报功能
-
-```
-用户可举报:
-├── 不当内容
-├── 抄袭/侵权
-├── 垃圾信息
-└── 其他
-```
-
-### 2.5 技术实现方案
-
-#### 推荐算法（For You）
+### 2.5 短篇分类（16个）
 
 ```typescript
-// 推荐因素权重
-const RECOMMENDATION_WEIGHTS = {
-  userInterests: 0.3,      // 用户兴趣标签
-  readingHistory: 0.25,    // 阅读历史
-  likedContent: 0.2,       // 点赞内容
-  trending: 0.15,          // 热门趋势
-  newContent: 0.1,         // 新发布内容
-}
-
-// API: GET /api/mobile/for-you
-// 返回分页推荐列表
+const SHORT_NOVEL_GENRES = [
+  'sweet-romance',        // Sweet Romance
+  'billionaire-romance',  // Billionaire Romance
+  'face-slapping',        // Face-Slapping
+  'revenge',              // Revenge
+  'rebirth',              // Rebirth
+  'regret',               // Regret
+  'healing-redemption',   // Healing/Redemption
+  'true-fake-identity',   // True/Fake Identity
+  'substitute',           // Substitute
+  'age-gap',              // Age Gap
+  'entertainment-circle', // Entertainment Circle
+  'group-pet',            // Group Pet
+  'lgbtq',                // LGBTQ+
+  'quick-transmigration', // Quick Transmigration
+  'survival-apocalypse',  // Survival/Apocalypse
+  'system',               // System
+]
 ```
-
-#### 关注系统
-
-```typescript
-// 关注/取关
-POST /api/user/follow
-DELETE /api/user/follow
-
-// 获取关注作者更新
-GET /api/mobile/following-updates
-```
-
-#### 创作系统
-
-```typescript
-// 创建短篇
-POST /api/mobile/stories
-{
-  title: string,
-  content: string,
-  coverImage?: string,
-  tags: string[],
-  categoryId: number,
-  isDraft: boolean,
-}
-
-// 获取我的作品
-GET /api/mobile/my-stories
-
-// 编辑作品
-PUT /api/mobile/stories/:id
-
-// 删除作品
-DELETE /api/mobile/stories/:id
-```
-
-### 2.6 数据模型扩展
-
-```prisma
-// 为移动端优化的新增字段
-
-model Novel {
-  // ... 现有字段 ...
-
-  // 短篇小说标记
-  isShort        Boolean  @default(true)  // 是否短篇
-
-  // 作者自主创建
-  creatorId      String?  // 创作者用户ID（非管理员上传）
-  creator        User?    @relation("CreatedNovels", fields: [creatorId], references: [id])
-}
-
-model User {
-  // ... 现有字段 ...
-
-  // 创作相关
-  createdNovels  Novel[]  @relation("CreatedNovels")
-
-  // 统计
-  totalReads     Int      @default(0)  // 作品总阅读量
-  totalLikes     Int      @default(0)  // 获得的总点赞
-}
-
-// 推荐相关
-model UserInterest {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tagId      Int
-  tag        Tag      @relation(fields: [tagId], references: [id])
-  weight     Float    @default(1.0)  // 兴趣权重
-  updatedAt  DateTime @updatedAt
-
-  @@unique([userId, tagId])
-}
-```
-
-### 2.7 开发优先级
-
-```
-Phase 1 - 基础框架（2周）
-├── Expo 项目搭建
-├── 导航架构
-├── 登录/注册（Google + Apple）
-├── API 客户端
-└── 基础 UI 组件
-
-Phase 2 - For You 推荐（2周）⭐ 核心
-├── 推荐 API
-├── 垂直滑动浏览
-├── 小说卡片组件
-├── 进入阅读流程
-└── 点赞/收藏交互
-
-Phase 3 - 阅读器（1周）
-├── 短篇阅读器
-├── 阅读设置
-├── 进度保存
-└── 阅读体验优化
-
-Phase 4 - 创作功能（2周）⭐ 重要
-├── 创建短篇 UI
-├── 富文本编辑器
-├── 封面上传
-├── 草稿系统
-└── 发布流程
-
-Phase 5 - 关注系统（1周）
-├── 关注/取关
-├── 关注列表
-├── 更新时间线
-└── 未读标记
-
-Phase 6 - 书架 & 个人中心（1周）
-├── 收藏列表
-├── 阅读历史
-├── 个人资料
-├── 设置页面
-└── 通知中心
-
-Phase 7 - 优化 & 上架（2周）
-├── 性能优化
-├── Bug 修复
-├── 商店素材准备
-├── 审核提交
-└── 上架发布
-```
-
-### 2.8 App 商店要求清单
-
-#### Google Play
-
-| 要求 | 状态 | 说明 |
-|------|------|------|
-| 开发者账号 | ❌ | $25 一次性 |
-| 隐私政策 | ❌ | 需创建 |
-| 内容分级 | ❌ | 填写问卷 |
-| 截图 | ❌ | 至少2张 |
-| 功能图片 | ❌ | 1024x500 |
-| App Bundle | - | 构建时生成 |
-
-#### App Store
-
-| 要求 | 状态 | 说明 |
-|------|------|------|
-| 开发者账号 | ❌ | $99/年 |
-| Sign in with Apple | ⭐ | **必须实现** |
-| 隐私政策 | ❌ | 与 GP 共用 |
-| 截图 | ❌ | 多尺寸 |
-| App Privacy | ❌ | 数据收集声明 |
-| 年龄分级 | ❌ | 内容问卷 |
 
 ---
 
-## 3. 技术栈
+## 3. 现有 API 详细列表
 
-### 3.1 Web 端（现有）
+### 3.1 认证 API
 
+| 路由 | 方法 | 说明 | 请求体 |
+|------|------|------|--------|
+| `/api/auth/[...nextauth]` | GET/POST | NextAuth 认证 | - |
+| `/api/auth/register` | POST | 邮箱注册 | `{ email, password, name }` |
+
+**Google OAuth 配置** (src/lib/auth.ts):
+```typescript
+Google({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+})
+```
+
+### 3.2 短篇小说 API
+
+| 路由 | 方法 | 说明 | 参数 |
+|------|------|------|------|
+| `/api/shorts` | GET | 短篇列表 | `?page=1&limit=20&genre=&sort=popular` |
+| `/api/shorts/[id]` | GET | 短篇详情 | - |
+| `/api/shorts/[id]/recommend` | POST | 点赞/取消点赞 | - |
+| `/api/shorts/[id]/recommend-status` | GET | 检查点赞状态 | - |
+
+**响应示例**:
 ```json
 {
-  "前端框架": "Next.js 16 (App Router)",
-  "React版本": "19.2.0",
-  "UI框架": "Tailwind CSS 4",
-  "数据库": "Vercel Postgres (Prisma ORM)",
-  "身份验证": "NextAuth.js v5",
-  "图片存储": "Cloudinary",
-  "部署平台": "Vercel"
+  "success": true,
+  "data": {
+    "id": 123,
+    "title": "Story Title",
+    "blurb": "Preview text...",
+    "shortNovelGenre": "sweet-romance",
+    "wordCount": 25000,
+    "viewCount": 1500,
+    "likeCount": 89,
+    "averageRating": 4.5,
+    "authorName": "Author",
+    "chapters": [{
+      "id": 456,
+      "content": "Full story content..."
+    }]
+  }
 }
 ```
 
-### 3.2 移动端（新增）
+### 3.3 段落评论 API ⭐ 重要
 
+| 路由 | 方法 | 说明 | 参数/请求体 |
+|------|------|------|-------------|
+| `/api/paragraph-comments` | GET | 获取段落评论 | `?chapterId=123&paragraphIndex=5` |
+| `/api/paragraph-comments` | POST | 发表评论 | `{ novelId, chapterId, paragraphIndex, content, image? }` |
+| `/api/paragraph-comments/[id]/replies` | GET | 获取回复 | - |
+| `/api/paragraph-comments/[id]/replies` | POST | 回复评论 | `{ novelId, chapterId, paragraphIndex, content }` |
+| `/api/paragraph-comments/[id]/like` | POST | 点赞 | - |
+| `/api/paragraph-comments/[id]/like` | DELETE | 取消点赞 | - |
+| `/api/paragraph-comments/batch-count` | GET | 批量获取评论数 | `?chapterId=123` |
+
+**响应示例** (GET 评论):
 ```json
 {
-  "框架": "Expo SDK 52+",
-  "核心": "React Native 0.76+",
-  "路由": "Expo Router",
-  "状态管理": "@tanstack/react-query + zustand",
-  "表单验证": "react-hook-form + zod",
-  "UI": "NativeWind (Tailwind CSS for RN)",
-  "存储": "expo-secure-store + async-storage",
-  "认证": "expo-auth-session",
-  "推送": "expo-notifications + FCM"
+  "success": true,
+  "data": [{
+    "id": "comment-id",
+    "content": "This is amazing!",
+    "paragraphIndex": 5,
+    "likeCount": 12,
+    "replyCount": 3,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "user": {
+      "id": "user-id",
+      "name": "Username",
+      "avatar": "https://...",
+      "level": 5
+    }
+  }]
 }
 ```
 
-### 3.3 开发命令
+### 3.4 评分 API ⭐ 重要
 
-```bash
-# Web 端
-npm run dev              # 启动开发服务器
-npm run build            # 生产环境构建
-npm run db:generate      # 生成 Prisma Client
-npm run db:push          # 推送数据库 schema
+| 路由 | 方法 | 说明 | 请求体 |
+|------|------|------|--------|
+| `/api/novels/[id]/rate` | POST | 提交评分 | `{ score: 2-10, review?: string }` |
+| `/api/novels/[id]/ratings` | GET | 获取评分列表 | `?page=1&limit=10` |
+| `/api/novels/[id]/user-rating` | GET | 获取当前用户评分 | - |
+| `/api/ratings/[id]/like` | POST | 点赞评分 | - |
+| `/api/ratings/[id]/replies` | GET/POST | 评分回复 | - |
 
-# 移动端（在 mobile 目录）
-npx expo start           # 启动开发服务器
-npx expo start --ios     # iOS 模拟器
-npx expo start --android # Android 模拟器
-eas build --profile development   # 开发版构建
-eas build --profile production    # 生产版构建
-eas submit --platform ios         # 提交 App Store
-eas submit --platform android     # 提交 Google Play
-```
+**评分规则**:
+- 分数: 2, 4, 6, 8, 10（对应 1-5 星）
+- 每个用户每本书只能评一次
+- 评分后自动更新小说平均分
+
+### 3.5 关注 API
+
+| 路由 | 方法 | 说明 | 请求体 |
+|------|------|------|--------|
+| `/api/user/follow` | POST | 关注用户 | `{ userId: "user-id" }` |
+| `/api/user/follow` | DELETE | 取消关注 | `{ userId: "user-id" }` |
+| `/api/user/follow-status` | GET | 检查关注状态 | `?userId=xxx` |
+| `/api/user/[id]/followers` | GET | 获取粉丝列表 | - |
+| `/api/user/[id]/following` | GET | 获取关注列表 | - |
+
+### 3.6 书架 API
+
+| 路由 | 方法 | 说明 | 请求体 |
+|------|------|------|--------|
+| `/api/library` | GET | 获取书架 | - |
+| `/api/library` | POST | 添加到书架 | `{ novelId: 123 }` |
+| `/api/library` | DELETE | 从书架移除 | `{ novelId: 123 }` |
+| `/api/library/check` | GET | 检查是否在书架 | `?novelId=123` |
+
+### 3.7 用户 API
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/profile` | GET | 获取当前用户资料 |
+| `/api/profile` | PUT | 更新资料 |
+| `/api/profile/avatar` | POST | 上传头像 |
+| `/api/user/[id]` | GET | 获取用户公开资料 |
+
+### 3.8 通知 API
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/notifications` | GET | 获取通知列表 |
+| `/api/notifications/unread-count` | GET | 获取未读数 |
+| `/api/notifications/[id]/read` | POST | 标记已读 |
+| `/api/notifications/read-all` | POST | 全部标记已读 |
+
+### 3.9 搜索 API
+
+| 路由 | 方法 | 说明 | 参数 |
+|------|------|------|------|
+| `/api/search` | GET | 搜索小说 | `?q=keyword&page=1` |
+| `/api/search/suggestions` | GET | 搜索建议 | `?q=keyword` |
 
 ---
 
-## 4. 项目结构
+## 4. 数据库模型
 
-### 4.1 整体结构
+### 4.1 User（用户）
 
-```
-butternovel/
-├── src/                      # Web 端代码
-│   ├── app/                  # Next.js App Router
-│   ├── components/           # React 组件
-│   └── lib/                  # 工具库
-│
-├── mobile/                   # 📱 移动端代码（新增）
-│   ├── app/                  # Expo Router 页面
-│   │   ├── (tabs)/           # Tab 导航
-│   │   │   ├── index.tsx     # For You
-│   │   │   ├── following.tsx # Following
-│   │   │   ├── create.tsx    # Create ➕
-│   │   │   ├── bookshelf.tsx # Bookshelf
-│   │   │   └── profile.tsx   # Profile
-│   │   ├── auth/             # 登录/注册
-│   │   ├── reader/           # 阅读器
-│   │   ├── story/            # 小说详情
-│   │   └── settings/         # 设置页面
-│   ├── components/           # RN 组件
-│   ├── lib/                  # 工具库
-│   ├── hooks/                # 自定义 Hooks
-│   └── stores/               # Zustand 状态
-│
-├── prisma/
-│   └── schema.prisma         # 数据库 Schema
-│
-├── docs/                     # 文档
-│   ├── 移动端开发计划.md
-│   └── React-Native开发执行手册.md
-│
-└── claude.md                 # 本文件
-```
-
----
-
-## 5. 数据库设计
-
-### 5.1 核心表结构
-
-#### User（用户表）
 ```prisma
 model User {
   id              String   @id @default(cuid())
@@ -563,63 +379,89 @@ model User {
 
   // OAuth
   googleId        String?  @unique
-  appleId         String?  @unique  // Apple 登录
+  // appleId      String?  @unique  // 需要新增
 
-  // 创作者信息
-  isWriter        Boolean  @default(false)
+  // 关注系统
+  following       Follow[] @relation("UserFollowing")
+  followers       Follow[] @relation("UserFollowers")
 
-  // 统计
-  totalReads      Int      @default(0)
-  totalLikes      Int      @default(0)
+  // 评分/评论
+  ratings         Rating[]
+  paragraphComments ParagraphComment[]
 
-  // 关系
-  createdNovels   Novel[]  @relation("CreatedNovels")
-  library         Library[]
-  followers       Follow[] @relation("Following")
-  following       Follow[] @relation("Followers")
+  // 创作
+  // 暂时没有 createdNovels 字段，需要新增
 }
 ```
 
-#### Novel（小说表）
+### 4.2 Novel（小说）
+
 ```prisma
 model Novel {
-  id                  Int         @id @default(autoincrement())
-  title               String
-  slug                String      @unique
-  coverImage          String
-  blurb               String      @db.Text
-  content             String      @db.Text  // 短篇小说内容
+  id              Int      @id @default(autoincrement())
+  title           String
+  slug            String   @unique
+  blurb           String   @db.Text
 
-  // 作者
-  authorId            String
-  authorName          String
-  creatorId           String?     // 用户创建者
-  creator             User?       @relation("CreatedNovels", fields: [creatorId], references: [id])
-
-  // 分类
-  categoryId          Int
-
-  // 状态
-  isShort             Boolean     @default(true)  // 短篇标记
-  isDraft             Boolean     @default(false)
-  isPublished         Boolean     @default(false)
+  // 短篇标识
+  isShortNovel    Boolean  @default(false)
+  shortNovelGenre String?
 
   // 统计
-  wordCount           Int         @default(0)
-  viewCount           Int         @default(0)
-  likeCount           Int         @default(0)
-  commentCount        Int         @default(0)
+  wordCount       Int      @default(0)
+  viewCount       Int      @default(0)
+  likeCount       Int      @default(0)
+  averageRating   Float?
+  totalRatings    Int      @default(0)
+
+  // 作者
+  authorId        String
+  authorName      String
 }
 ```
 
-#### Follow（关注表）
+### 4.3 Rating（评分）
+
+```prisma
+model Rating {
+  id        String   @id @default(cuid())
+  score     Int      // 2, 4, 6, 8, 10
+  review    String?  @db.Text
+  likeCount Int      @default(0)
+
+  userId    String
+  novelId   Int
+
+  @@unique([userId, novelId])  // 每用户每书一个评分
+}
+```
+
+### 4.4 ParagraphComment（段落评论）
+
+```prisma
+model ParagraphComment {
+  id             String  @id @default(cuid())
+  novelId        Int
+  chapterId      Int
+  paragraphIndex Int
+  content        String  @db.Text
+  likeCount      Int     @default(0)
+  replyCount     Int     @default(0)
+
+  userId         String
+  parentId       String?  // 回复父评论
+
+  @@index([novelId, chapterId, paragraphIndex])
+}
+```
+
+### 4.5 Follow（关注）
+
 ```prisma
 model Follow {
   id          String   @id @default(cuid())
-  followerId  String
-  follower    User     @relation("Followers", fields: [followerId], references: [id])
-  followingId String
-  following   User     @relation("Following", fields: [followingId], references: [id])
+  followerId  String   // 关注者
+  followingId String   // 被关注者
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
@@ -628,154 +470,388 @@ model Follow {
 
 ---
 
-## 6. 开发规范
+## 5. 开发流程
 
-### 6.1 代码规范
+### 5.1 开发阶段顺序
 
-**命名约定**:
-- 组件: PascalCase (`StoryCard.tsx`)
-- 工具函数: camelCase (`formatDate()`)
-- 常量: UPPER_SNAKE_CASE (`API_URL`)
+```
+Phase 1: 项目搭建
+├── 创建新仓库 butternovel-mobile
+├── Expo 项目初始化
+├── 导航架构搭建
+├── 基础 UI 组件
+└── API 客户端封装
 
-### 6.2 Git 提交规范
+Phase 2: 认证系统
+├── Google 登录
+├── Apple 登录
+├── 邮箱密码登录
+├── Token 存储
+└── 用户状态管理
+
+Phase 3: For You 推荐
+├── 推荐列表 API 调用
+├── 垂直滑动浏览组件
+├── 故事卡片组件（无封面）
+├── 点赞/收藏交互
+└── 搜索入口
+
+Phase 4: 阅读器
+├── 阅读器页面
+├── 段落评论功能
+├── 评分功能（底部 + 结尾弹窗）
+├── 阅读设置（字体/背景）
+└── 进度保存
+
+Phase 5: 创作功能
+├── 创建短篇 UI
+├── 富文本编辑器
+├── 分类选择
+├── 草稿保存
+└── 发布流程
+
+Phase 6: 关注系统
+├── 关注/取关
+├── Following 页面
+├── 作者主页
+└── 更新时间线
+
+Phase 7: 书架 & 个人中心
+├── 书架页面
+├── 收藏列表
+├── 阅读历史
+├── 个人资料编辑
+└── 设置页面
+
+Phase 8: 通知系统
+├── 通知列表
+├── 未读角标
+├── 推送通知（FCM）
+└── 通知偏好设置
+
+Phase 9: 优化 & 上架
+├── 性能优化
+├── Bug 修复
+├── 商店素材准备
+├── 审核提交
+└── 上架发布
+```
+
+### 5.2 创建新仓库步骤
 
 ```bash
-feat: 新功能
-fix: 修复 bug
-refactor: 重构
-docs: 文档更新
-style: 样式调整
-perf: 性能优化
+# 1. 在 GitHub 创建新仓库 butternovel-mobile
+
+# 2. 克隆并初始化
+git clone https://github.com/你的用户名/butternovel-mobile.git
+cd butternovel-mobile
+
+# 3. 创建 Expo 项目
+npx create-expo-app@latest . --template blank-typescript
+
+# 4. 安装依赖（见下方）
+
+# 5. 复制现有仓库代码作为参考
+# 可以把 butternovel 仓库下载下来放在旁边参考
+```
+
+### 5.3 安装依赖
+
+```bash
+# 导航
+npx expo install expo-router react-native-screens react-native-safe-area-context
+
+# 状态管理
+npm install @tanstack/react-query zustand
+
+# 表单验证
+npm install react-hook-form @hookform/resolvers zod
+
+# 存储
+npx expo install @react-native-async-storage/async-storage expo-secure-store
+
+# 认证
+npx expo install expo-auth-session expo-web-browser expo-crypto
+npx expo install expo-apple-authentication  # Apple 登录
+
+# UI
+npx expo install react-native-reanimated react-native-gesture-handler
+npm install nativewind tailwindcss
+npx expo install lucide-react-native react-native-svg
+
+# 图片
+npx expo install expo-image
+
+# 推送
+npx expo install expo-notifications expo-device expo-constants
 ```
 
 ---
 
-## 7. API 路由
+## 6. 新手测试指南
 
-### 7.1 移动端专用 API（新增）
+### 6.1 开发环境准备
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/mobile/for-you` | GET | For You 推荐列表 |
-| `/api/mobile/following-updates` | GET | 关注作者更新 |
-| `/api/mobile/stories` | POST | 创建短篇 |
-| `/api/mobile/stories` | GET | 获取我的作品 |
-| `/api/mobile/stories/[id]` | PUT | 编辑作品 |
-| `/api/mobile/stories/[id]` | DELETE | 删除作品 |
-| `/api/mobile/stories/[id]/publish` | POST | 发布作品 |
-
-### 7.2 复用现有 API
-
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/library` | POST/DELETE | 收藏/取消收藏 |
-| `/api/user/follow` | POST | 关注/取关作者 |
-| `/api/novels/[id]/rate` | POST | 评分 |
-| `/api/paragraph-comments` | POST | 评论 |
-| `/api/notifications` | GET | 通知列表 |
-| `/api/profile` | GET/PUT | 个人资料 |
-| `/api/search` | GET | 搜索 |
-
----
-
-## 8. 核心功能模块
-
-### 8.1 推荐系统
-
-**推荐算法**:
-1. 用户兴趣标签（30%）
-2. 阅读历史相似内容（25%）
-3. 点赞/收藏的相关内容（20%）
-4. 热门趋势（15%）
-5. 新发布内容（10%）
-
-### 8.2 创作系统
-
-**创作流程**:
-1. 填写标题
-2. 选择分类和标签
-3. 上传封面（可选）
-4. 编写内容（富文本）
-5. 预览
-6. 发布/存草稿
-
-### 8.3 阅读器
-
-**短篇阅读器特性**:
-- 全屏沉浸式阅读
-- 字体/背景/行距可调
-- 夜间模式
-- 进度保存
-- 评论入口
-
----
-
-## 9. 环境变量
-
-### 9.1 必需的环境变量
+#### macOS（推荐，可同时开发 iOS + Android）
 
 ```bash
-# 数据库
-DATABASE_URL="postgresql://..."
+# 1. 安装 Homebrew
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# NextAuth (用户认证)
-AUTH_SECRET="your-nextauth-secret"
-NEXTAUTH_URL="http://localhost:3000"
+# 2. 安装 Node.js
+brew install node@20
 
-# OAuth
-GOOGLE_CLIENT_ID="..."
-GOOGLE_CLIENT_SECRET="..."
+# 3. 安装 Watchman
+brew install watchman
 
-# Cloudinary (图片存储)
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="..."
-CLOUDINARY_API_KEY="..."
-CLOUDINARY_API_SECRET="..."
+# 4. 安装 CocoaPods（iOS 需要）
+sudo gem install cocoapods
 
-# 管理员 JWT
-ADMIN_JWT_SECRET="..."
+# 5. 安装 Xcode
+# 从 App Store 下载安装
+# 打开后：Xcode > Settings > Locations > Command Line Tools 选择版本
+
+# 6. 安装 Android Studio
+# 下载：https://developer.android.com/studio
+# 安装时勾选：Android SDK, Android SDK Platform, Android Virtual Device
+# 安装完成后：
+echo 'export ANDROID_HOME=$HOME/Library/Android/sdk' >> ~/.zshrc
+echo 'export PATH=$PATH:$ANDROID_HOME/emulator' >> ~/.zshrc
+echo 'export PATH=$PATH:$ANDROID_HOME/platform-tools' >> ~/.zshrc
+source ~/.zshrc
+
+# 7. 验证安装
+node --version   # 应该显示 v20.x.x
+npm --version    # 应该显示 10.x.x
+pod --version    # 应该显示 1.x.x
 ```
 
-### 9.2 移动端额外环境变量
+#### Windows（只能开发 Android）
+
+```powershell
+# 1. 安装 Node.js
+# 下载 https://nodejs.org/ LTS 版本
+
+# 2. 安装 Android Studio
+# 下载 https://developer.android.com/studio
+
+# 3. 配置环境变量
+# 系统设置 > 环境变量
+# 新建 ANDROID_HOME = C:\Users\你的用户名\AppData\Local\Android\Sdk
+# Path 添加 %ANDROID_HOME%\platform-tools
+```
+
+### 6.2 启动开发
 
 ```bash
-# Expo
-EXPO_PUBLIC_API_URL="https://butternovel.com/api"
+# 1. 进入项目目录
+cd butternovel-mobile
 
-# Apple Sign In (iOS)
-APPLE_CLIENT_ID="..."
-APPLE_TEAM_ID="..."
-APPLE_KEY_ID="..."
-APPLE_PRIVATE_KEY="..."
+# 2. 安装依赖
+npm install
 
-# Firebase (推送通知)
-FIREBASE_PROJECT_ID="..."
-FIREBASE_PRIVATE_KEY="..."
-FIREBASE_CLIENT_EMAIL="..."
+# 3. 启动开发服务器
+npx expo start
+
+# 会出现二维码和选项：
+# › Press s │ switch to development build
+# › Press a │ open Android
+# › Press i │ open iOS simulator
+# › Press w │ open web
+```
+
+### 6.3 在手机上测试
+
+#### 方法1：Expo Go App（最简单）
+
+```
+1. 手机下载 Expo Go App
+   - iOS: App Store 搜索 "Expo Go"
+   - Android: Play Store 搜索 "Expo Go"
+
+2. 电脑运行 npx expo start
+
+3. 手机扫描终端显示的二维码
+   - iOS: 用相机 App 扫描
+   - Android: 用 Expo Go App 扫描
+
+4. App 会自动在手机上打开
+```
+
+#### 方法2：模拟器（开发时推荐）
+
+```bash
+# iOS 模拟器（需要 Mac）
+# 在 Expo 终端按 i
+
+# Android 模拟器
+# 1. 打开 Android Studio
+# 2. 点击 Device Manager
+# 3. 创建一个虚拟设备（选择 Pixel 4，API 34）
+# 4. 启动虚拟设备
+# 5. 在 Expo 终端按 a
+```
+
+### 6.4 测试检查清单
+
+#### 认证测试
+```
+□ 可以用 Google 登录
+□ 可以用 Apple 登录（iOS）
+□ 可以用邮箱注册
+□ 可以用邮箱登录
+□ 登出后需要重新登录
+□ Token 持久化（关闭 App 后重开仍然登录）
+```
+
+#### For You 测试
+```
+□ 页面加载显示故事列表
+□ 可以上下滑动切换故事
+□ 显示标题、作者、预览内容
+□ 显示评分和阅读时间
+□ 点击可以进入阅读器
+□ 下拉可以刷新
+□ 可以点赞（需要登录）
+```
+
+#### 阅读器测试
+```
+□ 可以正常显示故事内容
+□ 可以滚动阅读
+□ 可以调整字体大小
+□ 可以切换背景颜色
+□ 可以切换夜间模式
+□ 可以点击段落查看评论
+□ 可以发表段落评论（需要登录）
+□ 可以在结尾评分
+□ 返回按钮正常工作
+```
+
+#### 段落评论测试
+```
+□ 点击段落末尾的评论按钮显示评论列表
+□ 可以发表评论
+□ 可以回复评论
+□ 可以点赞评论
+□ 可以查看更多回复
+```
+
+#### 评分测试
+```
+□ 可以选择 1-5 星
+□ 可以写评分内容（可选）
+□ 提交后显示成功
+□ 重复评分会提示已评过
+□ 评分列表正常显示
+```
+
+#### 创作测试
+```
+□ 可以填写标题
+□ 可以选择分类
+□ 可以编写内容
+□ 字数统计正确
+□ 可以保存草稿
+□ 可以发布
+□ 发布后可以在 For You 看到
+```
+
+### 6.5 常见问题
+
+#### 问题1：启动报错 "Unable to resolve module"
+```bash
+# 清除缓存重新启动
+npx expo start --clear
+```
+
+#### 问题2：iOS 模拟器无法启动
+```bash
+# 检查 Xcode 命令行工具
+xcode-select --print-path
+# 如果没有输出，运行：
+sudo xcode-select --switch /Applications/Xcode.app
+```
+
+#### 问题3：Android 模拟器无法启动
+```bash
+# 确保 ANDROID_HOME 正确设置
+echo $ANDROID_HOME
+# 应该显示类似 /Users/xxx/Library/Android/sdk
+```
+
+#### 问题4：网络请求失败
+```
+1. 确保 API 服务器正在运行
+2. 检查 API_BASE_URL 配置是否正确
+3. iOS 需要在 Info.plist 添加 NSAppTransportSecurity
+```
+
+#### 问题5：构建失败
+```bash
+# 重新安装依赖
+rm -rf node_modules
+npm install
+
+# 清除 Metro 缓存
+npx expo start --clear
+```
+
+### 6.6 提交到应用商店
+
+#### Google Play
+```
+1. 注册开发者账号 ($25)
+   https://play.google.com/console
+
+2. 构建 AAB 文件
+   eas build --profile production --platform android
+
+3. 在 Play Console 创建应用
+
+4. 填写商店信息
+   - 应用名称
+   - 描述
+   - 截图（至少2张）
+   - 隐私政策 URL
+
+5. 上传 AAB 文件
+
+6. 提交审核（通常1-3天）
+```
+
+#### App Store
+```
+1. 注册开发者账号 ($99/年)
+   https://developer.apple.com/programs/
+
+2. 构建 IPA 文件
+   eas build --profile production --platform ios
+
+3. 在 App Store Connect 创建应用
+
+4. 填写商店信息
+   - 应用名称
+   - 描述
+   - 截图（多尺寸）
+   - 隐私政策 URL
+
+5. 使用 eas submit 上传
+   eas submit --platform ios
+
+6. 提交审核（通常1-7天）
 ```
 
 ---
 
 ## 重要提醒
 
-### 开发前必读
-
-1. **移动端优先**: 当前阶段专注于移动端开发
-2. **只做短篇**: 暂不考虑长篇小说功能
-3. **一账号双身份**: 用户和作者是同一个账号
-4. **Apple 登录必须**: iOS 上架强制要求
-5. **文档规范**: 除非明确要求，推送时不创建 md 文件
-
-### 设计原则
-
-1. **抖音式体验**: For You 页面参考抖音交互
-2. **简单创作**: 降低创作门槛，鼓励用户上传
-3. **社交属性**: 关注、点赞、评论、分享
-4. **移动原生**: 充分利用移动设备特性
+1. **Apple 登录必须**：iOS 上架强制要求有 Apple 登录选项
+2. **隐私政策必须**：两个商店都需要提供隐私政策页面
+3. **截图必须**：需要准备多个尺寸的应用截图
+4. **测试充分**：提交前在真机上充分测试
+5. **文档规范**：除非明确要求，推送时不创建 md 文件
 
 ---
 
-**文档维护**: 每次重大功能更新后，请同步更新本文档
-**最后更新**: 2025-12-23
-**维护者**: Claude + Leo
-
-**📱 让短篇阅读触手可及，让创作人人可为**
+**📱 让短篇阅读触手可及**
