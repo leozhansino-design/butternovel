@@ -13,7 +13,7 @@ class BookshelfScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'My Bookshelf',
+                '我的书架',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -36,7 +36,7 @@ class BookshelfScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No books saved',
+                      '书架空空如也',
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 18,
@@ -44,7 +44,7 @@ class BookshelfScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Save your favorite stories to read\nthem anytime, even offline',
+                      '收藏喜欢的故事\n随时随地阅读',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.grey[600],
@@ -56,6 +56,7 @@ class BookshelfScreen extends StatelessWidget {
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3b82f6),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -64,19 +65,19 @@ class BookshelfScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(24),
                         ),
                       ),
-                      child: const Text('Explore Stories'),
+                      child: const Text('去发现故事'),
                     ),
                     const SizedBox(height: 48),
                     // Continue Reading Section
                     _buildSection(
-                      'Continue Reading',
-                      'Stories you\'re reading will appear here',
+                      '继续阅读',
+                      '正在阅读的故事会显示在这里',
                     ),
                     const SizedBox(height: 24),
                     // Saved for Later Section
                     _buildSection(
-                      'Saved for Later',
-                      'Stories you save will appear here',
+                      '稍后阅读',
+                      '收藏的故事会显示在这里',
                     ),
                   ],
                 ),

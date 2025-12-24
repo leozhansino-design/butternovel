@@ -47,11 +47,11 @@ class _MainScreenState extends State<MainScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, 'For You'),
-                _buildNavItem(1, 'Following'),
+                _buildNavItem(0, '推荐'),
+                _buildNavItem(1, '关注'),
                 _buildCreateButton(),
-                _buildNavItem(3, 'Bookshelf'),
-                _buildNavItem(4, 'Profile'),
+                _buildNavItem(3, '书架'),
+                _buildNavItem(4, '我的'),
               ],
             ),
           ),

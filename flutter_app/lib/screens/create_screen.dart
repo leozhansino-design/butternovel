@@ -33,12 +33,12 @@ class _CreateScreenState extends State<CreateScreen> {
                   TextButton(
                     onPressed: () {},
                     child: Text(
-                      'Cancel',
+                      '取消',
                       style: TextStyle(color: Colors.grey[400]),
                     ),
                   ),
                   const Text(
-                    'Create Story',
+                    '创作故事',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -49,6 +49,7 @@ class _CreateScreenState extends State<CreateScreen> {
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3b82f6),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
@@ -57,7 +58,7 @@ class _CreateScreenState extends State<CreateScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    child: const Text('Publish'),
+                    child: const Text('发布'),
                   ),
                 ],
               ),
@@ -77,7 +78,7 @@ class _CreateScreenState extends State<CreateScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Story Title',
+                        hintText: '故事标题',
                         hintStyle: TextStyle(color: Colors.grey[600]),
                         border: InputBorder.none,
                       ),
@@ -94,7 +95,7 @@ class _CreateScreenState extends State<CreateScreen> {
                         height: 1.6,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Write your story...',
+                        hintText: '开始写你的故事...',
                         hintStyle: TextStyle(color: Colors.grey[600]),
                         border: InputBorder.none,
                       ),
@@ -111,7 +112,7 @@ class _CreateScreenState extends State<CreateScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Writing Tips',
+                            '写作提示',
                             style: TextStyle(
                               color: const Color(0xFF3b82f6),
                               fontWeight: FontWeight.w600,
@@ -119,7 +120,7 @@ class _CreateScreenState extends State<CreateScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Short stories work best when they\'re between 500-2000 words. Start with a hook that grabs attention!',
+                            '短篇故事字数限制在 10 万字符以内。用一个吸引人的开头抓住读者的注意力！',
                             style: TextStyle(
                               color: Colors.grey[400],
                               fontSize: 14,

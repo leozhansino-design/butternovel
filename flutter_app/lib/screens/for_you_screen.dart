@@ -49,7 +49,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Failed to load stories',
+                  '加载失败',
                   style: TextStyle(color: Colors.grey[400], fontSize: 16),
                 ),
                 const SizedBox(height: 16),
@@ -57,8 +57,9 @@ class _ForYouScreenState extends State<ForYouScreen> {
                   onPressed: () => provider.fetchShorts(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3b82f6),
+                    foregroundColor: Colors.white,
                   ),
-                  child: const Text('Try Again'),
+                  child: const Text('重试'),
                 ),
               ],
             ),
@@ -114,16 +115,27 @@ class _ForYouScreenState extends State<ForYouScreen> {
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'For You',
+                        const SizedBox(width: 40),
+                        const Text(
+                          '推荐',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            // TODO: Navigate to search
+                          },
+                          icon: const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                            size: 24,
                           ),
                         ),
                       ],
