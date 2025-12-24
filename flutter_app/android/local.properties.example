@@ -1,0 +1,13 @@
+# Copy this file to local.properties and update the paths
+
+# Windows example:
+# sdk.dir=C:\\Users\\Administrator\\AppData\\Local\\Android\\sdk
+# flutter.sdk=C:\\Users\\Administrator\\flutter
+
+# macOS example:
+# sdk.dir=/Users/username/Library/Android/sdk
+# flutter.sdk=/Users/username/flutter
+
+# Linux example:
+# sdk.dir=/home/username/Android/Sdk
+# flutter.sdk=/home/username/flutter
