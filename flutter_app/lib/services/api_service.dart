@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 import '../models/short_novel.dart';
 
 class ApiService {
-  // Production URL
-  static const String baseUrl = 'https://butternovel.com';
+  // Production URL (use www to avoid redirect)
+  static const String baseUrl = 'https://www.butternovel.com';
   // For local development use:
   // static const String baseUrl = 'http://localhost:3000';
 
