@@ -79,17 +79,16 @@ class ShortNovelCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Preview Text
+                  // Preview Text (no scroll, show as much as fits)
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Text(
-                        novel.previewText,
-                        style: TextStyle(
-                          color: Colors.grey[200],
-                          fontSize: 16,
-                          height: 1.6,
-                        ),
+                    child: Text(
+                      novel.previewText,
+                      style: TextStyle(
+                        color: Colors.grey[200],
+                        fontSize: 16,
+                        height: 1.6,
                       ),
+                      overflow: TextOverflow.fade,
                     ),
                   ),
                   const SizedBox(height: 12),
