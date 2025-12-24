@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 import '../models/short_novel.dart';
 
 class ApiService {
-  // Change this to your production URL when deploying
-  static const String baseUrl = 'https://butternovel.vercel.app';
+  // Production URL
+  static const String baseUrl = 'https://butternovel.com';
   // For local development use:
   // static const String baseUrl = 'http://localhost:3000';
 
