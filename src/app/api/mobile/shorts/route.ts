@@ -3,6 +3,18 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Handle OPTIONS preflight request
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // GET /api/mobile/shorts - Get list of short novels for mobile app
 export async function GET(request: NextRequest) {
   try {
@@ -58,17 +70,20 @@ export async function GET(request: NextRequest) {
       prisma.novel.count({ where }),
     ]);
 
-    return NextResponse.json({
-      success: true,
-      data: shorts,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasMore: page * limit < total,
+    return NextResponse.json(
+      {
+        success: true,
+        data: shorts,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: page * limit < total,
+        },
       },
-    });
+      { headers: corsHeaders }
+    );
   } catch (error) {
     console.error("Error fetching shorts for mobile:", error);
     return NextResponse.json(
@@ -76,7 +91,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: "Failed to fetch short novels",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
