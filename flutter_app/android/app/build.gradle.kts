@@ -4,6 +4,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Force compatible versions of androidx dependencies
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core:1.15.0")
+        force("androidx.core:core-ktx:1.15.0")
+        force("androidx.browser:browser:1.8.0")
+    }
+}
+
 android {
     namespace = "com.butternovel.app"
     compileSdk = flutter.compileSdkVersion
