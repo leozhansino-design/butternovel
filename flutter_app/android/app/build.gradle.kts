@@ -4,6 +4,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Force compatible dependency versions for AGP 8.7.0
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core:1.13.1")
+        force("androidx.core:core-ktx:1.13.1")
+        force("androidx.browser:browser:1.7.0")
+    }
+}
+
 android {
     namespace = "com.butternovel.app"
     compileSdk = flutter.compileSdkVersion
