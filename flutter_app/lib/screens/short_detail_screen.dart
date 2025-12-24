@@ -143,52 +143,50 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Loading indicator
+                      // Story Content (show preview first, then full content)
+                      ...content.split('\n').where((p) => p.trim().isNotEmpty).map(
+                            (paragraph) => Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Text(
+                                paragraph,
+                                style: TextStyle(
+                                  color: Colors.grey[200],
+                                  fontSize: 18,
+                                  height: 1.8,
+                                ),
+                              ),
+                            ),
+                          ),
+                      // Loading indicator (shows at bottom while loading full content)
                       if (_isLoading)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(32),
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF3b82f6),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF3b82f6),
+                                strokeWidth: 2,
+                              ),
                             ),
                           ),
                         )
                       else if (_error != null)
-                        Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Failed to load content',
-                                style: TextStyle(color: Colors.grey[400]),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: TextButton(
+                              onPressed: _fetchFullContent,
+                              child: const Text(
+                                'Tap to load full content',
+                                style: TextStyle(color: Color(0xFF3b82f6)),
                               ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _fetchFullContent,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF3b82f6),
-                                ),
-                                child: const Text('Retry'),
-                              ),
-                            ],
+                            ),
                           ),
                         )
                       else
-                        // Story Content
-                        ...content.split('\n').where((p) => p.trim().isNotEmpty).map(
-                              (paragraph) => Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: Text(
-                                  paragraph,
-                                  style: TextStyle(
-                                    color: Colors.grey[200],
-                                    fontSize: 18,
-                                    height: 1.8,
-                                  ),
-                                ),
-                              ),
-                            ),
-                      // End marker
-                      if (!_isLoading && _error == null)
+                        // End marker
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Center(

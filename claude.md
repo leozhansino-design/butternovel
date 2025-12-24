@@ -35,10 +35,14 @@
 - [x] **Android real device build & testing** (Dec 24)
 - [x] App icon with ButterNovel logo
 - [x] Reading screen with full content loading from API
+- [x] UI refinement: title at top, tags next to author, actions at bottom
+- [x] Preview text no-scroll (shows max content based on screen)
+- [x] Removed For You header overlay (only search icon remains)
+- [x] Improved reading screen loading UX (shows preview while loading full content)
 
 ### In Progress
-- [ ] UI refinement based on user feedback
-- [ ] User authentication
+- [ ] User authentication (login/register)
+- [ ] Personalized recommendation algorithm (requires login)
 
 ### Pending
 - [ ] Like/Save functionality
@@ -99,15 +103,13 @@
 
 ```
 ┌─────────────────────────────────┐
-│  For You              [Search]  │  ← Header with search
-├─────────────────────────────────┤
-│                                 │
-│  Story Title Here (2 lines max) │  ← Small title at top
+│                        [Search] │  ← Search only (top right)
+│  Story Title Here (2 lines max) │  ← Title at top
 │  by Author Name  [Genre Tag]    │  ← Author + tag same row
 │                                 │
 │  Preview of the story content   │
 │  showing as much text as fits   │
-│  on the screen without scroll   │
+│  on the screen (no scroll)      │
 │                                 │
 │  1.2K views · 89 likes · chars  │
 │                                 │
@@ -116,6 +118,11 @@
 └─────────────────────────────────┘
      ↑ Swipe up/down to navigate
 ```
+
+**Recommendation Algorithm** (requires login):
+- Track user interactions (likes, saves, reading time)
+- Recommend stories based on user preferences
+- Without login: show trending/random stories
 
 ### 3.4 Theme Colors
 

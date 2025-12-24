@@ -96,49 +96,22 @@ class _ForYouScreenState extends State<ForYouScreen> {
                 );
               },
             ),
-            // Header
+            // Search button only (top right)
             Positioned(
               top: 0,
-              left: 0,
               right: 0,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.7),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox(width: 40),
-                        const Text(
-                          'For You',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            // TODO: Navigate to search
-                          },
-                          icon: const Icon(
-                            Icons.search,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ],
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: IconButton(
+                    onPressed: () {
+                      // TODO: Navigate to search
+                    },
+                    icon: const Icon(
+                      Icons.search,
+                      color: Colors.white,
+                      size: 24,
                     ),
                   ),
                 ),
