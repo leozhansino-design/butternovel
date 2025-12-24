@@ -2,19 +2,52 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 
 import '../models/short_novel.dart';
+import '../services/api_service.dart';
 
-class ShortDetailScreen extends StatelessWidget {
+class ShortDetailScreen extends StatefulWidget {
   final ShortNovel novel;
 
   const ShortDetailScreen({super.key, required this.novel});
 
   @override
+  State<ShortDetailScreen> createState() => _ShortDetailScreenState();
+}
+
+class _ShortDetailScreenState extends State<ShortDetailScreen> {
+  ShortNovel? _fullNovel;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFullContent();
+  }
+
+  Future<void> _fetchFullContent() async {
+    try {
+      final fullNovel = await ApiService.fetchShortById(widget.novel.id);
+      setState(() {
+        _fullNovel = fullNovel;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final novel = _fullNovel ?? widget.novel;
     final content = novel.chapters?.isNotEmpty == true
         ? novel.chapters!.first.content
         : novel.blurb;
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // Content
@@ -104,39 +137,70 @@ class ShortDetailScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 16),
                             _buildStatItem(
-                              '${novel.wordCount.toString()} words',
+                              '${novel.wordCount.toString()} chars',
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Story Content
-                      ...content.split('\n').where((p) => p.trim().isNotEmpty).map(
-                            (paragraph) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Text(
-                                paragraph,
-                                style: TextStyle(
-                                  color: Colors.grey[200],
-                                  fontSize: 18,
-                                  height: 1.8,
+                      // Loading indicator
+                      if (_isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32),
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF3b82f6),
+                            ),
+                          ),
+                        )
+                      else if (_error != null)
+                        Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Failed to load content',
+                                style: TextStyle(color: Colors.grey[400]),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _fetchFullContent,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3b82f6),
+                                ),
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        // Story Content
+                        ...content.split('\n').where((p) => p.trim().isNotEmpty).map(
+                              (paragraph) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: Text(
+                                  paragraph,
+                                  style: TextStyle(
+                                    color: Colors.grey[200],
+                                    fontSize: 18,
+                                    height: 1.8,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
                       // End marker
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 32),
-                        child: Center(
-                          child: Text(
-                            '— The End —',
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 16,
+                      if (!_isLoading && _error == null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: Text(
+                              '— The End —',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
-                      ),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -161,12 +225,13 @@ class ShortDetailScreen extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildBottomAction('♡', novel.likeCount.toString()),
-                          _buildBottomAction('💬', 'Comments'),
+                          _buildBottomAction(Icons.favorite_border, 'Like'),
+                          _buildBottomAction(Icons.chat_bubble_outline, 'Comment'),
                           ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF3b82f6),
+                              foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
                                 vertical: 12,
@@ -180,7 +245,7 @@ class ShortDetailScreen extends StatelessWidget {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          _buildBottomAction('↗', 'Share'),
+                          _buildBottomAction(Icons.share_outlined, 'Share'),
                         ],
                       ),
                     ),
@@ -223,11 +288,11 @@ class ShortDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomAction(String icon, String label) {
+  Widget _buildBottomAction(IconData icon, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(icon, style: const TextStyle(fontSize: 24)),
+        Icon(icon, color: Colors.white, size: 24),
         const SizedBox(height: 4),
         Text(
           label,

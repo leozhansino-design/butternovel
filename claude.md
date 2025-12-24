@@ -32,9 +32,12 @@
 - [x] CORS configuration for mobile API
 - [x] Basic UI for all screens
 - [x] Dark theme with blue accent (#3b82f6)
+- [x] **Android real device build & testing** (Dec 24)
+- [x] App icon with ButterNovel logo
+- [x] Reading screen with full content loading from API
 
 ### In Progress
-- [ ] Short novel detail/reading screen
+- [ ] UI refinement based on user feedback
 - [ ] User authentication
 
 ### Pending
@@ -99,17 +102,17 @@
 │  For You              [Search]  │  ← Header with search
 ├─────────────────────────────────┤
 │                                 │
-│   [Genre Tag]                   │
+│  Story Title Here (2 lines max) │  ← Small title at top
+│  by Author Name  [Genre Tag]    │  ← Author + tag same row
 │                                 │
-│   「Story Title」               │
-│   By Author Name                │
+│  Preview of the story content   │
+│  showing as much text as fits   │
+│  on the screen without scroll   │
 │                                 │
-│   Preview of the story content  │
-│   showing first few lines...    │
+│  1.2K views · 89 likes · chars  │
 │                                 │
-│   1.2K views · 89 likes         │
-│                                 │
-│   [Read Full Story]  ♡  ↗       │
+│  [Like] [Comment] [Save] [Share]│  ← Action buttons with text
+│  [      Start Reading         ] │  ← Primary action button
 └─────────────────────────────────┘
      ↑ Swipe up/down to navigate
 ```
