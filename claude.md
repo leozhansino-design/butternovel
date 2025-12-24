@@ -6,59 +6,72 @@
 **Current Phase**: Mobile App Development (Flutter)
 **Target Platforms**: Google Play + App Store
 **Mobile Branch**: `claude/setup-expo-mobile-app-psVwF`
-**Production URL**: `https://butternovel.com`
+**Production URL**: `https://www.butternovel.com`
+**Deadline**: 2 weeks (Target: 2025-01-07)
 
 ---
 
 ## Table of Contents
 
-1. [Project Overview](#1-project-overview)
-2. [Mobile App (Flutter)](#2-mobile-app-flutter)
-3. [API Reference](#3-api-reference)
-4. [Database Models](#4-database-models)
-5. [Development Workflow](#5-development-workflow)
+1. [Development Progress](#1-development-progress)
+2. [2-Week Roadmap](#2-2-week-roadmap)
+3. [Mobile App (Flutter)](#3-mobile-app-flutter)
+4. [API Reference](#4-api-reference)
+5. [Database Models](#5-database-models)
+6. [Development Workflow](#6-development-workflow)
 
 ---
 
-## 1. Project Overview
+## 1. Development Progress
 
-### 1.1 Product Vision
+### Completed
+- [x] Flutter project setup with Android configuration
+- [x] 5 Tab navigation (For You, Following, +, Bookshelf, Profile)
+- [x] For You page with TikTok-style vertical scroll
+- [x] API integration with www.butternovel.com
+- [x] CORS configuration for mobile API
+- [x] Basic UI for all screens
+- [x] Dark theme with blue accent (#3b82f6)
 
-**ButterNovel Mobile** - Short Novel Reading & Creation App
+### In Progress
+- [ ] Short novel detail/reading screen
+- [ ] User authentication
 
-**Core Features**:
-| Feature | Description |
-|---------|-------------|
-| Short Only | 15,000-50,000 characters |
-| No Covers | Pure text card display |
-| TikTok-style | For You vertical scroll |
-| Everyone Creates | One account = Reader + Author |
-| Comments | Paragraph comments + Book ratings |
-
-### 1.2 Repository Structure
-
-```
-butternovel/                 # Main repository
-├── src/                     # Next.js Web code
-├── prisma/                  # Database Schema
-├── flutter_app/             # Flutter Mobile App
-│   ├── lib/
-│   │   ├── main.dart        # Entry point
-│   │   ├── models/          # Data models
-│   │   ├── providers/       # State management
-│   │   ├── screens/         # Screens
-│   │   ├── services/        # API services
-│   │   └── widgets/         # Components
-│   └── pubspec.yaml         # Dependencies
-├── mobile/                  # (Old) Expo project, deprecated
-└── claude.md                # This document
-```
+### Pending
+- [ ] Like/Save functionality
+- [ ] Bookshelf with saved stories
+- [ ] Following page with followed authors
+- [ ] Profile page with user data
+- [ ] Create story functionality
+- [ ] Search functionality
+- [ ] App store submission
 
 ---
 
-## 2. Mobile App (Flutter)
+## 2. 2-Week Roadmap
 
-### 2.1 Tech Stack
+### Week 1 (Dec 24 - Dec 31)
+| Day | Tasks |
+|-----|-------|
+| Day 1-2 | Reading screen, story detail view |
+| Day 3-4 | User authentication (login/register) |
+| Day 5-6 | Like, save, and bookshelf functionality |
+| Day 7 | Following page, author profiles |
+
+### Week 2 (Jan 1 - Jan 7)
+| Day | Tasks |
+|-----|-------|
+| Day 8-9 | Profile page, settings |
+| Day 10-11 | Create story, publish flow |
+| Day 12 | Search functionality |
+| Day 13 | Testing, bug fixes |
+| Day 14 | Build release, submit to stores |
+
+---
+
+## 3. Mobile App (Flutter)
+
+### 3.1 Tech Stack
 
 | Technology | Purpose |
 |------------|---------|
@@ -68,7 +81,7 @@ butternovel/                 # Main repository
 | Google Fonts | Typography |
 | shared_preferences | Local storage |
 
-### 2.2 Bottom Navigation (5 Tabs)
+### 3.2 Bottom Navigation (5 Tabs)
 
 ```
 ┌─────────┬─────────┬─────────┬─────────┬─────────┐
@@ -79,7 +92,7 @@ butternovel/                 # Main repository
 - Tab bar has **text only**, no icons
 - Center **+** is a large blue button
 
-### 2.3 For You Page (TikTok-style)
+### 3.3 For You Page (TikTok-style)
 
 ```
 ┌─────────────────────────────────┐
@@ -97,22 +110,17 @@ butternovel/                 # Main repository
 │   1.2K views · 89 likes         │
 │                                 │
 │   [Read Full Story]  ♡  ↗       │
-│                                 │
-│                     ♡ 89        │  ← Side actions
-│                     💬 0        │
-│                     🔖 Save     │
-│                     ↗ Share    │
 └─────────────────────────────────┘
      ↑ Swipe up/down to navigate
 ```
 
-### 2.4 Theme Colors
+### 3.4 Theme Colors
 
 - **Primary**: `#3b82f6` (Blue)
 - **Background**: Black (#000000)
 - **Text**: White/Grey
 
-### 2.5 Getting Started
+### 3.5 Getting Started
 
 ```bash
 cd flutter_app
@@ -122,13 +130,13 @@ flutter run -d android     # Android device
 flutter run -d ios         # iOS device (Mac only)
 ```
 
-### 2.6 API Configuration
+### 3.6 API Configuration
 
 Edit `lib/services/api_service.dart`:
 
 ```dart
-// Production
-static const String baseUrl = 'https://butternovel.com';
+// Production (use www to avoid 308 redirect)
+static const String baseUrl = 'https://www.butternovel.com';
 
 // Local development
 // static const String baseUrl = 'http://localhost:3000';
@@ -136,9 +144,9 @@ static const String baseUrl = 'https://butternovel.com';
 
 ---
 
-## 3. API Reference
+## 4. API Reference
 
-### 3.1 Mobile API Endpoints
+### 4.1 Mobile API Endpoints
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -147,21 +155,21 @@ static const String baseUrl = 'https://butternovel.com';
 
 **Query filters**: `isShortNovel=true, isPublished=true, isBanned=false`
 
-### 3.2 Authentication API
+### 4.2 Authentication API
 
 | Route | Method | Description |
 |-------|--------|-------------|
 | `/api/auth/[...nextauth]` | GET/POST | NextAuth authentication |
 | `/api/auth/register` | POST | Email registration |
 
-### 3.3 Short Novel API
+### 4.3 Short Novel API
 
 | Route | Method | Description |
 |-------|--------|-------------|
 | `/api/shorts/[id]/recommend` | POST | Like/Unlike |
 | `/api/shorts/[id]/recommend-status` | GET | Check like status |
 
-### 3.4 Paragraph Comments API
+### 4.4 Paragraph Comments API
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -169,7 +177,7 @@ static const String baseUrl = 'https://butternovel.com';
 | `/api/paragraph-comments/[id]/replies` | GET/POST | Get/Post replies |
 | `/api/paragraph-comments/[id]/like` | POST/DELETE | Like/Unlike |
 
-### 3.5 Rating API
+### 4.5 Rating API
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -177,14 +185,14 @@ static const String baseUrl = 'https://butternovel.com';
 | `/api/novels/[id]/ratings` | GET | Get ratings list |
 | `/api/novels/[id]/user-rating` | GET | Get current user rating |
 
-### 3.6 Library API
+### 4.6 Library API
 
 | Route | Method | Description |
 |-------|--------|-------------|
 | `/api/library` | GET/POST/DELETE | Library operations |
 | `/api/library/check` | GET | Check if in library |
 
-### 3.7 Follow API
+### 4.7 Follow API
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -193,9 +201,9 @@ static const String baseUrl = 'https://butternovel.com';
 
 ---
 
-## 4. Database Models
+## 5. Database Models
 
-### 4.1 Novel Model (Key Fields)
+### 5.1 Novel Model (Key Fields)
 
 ```prisma
 model Novel {
@@ -216,7 +224,7 @@ model Novel {
 }
 ```
 
-### 4.2 Short Novel Genres (16 total)
+### 5.2 Short Novel Genres (16 total)
 
 ```
 sweet-romance, billionaire-romance, face-slapping, revenge,
@@ -227,15 +235,15 @@ lgbtq, quick-transmigration, survival-apocalypse, system
 
 ---
 
-## 5. Development Workflow
+## 6. Development Workflow
 
-### 5.1 Branch Convention
+### 6.1 Branch Convention
 
 - **Mobile development branch**: `claude/setup-expo-mobile-app-psVwF`
 - All mobile changes push to this branch
 - Merge to master when complete
 
-### 5.2 Flutter Commands
+### 6.2 Flutter Commands
 
 ```bash
 # Get dependencies
@@ -252,7 +260,7 @@ flutter build apk --release    # Android
 flutter build ios --release    # iOS
 ```
 
-### 5.3 App Store Submission
+### 6.3 App Store Submission
 
 #### Google Play
 ```
@@ -281,6 +289,7 @@ flutter build ios --release    # iOS
 3. **Tab Bar No Icons**: Text only, center + is large button
 4. **No MD Files**: Don't create markdown files unless requested
 5. **English UI**: All app text should be in English
+6. **Use www.butternovel.com**: Avoid 308 redirect issues
 
 ---
 
