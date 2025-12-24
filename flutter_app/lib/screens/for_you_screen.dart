@@ -49,7 +49,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  '加载失败',
+                  'Failed to load stories',
                   style: TextStyle(color: Colors.grey[400], fontSize: 16),
                 ),
                 const SizedBox(height: 16),
@@ -59,7 +59,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
                     backgroundColor: const Color(0xFF3b82f6),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('重试'),
+                  child: const Text('Retry'),
                 ),
               ],
             ),
@@ -121,7 +121,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
                       children: [
                         const SizedBox(width: 40),
                         const Text(
-                          '推荐',
+                          'For You',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,

@@ -17,7 +17,7 @@ class ProfileScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      '我的',
+                      'Profile',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -27,7 +27,7 @@ class ProfileScreen extends StatelessWidget {
                     TextButton(
                       onPressed: () {},
                       child: Text(
-                        '设置',
+                        'Settings',
                         style: TextStyle(color: const Color(0xFF3b82f6)),
                       ),
                     ),
@@ -49,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       child: const Center(
                         child: Text(
-                          '游',
+                          'G',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 36,
@@ -60,7 +60,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      '游客用户',
+                      'Guest User',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -69,7 +69,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '未登录',
+                      'Not signed in',
                       style: TextStyle(color: Colors.grey[500]),
                     ),
                   ],
@@ -93,7 +93,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          '登录',
+                          'Sign In',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -114,7 +114,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          '注册账号',
+                          'Create Account',
                           style: TextStyle(
                             color: Color(0xFF3b82f6),
                             fontSize: 16,
@@ -138,9 +138,9 @@ class ProfileScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStatItem('0', '已读'),
-                    _buildStatItem('0', '关注'),
-                    _buildStatItem('0', '收藏'),
+                    _buildStatItem('0', 'Stories Read'),
+                    _buildStatItem('0', 'Following'),
+                    _buildStatItem('0', 'Bookmarked'),
                   ],
                 ),
               ),
@@ -150,11 +150,11 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    _buildMenuItem('阅读历史'),
-                    _buildMenuItem('我的作品'),
-                    _buildMenuItem('消息通知'),
-                    _buildMenuItem('主题', subtitle: '深色'),
-                    _buildMenuItem('关于 ButterNovel'),
+                    _buildMenuItem('Reading History'),
+                    _buildMenuItem('My Stories'),
+                    _buildMenuItem('Notifications'),
+                    _buildMenuItem('Theme', subtitle: 'Dark'),
+                    _buildMenuItem('About ButterNovel'),
                   ],
                 ),
               ),

@@ -13,7 +13,7 @@ class FollowingScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                '关注',
+                'Following',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -34,7 +34,7 @@ class FollowingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '还没有关注作者',
+                      'No authors yet',
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 18,
@@ -42,7 +42,7 @@ class FollowingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '关注你喜欢的作者\n在这里看到他们的最新故事',
+                      'Follow your favorite authors to see\ntheir latest stories here',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.grey[600],
@@ -63,7 +63,7 @@ class FollowingScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(24),
                         ),
                       ),
-                      child: const Text('发现作者'),
+                      child: const Text('Discover Authors'),
                     ),
                   ],
                 ),

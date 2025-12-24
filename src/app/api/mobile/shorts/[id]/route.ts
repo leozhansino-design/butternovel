@@ -3,6 +3,18 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Handle OPTIONS preflight request
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // GET /api/mobile/shorts/[id] - Get short novel details
 export async function GET(
   request: NextRequest,
@@ -18,7 +30,7 @@ export async function GET(
           success: false,
           error: "Invalid novel ID",
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -84,7 +96,7 @@ export async function GET(
           success: false,
           error: "Short novel not found",
         },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
@@ -96,10 +108,13 @@ export async function GET(
       })
       .catch((err: unknown) => console.error("Failed to increment view count:", err));
 
-    return NextResponse.json({
-      success: true,
-      data: novel,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: novel,
+      },
+      { headers: corsHeaders }
+    );
   } catch (error) {
     console.error("Error fetching short novel details:", error);
     return NextResponse.json(
@@ -107,7 +122,7 @@ export async function GET(
         success: false,
         error: "Failed to fetch short novel details",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

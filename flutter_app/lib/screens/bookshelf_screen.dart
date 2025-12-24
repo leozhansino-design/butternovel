@@ -13,7 +13,7 @@ class BookshelfScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                '我的书架',
+                'My Bookshelf',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -36,7 +36,7 @@ class BookshelfScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '书架空空如也',
+                      'No books saved',
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 18,
@@ -44,7 +44,7 @@ class BookshelfScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '收藏喜欢的故事\n随时随地阅读',
+                      'Save your favorite stories to read\nthem anytime, even offline',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.grey[600],
@@ -65,19 +65,19 @@ class BookshelfScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(24),
                         ),
                       ),
-                      child: const Text('去发现故事'),
+                      child: const Text('Explore Stories'),
                     ),
                     const SizedBox(height: 48),
                     // Continue Reading Section
                     _buildSection(
-                      '继续阅读',
-                      '正在阅读的故事会显示在这里',
+                      'Continue Reading',
+                      'Stories you\'re reading will appear here',
                     ),
                     const SizedBox(height: 24),
                     // Saved for Later Section
                     _buildSection(
-                      '稍后阅读',
-                      '收藏的故事会显示在这里',
+                      'Saved for Later',
+                      'Stories you save will appear here',
                     ),
                   ],
                 ),

@@ -1,89 +1,89 @@
-# ButterNovel - Claude 开发参考文档
+# ButterNovel - Claude Development Reference
 
-> **快速参考**: 每次开发前必读
+> **Quick Reference**: Read before every development session
 
-**最后更新**: 2025-12-24
-**当前阶段**: 📱 手机版 App 开发 (Flutter)
-**目标平台**: Google Play + App Store
-**移动端分支**: `claude/setup-expo-mobile-app-psVwF`
-
----
-
-## 目录
-
-1. [项目概述](#1-项目概述)
-2. [移动端 App (Flutter)](#2-移动端-app-flutter)
-3. [现有 API 详细列表](#3-现有-api-详细列表)
-4. [数据库模型](#4-数据库模型)
-5. [开发流程](#5-开发流程)
+**Last Updated**: 2025-12-24
+**Current Phase**: Mobile App Development (Flutter)
+**Target Platforms**: Google Play + App Store
+**Mobile Branch**: `claude/setup-expo-mobile-app-psVwF`
+**Production URL**: `https://butternovel.com`
 
 ---
 
-## 1. 项目概述
+## Table of Contents
 
-### 1.1 产品定位
+1. [Project Overview](#1-project-overview)
+2. [Mobile App (Flutter)](#2-mobile-app-flutter)
+3. [API Reference](#3-api-reference)
+4. [Database Models](#4-database-models)
+5. [Development Workflow](#5-development-workflow)
 
-**ButterNovel 手机版** - 短篇小说阅读与创作 App
+---
 
-**核心特点**:
-| 特点 | 说明 |
-|------|------|
-| 只做短篇 | 15,000-50,000 字符 |
-| 不要封面 | 纯文字卡片展示 |
-| 抖音式推荐 | For You 垂直滑动 |
-| 人人可创作 | 一个账号 = 读者 + 作者 |
-| 保留评论 | 段落评论 + 书籍评分 |
+## 1. Project Overview
 
-### 1.2 仓库结构
+### 1.1 Product Vision
+
+**ButterNovel Mobile** - Short Novel Reading & Creation App
+
+**Core Features**:
+| Feature | Description |
+|---------|-------------|
+| Short Only | 15,000-50,000 characters |
+| No Covers | Pure text card display |
+| TikTok-style | For You vertical scroll |
+| Everyone Creates | One account = Reader + Author |
+| Comments | Paragraph comments + Book ratings |
+
+### 1.2 Repository Structure
 
 ```
-butternovel/                 # 主仓库
-├── src/                     # Next.js Web 端代码
-├── prisma/                  # 数据库 Schema
-├── flutter_app/             # 📱 Flutter 移动端 App
+butternovel/                 # Main repository
+├── src/                     # Next.js Web code
+├── prisma/                  # Database Schema
+├── flutter_app/             # Flutter Mobile App
 │   ├── lib/
-│   │   ├── main.dart        # 入口
-│   │   ├── models/          # 数据模型
-│   │   ├── providers/       # 状态管理
-│   │   ├── screens/         # 页面
-│   │   ├── services/        # API 服务
-│   │   └── widgets/         # 组件
-│   └── pubspec.yaml         # 依赖配置
-├── mobile/                  # (旧) Expo 项目，已弃用
-└── claude.md                # 本文档
+│   │   ├── main.dart        # Entry point
+│   │   ├── models/          # Data models
+│   │   ├── providers/       # State management
+│   │   ├── screens/         # Screens
+│   │   ├── services/        # API services
+│   │   └── widgets/         # Components
+│   └── pubspec.yaml         # Dependencies
+├── mobile/                  # (Old) Expo project, deprecated
+└── claude.md                # This document
 ```
 
 ---
 
-## 2. 移动端 App (Flutter)
+## 2. Mobile App (Flutter)
 
-### 2.1 技术栈
+### 2.1 Tech Stack
 
-| 技术 | 用途 |
-|------|------|
-| Flutter 3.x | 跨平台框架 |
-| Provider | 状态管理 |
-| http | HTTP 请求 |
-| Google Fonts | 字体 |
-| shared_preferences | 本地存储 |
+| Technology | Purpose |
+|------------|---------|
+| Flutter 3.x | Cross-platform framework |
+| Provider | State management |
+| http | HTTP requests |
+| Google Fonts | Typography |
+| shared_preferences | Local storage |
 
-### 2.2 底部导航 (5 Tabs)
+### 2.2 Bottom Navigation (5 Tabs)
 
 ```
 ┌─────────┬─────────┬─────────┬─────────┬─────────┐
-│ For You │Following│   ➕    │Bookshelf│ Profile │
-│  推荐   │  关注   │  创作   │   书架   │   我的  │
+│ For You │Following│    +    │Bookshelf│ Profile │
 └─────────┴─────────┴─────────┴─────────┴─────────┘
 ```
 
-- Tab 栏**只有文字**，无图标
-- 中间 **+** 是蓝色大号按钮
+- Tab bar has **text only**, no icons
+- Center **+** is a large blue button
 
-### 2.3 For You 页面 (TikTok 风格)
+### 2.3 For You Page (TikTok-style)
 
 ```
 ┌─────────────────────────────────┐
-│        For You                  │  ← 顶部标题
+│  For You              [Search]  │  ← Header with search
 ├─────────────────────────────────┤
 │                                 │
 │   [Genre Tag]                   │
@@ -98,104 +98,104 @@ butternovel/                 # 主仓库
 │                                 │
 │   [Read Full Story]  ♡  ↗       │
 │                                 │
-│                     ♡ 89        │  ← 右侧操作
+│                     ♡ 89        │  ← Side actions
 │                     💬 0        │
 │                     🔖 Save     │
 │                     ↗ Share    │
 └─────────────────────────────────┘
-     ↑ 上滑下一个 / 下滑上一个
+     ↑ Swipe up/down to navigate
 ```
 
-### 2.4 主题颜色
+### 2.4 Theme Colors
 
-- **主色**: `#3b82f6` (蓝色)
-- **背景**: 黑色 (#000000)
-- **文字**: 白色/灰色
+- **Primary**: `#3b82f6` (Blue)
+- **Background**: Black (#000000)
+- **Text**: White/Grey
 
-### 2.5 启动开发
+### 2.5 Getting Started
 
 ```bash
 cd flutter_app
 flutter pub get
-flutter run -d chrome      # 浏览器测试
-flutter run -d android     # Android 设备
-flutter run -d ios         # iOS 设备 (Mac)
+flutter run -d chrome      # Browser testing
+flutter run -d android     # Android device
+flutter run -d ios         # iOS device (Mac only)
 ```
 
-### 2.6 API 配置
+### 2.6 API Configuration
 
-修改 `lib/services/api_service.dart`:
+Edit `lib/services/api_service.dart`:
 
 ```dart
-// 生产环境
-static const String baseUrl = 'https://butternovel.vercel.app';
+// Production
+static const String baseUrl = 'https://butternovel.com';
 
-// 本地开发
+// Local development
 // static const String baseUrl = 'http://localhost:3000';
 ```
 
 ---
 
-## 3. 现有 API 详细列表
+## 3. API Reference
 
-### 3.1 移动端专用 API
+### 3.1 Mobile API Endpoints
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/mobile/shorts` | GET | 短篇列表 |
-| `/api/mobile/shorts/[id]` | GET | 短篇详情 |
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/mobile/shorts` | GET | Short novels list |
+| `/api/mobile/shorts/[id]` | GET | Short novel details |
 
-**查询条件**: `isShortNovel=true, isPublished=true, isBanned=false`
+**Query filters**: `isShortNovel=true, isPublished=true, isBanned=false`
 
-### 3.2 认证 API
+### 3.2 Authentication API
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/auth/[...nextauth]` | GET/POST | NextAuth 认证 |
-| `/api/auth/register` | POST | 邮箱注册 |
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/auth/[...nextauth]` | GET/POST | NextAuth authentication |
+| `/api/auth/register` | POST | Email registration |
 
-### 3.3 短篇小说 API
+### 3.3 Short Novel API
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/shorts/[id]/recommend` | POST | 点赞/取消点赞 |
-| `/api/shorts/[id]/recommend-status` | GET | 检查点赞状态 |
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/shorts/[id]/recommend` | POST | Like/Unlike |
+| `/api/shorts/[id]/recommend-status` | GET | Check like status |
 
-### 3.4 段落评论 API
+### 3.4 Paragraph Comments API
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/paragraph-comments` | GET/POST | 获取/发表评论 |
-| `/api/paragraph-comments/[id]/replies` | GET/POST | 获取/发表回复 |
-| `/api/paragraph-comments/[id]/like` | POST/DELETE | 点赞/取消 |
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/paragraph-comments` | GET/POST | Get/Post comments |
+| `/api/paragraph-comments/[id]/replies` | GET/POST | Get/Post replies |
+| `/api/paragraph-comments/[id]/like` | POST/DELETE | Like/Unlike |
 
-### 3.5 评分 API
+### 3.5 Rating API
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/novels/[id]/rate` | POST | 提交评分 |
-| `/api/novels/[id]/ratings` | GET | 获取评分列表 |
-| `/api/novels/[id]/user-rating` | GET | 获取当前用户评分 |
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/novels/[id]/rate` | POST | Submit rating |
+| `/api/novels/[id]/ratings` | GET | Get ratings list |
+| `/api/novels/[id]/user-rating` | GET | Get current user rating |
 
-### 3.6 书架 API
+### 3.6 Library API
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/library` | GET/POST/DELETE | 书架操作 |
-| `/api/library/check` | GET | 检查是否在书架 |
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/library` | GET/POST/DELETE | Library operations |
+| `/api/library/check` | GET | Check if in library |
 
-### 3.7 关注 API
+### 3.7 Follow API
 
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/user/follow` | POST/DELETE | 关注/取关 |
-| `/api/user/follow-status` | GET | 检查关注状态 |
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/user/follow` | POST/DELETE | Follow/Unfollow |
+| `/api/user/follow-status` | GET | Check follow status |
 
 ---
 
-## 4. 数据库模型
+## 4. Database Models
 
-### 4.1 Novel（小说）关键字段
+### 4.1 Novel Model (Key Fields)
 
 ```prisma
 model Novel {
@@ -216,7 +216,7 @@ model Novel {
 }
 ```
 
-### 4.2 短篇分类 (16个)
+### 4.2 Short Novel Genres (16 total)
 
 ```
 sweet-romance, billionaire-romance, face-slapping, revenge,
@@ -227,60 +227,61 @@ lgbtq, quick-transmigration, survival-apocalypse, system
 
 ---
 
-## 5. 开发流程
+## 5. Development Workflow
 
-### 5.1 分支规范
+### 5.1 Branch Convention
 
-- **移动端开发分支**: `claude/setup-expo-mobile-app-psVwF`
-- 所有移动端更改都推送到这个分支
-- 完成后合并到 master
+- **Mobile development branch**: `claude/setup-expo-mobile-app-psVwF`
+- All mobile changes push to this branch
+- Merge to master when complete
 
-### 5.2 Flutter 开发命令
+### 5.2 Flutter Commands
 
 ```bash
-# 获取依赖
+# Get dependencies
 flutter pub get
 
-# 运行 (选择设备)
+# Run (select device)
 flutter run
 
-# 热重载
-r  # 在运行中按 r
+# Hot reload
+r  # Press r while running
 
-# 构建发布版
+# Build release
 flutter build apk --release    # Android
 flutter build ios --release    # iOS
 ```
 
-### 5.3 提交到应用商店
+### 5.3 App Store Submission
 
 #### Google Play
 ```
-1. 注册开发者账号 ($25)
+1. Register developer account ($25)
 2. flutter build appbundle --release
-3. 在 Play Console 创建应用
-4. 上传 AAB 文件
-5. 提交审核
+3. Create app in Play Console
+4. Upload AAB file
+5. Submit for review
 ```
 
 #### App Store
 ```
-1. 注册开发者账号 ($99/年)
+1. Register developer account ($99/year)
 2. flutter build ios --release
-3. 在 App Store Connect 创建应用
-4. 用 Xcode 上传
-5. 提交审核
+3. Create app in App Store Connect
+4. Upload with Xcode
+5. Submit for review
 ```
 
 ---
 
-## 重要提醒
+## Important Reminders
 
-1. **Apple 登录必须**: iOS 上架强制要求
-2. **主题色蓝色**: #3b82f6，不要黄色
-3. **Tab 栏无图标**: 只有文字，中间 + 是大号按钮
-4. **推送时不创建 md 文件**: 除非明确要求
+1. **Apple Sign-In Required**: Mandatory for iOS App Store
+2. **Theme Color Blue**: #3b82f6, no yellow
+3. **Tab Bar No Icons**: Text only, center + is large button
+4. **No MD Files**: Don't create markdown files unless requested
+5. **English UI**: All app text should be in English
 
 ---
 
-**📱 让短篇阅读触手可及**
+**Making short stories accessible everywhere**
