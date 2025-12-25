@@ -81,22 +81,24 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Transform data to include extended preview (up to 5000 chars for large screens)
-    const transformedShorts = shorts.map((short) => {
-      const firstChapterContent = short.chapters?.[0]?.content || "";
-      // Use up to 5000 chars to fill large screens like iPad
-      const maxPreviewLength = 5000;
-      const extendedPreview =
-        firstChapterContent.length > maxPreviewLength
-          ? firstChapterContent.substring(0, maxPreviewLength)
-          : firstChapterContent;
+    const transformedShorts = shorts.map(
+      (short: (typeof shorts)[number]) => {
+        const firstChapterContent = short.chapters?.[0]?.content || "";
+        // Use up to 5000 chars to fill large screens like iPad
+        const maxPreviewLength = 5000;
+        const extendedPreview =
+          firstChapterContent.length > maxPreviewLength
+            ? firstChapterContent.substring(0, maxPreviewLength)
+            : firstChapterContent;
 
-      return {
-        ...short,
-        // Use first chapter content as extended preview, fallback to readingPreview
-        readingPreview: extendedPreview || short.readingPreview || short.blurb,
-        chapters: undefined, // Don't send raw chapters to reduce payload
-      };
-    });
+        return {
+          ...short,
+          // Use first chapter content as extended preview, fallback to readingPreview
+          readingPreview: extendedPreview || short.readingPreview || short.blurb,
+          chapters: undefined, // Don't send raw chapters to reduce payload
+        };
+      }
+    );
 
     return NextResponse.json(
       {
