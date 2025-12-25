@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/short_novel.dart';
 import '../services/api_service.dart';
+import '../services/recommendation_service.dart';
 
 class ShortsProvider extends ChangeNotifier {
   List<ShortNovel> _shorts = [];
@@ -9,6 +10,7 @@ class ShortsProvider extends ChangeNotifier {
   String? _error;
   int _currentPage = 1;
   bool _hasMore = true;
+  Set<int> _viewedIds = {};
 
   List<ShortNovel> get shorts => _shorts;
   bool get isLoading => _isLoading;
@@ -24,14 +26,30 @@ class ShortsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Load viewed IDs for recommendation
+      _viewedIds = await RecommendationService.getViewedIds();
+
       final page = loadMore ? _currentPage + 1 : 1;
       final newShorts = await ApiService.fetchShorts(page: page);
 
+      // Shuffle and diversify recommendations
+      final recommendedShorts = RecommendationService.shuffleAndDiversify<ShortNovel>(
+        newShorts,
+        _viewedIds,
+        (s) => s.id,
+        (s) => s.displayGenre,
+      );
+
       if (loadMore) {
-        _shorts.addAll(newShorts);
+        // Filter out duplicates when loading more
+        final existingIds = _shorts.map((s) => s.id).toSet();
+        final uniqueNewShorts = recommendedShorts
+            .where((s) => !existingIds.contains(s.id))
+            .toList();
+        _shorts.addAll(uniqueNewShorts);
         _currentPage = page;
       } else {
-        _shorts = newShorts;
+        _shorts = recommendedShorts;
         _currentPage = 1;
       }
 
@@ -42,6 +60,12 @@ class ShortsProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Mark a short as viewed (call when user scrolls to it)
+  Future<void> markAsViewed(int id) async {
+    await RecommendationService.markAsViewed(id);
+    _viewedIds.add(id);
   }
 
   Future<void> refresh() async {

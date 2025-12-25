@@ -10,6 +10,7 @@ class ShortNovel {
   final int viewCount;
   final int likeCount;
   final int wordCount;
+  final double? averageRating;
   final Category category;
   final List<Tag>? tags;
   final List<Chapter>? chapters;
@@ -26,6 +27,7 @@ class ShortNovel {
     required this.viewCount,
     required this.likeCount,
     required this.wordCount,
+    this.averageRating,
     required this.category,
     this.tags,
     this.chapters,
@@ -44,6 +46,9 @@ class ShortNovel {
       viewCount: json['viewCount'] ?? 0,
       likeCount: json['likeCount'] ?? 0,
       wordCount: json['wordCount'] ?? 0,
+      averageRating: json['averageRating'] != null
+          ? (json['averageRating'] as num).toDouble()
+          : null,
       category: Category.fromJson(json['category']),
       tags: json['tags'] != null
           ? (json['tags'] as List).map((t) => Tag.fromJson(t)).toList()

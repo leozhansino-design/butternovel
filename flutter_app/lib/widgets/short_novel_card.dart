@@ -117,14 +117,28 @@ class ShortNovelCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Stats
+                  // Stats with rating
                   Row(
                     children: [
+                      // Rating (if available)
+                      if (novel.averageRating != null && novel.averageRating! > 0) ...[
+                        Icon(Icons.star, color: Colors.amber[400], size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          novel.averageRating!.toStringAsFixed(1),
+                          style: TextStyle(
+                            color: Colors.amber[400],
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
                       _buildStat('${_formatCount(novel.viewCount)} views'),
                       const SizedBox(width: 16),
                       _buildStat('${_formatCount(novel.likeCount)} likes'),
                       const SizedBox(width: 16),
-                      _buildStat('${novel.wordCount.toString()} chars'),
+                      _buildStat(_getReadingTime(novel.wordCount)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -258,6 +272,17 @@ class ShortNovelCard extends StatelessWidget {
       return '${(count / 1000).toStringAsFixed(1)}K';
     }
     return count.toString();
+  }
+
+  String _getReadingTime(int wordCount) {
+    // Average reading speed: ~450 chars per minute
+    final minutes = (wordCount / 450).ceil();
+    if (minutes < 1) return '< 1 min';
+    if (minutes < 60) return '$minutes min';
+    final hours = minutes ~/ 60;
+    final remainingMins = minutes % 60;
+    if (remainingMins == 0) return '${hours}h';
+    return '${hours}h ${remainingMins}m';
   }
 
   Color _getGenreColor(String genre) {

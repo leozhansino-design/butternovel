@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'for_you_screen.dart';
-import 'following_screen.dart';
+import 'genre_screen.dart';
 import 'create_screen.dart';
 import 'bookshelf_screen.dart';
 import 'profile_screen.dart';
@@ -18,7 +18,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const ForYouScreen(),
-    const FollowingScreen(),
+    const GenreScreen(),
     const CreateScreen(),
     const BookshelfScreen(),
     const ProfileScreen(),
@@ -48,7 +48,7 @@ class _MainScreenState extends State<MainScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildNavItem(0, 'For You'),
-                _buildNavItem(1, 'Following'),
+                _buildNavItem(1, 'Genre'),
                 _buildCreateButton(),
                 _buildNavItem(3, 'Bookshelf'),
                 _buildNavItem(4, 'Profile'),

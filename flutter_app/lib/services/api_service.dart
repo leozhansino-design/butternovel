@@ -13,12 +13,14 @@ class ApiService {
     int page = 1,
     int limit = 20,
     String? genre,
+    String? sortBy,
   }) async {
     try {
       final queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
         if (genre != null) 'genre': genre,
+        if (sortBy != null) 'sort': sortBy,
       };
 
       final uri = Uri.parse('$baseUrl/api/mobile/shorts')
