@@ -2,7 +2,7 @@
 
 > **Quick Reference**: Read before every development session
 
-**Last Updated**: 2025-12-24
+**Last Updated**: 2025-12-25
 **Current Phase**: Mobile App Development (Flutter)
 **Target Platforms**: Google Play + App Store
 **Mobile Branch**: `claude/setup-expo-mobile-app-psVwF`
@@ -39,6 +39,11 @@
 - [x] Preview text no-scroll (shows max content based on screen)
 - [x] Removed For You header overlay (only search icon remains)
 - [x] Improved reading screen loading UX (shows preview while loading full content)
+- [x] View tracking API integration (same logic as web: 1 user/IP max 5 views/day)
+- [x] Swipe indicator on action buttons row
+- [x] Search icon moved to author row (to avoid blocking content)
+- [x] **Dynamic preview text sizing** - LayoutBuilder calculates maxLines based on screen size
+- [x] **Extended preview content** - API returns up to 5000 chars from first chapter (Dec 25)
 
 ### In Progress
 - [ ] User authentication (login/register)
@@ -103,17 +108,18 @@
 
 ```
 ┌─────────────────────────────────┐
-│                        [Search] │  ← Search only (top right)
 │  Story Title Here (2 lines max) │  ← Title at top
-│  by Author Name  [Genre Tag]    │  ← Author + tag same row
+│  by Author Name [Tag]      🔍   │  ← Author + tag + search icon
 │                                 │
 │  Preview of the story content   │
-│  showing as much text as fits   │
-│  on the screen (no scroll)      │
+│  dynamically fills available    │
+│  space using LayoutBuilder      │
+│  (calculates maxLines based on  │
+│  actual screen height)...       │
 │                                 │
 │  1.2K views · 89 likes · chars  │
 │                                 │
-│  [Like] [Comment] [Save] [Share]│  ← Action buttons with text
+│ [Like][Comment][Save][Share][↕] │  ← Actions + swipe indicator
 │  [      Start Reading         ] │  ← Primary action button
 └─────────────────────────────────┘
      ↑ Swipe up/down to navigate
@@ -300,6 +306,31 @@ flutter build ios --release    # iOS
 4. **No MD Files**: Don't create markdown files unless requested
 5. **English UI**: All app text should be in English
 6. **Use www.butternovel.com**: Avoid 308 redirect issues
+
+---
+
+## Deployment Reminder
+
+**IMPORTANT**: When making changes to backend/API code (anything in `src/` folder), remind the user:
+
+> **Deployment Required**: API changes need to be deployed to take effect.
+>
+> ```bash
+> # Merge to master and deploy
+> git checkout main
+> git merge claude/setup-expo-mobile-app-psVwF
+> git push origin main
+> ```
+>
+> Then trigger deployment to production server.
+
+**Backend files that require deployment**:
+- `src/app/api/**/*.ts` - API routes
+- `src/lib/**/*.ts` - Shared libraries
+- `prisma/schema.prisma` - Database schema
+- `next.config.js` - Next.js configuration
+
+**Frontend-only changes (Flutter) don't require server deployment**, but need app rebuild.
 
 ---
 
