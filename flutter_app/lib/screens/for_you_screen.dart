@@ -75,76 +75,24 @@ class _ForYouScreenState extends State<ForYouScreen> {
           );
         }
 
-        return Stack(
-          children: [
-            // TikTok-style vertical scroll
-            PageView.builder(
-              controller: _pageController,
-              scrollDirection: Axis.vertical,
-              itemCount: provider.shorts.length,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-                // Load more when near end
-                if (index >= provider.shorts.length - 3) {
-                  provider.fetchShorts(loadMore: true);
-                }
-              },
-              itemBuilder: (context, index) {
-                return ShortNovelCard(
-                  novel: provider.shorts[index],
-                  isActive: index == _currentPage,
-                );
-              },
-            ),
-            // Header
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.7),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox(width: 40),
-                        const Text(
-                          'For You',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            // TODO: Navigate to search
-                          },
-                          icon: const Icon(
-                            Icons.search,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        // TikTok-style vertical scroll
+        return PageView.builder(
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          itemCount: provider.shorts.length,
+          onPageChanged: (index) {
+            setState(() => _currentPage = index);
+            // Load more when near end
+            if (index >= provider.shorts.length - 3) {
+              provider.fetchShorts(loadMore: true);
+            }
+          },
+          itemBuilder: (context, index) {
+            return ShortNovelCard(
+              novel: provider.shorts[index],
+              isActive: index == _currentPage,
+            );
+          },
         );
       },
     );

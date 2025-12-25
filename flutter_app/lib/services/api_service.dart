@@ -73,4 +73,61 @@ class ApiService {
       throw Exception('Failed to like short: $e');
     }
   }
+
+  /// Track view when entering the reading screen
+  /// Returns the new view count if successful
+  static Future<int?> trackView(int novelId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/views/track'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'novelId': novelId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return data['viewCount'];
+        }
+      }
+      return null;
+    } catch (e) {
+      // Silently fail - view tracking is not critical
+      return null;
+    }
+  }
+
+  /// Like/Unlike a short novel (recommend)
+  static Future<Map<String, dynamic>?> toggleLike(int id) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/shorts/$id/recommend'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Check if user has liked a short novel
+  static Future<bool> checkLikeStatus(int id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/shorts/$id/recommend-status'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['hasRecommended'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
 }

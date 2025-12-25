@@ -56,6 +56,15 @@ class ShortNovel {
 
   String get displayGenre => shortNovelGenre ?? category.name;
   String get previewText => readingPreview ?? blurb;
+
+  // Get full content from chapters for preview display
+  String get fullContent {
+    if (chapters != null && chapters!.isNotEmpty) {
+      // Combine all chapter content
+      return chapters!.map((c) => c.content).join('\n\n');
+    }
+    return readingPreview ?? blurb;
+  }
 }
 
 class Category {

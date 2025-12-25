@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       ...(genre && { shortNovelGenre: genre }),
     };
 
-    // Fetch short novels
+    // Fetch short novels with first chapter content for preview
     const [shorts, total] = await Promise.all([
       prisma.novel.findMany({
         where,
@@ -58,6 +58,16 @@ export async function GET(request: NextRequest) {
               slug: true,
             },
           },
+          // Include first chapter for longer preview
+          chapters: {
+            select: {
+              content: true,
+            },
+            orderBy: {
+              chapterNumber: "asc",
+            },
+            take: 1,
+          },
         },
         orderBy: [
           { likeCount: "desc" },
@@ -70,10 +80,30 @@ export async function GET(request: NextRequest) {
       prisma.novel.count({ where }),
     ]);
 
+    // Transform data to include extended preview (up to 5000 chars for large screens)
+    const transformedShorts = shorts.map(
+      (short: (typeof shorts)[number]) => {
+        const firstChapterContent = short.chapters?.[0]?.content || "";
+        // Use up to 5000 chars to fill large screens like iPad
+        const maxPreviewLength = 5000;
+        const extendedPreview =
+          firstChapterContent.length > maxPreviewLength
+            ? firstChapterContent.substring(0, maxPreviewLength)
+            : firstChapterContent;
+
+        return {
+          ...short,
+          // Use first chapter content as extended preview, fallback to readingPreview
+          readingPreview: extendedPreview || short.readingPreview || short.blurb,
+          chapters: undefined, // Don't send raw chapters to reduce payload
+        };
+      }
+    );
+
     return NextResponse.json(
       {
         success: true,
-        data: shorts,
+        data: transformedShorts,
         pagination: {
           page,
           limit,

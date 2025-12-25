@@ -29,73 +29,94 @@ class ShortNovelCard extends StatelessWidget {
           // Content
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 80, 16, 100),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Spacer(),
-                  // Genre Tag
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          novel.displayGenre,
-                          style: TextStyle(
-                            color: const Color(0xFF60a5fa),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Title
+                  // Title at top (below For You header)
                   Text(
                     novel.title,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      height: 1.2,
+                      height: 1.3,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  // Author
-                  Text(
-                    'by ${novel.authorName}',
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Preview Text
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Text(
-                        novel.previewText,
+                  // Author, Tag, and Search on same row
+                  Row(
+                    children: [
+                      Text(
+                        'by ${novel.authorName}',
                         style: TextStyle(
-                          color: Colors.grey[200],
-                          fontSize: 16,
-                          height: 1.6,
+                          color: Colors.grey[400],
+                          fontSize: 13,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      // Genre Tag
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getGenreColor(novel.displayGenre).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          novel.displayGenre,
+                          style: TextStyle(
+                            color: _getGenreColor(novel.displayGenre),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      // Search icon
+                      IconButton(
+                        onPressed: () {
+                          // TODO: Navigate to search
+                        },
+                        icon: Icon(
+                          Icons.search,
+                          color: Colors.grey[400],
+                          size: 22,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
+                  // Preview Text - dynamically fill available space
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Calculate max lines based on available height
+                        const double fontSize = 16;
+                        const double lineHeight = 1.6;
+                        final double lineSize = fontSize * lineHeight;
+                        final int maxLines = (constraints.maxHeight / lineSize).floor();
+
+                        return Text(
+                          novel.previewText,
+                          style: TextStyle(
+                            color: Colors.grey[200],
+                            fontSize: fontSize,
+                            height: lineHeight,
+                          ),
+                          maxLines: maxLines > 0 ? maxLines : 1,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   // Stats
                   Row(
                     children: [
@@ -103,63 +124,85 @@ class ShortNovelCard extends StatelessWidget {
                       const SizedBox(width: 16),
                       _buildStat('${_formatCount(novel.likeCount)} likes'),
                       const SizedBox(width: 16),
-                      _buildStat('${novel.wordCount.toString()} words'),
+                      _buildStat('${novel.wordCount.toString()} chars'),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Action Buttons
+                  // Bottom Actions Row with swipe indicator
                   Row(
                     children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ShortDetailScreen(novel: novel),
+                      // Like button
+                      _buildBottomAction(Icons.favorite_border, 'Like'),
+                      const SizedBox(width: 8),
+                      // Comment button
+                      _buildBottomAction(Icons.chat_bubble_outline, 'Comment'),
+                      const SizedBox(width: 8),
+                      // Save button
+                      _buildBottomAction(Icons.bookmark_border, 'Save'),
+                      const SizedBox(width: 8),
+                      // Share button
+                      _buildBottomAction(Icons.share_outlined, 'Share'),
+                      const SizedBox(width: 8),
+                      // Swipe indicator
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800]?.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.swap_vert,
+                              color: Colors.grey[400],
+                              size: 22,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Swipe',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 11,
                               ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3b82f6),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                          child: const Text(
-                            'Read Full Story',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      _buildActionButton('♡'),
-                      const SizedBox(width: 8),
-                      _buildActionButton('↗'),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Start Reading Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ShortDetailScreen(novel: novel),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3b82f6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Start Reading',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
-          // Side Actions (TikTok style)
-          Positioned(
-            right: 12,
-            bottom: 180,
-            child: Column(
-              children: [
-                _buildSideAction('♡', _formatCount(novel.likeCount)),
-                const SizedBox(height: 20),
-                _buildSideAction('💬', '0'),
-                const SizedBox(height: 20),
-                _buildSideAction('🔖', 'Save'),
-                const SizedBox(height: 20),
-                _buildSideAction('↗', 'Share'),
-              ],
             ),
           ),
         ],
@@ -177,46 +220,33 @@ class ShortNovelCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(String icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[800],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        icon,
-        style: const TextStyle(fontSize: 20),
-      ),
-    );
-  }
-
-  Widget _buildSideAction(String icon, String label) {
-    return Column(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.grey[800]?.withOpacity(0.8),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
+  Widget _buildBottomAction(IconData icon, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.grey[800]?.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
               icon,
-              style: const TextStyle(fontSize: 20),
+              color: Colors.white,
+              size: 22,
             ),
-          ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
