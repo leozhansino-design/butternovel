@@ -79,18 +79,27 @@ class ShortNovelCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Preview Text (show max 2000 chars to fill space on large screens)
+                  // Preview Text - dynamically fill available space
                   Expanded(
-                    child: Text(
-                      novel.previewText.length > 2000
-                          ? '${novel.previewText.substring(0, 2000)}...'
-                          : novel.previewText,
-                      style: TextStyle(
-                        color: Colors.grey[200],
-                        fontSize: 16,
-                        height: 1.6,
-                      ),
-                      overflow: TextOverflow.clip,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Calculate max lines based on available height
+                        const double fontSize = 16;
+                        const double lineHeight = 1.6;
+                        final double lineSize = fontSize * lineHeight;
+                        final int maxLines = (constraints.maxHeight / lineSize).floor();
+
+                        return Text(
+                          novel.previewText,
+                          style: TextStyle(
+                            color: Colors.grey[200],
+                            fontSize: fontSize,
+                            height: lineHeight,
+                          ),
+                          maxLines: maxLines > 0 ? maxLines : 1,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 12),
