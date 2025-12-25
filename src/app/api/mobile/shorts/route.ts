@@ -80,12 +80,14 @@ export async function GET(request: NextRequest) {
       prisma.novel.count({ where }),
     ]);
 
-    // Transform data to include extended preview (up to 3000 chars)
+    // Transform data to include extended preview (up to 5000 chars for large screens)
     const transformedShorts = shorts.map((short) => {
       const firstChapterContent = short.chapters?.[0]?.content || "";
+      // Use up to 5000 chars to fill large screens like iPad
+      const maxPreviewLength = 5000;
       const extendedPreview =
-        firstChapterContent.length > 3000
-          ? firstChapterContent.substring(0, 3000)
+        firstChapterContent.length > maxPreviewLength
+          ? firstChapterContent.substring(0, maxPreviewLength)
           : firstChapterContent;
 
       return {
