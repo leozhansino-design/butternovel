@@ -75,49 +75,24 @@ class _ForYouScreenState extends State<ForYouScreen> {
           );
         }
 
-        return Stack(
-          children: [
-            // TikTok-style vertical scroll
-            PageView.builder(
-              controller: _pageController,
-              scrollDirection: Axis.vertical,
-              itemCount: provider.shorts.length,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-                // Load more when near end
-                if (index >= provider.shorts.length - 3) {
-                  provider.fetchShorts(loadMore: true);
-                }
-              },
-              itemBuilder: (context, index) {
-                return ShortNovelCard(
-                  novel: provider.shorts[index],
-                  isActive: index == _currentPage,
-                );
-              },
-            ),
-            // Search button only (top right)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: IconButton(
-                    onPressed: () {
-                      // TODO: Navigate to search
-                    },
-                    icon: const Icon(
-                      Icons.search,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        // TikTok-style vertical scroll
+        return PageView.builder(
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          itemCount: provider.shorts.length,
+          onPageChanged: (index) {
+            setState(() => _currentPage = index);
+            // Load more when near end
+            if (index >= provider.shorts.length - 3) {
+              provider.fetchShorts(loadMore: true);
+            }
+          },
+          itemBuilder: (context, index) {
+            return ShortNovelCard(
+              novel: provider.shorts[index],
+              isActive: index == _currentPage,
+            );
+          },
         );
       },
     );

@@ -46,7 +46,7 @@ class ShortNovelCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  // Author and Tag on same row
+                  // Author, Tag, and Search on same row
                   Row(
                     children: [
                       Text(
@@ -75,6 +75,20 @@ class ShortNovelCard extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                      ),
+                      const Spacer(),
+                      // Search icon
+                      IconButton(
+                        onPressed: () {
+                          // TODO: Navigate to search
+                        },
+                        icon: Icon(
+                          Icons.search,
+                          color: Colors.grey[400],
+                          size: 22,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
                     ],
                   ),
