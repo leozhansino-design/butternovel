@@ -82,6 +82,10 @@ class _ForYouScreenState extends State<ForYouScreen> {
           itemCount: provider.shorts.length,
           onPageChanged: (index) {
             setState(() => _currentPage = index);
+            // Mark as viewed for recommendation algorithm
+            if (index < provider.shorts.length) {
+              provider.markAsViewed(provider.shorts[index].id);
+            }
             // Load more when near end
             if (index >= provider.shorts.length - 3) {
               provider.fetchShorts(loadMore: true);

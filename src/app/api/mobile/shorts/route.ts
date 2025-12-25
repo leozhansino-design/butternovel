@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const genre = searchParams.get("genre");
+    const sort = searchParams.get("sort") || "hot";
 
     const skip = (page - 1) * limit;
 
@@ -32,6 +33,26 @@ export async function GET(request: NextRequest) {
       isBanned: false,
       ...(genre && { shortNovelGenre: genre }),
     };
+
+    // Build orderBy based on sort parameter
+    type OrderByType = { [key: string]: "asc" | "desc" }[];
+    let orderBy: OrderByType;
+    switch (sort) {
+      case "new":
+        orderBy = [{ createdAt: "desc" }];
+        break;
+      case "rating":
+        orderBy = [{ averageRating: "desc" }, { likeCount: "desc" }];
+        break;
+      case "hot":
+      default:
+        orderBy = [
+          { likeCount: "desc" },
+          { viewCount: "desc" },
+          { createdAt: "desc" },
+        ];
+        break;
+    }
 
     // Fetch short novels with first chapter content for preview
     const [shorts, total] = await Promise.all([
@@ -50,6 +71,7 @@ export async function GET(request: NextRequest) {
           viewCount: true,
           likeCount: true,
           wordCount: true,
+          averageRating: true,
           createdAt: true,
           category: {
             select: {
@@ -69,11 +91,7 @@ export async function GET(request: NextRequest) {
             take: 1,
           },
         },
-        orderBy: [
-          { likeCount: "desc" },
-          { viewCount: "desc" },
-          { createdAt: "desc" },
-        ],
+        orderBy,
         skip,
         take: limit,
       }),
