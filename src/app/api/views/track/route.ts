@@ -3,6 +3,18 @@ import { NextResponse } from 'next/server'
 import { trackView } from '@/lib/view-tracker'
 import { auth } from '@/lib/auth'
 
+// CORS headers for mobile app access
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Handle preflight requests
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   try {
     const { novelId } = await request.json()
@@ -10,7 +22,7 @@ export async function POST(request: Request) {
     if (!novelId) {
       return NextResponse.json(
         { error: 'Missing novelId' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -35,11 +47,11 @@ export async function POST(request: Request) {
       success: true,
       counted: result.counted,
       viewCount: result.viewCount,
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to track view' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }

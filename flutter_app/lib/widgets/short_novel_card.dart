@@ -79,16 +79,18 @@ class ShortNovelCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Preview Text (no scroll, show as much as fits)
+                  // Preview Text (show max 2000 chars to fill space on large screens)
                   Expanded(
                     child: Text(
-                      novel.previewText,
+                      novel.previewText.length > 2000
+                          ? '${novel.previewText.substring(0, 2000)}...'
+                          : novel.previewText,
                       style: TextStyle(
                         color: Colors.grey[200],
                         fontSize: 16,
                         height: 1.6,
                       ),
-                      overflow: TextOverflow.fade,
+                      overflow: TextOverflow.clip,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -103,7 +105,7 @@ class ShortNovelCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Bottom Actions Row
+                  // Bottom Actions Row with swipe indicator
                   Row(
                     children: [
                       // Like button
@@ -117,6 +119,33 @@ class ShortNovelCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       // Share button
                       _buildBottomAction(Icons.share_outlined, 'Share'),
+                      const SizedBox(width: 8),
+                      // Swipe indicator
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800]?.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.swap_vert,
+                              color: Colors.grey[400],
+                              size: 22,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Swipe',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),

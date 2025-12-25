@@ -17,11 +17,13 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   ShortNovel? _fullNovel;
   bool _isLoading = true;
   String? _error;
+  int? _currentViewCount;
 
   @override
   void initState() {
     super.initState();
     _fetchFullContent();
+    _trackView(); // Record view when entering reader
   }
 
   Future<void> _fetchFullContent() async {
@@ -35,6 +37,16 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
       setState(() {
         _error = e.toString();
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _trackView() async {
+    // Record view (same logic as web: 1 user/IP max 5 views per day)
+    final newViewCount = await ApiService.trackView(widget.novel.id);
+    if (newViewCount != null && mounted) {
+      setState(() {
+        _currentViewCount = newViewCount;
       });
     }
   }
@@ -117,7 +129,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Stats
+                      // Stats (use real-time view count if available)
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
@@ -129,7 +141,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         child: Row(
                           children: [
                             _buildStatItem(
-                              '${novel.viewCount.toString()} views',
+                              '${(_currentViewCount ?? novel.viewCount).toString()} views',
                             ),
                             const SizedBox(width: 16),
                             _buildStatItem(
