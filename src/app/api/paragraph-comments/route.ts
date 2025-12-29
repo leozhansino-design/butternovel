@@ -6,6 +6,18 @@ import { uploadCommentImage } from '@/lib/cloudinary'
 import { createNotification } from '@/lib/notification-service'
 import { Prisma } from '@prisma/client'
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Handle OPTIONS preflight request
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // GET - 获取某个段落的评论
 export async function GET(request: NextRequest) {
   try {

@@ -5,6 +5,17 @@ import { prisma } from '@/lib/prisma'
 import { createNotification, deleteLikeNotification } from '@/lib/notification-service'
 import crypto from 'crypto'
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // POST - 点赞段落评论
 export async function POST(
   request: NextRequest,

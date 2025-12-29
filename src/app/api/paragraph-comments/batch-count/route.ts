@@ -4,6 +4,17 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)

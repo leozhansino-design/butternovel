@@ -3,6 +3,8 @@ import 'dart:ui';
 
 import '../models/short_novel.dart';
 import '../services/api_service.dart';
+import '../widgets/comment_sheet.dart';
+import '../widgets/rating_widget.dart';
 
 class ShortDetailScreen extends StatefulWidget {
   final ShortNovel novel;
@@ -18,12 +20,15 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   bool _isLoading = true;
   String? _error;
   int? _currentViewCount;
+  Map<int, int> _commentCounts = {};
+  double? _averageRating;
+  int? _totalRatings;
 
   @override
   void initState() {
     super.initState();
     _fetchFullContent();
-    _trackView(); // Record view when entering reader
+    _trackView();
   }
 
   Future<void> _fetchFullContent() async {
@@ -31,8 +36,18 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
       final fullNovel = await ApiService.fetchShortById(widget.novel.id);
       setState(() {
         _fullNovel = fullNovel;
+        _averageRating = fullNovel.averageRating;
         _isLoading = false;
       });
+
+      // Load comment counts if we have chapter
+      if (fullNovel.chapters?.isNotEmpty == true) {
+        final chapterId = fullNovel.chapters!.first.id;
+        final counts = await ApiService.getCommentCounts(chapterId);
+        if (mounted) {
+          setState(() => _commentCounts = counts);
+        }
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -42,13 +57,44 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   }
 
   Future<void> _trackView() async {
-    // Record view (same logic as web: 1 user/IP max 5 views per day)
     final newViewCount = await ApiService.trackView(widget.novel.id);
     if (newViewCount != null && mounted) {
-      setState(() {
-        _currentViewCount = newViewCount;
-      });
+      setState(() => _currentViewCount = newViewCount);
     }
+  }
+
+  void _showCommentSheet(int paragraphIndex, String paragraphText) {
+    final novel = _fullNovel ?? widget.novel;
+    if (novel.chapters?.isEmpty ?? true) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => CommentSheet(
+        novelId: novel.id,
+        chapterId: novel.chapters!.first.id,
+        paragraphIndex: paragraphIndex,
+        paragraphText: paragraphText,
+      ),
+    ).then((_) {
+      // Refresh comment counts after closing
+      if (novel.chapters?.isNotEmpty == true) {
+        ApiService.getCommentCounts(novel.chapters!.first.id).then((counts) {
+          if (mounted) setState(() => _commentCounts = counts);
+        });
+      }
+    });
+  }
+
+  void _refreshRating() {
+    ApiService.fetchShortById(widget.novel.id).then((novel) {
+      if (mounted) {
+        setState(() {
+          _averageRating = novel.averageRating;
+        });
+      }
+    });
   }
 
   @override
@@ -57,6 +103,10 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     final content = novel.chapters?.isNotEmpty == true
         ? novel.chapters!.first.content
         : novel.blurb;
+    final paragraphs = content
+        .split('\n')
+        .where((p) => p.trim().isNotEmpty)
+        .toList();
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -110,10 +160,22 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Author
-                      Text(
-                        'by ${novel.authorName}',
-                        style: TextStyle(color: Colors.grey[400]),
+                      // Author and Rating row
+                      Row(
+                        children: [
+                          Text(
+                            'by ${novel.authorName}',
+                            style: TextStyle(color: Colors.grey[400]),
+                          ),
+                          const Spacer(),
+                          // Rating widget
+                          RatingWidget(
+                            novelId: novel.id,
+                            averageRating: _averageRating ?? novel.averageRating,
+                            totalRatings: _totalRatings,
+                            onRated: _refreshRating,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       // Tags
@@ -129,7 +191,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Stats (use real-time view count if available)
+                      // Stats
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
@@ -141,35 +203,33 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         child: Row(
                           children: [
                             _buildStatItem(
-                              '${(_currentViewCount ?? novel.viewCount).toString()} views',
+                              '${(_currentViewCount ?? novel.viewCount)} views',
                             ),
                             const SizedBox(width: 16),
                             _buildStatItem(
-                              '${novel.likeCount.toString()} likes',
+                              '${novel.likeCount} likes',
                             ),
                             const SizedBox(width: 16),
                             _buildStatItem(
-                              '${novel.wordCount.toString()} chars',
+                              _getReadingTime(novel.wordCount),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Story Content (show preview first, then full content)
-                      ...content.split('\n').where((p) => p.trim().isNotEmpty).map(
-                            (paragraph) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Text(
-                                paragraph,
-                                style: TextStyle(
-                                  color: Colors.grey[200],
-                                  fontSize: 18,
-                                  height: 1.8,
-                                ),
-                              ),
-                            ),
-                          ),
-                      // Loading indicator (shows at bottom while loading full content)
+                      // Story Content with comment bubbles
+                      ...paragraphs.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final paragraph = entry.value;
+                        final commentCount = _commentCounts[index] ?? 0;
+
+                        return _buildParagraphWithComment(
+                          paragraph,
+                          index,
+                          commentCount,
+                        );
+                      }),
+                      // Loading indicator
                       if (_isLoading)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
@@ -197,7 +257,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                             ),
                           ),
                         )
-                      else
+                      else ...[
                         // End marker
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 32),
@@ -211,6 +271,28 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                             ),
                           ),
                         ),
+                        // Bottom rating
+                        Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Did you enjoy this story?',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              RatingWidget(
+                                novelId: novel.id,
+                                averageRating: _averageRating ?? novel.averageRating,
+                                totalRatings: _totalRatings,
+                                onRated: _refreshRating,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -269,6 +351,71 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     );
   }
 
+  Widget _buildParagraphWithComment(String paragraph, int index, int commentCount) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Paragraph text
+          Text(
+            paragraph,
+            style: TextStyle(
+              color: Colors.grey[200],
+              fontSize: 18,
+              height: 1.8,
+            ),
+          ),
+          // Comment bubble
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () => _showCommentSheet(index, paragraph),
+              child: Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: commentCount > 0
+                      ? const Color(0xFF3b82f6).withOpacity(0.2)
+                      : Colors.grey[850],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: commentCount > 0
+                        ? const Color(0xFF3b82f6).withOpacity(0.5)
+                        : Colors.grey[700]!,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 14,
+                      color: commentCount > 0
+                          ? const Color(0xFF3b82f6)
+                          : Colors.grey[500],
+                    ),
+                    if (commentCount > 0) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        commentCount.toString(),
+                        style: const TextStyle(
+                          color: Color(0xFF3b82f6),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTag(String text, {bool isPrimary = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -313,5 +460,15 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
         ),
       ],
     );
+  }
+
+  String _getReadingTime(int wordCount) {
+    final minutes = (wordCount / 450).ceil();
+    if (minutes < 1) return '< 1 min';
+    if (minutes < 60) return '$minutes min';
+    final hours = minutes ~/ 60;
+    final remainingMins = minutes % 60;
+    if (remainingMins == 0) return '${hours}h';
+    return '${hours}h ${remainingMins}m';
   }
 }
