@@ -34,9 +34,8 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   final List<Color> _bgColors = [
     Colors.black,
     const Color(0xFF1a1a2e),
-    const Color(0xFF16213e),
-    const Color(0xFF0f0f0f),
-    const Color(0xFF2d2d2d),
+    const Color(0xFFc7edcc), // Eye-care green (护眼绿)
+    Colors.white,            // White
     const Color(0xFFf5f5dc), // Beige
     const Color(0xFFfaf3e0), // Cream
   ];
@@ -528,47 +527,51 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          // Add to Bookshelf button
-                          ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-                            label: const Text(
-                              'Bookshelf',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3b82f6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                          // Start Reading / Bookshelf button
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                // TODO: Require login for bookshelf
+                                _showLoginRequiredSnackbar('add to bookshelf');
+                              },
+                              icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                              label: const Text(
+                                'Start Reading',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3b82f6),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
                               ),
                             ),
                           ),
-                          _buildBottomAction(Icons.chat_bubble_outline, 'Comment'),
-                          _buildBottomAction(Icons.share_outlined, 'Share'),
+                          const SizedBox(width: 12),
+                          // Like button
+                          _buildActionButton(
+                            icon: Icons.favorite_border,
+                            onTap: () => _showLoginRequiredSnackbar('like'),
+                          ),
+                          const SizedBox(width: 8),
+                          // Share button
+                          _buildActionButton(
+                            icon: Icons.share_outlined,
+                            onTap: () {
+                              // Share functionality
+                            },
+                          ),
+                          const SizedBox(width: 8),
                           // Settings button
-                          GestureDetector(
+                          _buildActionButton(
+                            icon: Icons.settings_outlined,
                             onTap: _showSettingsSheet,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.settings_outlined, color: _textColor, size: 24),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Settings',
-                                  style: TextStyle(
-                                    color: _subtitleColor,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
                         ],
                       ),
@@ -708,20 +711,44 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     );
   }
 
-  Widget _buildBottomAction(IconData icon, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: _textColor, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: _subtitleColor,
-            fontSize: 11,
-          ),
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: _isLightBackground
+              ? Colors.grey[200]
+              : Colors.grey[800]?.withOpacity(0.5),
+          shape: BoxShape.circle,
         ),
-      ],
+        child: Icon(
+          icon,
+          color: _textColor,
+          size: 22,
+        ),
+      ),
+    );
+  }
+
+  void _showLoginRequiredSnackbar(String action) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please login to $action'),
+        backgroundColor: Colors.grey[800],
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Login',
+          textColor: const Color(0xFF3b82f6),
+          onPressed: () {
+            // TODO: Navigate to login screen
+          },
+        ),
+      ),
     );
   }
 
