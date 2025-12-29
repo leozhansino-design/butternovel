@@ -142,78 +142,44 @@ class ShortNovelCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Bottom Actions Row with swipe indicator
+                  // Bottom Action Row: Start Reading + Like + Share
                   Row(
                     children: [
+                      // Start Reading Button
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ShortDetailScreen(novel: novel),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3b82f6),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          child: const Text(
+                            'Start Reading',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       // Like button
-                      _buildBottomAction(Icons.favorite_border, 'Like'),
-                      const SizedBox(width: 8),
-                      // Comment button
-                      _buildBottomAction(Icons.chat_bubble_outline, 'Comment'),
-                      const SizedBox(width: 8),
-                      // Save button
-                      _buildBottomAction(Icons.bookmark_border, 'Save'),
+                      _buildCircleAction(Icons.favorite_border),
                       const SizedBox(width: 8),
                       // Share button
-                      _buildBottomAction(Icons.share_outlined, 'Share'),
-                      const SizedBox(width: 8),
-                      // Swipe indicator
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[800]?.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.swap_vert,
-                              color: Colors.grey[400],
-                              size: 22,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Swipe',
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildCircleAction(Icons.share_outlined),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Start Reading Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ShortDetailScreen(novel: novel),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3b82f6),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Start Reading',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -234,32 +200,18 @@ class ShortNovelCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomAction(IconData icon, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.grey[800]?.withOpacity(0.6),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 22,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildCircleAction(IconData icon) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.grey[800]?.withOpacity(0.6),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        color: Colors.white,
+        size: 22,
       ),
     );
   }
