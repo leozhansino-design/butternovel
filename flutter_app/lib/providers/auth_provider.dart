@@ -158,6 +158,78 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> loginWithGoogle({
+    required String email,
+    String? displayName,
+    String? photoUrl,
+    String? googleId,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // TODO: Replace with actual API call to backend
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final user = User(
+        id: googleId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+        email: email,
+        username: displayName ?? email.split('@')[0],
+        avatarUrl: photoUrl,
+      );
+      final token = 'google_token_${DateTime.now().millisecondsSinceEpoch}';
+
+      _user = user;
+      _token = token;
+      await _saveAuth(user, token);
+
+      _isLoading = false;
+      notifyListeners();
+      return {'success': true};
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> loginWithApple({
+    String? email,
+    String? fullName,
+    String? appleId,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // TODO: Replace with actual API call to backend
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Apple may not provide email on subsequent logins
+      final userEmail = email ?? 'apple_user_${appleId?.substring(0, 8) ?? 'unknown'}@private.apple.com';
+      final username = fullName?.isNotEmpty == true ? fullName! : userEmail.split('@')[0];
+
+      final user = User(
+        id: appleId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+        email: userEmail,
+        username: username,
+      );
+      final token = 'apple_token_${DateTime.now().millisecondsSinceEpoch}';
+
+      _user = user;
+      _token = token;
+      await _saveAuth(user, token);
+
+      _isLoading = false;
+      notifyListeners();
+      return {'success': true};
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   Future<void> logout() async {
     _user = null;
     _token = null;
