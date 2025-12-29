@@ -24,6 +24,22 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   double? _averageRating;
   int? _totalRatings;
 
+  // Reader settings
+  Color _backgroundColor = Colors.black;
+  double _fontSize = 18;
+  bool _showCommentBubbles = true;
+
+  // Predefined background colors
+  final List<Color> _bgColors = [
+    Colors.black,
+    const Color(0xFF1a1a2e),
+    const Color(0xFF16213e),
+    const Color(0xFF0f0f0f),
+    const Color(0xFF2d2d2d),
+    const Color(0xFFf5f5dc), // Beige
+    const Color(0xFFfaf3e0), // Cream
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +113,177 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     });
   }
 
+  void _showSettingsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[700],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Title
+                const Text(
+                  'Reader Settings',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Background Color
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Background Color',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: _bgColors.map((color) {
+                          final isSelected = _backgroundColor == color;
+                          final isLight = color.computeLuminance() > 0.5;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() => _backgroundColor = color);
+                              setSheetState(() {});
+                            },
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF3b82f6)
+                                      : isLight
+                                          ? Colors.grey[400]!
+                                          : Colors.grey[700]!,
+                                  width: isSelected ? 3 : 1,
+                                ),
+                              ),
+                              child: isSelected
+                                  ? Icon(
+                                      Icons.check,
+                                      color: isLight ? Colors.black : Colors.white,
+                                      size: 20,
+                                    )
+                                  : null,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Font Size
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Font Size',
+                            style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                          ),
+                          Text(
+                            '${_fontSize.toInt()}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text('A', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Expanded(
+                            child: Slider(
+                              value: _fontSize,
+                              min: 14,
+                              max: 28,
+                              divisions: 7,
+                              activeColor: const Color(0xFF3b82f6),
+                              inactiveColor: Colors.grey[700],
+                              onChanged: (value) {
+                                setState(() => _fontSize = value);
+                                setSheetState(() {});
+                              },
+                            ),
+                          ),
+                          const Text('A', style: TextStyle(color: Colors.grey, fontSize: 20)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Show Comments Toggle
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Show Comment Bubbles',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      ),
+                      Switch(
+                        value: _showCommentBubbles,
+                        activeColor: const Color(0xFF3b82f6),
+                        onChanged: (value) {
+                          setState(() => _showCommentBubbles = value);
+                          setSheetState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  bool get _isLightBackground => _backgroundColor.computeLuminance() > 0.5;
+  Color get _textColor => _isLightBackground ? Colors.grey[900]! : Colors.grey[200]!;
+  Color get _subtitleColor => _isLightBackground ? Colors.grey[600]! : Colors.grey[400]!;
+
   @override
   Widget build(BuildContext context) {
     final novel = _fullNovel ?? widget.novel;
@@ -109,7 +296,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
         .toList();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: _backgroundColor,
       body: Stack(
         children: [
           // Content
@@ -118,27 +305,64 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
               // App Bar
               SliverAppBar(
                 pinned: true,
-                backgroundColor: Colors.black.withOpacity(0.9),
+                backgroundColor: _backgroundColor.withOpacity(0.95),
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Color(0xFF3b82f6)),
+                  icon: Icon(Icons.arrow_back, color: _isLightBackground ? Colors.grey[800] : const Color(0xFF3b82f6)),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: Text(
-                  novel.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'ButterPicks',
+                      style: TextStyle(
+                        color: _textColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (_averageRating != null && _averageRating! > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.amber[400],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, color: Colors.black, size: 12),
+                            const SizedBox(width: 2),
+                            Text(
+                              _averageRating!.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 actions: [
+                  // Compact rate button
+                  RatingWidget(
+                    novelId: novel.id,
+                    averageRating: _averageRating ?? novel.averageRating,
+                    totalRatings: _totalRatings,
+                    onRated: _refreshRating,
+                    compact: true,
+                  ),
+                  const SizedBox(width: 8),
                   TextButton(
                     onPressed: () {},
-                    child: const Text(
+                    child: Text(
                       'Share',
-                      style: TextStyle(color: Color(0xFF3b82f6)),
+                      style: TextStyle(color: _isLightBackground ? Colors.grey[700] : const Color(0xFF3b82f6)),
                     ),
                   ),
                 ],
@@ -153,29 +377,17 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                       // Title
                       Text(
                         novel.title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: _textColor,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Author and Rating row
-                      Row(
-                        children: [
-                          Text(
-                            'by ${novel.authorName}',
-                            style: TextStyle(color: Colors.grey[400]),
-                          ),
-                          const Spacer(),
-                          // Rating widget
-                          RatingWidget(
-                            novelId: novel.id,
-                            averageRating: _averageRating ?? novel.averageRating,
-                            totalRatings: _totalRatings,
-                            onRated: _refreshRating,
-                          ),
-                        ],
+                      // Author
+                      Text(
+                        'by ${novel.authorName}',
+                        style: TextStyle(color: _subtitleColor),
                       ),
                       const SizedBox(height: 16),
                       // Tags
@@ -196,8 +408,8 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
                           border: Border(
-                            top: BorderSide(color: Colors.grey[800]!),
-                            bottom: BorderSide(color: Colors.grey[800]!),
+                            top: BorderSide(color: _isLightBackground ? Colors.grey[300]! : Colors.grey[800]!),
+                            bottom: BorderSide(color: _isLightBackground ? Colors.grey[300]! : Colors.grey[800]!),
                           ),
                         ),
                         child: Row(
@@ -217,13 +429,13 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Story Content with comment bubbles
+                      // Story Content with inline comment bubbles
                       ...paragraphs.asMap().entries.map((entry) {
                         final index = entry.key;
                         final paragraph = entry.value;
                         final commentCount = _commentCounts[index] ?? 0;
 
-                        return _buildParagraphWithComment(
+                        return _buildParagraphWithInlineComment(
                           paragraph,
                           index,
                           commentCount,
@@ -265,7 +477,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                             child: Text(
                               '— The End —',
                               style: TextStyle(
-                                color: Colors.grey[500],
+                                color: _subtitleColor,
                                 fontSize: 16,
                               ),
                             ),
@@ -278,7 +490,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                               Text(
                                 'Did you enjoy this story?',
                                 style: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: _subtitleColor,
                                   fontSize: 16,
                                 ),
                               ),
@@ -309,7 +521,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
-                  color: Colors.black.withOpacity(0.8),
+                  color: _backgroundColor.withOpacity(0.85),
                   child: SafeArea(
                     top: false,
                     child: Padding(
@@ -317,27 +529,46 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildBottomAction(Icons.favorite_border, 'Like'),
-                          _buildBottomAction(Icons.chat_bubble_outline, 'Comment'),
-                          ElevatedButton(
+                          // Add to Bookshelf button
+                          ElevatedButton.icon(
                             onPressed: () {},
+                            icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                            label: const Text(
+                              'Bookshelf',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF3b82f6),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
+                                horizontal: 16,
+                                vertical: 10,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(20),
                               ),
                             ),
-                            child: const Text(
-                              'Save to Library',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          _buildBottomAction(Icons.chat_bubble_outline, 'Comment'),
+                          _buildBottomAction(Icons.share_outlined, 'Share'),
+                          // Settings button
+                          GestureDetector(
+                            onTap: _showSettingsSheet,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.settings_outlined, color: _textColor, size: 24),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Settings',
+                                  style: TextStyle(
+                                    color: _subtitleColor,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          _buildBottomAction(Icons.share_outlined, 'Share'),
                         ],
                       ),
                     ),
@@ -351,67 +582,81 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     );
   }
 
-  Widget _buildParagraphWithComment(String paragraph, int index, int commentCount) {
+  Widget _buildParagraphWithInlineComment(String paragraph, int index, int commentCount) {
+    if (!_showCommentBubbles) {
+      // Just show paragraph without comment bubble
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Text(
+          paragraph,
+          style: TextStyle(
+            color: _textColor,
+            fontSize: _fontSize,
+            height: 1.8,
+          ),
+        ),
+      );
+    }
+
+    // Build inline comment bubble at end of paragraph
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Paragraph text
-          Text(
-            paragraph,
+      padding: const EdgeInsets.only(bottom: 20),
+      child: GestureDetector(
+        onTap: () => _showCommentSheet(index, paragraph),
+        child: RichText(
+          text: TextSpan(
             style: TextStyle(
-              color: Colors.grey[200],
-              fontSize: 18,
+              color: _textColor,
+              fontSize: _fontSize,
               height: 1.8,
             ),
-          ),
-          // Comment bubble
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: () => _showCommentSheet(index, paragraph),
-              child: Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: commentCount > 0
-                      ? const Color(0xFF3b82f6).withOpacity(0.2)
-                      : Colors.grey[850],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
+            children: [
+              TextSpan(text: paragraph),
+              const TextSpan(text: ' '),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
                     color: commentCount > 0
-                        ? const Color(0xFF3b82f6).withOpacity(0.5)
-                        : Colors.grey[700]!,
+                        ? const Color(0xFF3b82f6).withOpacity(0.15)
+                        : (_isLightBackground ? Colors.grey[200] : Colors.grey[850]),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: commentCount > 0
+                          ? const Color(0xFF3b82f6).withOpacity(0.4)
+                          : (_isLightBackground ? Colors.grey[400]! : Colors.grey[700]!),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: 12,
+                        color: commentCount > 0
+                            ? const Color(0xFF3b82f6)
+                            : _subtitleColor,
+                      ),
+                      if (commentCount > 0) ...[
+                        const SizedBox(width: 3),
+                        Text(
+                          commentCount.toString(),
+                          style: const TextStyle(
+                            color: Color(0xFF3b82f6),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      size: 14,
-                      color: commentCount > 0
-                          ? const Color(0xFF3b82f6)
-                          : Colors.grey[500],
-                    ),
-                    if (commentCount > 0) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        commentCount.toString(),
-                        style: const TextStyle(
-                          color: Color(0xFF3b82f6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -422,13 +667,13 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
       decoration: BoxDecoration(
         color: isPrimary
             ? const Color(0xFF3b82f6).withOpacity(0.2)
-            : Colors.grey[800],
+            : (_isLightBackground ? Colors.grey[200] : Colors.grey[800]),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: isPrimary ? const Color(0xFF60a5fa) : Colors.grey[400],
+          color: isPrimary ? const Color(0xFF60a5fa) : _subtitleColor,
           fontSize: 12,
         ),
       ),
@@ -439,7 +684,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     return Text(
       text,
       style: TextStyle(
-        color: Colors.grey[500],
+        color: _subtitleColor,
         fontSize: 14,
       ),
     );
@@ -449,12 +694,12 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white, size: 24),
+        Icon(icon, color: _textColor, size: 24),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            color: Colors.grey[400],
+            color: _subtitleColor,
             fontSize: 11,
           ),
         ),

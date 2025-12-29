@@ -6,6 +6,7 @@ class RatingWidget extends StatelessWidget {
   final int? totalRatings;
   final int novelId;
   final VoidCallback? onRated;
+  final bool compact;
 
   const RatingWidget({
     super.key,
@@ -13,10 +14,45 @@ class RatingWidget extends StatelessWidget {
     this.totalRatings,
     required this.novelId,
     this.onRated,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      return _buildCompact(context);
+    }
+    return _buildFull(context);
+  }
+
+  Widget _buildCompact(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showRatingDialog(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.grey[850]?.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star_rounded, color: Colors.amber[400], size: 14),
+            const SizedBox(width: 3),
+            Text(
+              'Rate',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFull(BuildContext context) {
     return GestureDetector(
       onTap: () => _showRatingDialog(context),
       child: Container(
