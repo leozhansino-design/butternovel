@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/short_novel.dart';
 import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
 import '../screens/short_detail_screen.dart';
 import '../screens/search_screen.dart';
+import '../screens/login_screen.dart';
 
-class ShortNovelCard extends StatelessWidget {
+class ShortNovelCard extends StatefulWidget {
   final ShortNovel novel;
   final bool isActive;
 
@@ -15,6 +18,90 @@ class ShortNovelCard extends StatelessWidget {
     required this.novel,
     required this.isActive,
   });
+
+  @override
+  State<ShortNovelCard> createState() => _ShortNovelCardState();
+}
+
+class _ShortNovelCardState extends State<ShortNovelCard> {
+  bool _isLiked = false;
+  int _likeCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _likeCount = widget.novel.likeCount;
+  }
+
+  Future<void> _handleLike() async {
+    final authProvider = context.read<AuthProvider>();
+
+    if (!authProvider.isLoggedIn) {
+      // Navigate to login screen
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+
+      // If login successful, proceed with like
+      if (result == true && mounted) {
+        _performLike();
+      }
+      return;
+    }
+
+    _performLike();
+  }
+
+  void _performLike() {
+    setState(() {
+      _isLiked = !_isLiked;
+      if (_isLiked) {
+        _likeCount++;
+      } else {
+        _likeCount--;
+      }
+    });
+
+    // TODO: Call API to like/unlike
+    // ApiService.likeShort(widget.novel.id);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isLiked ? 'Added to favorites' : 'Removed from favorites'),
+        backgroundColor: Colors.grey[800],
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _handleShare() async {
+    final authProvider = context.read<AuthProvider>();
+
+    if (!authProvider.isLoggedIn) {
+      // Navigate to login screen
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+
+      // If login successful, proceed with share
+      if (result == true && mounted) {
+        _performShare();
+      }
+      return;
+    }
+
+    _performShare();
+  }
+
+  void _performShare() {
+    Share.share(
+      'Check out "${widget.novel.title}" by ${widget.novel.authorName} on ButterNovel!\n\nhttps://butternovel.com/shorts/${widget.novel.id}',
+      subject: widget.novel.title,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +120,7 @@ class ShortNovelCard extends StatelessWidget {
               // Background color based on genre
               Container(
                 decoration: BoxDecoration(
-                  color: _getGenreColor(novel.displayGenre).withOpacity(isDark ? 0.15 : 0.08),
+                  color: _getGenreColor(widget.novel.displayGenre).withOpacity(isDark ? 0.15 : 0.08),
                 ),
               ),
               // Content
@@ -44,7 +131,7 @@ class ShortNovelCard extends StatelessWidget {
                   children: [
                     // Title at top
                     Text(
-                      novel.title,
+                      widget.novel.title,
                       style: TextStyle(
                         color: textColor,
                         fontSize: 18,
@@ -59,7 +146,7 @@ class ShortNovelCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          'by ${novel.authorName}',
+                          'by ${widget.novel.authorName}',
                           style: TextStyle(
                             color: subtitleColor,
                             fontSize: 13,
@@ -73,13 +160,13 @@ class ShortNovelCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: _getGenreColor(novel.displayGenre).withOpacity(0.2),
+                            color: _getGenreColor(widget.novel.displayGenre).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            novel.displayGenre,
+                            widget.novel.displayGenre,
                             style: TextStyle(
-                              color: _getGenreColor(novel.displayGenre),
+                              color: _getGenreColor(widget.novel.displayGenre),
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
@@ -118,7 +205,7 @@ class ShortNovelCard extends StatelessWidget {
                           final int maxLines = (constraints.maxHeight / lineSize).floor();
 
                           return Text(
-                            novel.previewText,
+                            widget.novel.previewText,
                             style: TextStyle(
                               color: isDark ? Colors.grey[200] : Colors.grey[800],
                               fontSize: fontSize,
@@ -135,11 +222,11 @@ class ShortNovelCard extends StatelessWidget {
                     Row(
                       children: [
                         // Rating (if available)
-                        if (novel.averageRating != null && novel.averageRating! > 0) ...[
+                        if (widget.novel.averageRating != null && widget.novel.averageRating! > 0) ...[
                           Icon(Icons.star, color: Colors.amber[400], size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            novel.averageRating!.toStringAsFixed(1),
+                            widget.novel.averageRating!.toStringAsFixed(1),
                             style: TextStyle(
                               color: Colors.amber[400],
                               fontSize: 14,
@@ -148,11 +235,11 @@ class ShortNovelCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 16),
                         ],
-                        _buildStat('${_formatCount(novel.viewCount)} views', subtitleColor),
+                        _buildStat('${_formatCount(widget.novel.viewCount)} views', subtitleColor),
                         const SizedBox(width: 16),
-                        _buildStat('${_formatCount(novel.likeCount)} likes', subtitleColor),
+                        _buildStat('${_formatCount(_likeCount)} likes', subtitleColor),
                         const SizedBox(width: 16),
-                        _buildStat(_getReadingTime(novel.wordCount), subtitleColor),
+                        _buildStat(_getReadingTime(widget.novel.wordCount), subtitleColor),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -166,7 +253,7 @@ class ShortNovelCard extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => ShortDetailScreen(novel: novel),
+                                  builder: (_) => ShortDetailScreen(novel: widget.novel),
                                 ),
                               );
                             },
@@ -189,10 +276,42 @@ class ShortNovelCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         // Like button
-                        _buildCircleAction(Icons.favorite_border, cardBgColor, textColor),
+                        GestureDetector(
+                          onTap: _handleLike,
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: _isLiked
+                                  ? Colors.red.withOpacity(0.2)
+                                  : cardBgColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _isLiked ? Icons.favorite : Icons.favorite_border,
+                              color: _isLiked ? Colors.red : textColor,
+                              size: 22,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         // Share button
-                        _buildCircleAction(Icons.share_outlined, cardBgColor, textColor),
+                        GestureDetector(
+                          onTap: _handleShare,
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: cardBgColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.share_outlined,
+                              color: textColor,
+                              size: 22,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         // Theme toggle button
                         GestureDetector(
@@ -229,22 +348,6 @@ class ShortNovelCard extends StatelessWidget {
       style: TextStyle(
         color: color,
         fontSize: 14,
-      ),
-    );
-  }
-
-  Widget _buildCircleAction(IconData icon, Color? bgColor, Color iconColor) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        color: iconColor,
-        size: 22,
       ),
     );
   }
