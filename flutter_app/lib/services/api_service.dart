@@ -132,4 +132,144 @@ class ApiService {
       return false;
     }
   }
+
+  // ==================== Paragraph Comments ====================
+
+  /// Get comment counts for all paragraphs in a chapter
+  static Future<Map<int, int>> getCommentCounts(int chapterId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/paragraph-comments/batch-count?chapterId=$chapterId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final Map<String, dynamic> counts = data['data'];
+          return counts.map((key, value) => MapEntry(int.parse(key), value as int));
+        }
+      }
+      return {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Get comments for a specific paragraph
+  static Future<List<Map<String, dynamic>>> getComments(int chapterId, int paragraphIndex) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/paragraph-comments?chapterId=$chapterId&paragraphIndex=$paragraphIndex'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Post a comment on a paragraph
+  static Future<Map<String, dynamic>?> postComment({
+    required int novelId,
+    required int chapterId,
+    required int paragraphIndex,
+    required String content,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/paragraph-comments'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'novelId': novelId,
+          'chapterId': chapterId,
+          'paragraphIndex': paragraphIndex,
+          'content': content,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return data['data'];
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Like a comment
+  static Future<bool> likeComment(String commentId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/paragraph-comments/$commentId/like'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Unlike a comment
+  static Future<bool> unlikeComment(String commentId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/paragraph-comments/$commentId/like'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ==================== Ratings ====================
+
+  /// Get user's rating for a novel
+  static Future<Map<String, dynamic>?> getUserRating(int novelId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/novels/$novelId/user-rating'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Submit a rating for a novel
+  static Future<Map<String, dynamic>?> rateNovel({
+    required int novelId,
+    required double score,
+    String? review,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/novels/$novelId/rate'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'score': score,
+          if (review != null) 'review': review,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }
