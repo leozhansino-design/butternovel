@@ -25,6 +25,10 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   double? _averageRating;
   int? _totalRatings;
 
+  // Recommendations
+  List<ShortNovel> _similarNovels = [];
+  bool _loadingSimilar = false;
+
   // Reader settings
   Color _backgroundColor = Colors.black;
   double _fontSize = 18;
@@ -64,11 +68,40 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
           setState(() => _commentCounts = counts);
         }
       }
+
+      // Load similar novels for recommendations
+      _fetchSimilarNovels(fullNovel);
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchSimilarNovels(ShortNovel novel) async {
+    if (_loadingSimilar) return;
+    setState(() => _loadingSimilar = true);
+
+    try {
+      final tagNames = novel.tags?.map((t) => t.name).toList();
+      final similar = await ApiService.getSimilarNovels(
+        currentNovelId: novel.id,
+        genre: novel.displayGenre,
+        tags: tagNames,
+        limit: 6,
+      );
+
+      if (mounted) {
+        setState(() {
+          _similarNovels = similar;
+          _loadingSimilar = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingSimilar = false);
+      }
     }
   }
 
@@ -504,6 +537,9 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                             ],
                           ),
                         ),
+                        // You may also like section
+                        const SizedBox(height: 40),
+                        _buildRecommendationsSection(),
                       ],
                       const SizedBox(height: 100),
                     ],
@@ -761,5 +797,208 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     final remainingMins = minutes % 60;
     if (remainingMins == 0) return '${hours}h';
     return '${hours}h ${remainingMins}m';
+  }
+
+  Widget _buildRecommendationsSection() {
+    if (_loadingSimilar) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: CircularProgressIndicator(
+            color: const Color(0xFF3b82f6),
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+
+    if (_similarNovels.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF3b82f6),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'You may also like',
+              style: TextStyle(
+                color: _textColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // Recommendation cards in a grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.75,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount: _similarNovels.length,
+          itemBuilder: (context, index) {
+            return _buildRecommendationCard(_similarNovels[index]);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationCard(ShortNovel novel) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ShortDetailScreen(novel: novel),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: _isLightBackground
+              ? Colors.grey[100]
+              : Colors.grey[900]?.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isLightBackground
+                ? Colors.grey[300]!
+                : Colors.grey[800]!,
+          ),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Genre tag
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getGenreColor(novel.displayGenre).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                novel.displayGenre,
+                style: TextStyle(
+                  color: _getGenreColor(novel.displayGenre),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Title
+            Text(
+              novel.title,
+              style: TextStyle(
+                color: _textColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                height: 1.3,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            // Author
+            Text(
+              'by ${novel.authorName}',
+              style: TextStyle(
+                color: _subtitleColor,
+                fontSize: 11,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            // Preview text
+            Text(
+              novel.previewText,
+              style: TextStyle(
+                color: _subtitleColor,
+                fontSize: 12,
+                height: 1.4,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            // Stats row
+            Row(
+              children: [
+                if (novel.averageRating != null && novel.averageRating! > 0) ...[
+                  Icon(Icons.star, size: 12, color: Colors.amber[400]),
+                  const SizedBox(width: 2),
+                  Text(
+                    novel.averageRating!.toStringAsFixed(1),
+                    style: TextStyle(
+                      color: Colors.amber[400],
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Icon(Icons.visibility_outlined, size: 12, color: _subtitleColor),
+                const SizedBox(width: 2),
+                Text(
+                  _formatCount(novel.viewCount),
+                  style: TextStyle(
+                    color: _subtitleColor,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatCount(int count) {
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M';
+    }
+    if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K';
+    }
+    return count.toString();
+  }
+
+  Color _getGenreColor(String genre) {
+    final colors = {
+      'Romance': const Color(0xFFec4899),
+      'Fantasy': const Color(0xFF8b5cf6),
+      'Thriller': const Color(0xFFef4444),
+      'Mystery': const Color(0xFF6366f1),
+      'Sci-Fi': const Color(0xFF06b6d4),
+      'Drama': const Color(0xFFf59e0b),
+      'Comedy': const Color(0xFF22c55e),
+      'Horror': const Color(0xFF991b1b),
+      'Age Gap': const Color(0xFFec4899),
+      'Billionaire Romance': const Color(0xFFeab308),
+      'Second Chance': const Color(0xFFf97316),
+      'Enemies to Lovers': const Color(0xFFdc2626),
+      'Fake Dating': const Color(0xFFa855f7),
+    };
+    return colors[genre] ?? const Color(0xFF3b82f6);
   }
 }

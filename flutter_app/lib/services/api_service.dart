@@ -313,4 +313,97 @@ class ApiService {
       return false;
     }
   }
+
+  // ==================== Recommendations ====================
+
+  /// Get similar/recommended novels based on current novel
+  /// Algorithm considers: genre, tags, author, popularity, avoids duplicates
+  static Future<List<ShortNovel>> getSimilarNovels({
+    required int currentNovelId,
+    String? genre,
+    List<String>? tags,
+    int? authorId,
+    int limit = 6,
+    List<int>? excludeIds,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+        'excludeId': currentNovelId.toString(),
+      };
+
+      if (genre != null) {
+        queryParams['genre'] = genre;
+      }
+      if (tags != null && tags.isNotEmpty) {
+        queryParams['tags'] = tags.join(',');
+      }
+      if (excludeIds != null && excludeIds.isNotEmpty) {
+        queryParams['excludeIds'] = excludeIds.join(',');
+      }
+
+      final uri = Uri.parse('$baseUrl/api/mobile/shorts/similar')
+          .replace(queryParameters: queryParams);
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return (data['data'] as List)
+              .map((item) => ShortNovel.fromJson(item))
+              .toList();
+        }
+      }
+
+      // Fallback: fetch random shorts excluding current
+      return _getFallbackRecommendations(currentNovelId, genre, limit);
+    } catch (e) {
+      // Fallback on error
+      return _getFallbackRecommendations(currentNovelId, genre, limit);
+    }
+  }
+
+  /// Fallback recommendation: mix of same genre and different genres
+  static Future<List<ShortNovel>> _getFallbackRecommendations(
+    int excludeId,
+    String? currentGenre,
+    int limit,
+  ) async {
+    try {
+      final List<ShortNovel> recommendations = [];
+
+      // Get some from same genre (if available)
+      if (currentGenre != null) {
+        final sameGenre = await fetchShorts(
+          genre: currentGenre,
+          limit: (limit / 2).ceil() + 2,
+          sortBy: 'popular',
+        );
+        recommendations.addAll(
+          sameGenre.where((n) => n.id != excludeId).take((limit / 2).ceil())
+        );
+      }
+
+      // Get some from trending/popular (mixed genres)
+      final trending = await fetchShorts(
+        limit: limit + 2,
+        sortBy: 'trending',
+      );
+
+      final existingIds = recommendations.map((n) => n.id).toSet();
+      existingIds.add(excludeId);
+
+      for (final novel in trending) {
+        if (!existingIds.contains(novel.id) && recommendations.length < limit) {
+          recommendations.add(novel);
+          existingIds.add(novel.id);
+        }
+      }
+
+      return recommendations;
+    } catch (e) {
+      return [];
+    }
+  }
 }
