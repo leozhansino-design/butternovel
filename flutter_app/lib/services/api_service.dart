@@ -9,6 +9,136 @@ class ApiService {
   // For local development use:
   // static const String baseUrl = 'http://localhost:3000';
 
+  // ==================== Search ====================
+
+  /// Search for novels by query string
+  /// Searches in title, author name, tags, and blurb
+  static Future<Map<String, dynamic>> searchNovels({
+    required String query,
+    int page = 1,
+    int limit = 20,
+    String? genre,
+    String? sortBy,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'q': query,
+        'page': page.toString(),
+        'limit': limit.toString(),
+      };
+
+      if (genre != null) queryParams['genre'] = genre;
+      if (sortBy != null) queryParams['sort'] = sortBy;
+
+      final uri = Uri.parse('$baseUrl/api/mobile/shorts/search')
+          .replace(queryParameters: queryParams);
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final novels = (data['data'] as List)
+              .map((item) => ShortNovel.fromJson(item))
+              .toList();
+          return {
+            'novels': novels,
+            'total': data['total'] ?? novels.length,
+            'hasMore': data['hasMore'] ?? false,
+          };
+        }
+      }
+
+      // Fallback: client-side search from all shorts
+      return _fallbackSearch(query, page, limit, genre);
+    } catch (e) {
+      // Fallback on error
+      return _fallbackSearch(query, page, limit, genre);
+    }
+  }
+
+  /// Fallback client-side search when API endpoint doesn't exist
+  static Future<Map<String, dynamic>> _fallbackSearch(
+    String query,
+    int page,
+    int limit,
+    String? genre,
+  ) async {
+    try {
+      final allShorts = await fetchShorts(
+        page: 1,
+        limit: 100,
+        genre: genre,
+      );
+
+      final queryLower = query.toLowerCase();
+      final filtered = allShorts.where((novel) {
+        final titleMatch = novel.title.toLowerCase().contains(queryLower);
+        final authorMatch = novel.authorName.toLowerCase().contains(queryLower);
+        final blurbMatch = novel.blurb.toLowerCase().contains(queryLower);
+        final tagMatch = novel.tags?.any(
+              (tag) => tag.name.toLowerCase().contains(queryLower),
+            ) ?? false;
+        return titleMatch || authorMatch || blurbMatch || tagMatch;
+      }).toList();
+
+      // Paginate results
+      final startIndex = (page - 1) * limit;
+      final endIndex = startIndex + limit;
+      final paged = filtered.length > startIndex
+          ? filtered.sublist(
+              startIndex,
+              endIndex > filtered.length ? filtered.length : endIndex,
+            )
+          : <ShortNovel>[];
+
+      return {
+        'novels': paged,
+        'total': filtered.length,
+        'hasMore': endIndex < filtered.length,
+      };
+    } catch (e) {
+      return {'novels': <ShortNovel>[], 'total': 0, 'hasMore': false};
+    }
+  }
+
+  /// Get trending search terms
+  static Future<List<String>> getTrendingSearches() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/search/trending'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return List<String>.from(data['data']);
+        }
+      }
+
+      // Fallback trending terms
+      return [
+        'Romance',
+        'Billionaire',
+        'CEO',
+        'Werewolf',
+        'Fantasy',
+        'Second Chance',
+        'Enemies to Lovers',
+        'Fake Dating',
+      ];
+    } catch (e) {
+      return [
+        'Romance',
+        'Billionaire',
+        'CEO',
+        'Werewolf',
+        'Fantasy',
+        'Second Chance',
+      ];
+    }
+  }
+
   static Future<List<ShortNovel>> fetchShorts({
     int page = 1,
     int limit = 20,

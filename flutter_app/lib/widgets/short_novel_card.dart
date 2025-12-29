@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import '../models/short_novel.dart';
 import '../screens/short_detail_screen.dart';
+import '../screens/search_screen.dart';
 
 class ShortNovelCard extends StatelessWidget {
   final ShortNovel novel;
@@ -80,7 +81,12 @@ class ShortNovelCard extends StatelessWidget {
                       // Search icon
                       IconButton(
                         onPressed: () {
-                          // TODO: Navigate to search
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SearchScreen(),
+                            ),
+                          );
                         },
                         icon: Icon(
                           Icons.search,
