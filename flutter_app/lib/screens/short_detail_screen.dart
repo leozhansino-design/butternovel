@@ -849,23 +849,6 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     );
   }
 
-  void _showLoginRequiredSnackbar(String action) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Please login to $action'),
-        backgroundColor: Colors.grey[800],
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'Login',
-          textColor: const Color(0xFF3b82f6),
-          onPressed: () {
-            // TODO: Navigate to login screen
-          },
-        ),
-      ),
-    );
-  }
-
   String _getReadingTime(int wordCount) {
     // ~1350 chars per minute (faster reading speed for short content)
     final minutes = (wordCount / 1350).ceil();
