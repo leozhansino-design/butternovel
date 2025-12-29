@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +11,55 @@ import 'screens/main_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Show detailed errors in debug mode
+  if (kDebugMode) {
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(
+        color: Colors.red[900],
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 48),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  details.exception.toString(),
+                  style: const TextStyle(color: Colors.yellow, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Stack Trace:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  details.stack.toString(),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    };
+  }
+
   runApp(const MyApp());
 }
 
