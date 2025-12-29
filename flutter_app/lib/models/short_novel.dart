@@ -53,7 +53,7 @@ class ShortNovel {
     }
 
     return ShortNovel(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title']?.toString() ?? '',
       slug: json['slug']?.toString() ?? '',
       blurb: json['blurb']?.toString() ?? '',
@@ -107,9 +107,9 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? 'Unknown',
+      slug: json['slug']?.toString() ?? 'unknown',
     );
   }
 }
@@ -127,9 +127,9 @@ class Tag {
 
   factory Tag.fromJson(Map<String, dynamic> json) {
     return Tag(
-      id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
     );
   }
 }
@@ -151,11 +151,11 @@ class Chapter {
 
   factory Chapter.fromJson(Map<String, dynamic> json) {
     return Chapter(
-      id: json['id'],
-      title: json['title'],
-      chapterNumber: json['chapterNumber'],
-      content: json['content'],
-      wordCount: json['wordCount'] ?? 0,
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      title: json['title']?.toString() ?? '',
+      chapterNumber: json['chapterNumber'] is int ? json['chapterNumber'] : int.tryParse(json['chapterNumber']?.toString() ?? '0') ?? 0,
+      content: json['content']?.toString() ?? '',
+      wordCount: json['wordCount'] is int ? json['wordCount'] : int.tryParse(json['wordCount']?.toString() ?? '0') ?? 0,
     );
   }
 }
