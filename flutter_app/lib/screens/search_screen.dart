@@ -80,13 +80,25 @@ class _SearchScreenState extends State<SearchScreen> {
       );
 
       if (mounted && _searchController.text.trim() == query) {
-        setState(() {
-          _suggestions = result['novels'] as List<ShortNovel>;
-          _showSuggestions = _suggestions.isNotEmpty;
-        });
+        final novels = result['novels'];
+        if (novels != null && novels is List<ShortNovel>) {
+          setState(() {
+            _suggestions = novels;
+            _showSuggestions = novels.isNotEmpty;
+          });
+        } else {
+          setState(() {
+            _suggestions = [];
+            _showSuggestions = false;
+          });
+        }
       }
     } catch (e) {
       // Ignore errors for suggestions
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+      });
     }
   }
 
@@ -170,20 +182,30 @@ class _SearchScreenState extends State<SearchScreen> {
       );
 
       if (mounted) {
+        final novels = result['novels'];
+        final novelsList = (novels != null && novels is List<ShortNovel>)
+            ? novels
+            : <ShortNovel>[];
+
         setState(() {
           if (newSearch) {
-            _searchResults = result['novels'] as List<ShortNovel>;
+            _searchResults = novelsList;
           } else {
-            _searchResults.addAll(result['novels'] as List<ShortNovel>);
+            _searchResults.addAll(novelsList);
           }
-          _totalResults = result['total'] as int;
-          _hasMore = result['hasMore'] as bool;
+          _totalResults = (result['total'] as int?) ?? novelsList.length;
+          _hasMore = (result['hasMore'] as bool?) ?? false;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          if (newSearch) {
+            _searchResults = [];
+          }
+        });
       }
     }
   }
