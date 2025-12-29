@@ -583,70 +583,51 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   }
 
   Widget _buildParagraphWithInlineComment(String paragraph, int index, int commentCount) {
+    final textStyle = TextStyle(
+      color: _textColor,
+      fontSize: _fontSize,
+      height: 1.8,
+    );
+
     if (!_showCommentBubbles) {
-      // Just show paragraph without comment bubble
       return Padding(
         padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          paragraph,
-          style: TextStyle(
-            color: _textColor,
-            fontSize: _fontSize,
-            height: 1.8,
-          ),
-        ),
+        child: Text(paragraph, style: textStyle),
       );
     }
 
-    // Build inline comment bubble at end of paragraph (no space, directly after punctuation)
+    // Comment bubble inline at the end of paragraph
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
-      child: GestureDetector(
-        onTap: () => _showCommentSheet(index, paragraph),
-        child: RichText(
-          text: TextSpan(
-            style: TextStyle(
-              color: _textColor,
-              fontSize: _fontSize,
-              height: 1.8,
-            ),
-            children: [
-              TextSpan(text: paragraph),
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 2),
-                  child: Container(
-                    width: commentCount > 0 ? null : 16,
-                    height: 16,
-                    padding: commentCount > 0
-                        ? const EdgeInsets.symmetric(horizontal: 5, vertical: 1)
-                        : EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      color: commentCount > 0
-                          ? const Color(0xFF3b82f6).withOpacity(0.2)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
+      child: Text.rich(
+        TextSpan(
+          style: textStyle,
+          children: [
+            TextSpan(text: paragraph),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: GestureDetector(
+                onTap: () => _showCommentSheet(index, paragraph),
+                child: Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: commentCount > 0
+                        ? const Color(0xFF3b82f6).withOpacity(0.15)
+                        : Colors.grey.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    commentCount > 0 ? '$commentCount' : '💬',
+                    style: TextStyle(
+                      color: commentCount > 0 ? const Color(0xFF3b82f6) : _subtitleColor,
+                      fontSize: 11,
                     ),
-                    child: commentCount > 0
-                        ? Text(
-                            commentCount.toString(),
-                            style: const TextStyle(
-                              color: Color(0xFF3b82f6),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          )
-                        : Icon(
-                            Icons.mode_comment_outlined,
-                            size: 14,
-                            color: _subtitleColor.withOpacity(0.5),
-                          ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
