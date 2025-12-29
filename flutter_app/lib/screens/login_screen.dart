@@ -31,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    clientId: '973923327359-r9futute01c7958uheonk85dqq1jqdau.apps.googleusercontent.com',
   );
 
   @override
