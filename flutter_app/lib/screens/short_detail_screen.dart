@@ -419,7 +419,9 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
               // App Bar
               SliverAppBar(
                 pinned: true,
+                toolbarHeight: 56,
                 backgroundColor: _backgroundColor.withOpacity(0.95),
+                // Automatically handles safe area (notch, status bar)
                 leading: IconButton(
                   icon: Icon(Icons.arrow_back, color: _isLightBackground ? Colors.grey[800] : const Color(0xFF3b82f6)),
                   onPressed: () => Navigator.pop(context),
