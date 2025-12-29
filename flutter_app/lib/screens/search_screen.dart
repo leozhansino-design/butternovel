@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'dart:async';
 
 import '../models/short_novel.dart';
 import '../services/api_service.dart';
@@ -19,33 +19,24 @@ class _SearchScreenState extends State<SearchScreen> {
   final ScrollController _scrollController = ScrollController();
 
   List<ShortNovel> _searchResults = [];
-  List<String> _trendingSearches = [];
+  List<ShortNovel> _suggestions = [];
+  List<ShortNovel> _recommendedNovels = [];
   List<String> _searchHistory = [];
   bool _isLoading = false;
   bool _hasMore = false;
   int _currentPage = 1;
   int _totalResults = 0;
   String _currentQuery = '';
-  String? _selectedGenre;
-
-  final List<String> _genres = [
-    'All',
-    'Romance',
-    'Fantasy',
-    'Thriller',
-    'Mystery',
-    'Sci-Fi',
-    'Drama',
-    'Comedy',
-    'Horror',
-  ];
+  bool _showSuggestions = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
-    _loadTrendingSearches();
     _loadSearchHistory();
+    _loadRecommendedNovels();
     _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
@@ -53,13 +44,49 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchController.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadTrendingSearches() async {
-    final trending = await ApiService.getTrendingSearches();
-    if (mounted) {
-      setState(() => _trendingSearches = trending);
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+
+    // Debounce search suggestions
+    _debounceTimer?.cancel();
+
+    if (query.isEmpty) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+      });
+      return;
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _fetchSuggestions(query);
+    });
+  }
+
+  Future<void> _fetchSuggestions(String query) async {
+    if (query.length < 2) {
+      setState(() => _showSuggestions = false);
+      return;
+    }
+
+    try {
+      final result = await ApiService.searchNovels(
+        query: query,
+        limit: 5,
+      );
+
+      if (mounted && _searchController.text.trim() == query) {
+        setState(() {
+          _suggestions = result['novels'] as List<ShortNovel>;
+          _showSuggestions = _suggestions.isNotEmpty;
+        });
+      }
+    } catch (e) {
+      // Ignore errors for suggestions
     }
   }
 
@@ -67,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final prefs = await SharedPreferences.getInstance();
     final history = prefs.getStringList('search_history') ?? [];
     if (mounted) {
-      setState(() => _searchHistory = history);
+      setState(() => _searchHistory = history.take(8).toList());
     }
   }
 
@@ -76,16 +103,31 @@ class _SearchScreenState extends State<SearchScreen> {
     final prefs = await SharedPreferences.getInstance();
     _searchHistory.remove(query);
     _searchHistory.insert(0, query);
-    if (_searchHistory.length > 10) {
-      _searchHistory = _searchHistory.take(10).toList();
+    if (_searchHistory.length > 8) {
+      _searchHistory = _searchHistory.take(8).toList();
     }
     await prefs.setStringList('search_history', _searchHistory);
+    setState(() {});
   }
 
   Future<void> _clearSearchHistory() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('search_history');
     setState(() => _searchHistory = []);
+  }
+
+  Future<void> _loadRecommendedNovels() async {
+    try {
+      final novels = await ApiService.fetchShorts(
+        limit: 10,
+        sortBy: 'popular',
+      );
+      if (mounted) {
+        setState(() => _recommendedNovels = novels);
+      }
+    } catch (e) {
+      // Ignore errors
+    }
   }
 
   void _onScroll() {
@@ -103,6 +145,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchResults = [];
         _currentQuery = '';
         _totalResults = 0;
+        _showSuggestions = false;
       });
       return;
     }
@@ -113,8 +156,10 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchResults = [];
         _isLoading = true;
         _currentQuery = query;
+        _showSuggestions = false;
       });
       _saveSearchHistory(query);
+      _focusNode.unfocus();
     }
 
     try {
@@ -122,7 +167,6 @@ class _SearchScreenState extends State<SearchScreen> {
         query: query,
         page: _currentPage,
         limit: 20,
-        genre: _selectedGenre == 'All' ? null : _selectedGenre,
       );
 
       if (mounted) {
@@ -153,15 +197,6 @@ class _SearchScreenState extends State<SearchScreen> {
     await _search(_currentQuery, newSearch: false);
   }
 
-  void _onGenreSelected(String genre) {
-    setState(() {
-      _selectedGenre = genre == 'All' ? null : genre;
-    });
-    if (_currentQuery.isNotEmpty) {
-      _search(_currentQuery);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,13 +206,18 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             // Search bar
             _buildSearchBar(),
-            // Genre filter chips
-            _buildGenreChips(),
             // Content
             Expanded(
-              child: _currentQuery.isEmpty
-                  ? _buildEmptyState()
-                  : _buildSearchResults(),
+              child: Stack(
+                children: [
+                  // Main content
+                  _currentQuery.isEmpty
+                      ? _buildEmptyState()
+                      : _buildSearchResults(),
+                  // Suggestions overlay
+                  if (_showSuggestions) _buildSuggestionsOverlay(),
+                ],
+              ),
             ),
           ],
         ),
@@ -187,7 +227,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Row(
         children: [
           Expanded(
@@ -202,17 +242,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 focusNode: _focusNode,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: 'Search stories, authors, tags...',
+                  hintText: 'Search by title...',
                   hintStyle: TextStyle(color: Colors.grey[500]),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey[500]),
+                          icon: Icon(Icons.clear, color: Colors.grey[500], size: 20),
                           onPressed: () {
                             _searchController.clear();
                             setState(() {
                               _searchResults = [];
                               _currentQuery = '';
+                              _showSuggestions = false;
                             });
                           },
                         )
@@ -224,70 +265,73 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 textInputAction: TextInputAction.search,
-                onChanged: (value) {
-                  setState(() {}); // Update clear button visibility
-                },
                 onSubmitted: (value) => _search(value),
               ),
             ),
           ),
-          if (_currentQuery.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            TextButton(
-              onPressed: () {
-                _searchController.clear();
-                _focusNode.unfocus();
-                setState(() {
-                  _searchResults = [];
-                  _currentQuery = '';
-                });
-              },
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey[400]),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: () {
+              if (_searchController.text.isNotEmpty) {
+                _search(_searchController.text);
+              }
+            },
+            child: Text(
+              'Search',
+              style: TextStyle(
+                color: const Color(0xFF3b82f6),
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildGenreChips() {
-    return SizedBox(
-      height: 40,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: _genres.length,
-        itemBuilder: (context, index) {
-          final genre = _genres[index];
-          final isSelected = (_selectedGenre == null && genre == 'All') ||
-              _selectedGenre == genre;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: FilterChip(
-              label: Text(genre),
-              selected: isSelected,
-              onSelected: (_) => _onGenreSelected(genre),
-              backgroundColor: Colors.grey[900],
-              selectedColor: const Color(0xFF3b82f6).withOpacity(0.3),
-              labelStyle: TextStyle(
-                color: isSelected ? const Color(0xFF3b82f6) : Colors.grey[400],
-                fontSize: 13,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: isSelected
-                      ? const Color(0xFF3b82f6)
-                      : Colors.transparent,
-                ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+  Widget _buildSuggestionsOverlay() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          );
-        },
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _suggestions.map((novel) {
+            return ListTile(
+              dense: true,
+              leading: Icon(Icons.search, color: Colors.grey[600], size: 20),
+              title: Text(
+                novel.title,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                novel.authorName,
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              ),
+              trailing: Icon(Icons.north_west, color: Colors.grey[600], size: 16),
+              onTap: () {
+                _searchController.text = novel.title;
+                _search(novel.title);
+              },
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -304,119 +348,217 @@ class _SearchScreenState extends State<SearchScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Recent Searches',
+                  'Search History',
                   style: TextStyle(
                     color: Colors.grey[300],
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                TextButton(
-                  onPressed: _clearSearchHistory,
-                  child: Text(
-                    'Clear',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                GestureDetector(
+                  onTap: _clearSearchHistory,
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, color: Colors.grey[500], size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Clear',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _searchHistory.map((query) {
+            const SizedBox(height: 12),
+            // History items in 2 columns
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 4,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: _searchHistory.length,
+              itemBuilder: (context, index) {
+                final query = _searchHistory[index];
                 return GestureDetector(
                   onTap: () {
                     _searchController.text = query;
                     _search(query);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.grey[850],
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.history, size: 16, color: Colors.grey[500]),
-                        const SizedBox(width: 6),
-                        Text(
-                          query,
-                          style: TextStyle(color: Colors.grey[300]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            query,
+                            style: TextStyle(color: Colors.grey[300], fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 );
-              }).toList(),
+              },
             ),
             const SizedBox(height: 24),
           ],
-          // Trending searches
-          Text(
-            'Trending Searches',
-            style: TextStyle(
-              color: Colors.grey[300],
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _trendingSearches.asMap().entries.map((entry) {
-              final index = entry.key;
-              final query = entry.value;
-              return GestureDetector(
-                onTap: () {
-                  _searchController.text = query;
-                  _search(query);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+
+          // Recommended section
+          if (_recommendedNovels.isNotEmpty) ...[
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 18,
                   decoration: BoxDecoration(
-                    color: Colors.grey[850],
-                    borderRadius: BorderRadius.circular(16),
-                    border: index < 3
-                        ? Border.all(
-                            color: const Color(0xFFf97316).withOpacity(0.5),
-                          )
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (index < 3) ...[
-                        Icon(
-                          Icons.local_fire_department,
-                          size: 16,
-                          color: const Color(0xFFf97316),
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                      Text(
-                        query,
-                        style: TextStyle(
-                          color: index < 3
-                              ? const Color(0xFFf97316)
-                              : Colors.grey[300],
-                        ),
-                      ),
-                    ],
+                    color: const Color(0xFF3b82f6),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              );
-            }).toList(),
-          ),
+                const SizedBox(width: 8),
+                Text(
+                  'Recommended For You',
+                  style: TextStyle(
+                    color: Colors.grey[300],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Recommended novels list
+            ...List.generate(_recommendedNovels.length, (index) {
+              final novel = _recommendedNovels[index];
+              return _buildRecommendedItem(novel, index + 1);
+            }),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildRecommendedItem(ShortNovel novel, int rank) {
+    final isTop3 = rank <= 3;
+    final rankColors = [
+      const Color(0xFFef4444), // 1st - red
+      const Color(0xFFf97316), // 2nd - orange
+      const Color(0xFFeab308), // 3rd - yellow
+    ];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ShortDetailScreen(novel: novel),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            // Rank number
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: isTop3
+                    ? rankColors[rank - 1].withOpacity(0.2)
+                    : Colors.grey[800],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Text(
+                  '$rank',
+                  style: TextStyle(
+                    color: isTop3 ? rankColors[rank - 1] : Colors.grey[500],
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    novel.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        novel.authorName,
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _getGenreColor(novel.displayGenre).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          novel.displayGenre,
+                          style: TextStyle(
+                            color: _getGenreColor(novel.displayGenre),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                      if (novel.averageRating != null && novel.averageRating! > 0) ...[
+                        const SizedBox(width: 8),
+                        Icon(Icons.star, size: 12, color: Colors.amber[400]),
+                        const SizedBox(width: 2),
+                        Text(
+                          novel.averageRating!.toStringAsFixed(1),
+                          style: TextStyle(
+                            color: Colors.amber[400],
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[700], size: 20),
+          ],
+        ),
       ),
     );
   }
@@ -446,7 +588,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Try different keywords or filters',
+              'Try a different search term',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 14,
@@ -464,7 +606,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Text(
-            '$_totalResults results for "$_currentQuery"',
+            '$_totalResults results',
             style: TextStyle(
               color: Colors.grey[500],
               fontSize: 13,
@@ -522,26 +664,6 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Genre tag
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getGenreColor(novel.displayGenre).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      novel.displayGenre,
-                      style: TextStyle(
-                        color: _getGenreColor(novel.displayGenre),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   // Title
                   Text(
                     novel.title,
@@ -553,14 +675,36 @@ class _SearchScreenState extends State<SearchScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  // Author
-                  Text(
-                    'by ${novel.authorName}',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                    ),
+                  const SizedBox(height: 6),
+                  // Author and genre
+                  Row(
+                    children: [
+                      Text(
+                        novel.authorName,
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getGenreColor(novel.displayGenre).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          novel.displayGenre,
+                          style: TextStyle(
+                            color: _getGenreColor(novel.displayGenre),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   // Preview
@@ -596,17 +740,6 @@ class _SearchScreenState extends State<SearchScreen> {
                       const SizedBox(width: 4),
                       Text(
                         _formatCount(novel.viewCount),
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(Icons.favorite_border,
-                          size: 14, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatCount(novel.likeCount),
                         style: TextStyle(
                           color: Colors.grey[500],
                           fontSize: 12,
