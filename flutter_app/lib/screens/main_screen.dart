@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/theme_provider.dart';
 import 'for_you_screen.dart';
 import 'search_screen.dart';
 import 'create_screen.dart';
@@ -26,17 +28,21 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : Colors.white,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.95),
+          color: isDark ? Colors.black.withOpacity(0.95) : Colors.white.withOpacity(0.95),
           border: Border(
             top: BorderSide(
-              color: Colors.grey[800]!,
+              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
               width: 0.5,
             ),
           ),

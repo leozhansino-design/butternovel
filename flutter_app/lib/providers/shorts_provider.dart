@@ -74,6 +74,42 @@ class ShortsProvider extends ChangeNotifier {
     await fetchShorts();
   }
 
+  /// Fetch shorts by genre filter
+  Future<void> fetchShortsByGenre(String genre) async {
+    if (_isLoading) return;
+
+    _isLoading = true;
+    _error = null;
+    _shorts = []; // Clear existing
+    notifyListeners();
+
+    try {
+      _viewedIds = await RecommendationService.getViewedIds();
+
+      final newShorts = await ApiService.fetchShorts(
+        page: 1,
+        genre: genre,
+      );
+
+      // Shuffle and diversify recommendations
+      final recommendedShorts = RecommendationService.shuffleAndDiversify<ShortNovel>(
+        newShorts,
+        _viewedIds,
+        (s) => s.id,
+        (s) => s.displayGenre,
+      );
+
+      _shorts = recommendedShorts;
+      _currentPage = 1;
+      _hasMore = newShorts.length >= 20;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void likeShort(int id) {
     final index = _shorts.indexWhere((s) => s.id == id);
     if (index != -1) {
