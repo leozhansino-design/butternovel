@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/theme_provider.dart';
 import 'for_you_screen.dart';
-import 'search_screen.dart';
+import 'genre_screen.dart';
 import 'create_screen.dart';
 import 'bookshelf_screen.dart';
 import 'profile_screen.dart';
@@ -20,7 +20,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const ForYouScreen(),
-    const SearchScreen(),
+    const GenreScreen(),
     const CreateScreen(),
     const BookshelfScreen(),
     const ProfileScreen(),
@@ -54,7 +54,7 @@ class _MainScreenState extends State<MainScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildNavItem(0, Icons.home_outlined, 'For You'),
-                _buildNavItem(1, Icons.search, 'Search'),
+                _buildNavItem(1, Icons.category_outlined, 'Genre'),
                 _buildCreateButton(),
                 _buildNavItem(3, Icons.bookmark_outline, 'Bookshelf'),
                 _buildNavItem(4, Icons.person_outline, 'Profile'),

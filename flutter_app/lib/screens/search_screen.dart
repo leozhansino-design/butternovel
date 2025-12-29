@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:math';
 
 import '../models/short_novel.dart';
+import '../providers/theme_provider.dart';
 import '../services/api_service.dart';
 import 'short_detail_screen.dart';
 
@@ -230,33 +232,45 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Search bar
-            _buildSearchBar(),
-            // Content
-            Expanded(
-              child: Stack(
-                children: [
-                  // Main content
-                  _currentQuery.isEmpty
-                      ? _buildEmptyState()
-                      : _buildSearchResults(),
-                  // Suggestions overlay
-                  if (_showSuggestions) _buildSuggestionsOverlay(),
-                ],
-              ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final isDark = themeProvider.isDarkMode;
+        final bgColor = isDark ? Colors.black : Colors.white;
+        final textColor = isDark ? Colors.white : Colors.grey[900]!;
+        final subtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+        final cardBgColor = isDark ? Colors.grey[900]! : Colors.grey[100]!;
+        final borderColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+
+        return Scaffold(
+          backgroundColor: bgColor,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Search bar
+                _buildSearchBar(isDark, textColor, subtitleColor, cardBgColor),
+                // Content
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // Main content
+                      _currentQuery.isEmpty
+                          ? _buildEmptyState(isDark, textColor, subtitleColor, cardBgColor, borderColor)
+                          : _buildSearchResults(isDark, textColor, subtitleColor, cardBgColor),
+                      // Suggestions overlay
+                      if (_showSuggestions)
+                        _buildSuggestionsOverlay(isDark, textColor, subtitleColor, cardBgColor),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(bool isDark, Color textColor, Color subtitleColor, Color cardBgColor) {
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 16, 12),
       child: Row(
@@ -264,26 +278,26 @@ class _SearchScreenState extends State<SearchScreen> {
           // Back button
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back, color: Colors.grey[400]),
+            icon: Icon(Icons.arrow_back, color: subtitleColor),
           ),
           Expanded(
             child: Container(
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.grey[900],
+                color: cardBgColor,
                 borderRadius: BorderRadius.circular(22),
               ),
               child: TextField(
                 controller: _searchController,
                 focusNode: _focusNode,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: textColor),
                 decoration: InputDecoration(
                   hintText: 'Search by title...',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+                  hintStyle: TextStyle(color: subtitleColor),
+                  prefixIcon: Icon(Icons.search, color: subtitleColor),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey[500], size: 20),
+                          icon: Icon(Icons.clear, color: subtitleColor, size: 20),
                           onPressed: () {
                             _searchController.clear();
                             setState(() {
@@ -312,10 +326,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 _search(_searchController.text);
               }
             },
-            child: Text(
+            child: const Text(
               'Search',
               style: TextStyle(
-                color: const Color(0xFF3b82f6),
+                color: Color(0xFF3b82f6),
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
@@ -326,7 +340,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSuggestionsOverlay() {
+  Widget _buildSuggestionsOverlay(bool isDark, Color textColor, Color subtitleColor, Color cardBgColor) {
     return Positioned(
       top: 0,
       left: 0,
@@ -334,11 +348,11 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: cardBgColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -349,18 +363,18 @@ class _SearchScreenState extends State<SearchScreen> {
           children: _suggestions.map((novel) {
             return ListTile(
               dense: true,
-              leading: Icon(Icons.search, color: Colors.grey[600], size: 20),
+              leading: Icon(Icons.search, color: subtitleColor, size: 20),
               title: Text(
                 novel.title,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(color: textColor, fontSize: 14),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               subtitle: Text(
                 novel.authorName,
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                style: TextStyle(color: subtitleColor, fontSize: 12),
               ),
-              trailing: Icon(Icons.north_west, color: Colors.grey[600], size: 16),
+              trailing: Icon(Icons.north_west, color: subtitleColor, size: 16),
               onTap: () {
                 _searchController.text = novel.title;
                 _search(novel.title);
@@ -372,7 +386,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark, Color textColor, Color subtitleColor, Color cardBgColor, Color borderColor) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -386,7 +400,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Text(
                   'Search History',
                   style: TextStyle(
-                    color: Colors.grey[300],
+                    color: textColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -395,11 +409,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   onTap: _clearSearchHistory,
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, color: Colors.grey[500], size: 18),
+                      Icon(Icons.delete_outline, color: subtitleColor, size: 18),
                       const SizedBox(width: 4),
                       Text(
                         'Clear',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                        style: TextStyle(color: subtitleColor, fontSize: 13),
                       ),
                     ],
                   ),
@@ -428,17 +442,18 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: cardBgColor,
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: borderColor),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.history, size: 16, color: Colors.grey[500]),
+                        Icon(Icons.history, size: 16, color: subtitleColor),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             query,
-                            style: TextStyle(color: Colors.grey[300], fontSize: 13),
+                            style: TextStyle(color: textColor, fontSize: 13),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -468,7 +483,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Text(
                   'Recommended For You',
                   style: TextStyle(
-                    color: Colors.grey[300],
+                    color: textColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -479,7 +494,7 @@ class _SearchScreenState extends State<SearchScreen> {
             // Recommended novels list
             ...List.generate(_recommendedNovels.length, (index) {
               final novel = _recommendedNovels[index];
-              return _buildRecommendedItem(novel, index + 1);
+              return _buildRecommendedItem(novel, index + 1, isDark, textColor, subtitleColor, cardBgColor);
             }),
           ],
         ],
@@ -487,7 +502,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildRecommendedItem(ShortNovel novel, int rank) {
+  Widget _buildRecommendedItem(ShortNovel novel, int rank, bool isDark, Color textColor, Color subtitleColor, Color cardBgColor) {
     final isTop3 = rank <= 3;
     final rankColors = [
       const Color(0xFFef4444), // 1st - red
@@ -508,7 +523,7 @@ class _SearchScreenState extends State<SearchScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: cardBgColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -520,14 +535,14 @@ class _SearchScreenState extends State<SearchScreen> {
               decoration: BoxDecoration(
                 color: isTop3
                     ? rankColors[rank - 1].withOpacity(0.2)
-                    : Colors.grey[800],
+                    : (isDark ? Colors.grey[800] : Colors.grey[300]),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
                 child: Text(
                   '$rank',
                   style: TextStyle(
-                    color: isTop3 ? rankColors[rank - 1] : Colors.grey[500],
+                    color: isTop3 ? rankColors[rank - 1] : subtitleColor,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -542,8 +557,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   Text(
                     novel.title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: textColor,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -556,7 +571,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       Text(
                         novel.authorName,
                         style: TextStyle(
-                          color: Colors.grey[500],
+                          color: subtitleColor,
                           fontSize: 12,
                         ),
                       ),
@@ -592,14 +607,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey[700], size: 20),
+            Icon(Icons.chevron_right, color: subtitleColor, size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(bool isDark, Color textColor, Color subtitleColor, Color cardBgColor) {
     if (_isLoading && _searchResults.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
@@ -613,12 +628,12 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[700]),
+            Icon(Icons.search_off, size: 64, color: subtitleColor),
             const SizedBox(height: 16),
             Text(
               'No results found',
               style: TextStyle(
-                color: Colors.grey[500],
+                color: subtitleColor,
                 fontSize: 16,
               ),
             ),
@@ -626,7 +641,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Text(
               'Try a different search term',
               style: TextStyle(
-                color: Colors.grey[600],
+                color: subtitleColor.withOpacity(0.7),
                 fontSize: 14,
               ),
             ),
@@ -644,7 +659,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Text(
             '$_totalResults results',
             style: TextStyle(
-              color: Colors.grey[500],
+              color: subtitleColor,
               fontSize: 13,
             ),
           ),
@@ -667,7 +682,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 );
               }
-              return _buildResultCard(_searchResults[index]);
+              return _buildResultCard(_searchResults[index], isDark, textColor, subtitleColor, cardBgColor);
             },
           ),
         ),
@@ -675,7 +690,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildResultCard(ShortNovel novel) {
+  Widget _buildResultCard(ShortNovel novel, bool isDark, Color textColor, Color subtitleColor, Color cardBgColor) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -689,7 +704,7 @@ class _SearchScreenState extends State<SearchScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: cardBgColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -703,8 +718,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   // Title
                   Text(
                     novel.title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: textColor,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -718,7 +733,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       Text(
                         novel.authorName,
                         style: TextStyle(
-                          color: Colors.grey[500],
+                          color: subtitleColor,
                           fontSize: 12,
                         ),
                       ),
@@ -747,7 +762,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   Text(
                     novel.previewText,
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: subtitleColor,
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -772,12 +787,12 @@ class _SearchScreenState extends State<SearchScreen> {
                         const SizedBox(width: 12),
                       ],
                       Icon(Icons.visibility_outlined,
-                          size: 14, color: Colors.grey[600]),
+                          size: 14, color: subtitleColor),
                       const SizedBox(width: 4),
                       Text(
                         _formatCount(novel.viewCount),
                         style: TextStyle(
-                          color: Colors.grey[500],
+                          color: subtitleColor,
                           fontSize: 12,
                         ),
                       ),
@@ -788,7 +803,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             // Right arrow
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right, color: Colors.grey[700]),
+            Icon(Icons.chevron_right, color: subtitleColor),
           ],
         ),
       ),
