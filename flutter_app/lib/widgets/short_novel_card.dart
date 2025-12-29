@@ -275,8 +275,8 @@ class ShortNovelCard extends StatelessWidget {
   }
 
   String _getReadingTime(int wordCount) {
-    // Average reading speed: ~450 chars per minute
-    final minutes = (wordCount / 450).ceil();
+    // ~1350 chars per minute (faster reading speed for short content)
+    final minutes = (wordCount / 1350).ceil();
     if (minutes < 1) return '< 1 min';
     if (minutes < 60) return '$minutes min';
     final hours = minutes ~/ 60;

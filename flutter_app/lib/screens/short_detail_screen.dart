@@ -598,7 +598,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
       );
     }
 
-    // Build inline comment bubble at end of paragraph
+    // Build inline comment bubble at end of paragraph (no space, directly after punctuation)
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: GestureDetector(
@@ -612,45 +612,36 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
             ),
             children: [
               TextSpan(text: paragraph),
-              const TextSpan(text: ' '),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: commentCount > 0
-                        ? const Color(0xFF3b82f6).withOpacity(0.15)
-                        : (_isLightBackground ? Colors.grey[200] : Colors.grey[850]),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Container(
+                    width: commentCount > 0 ? null : 16,
+                    height: 16,
+                    padding: commentCount > 0
+                        ? const EdgeInsets.symmetric(horizontal: 5, vertical: 1)
+                        : EdgeInsets.zero,
+                    decoration: BoxDecoration(
                       color: commentCount > 0
-                          ? const Color(0xFF3b82f6).withOpacity(0.4)
-                          : (_isLightBackground ? Colors.grey[400]! : Colors.grey[700]!),
-                      width: 0.5,
+                          ? const Color(0xFF3b82f6).withOpacity(0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 12,
-                        color: commentCount > 0
-                            ? const Color(0xFF3b82f6)
-                            : _subtitleColor,
-                      ),
-                      if (commentCount > 0) ...[
-                        const SizedBox(width: 3),
-                        Text(
-                          commentCount.toString(),
-                          style: const TextStyle(
-                            color: Color(0xFF3b82f6),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                    child: commentCount > 0
+                        ? Text(
+                            commentCount.toString(),
+                            style: const TextStyle(
+                              color: Color(0xFF3b82f6),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : Icon(
+                            Icons.mode_comment_outlined,
+                            size: 14,
+                            color: _subtitleColor.withOpacity(0.5),
                           ),
-                        ),
-                      ],
-                    ],
                   ),
                 ),
               ),
@@ -708,7 +699,8 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   }
 
   String _getReadingTime(int wordCount) {
-    final minutes = (wordCount / 450).ceil();
+    // ~1350 chars per minute (faster reading speed for short content)
+    final minutes = (wordCount / 1350).ceil();
     if (minutes < 1) return '< 1 min';
     if (minutes < 60) return '$minutes min';
     final hours = minutes ~/ 60;
