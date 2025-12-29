@@ -270,7 +270,7 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'score': score,
-          if (review != null) 'review': review,
+          if (review != null && review.isNotEmpty) 'review': review,
         }),
       );
 
@@ -280,6 +280,37 @@ class ApiService {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Get reviews for a novel
+  static Future<List<Map<String, dynamic>>> getReviews(int novelId, {int page = 1, String sortBy = 'likes'}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/novels/$novelId/ratings?page=$page&limit=20&sortBy=$sortBy'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['ratings'] != null) {
+          return List<Map<String, dynamic>>.from(data['ratings']);
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Like a review
+  static Future<bool> likeReview(String reviewId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/ratings/$reviewId/like'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 }

@@ -131,23 +131,56 @@ class RatingSheet extends StatefulWidget {
   State<RatingSheet> createState() => _RatingSheetState();
 }
 
-class _RatingSheetState extends State<RatingSheet> {
+class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   double _selectedRating = 0;
   bool _isSubmitting = false;
-  bool _hasRated = false;
+  bool _hasExistingRating = false;
+  String? _existingReview;
+  final TextEditingController _reviewController = TextEditingController();
+
+  // Reviews
+  List<Map<String, dynamic>> _reviews = [];
+  bool _isLoadingReviews = false;
+  String _sortBy = 'likes';
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _checkExistingRating();
+    _loadReviews();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _reviewController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkExistingRating() async {
     final existing = await ApiService.getUserRating(widget.novelId);
     if (existing != null && existing['rating'] != null && mounted) {
+      final rating = existing['rating'];
       setState(() {
-        _selectedRating = (existing['rating']['score'] as num).toDouble();
-        _hasRated = true;
+        _selectedRating = (rating['score'] as num).toDouble();
+        _existingReview = rating['review']?.toString();
+        _hasExistingRating = true;
+        if (_existingReview != null) {
+          _reviewController.text = _existingReview!;
+        }
+      });
+    }
+  }
+
+  Future<void> _loadReviews() async {
+    setState(() => _isLoadingReviews = true);
+    final reviews = await ApiService.getReviews(widget.novelId, sortBy: _sortBy);
+    if (mounted) {
+      setState(() {
+        _reviews = reviews;
+        _isLoadingReviews = false;
       });
     }
   }
@@ -165,6 +198,7 @@ class _RatingSheetState extends State<RatingSheet> {
     final result = await ApiService.rateNovel(
       novelId: widget.novelId,
       score: _selectedRating,
+      review: _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim(),
     );
 
     if (mounted) {
@@ -172,9 +206,13 @@ class _RatingSheetState extends State<RatingSheet> {
 
       if (result != null) {
         widget.onRated?.call();
-        Navigator.pop(context);
+        _loadReviews(); // Refresh reviews
+        setState(() {
+          _hasExistingRating = true;
+          _existingReview = _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim();
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rating submitted!')),
+          SnackBar(content: Text(_hasExistingRating ? 'Rating updated!' : 'Rating submitted!')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -189,6 +227,7 @@ class _RatingSheetState extends State<RatingSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).padding.bottom,
       ),
@@ -197,7 +236,6 @@ class _RatingSheetState extends State<RatingSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           // Handle bar
           Container(
@@ -209,10 +247,41 @@ class _RatingSheetState extends State<RatingSheet> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          // Tab bar
+          TabBar(
+            controller: _tabController,
+            indicatorColor: const Color(0xFF3b82f6),
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey[500],
+            tabs: const [
+              Tab(text: 'Rate'),
+              Tab(text: 'Reviews'),
+            ],
+          ),
+          // Tab views
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildRateTab(),
+                _buildReviewsTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRateTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
           // Title
           Text(
-            _hasRated ? 'Your Rating' : 'Rate this story',
+            _hasExistingRating ? 'Update Your Rating' : 'Rate this story',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -235,9 +304,7 @@ class _RatingSheetState extends State<RatingSheet> {
                   _selectedRating < starValue;
 
               return GestureDetector(
-                onTap: _hasRated
-                    ? null
-                    : () => setState(() => _selectedRating = starValue.toDouble()),
+                onTap: () => setState(() => _selectedRating = starValue.toDouble()),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Icon(
@@ -264,50 +331,281 @@ class _RatingSheetState extends State<RatingSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          // Submit button
-          if (!_hasRated)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitRating,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3b82f6),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Submit Rating',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'You have already rated this story',
-                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+          // Optional review input
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[850],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[700]!),
+            ),
+            child: TextField(
+              controller: _reviewController,
+              maxLines: 4,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Write a review (optional)',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.all(16),
               ),
             ),
+          ),
           const SizedBox(height: 24),
+          // Submit button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submitRating,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3b82f6),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      _hasExistingRating ? 'Update Rating' : 'Submit Rating',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+            ),
+          ),
+          if (_hasExistingRating) ...[
+            const SizedBox(height: 12),
+            Text(
+              'You can update your rating anytime',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsTab() {
+    return Column(
+      children: [
+        // Sort options
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(
+                'Sort by:',
+                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+              ),
+              const SizedBox(width: 12),
+              _buildSortChip('Most Liked', 'likes'),
+              const SizedBox(width: 8),
+              _buildSortChip('Newest', 'newest'),
+            ],
+          ),
+        ),
+        // Reviews list
+        Expanded(
+          child: _isLoadingReviews
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF3b82f6),
+                  ),
+                )
+              : _reviews.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.rate_review_outlined, color: Colors.grey[600], size: 48),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No reviews yet',
+                            style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Be the first to write a review!',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _reviews.length,
+                      itemBuilder: (context, index) {
+                        return _buildReviewItem(_reviews[index]);
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSortChip(String label, String value) {
+    final isSelected = _sortBy == value;
+    return GestureDetector(
+      onTap: () {
+        if (_sortBy != value) {
+          setState(() => _sortBy = value);
+          _loadReviews();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF3b82f6) : Colors.grey[800],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[400],
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReviewItem(Map<String, dynamic> review) {
+    final user = review['user'] as Map<String, dynamic>?;
+    final userName = user?['name'] ?? 'Anonymous';
+    final score = (review['score'] as num?)?.toDouble() ?? 0;
+    final reviewText = review['review'] as String?;
+    final likeCount = review['likeCount'] as int? ?? 0;
+    final createdAt = review['createdAt'] as String?;
+
+    String timeAgo = '';
+    if (createdAt != null) {
+      final date = DateTime.tryParse(createdAt);
+      if (date != null) {
+        final diff = DateTime.now().difference(date);
+        if (diff.inDays > 30) {
+          timeAgo = '${diff.inDays ~/ 30}mo ago';
+        } else if (diff.inDays > 0) {
+          timeAgo = '${diff.inDays}d ago';
+        } else if (diff.inHours > 0) {
+          timeAgo = '${diff.inHours}h ago';
+        } else {
+          timeAgo = '${diff.inMinutes}m ago';
+        }
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // User info and rating
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.grey[700],
+                child: Text(
+                  userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        ...List.generate(5, (index) {
+                          final starValue = (index + 1) * 2;
+                          return Icon(
+                            score >= starValue ? Icons.star : Icons.star_border,
+                            color: Colors.amber[400],
+                            size: 14,
+                          );
+                        }),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${score.toInt()}/10',
+                          style: TextStyle(color: Colors.amber[400], fontSize: 12),
+                        ),
+                        if (timeAgo.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            timeAgo,
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (reviewText != null && reviewText.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              reviewText,
+              style: TextStyle(color: Colors.grey[300], fontSize: 14, height: 1.5),
+            ),
+          ],
+          const SizedBox(height: 12),
+          // Like button
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  final reviewId = review['id']?.toString();
+                  if (reviewId != null) {
+                    await ApiService.likeReview(reviewId);
+                    _loadReviews();
+                  }
+                },
+                child: Row(
+                  children: [
+                    Icon(
+                      review['userHasLiked'] == true
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: review['userHasLiked'] == true
+                          ? Colors.red
+                          : Colors.grey[500],
+                      size: 18,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      likeCount > 0 ? '$likeCount' : 'Like',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
