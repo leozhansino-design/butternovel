@@ -596,38 +596,43 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
       );
     }
 
-    // Comment bubble inline at the end of paragraph
+    // Build comment indicator text
+    String commentIndicator;
+    Color indicatorColor;
+    if (commentCount == 0) {
+      commentIndicator = ' ⌾'; // Simple circle for no comments
+      indicatorColor = _subtitleColor.withOpacity(0.4);
+    } else if (commentCount >= 99) {
+      commentIndicator = ' 🔥99+'; // Fire for hot discussions
+      indicatorColor = const Color(0xFFef4444);
+    } else if (commentCount >= 50) {
+      commentIndicator = ' 🔥$commentCount'; // Fire for popular
+      indicatorColor = const Color(0xFFf97316);
+    } else {
+      commentIndicator = ' ⌜$commentCount'; // Normal count with bracket
+      indicatorColor = const Color(0xFF3b82f6);
+    }
+
+    // Use pure TextSpan for true inline - no WidgetSpan wrapping issues
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
-      child: Text.rich(
-        TextSpan(
-          style: textStyle,
-          children: [
-            TextSpan(text: paragraph),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: GestureDetector(
-                onTap: () => _showCommentSheet(index, paragraph),
-                child: Container(
-                  margin: const EdgeInsets.only(left: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: commentCount > 0
-                        ? const Color(0xFF3b82f6).withOpacity(0.15)
-                        : Colors.grey.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    commentCount > 0 ? '$commentCount' : '💬',
-                    style: TextStyle(
-                      color: commentCount > 0 ? const Color(0xFF3b82f6) : _subtitleColor,
-                      fontSize: 11,
-                    ),
-                  ),
+      child: GestureDetector(
+        onTap: () => _showCommentSheet(index, paragraph),
+        child: Text.rich(
+          TextSpan(
+            style: textStyle,
+            children: [
+              TextSpan(text: paragraph),
+              TextSpan(
+                text: commentIndicator,
+                style: TextStyle(
+                  color: indicatorColor,
+                  fontSize: _fontSize * 0.7,
+                  fontWeight: commentCount > 0 ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
