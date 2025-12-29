@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 
 import '../models/short_novel.dart';
@@ -494,44 +495,50 @@ class ApiService {
     }
   }
 
-  /// Fallback recommendation: mix of same genre and different genres
+  /// Fallback recommendation: mix of same genre and different genres with randomization
   static Future<List<ShortNovel>> _getFallbackRecommendations(
     int excludeId,
     String? currentGenre,
     int limit,
   ) async {
     try {
-      final List<ShortNovel> recommendations = [];
+      final random = Random();
+      final List<ShortNovel> allCandidates = [];
+
+      // Get more novels than needed so we can randomize
+      final fetchLimit = limit * 3;
 
       // Get some from same genre (if available)
       if (currentGenre != null) {
         final sameGenre = await fetchShorts(
           genre: currentGenre,
-          limit: (limit / 2).ceil() + 2,
-          sortBy: 'popular',
+          limit: fetchLimit,
+          page: random.nextInt(3) + 1, // Random page 1-3
         );
-        recommendations.addAll(
-          sameGenre.where((n) => n.id != excludeId).take((limit / 2).ceil())
-        );
+        allCandidates.addAll(sameGenre.where((n) => n.id != excludeId));
       }
 
-      // Get some from trending/popular (mixed genres)
-      final trending = await fetchShorts(
-        limit: limit + 2,
-        sortBy: 'trending',
+      // Get some from different genres/trending
+      final sortOptions = ['popular', 'trending', 'latest'];
+      final randomSort = sortOptions[random.nextInt(sortOptions.length)];
+
+      final others = await fetchShorts(
+        limit: fetchLimit,
+        sortBy: randomSort,
+        page: random.nextInt(3) + 1, // Random page 1-3
       );
 
-      final existingIds = recommendations.map((n) => n.id).toSet();
-      existingIds.add(excludeId);
-
-      for (final novel in trending) {
-        if (!existingIds.contains(novel.id) && recommendations.length < limit) {
-          recommendations.add(novel);
-          existingIds.add(novel.id);
+      for (final novel in others) {
+        if (novel.id != excludeId && !allCandidates.any((n) => n.id == novel.id)) {
+          allCandidates.add(novel);
         }
       }
 
-      return recommendations;
+      // Shuffle all candidates
+      allCandidates.shuffle(random);
+
+      // Take random selection
+      return allCandidates.take(limit).toList();
     } catch (e) {
       return [];
     }

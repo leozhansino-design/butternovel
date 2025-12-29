@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'dart:math';
 
 import '../models/short_novel.dart';
 import '../services/api_service.dart';
@@ -130,12 +131,20 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _loadRecommendedNovels() async {
     try {
+      final random = Random();
+      final sortOptions = ['popular', 'trending', 'latest'];
+      final randomSort = sortOptions[random.nextInt(sortOptions.length)];
+
       final novels = await ApiService.fetchShorts(
-        limit: 10,
-        sortBy: 'popular',
+        limit: 20, // Fetch more to allow shuffling
+        sortBy: randomSort,
+        page: random.nextInt(2) + 1, // Random page 1-2
       );
-      if (mounted) {
-        setState(() => _recommendedNovels = novels);
+
+      if (mounted && novels.isNotEmpty) {
+        // Shuffle and take 10
+        final shuffled = List<ShortNovel>.from(novels)..shuffle(random);
+        setState(() => _recommendedNovels = shuffled.take(10).toList());
       }
     } catch (e) {
       // Ignore errors
@@ -249,9 +258,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 12),
       child: Row(
         children: [
+          // Back button
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(Icons.arrow_back, color: Colors.grey[400]),
+          ),
           Expanded(
             child: Container(
               height: 44,
