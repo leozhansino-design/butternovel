@@ -103,12 +103,15 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
+      // On web, Google Sign-In requires proper configuration
+      // For now, show option to use email login instead
       if (mounted) {
         setState(() {
           _isGoogleLoading = false;
-          _errorMessage = 'Google sign in failed. Please try again.';
+          _errorMessage = 'Google login not configured. Please use email login or contact support.';
         });
       }
+      debugPrint('Google Sign In Error: $e');
     }
   }
 
