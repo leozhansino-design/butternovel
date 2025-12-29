@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:ui';
 
 import '../models/short_novel.dart';
 import '../services/api_service.dart';
 import '../widgets/comment_sheet.dart';
 import '../widgets/rating_widget.dart';
+import '../providers/auth_provider.dart';
+import 'login_screen.dart';
 
 class ShortDetailScreen extends StatefulWidget {
   final ShortNovel novel;
@@ -29,6 +33,10 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   List<ShortNovel> _similarNovels = [];
   bool _loadingSimilar = false;
 
+  // Like state
+  bool _isLiked = false;
+  int _likeCount = 0;
+
   // Reader settings
   Color _backgroundColor = Colors.black;
   double _fontSize = 18;
@@ -47,6 +55,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _likeCount = widget.novel.likeCount;
     _fetchFullContent();
     _trackView();
   }
@@ -144,6 +153,78 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
         });
       }
     });
+  }
+
+  Future<void> _handleLike() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isLoggedIn) {
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (result == true && mounted) {
+        _performLike();
+      }
+      return;
+    }
+    _performLike();
+  }
+
+  void _performLike() {
+    setState(() {
+      _isLiked = !_isLiked;
+      _likeCount += _isLiked ? 1 : -1;
+    });
+    // TODO: Call API to persist like
+  }
+
+  Future<void> _handleShare() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isLoggedIn) {
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (result == true && mounted) {
+        _performShare();
+      }
+      return;
+    }
+    _performShare();
+  }
+
+  void _performShare() {
+    final novel = _fullNovel ?? widget.novel;
+    Share.share(
+      '${novel.title} by ${novel.authorName}\n\nCheck out this story on ButterNovel!',
+      subject: novel.title,
+    );
+  }
+
+  Future<void> _handleAddToBookshelf() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isLoggedIn) {
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (result == true && mounted) {
+        _performAddToBookshelf();
+      }
+      return;
+    }
+    _performAddToBookshelf();
+  }
+
+  void _performAddToBookshelf() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Added to your bookshelf!'),
+        backgroundColor: Colors.grey[800],
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    // TODO: Call API to add to bookshelf
   }
 
   void _showSettingsSheet() {
@@ -392,7 +473,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                   ),
                   const SizedBox(width: 8),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: _handleShare,
                     child: Text(
                       'Share',
                       style: TextStyle(color: _isLightBackground ? Colors.grey[700] : const Color(0xFF3b82f6)),
@@ -452,7 +533,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                             ),
                             const SizedBox(width: 16),
                             _buildStatItem(
-                              '${novel.likeCount} likes',
+                              '$_likeCount likes',
                             ),
                             const SizedBox(width: 16),
                             _buildStatItem(
@@ -567,10 +648,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                           // Start Reading / Bookshelf button
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () {
-                                // TODO: Require login for bookshelf
-                                _showLoginRequiredSnackbar('add to bookshelf');
-                              },
+                              onPressed: _handleAddToBookshelf,
                               icon: const Icon(Icons.bookmark_add_outlined, size: 18),
                               label: const Text(
                                 'Start Reading',
@@ -592,16 +670,15 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                           const SizedBox(width: 12),
                           // Like button
                           _buildActionButton(
-                            icon: Icons.favorite_border,
-                            onTap: () => _showLoginRequiredSnackbar('like'),
+                            icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+                            onTap: _handleLike,
+                            isActive: _isLiked,
                           ),
                           const SizedBox(width: 8),
                           // Share button
                           _buildActionButton(
                             icon: Icons.share_outlined,
-                            onTap: () {
-                              // Share functionality
-                            },
+                            onTap: _handleShare,
                           ),
                           const SizedBox(width: 8),
                           // Settings button
@@ -750,6 +827,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   Widget _buildActionButton({
     required IconData icon,
     required VoidCallback onTap,
+    bool isActive = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -764,7 +842,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
         ),
         child: Icon(
           icon,
-          color: _textColor,
+          color: isActive ? Colors.red : _textColor,
           size: 22,
         ),
       ),
