@@ -33,6 +33,7 @@ dependencies:
 
   # Auth
   google_sign_in: ^6.2.2
+  google_sign_in_web: ^0.12.4+3
   sign_in_with_apple: ^6.1.4
   crypto: ^3.0.6
 
