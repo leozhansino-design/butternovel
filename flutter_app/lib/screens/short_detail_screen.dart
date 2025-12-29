@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'dart:ui';
 
 import '../models/short_novel.dart';
@@ -583,6 +584,9 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   }
 
   Widget _buildParagraphWithInlineComment(String paragraph, int index, int commentCount) {
+    // Trim any trailing whitespace/newlines from paragraph
+    final cleanParagraph = paragraph.trimRight();
+
     final textStyle = TextStyle(
       color: _textColor,
       fontSize: _fontSize,
@@ -592,47 +596,40 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     if (!_showCommentBubbles) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 20),
-        child: Text(paragraph, style: textStyle),
+        child: Text(cleanParagraph, style: textStyle),
       );
     }
 
-    // Build comment indicator text
+    // Build comment indicator - simple subscript style
     String commentIndicator;
-    Color indicatorColor;
     if (commentCount == 0) {
-      commentIndicator = ' ⌾'; // Simple circle for no comments
-      indicatorColor = _subtitleColor.withOpacity(0.4);
+      commentIndicator = '₍₀₎';
     } else if (commentCount >= 99) {
-      commentIndicator = ' 🔥99+'; // Fire for hot discussions
-      indicatorColor = const Color(0xFFef4444);
+      commentIndicator = '₍🔥₉₉₊₎';
     } else if (commentCount >= 50) {
-      commentIndicator = ' 🔥$commentCount'; // Fire for popular
-      indicatorColor = const Color(0xFFf97316);
+      commentIndicator = '₍🔥$commentCount₎';
     } else {
-      commentIndicator = ' ⌜$commentCount'; // Normal count with bracket
-      indicatorColor = const Color(0xFF3b82f6);
+      commentIndicator = '₍$commentCount₎';
     }
 
-    // Use pure TextSpan for true inline - no WidgetSpan wrapping issues
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
-      child: GestureDetector(
-        onTap: () => _showCommentSheet(index, paragraph),
-        child: Text.rich(
-          TextSpan(
-            style: textStyle,
-            children: [
-              TextSpan(text: paragraph),
-              TextSpan(
-                text: commentIndicator,
-                style: TextStyle(
-                  color: indicatorColor,
-                  fontSize: _fontSize * 0.7,
-                  fontWeight: commentCount > 0 ? FontWeight.w600 : FontWeight.normal,
-                ),
+      child: Text.rich(
+        TextSpan(
+          style: textStyle,
+          children: [
+            TextSpan(text: cleanParagraph),
+            TextSpan(
+              text: commentIndicator,
+              style: TextStyle(
+                color: commentCount > 0
+                    ? (commentCount >= 50 ? const Color(0xFFf97316) : const Color(0xFF3b82f6))
+                    : _subtitleColor.withOpacity(0.3),
+                fontSize: _fontSize * 0.65,
               ),
-            ],
-          ),
+              recognizer: TapGestureRecognizer()..onTap = () => _showCommentSheet(index, cleanParagraph),
+            ),
+          ],
         ),
       ),
     );
