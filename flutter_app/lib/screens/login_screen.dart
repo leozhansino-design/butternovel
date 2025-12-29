@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -29,9 +30,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isGoogleLoading = false;
   bool _isAppleLoading = false;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
+  // For web, clientId is read from meta tag in index.html
+  // For mobile, we need to pass it here
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
-    clientId: '973923327359-r9futute01c7958uheonk85dqq1jqdau.apps.googleusercontent.com',
+    clientId: kIsWeb ? null : '973923327359-r9futute01c7958uheonk85dqq1jqdau.apps.googleusercontent.com',
   );
 
   @override
@@ -104,15 +107,14 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
-      // On web, Google Sign-In requires proper configuration
-      // For now, show option to use email login instead
+      debugPrint('Google Sign In Error: $e');
       if (mounted) {
         setState(() {
           _isGoogleLoading = false;
-          _errorMessage = 'Google login not configured. Please use email login or contact support.';
+          // Show actual error in debug mode for troubleshooting
+          _errorMessage = 'Google Sign-In failed: ${e.toString()}';
         });
       }
-      debugPrint('Google Sign In Error: $e');
     }
   }
 
