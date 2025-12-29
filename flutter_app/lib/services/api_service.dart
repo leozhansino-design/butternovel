@@ -145,8 +145,18 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true && data['data'] != null) {
-          final Map<String, dynamic> counts = data['data'];
-          return counts.map((key, value) => MapEntry(int.parse(key), value as int));
+          final result = <int, int>{};
+          final counts = data['data'];
+          if (counts is Map) {
+            counts.forEach((key, value) {
+              final intKey = int.tryParse(key.toString());
+              final intValue = value is int ? value : int.tryParse(value?.toString() ?? '0') ?? 0;
+              if (intKey != null) {
+                result[intKey] = intValue;
+              }
+            });
+          }
+          return result;
         }
       }
       return {};
