@@ -174,6 +174,15 @@ class ApiService {
     }
   }
 
+  /// Fetch shorts filtered by genre
+  static Future<List<ShortNovel>> fetchShortsByGenre(
+    String genre, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return fetchShorts(page: page, limit: limit, genre: genre);
+  }
+
   static Future<ShortNovel> fetchShortById(int id) async {
     try {
       final response = await http.get(
