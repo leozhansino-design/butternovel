@@ -2,7 +2,7 @@
 
 > **Quick Reference**: Read before every development session
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-29
 **Current Phase**: Mobile App Development (Flutter)
 **Target Platforms**: Google Play + App Store
 **Mobile Branch**: `claude/setup-expo-mobile-app-psVwF`
@@ -44,40 +44,51 @@
 - [x] Search icon moved to author row (to avoid blocking content)
 - [x] **Dynamic preview text sizing** - LayoutBuilder calculates maxLines based on screen size
 - [x] **Extended preview content** - API returns up to 5000 chars from first chapter (Dec 25)
+- [x] **Genre screen** - List cards with horizontal genre filter chips (Dec 29)
+- [x] **Search functionality** - Search page with keyword search
+- [x] **Paragraph comments** - Comment bubbles inline with text, replies support
+- [x] **Rating system** - Star rating with average display
+- [x] **Reader settings** - Background color, font size, comment bubbles toggle
+- [x] **Recommendations** - "You may also like" section after story
+- [x] **User Authentication** - AuthProvider with login state management (Dec 29)
+- [x] **Login Screen** - Email/password login with form validation
+- [x] **Social Login UI** - Google and Apple sign-in buttons
+- [x] **Login Modal Flow** - Like/Share/Bookshelf require login, navigate to LoginScreen
+- [x] **Share functionality** - Native share sheet using share_plus
+- [x] **Like toggle UI** - Heart icon toggles red/outline with count update
 
 ### In Progress
-- [ ] User authentication (login/register)
-- [ ] Personalized recommendation algorithm (requires login)
+- [ ] **Google Sign-In** - Configured, testing after flutter clean (MissingPluginException fix)
+- [ ] **Apple Sign-In** - Configured, needs iOS device testing
 
 ### Pending
-- [ ] Like/Save functionality
-- [ ] Bookshelf with saved stories
+- [ ] Like API integration (currently UI-only, needs backend persist)
+- [ ] Bookshelf API integration (add/remove from library)
 - [ ] Following page with followed authors
 - [ ] Profile page with user data
 - [ ] Create story functionality
-- [ ] Search functionality
 - [ ] App store submission
 
 ---
 
 ## 2. 2-Week Roadmap
 
-### Week 1 (Dec 24 - Dec 31)
-| Day | Tasks |
-|-----|-------|
-| Day 1-2 | Reading screen, story detail view |
-| Day 3-4 | User authentication (login/register) |
-| Day 5-6 | Like, save, and bookshelf functionality |
-| Day 7 | Following page, author profiles |
+### Week 1 (Dec 24 - Dec 31) - MOSTLY COMPLETE
+| Day | Tasks | Status |
+|-----|-------|--------|
+| Day 1-2 | Reading screen, story detail view | DONE |
+| Day 3-4 | User authentication (login/register) | DONE |
+| Day 5-6 | Like, save, and bookshelf functionality | IN PROGRESS |
+| Day 7 | Following page, author profiles | PENDING |
 
 ### Week 2 (Jan 1 - Jan 7)
-| Day | Tasks |
-|-----|-------|
-| Day 8-9 | Profile page, settings |
-| Day 10-11 | Create story, publish flow |
-| Day 12 | Search functionality |
-| Day 13 | Testing, bug fixes |
-| Day 14 | Build release, submit to stores |
+| Day | Tasks | Status |
+|-----|-------|--------|
+| Day 8-9 | Profile page, settings | PENDING |
+| Day 10-11 | Create story, publish flow | PENDING |
+| Day 12 | Search functionality | DONE |
+| Day 13 | Testing, bug fixes | PENDING |
+| Day 14 | Build release, submit to stores | PENDING |
 
 ---
 
@@ -92,8 +103,49 @@
 | http | HTTP requests |
 | Google Fonts | Typography |
 | shared_preferences | Local storage |
+| google_sign_in | Google authentication |
+| google_sign_in_web | Google auth for web |
+| sign_in_with_apple | Apple authentication |
+| share_plus | Native share functionality |
+| crypto | SHA256 for Apple Sign-In nonce |
 
-### 3.2 Bottom Navigation (5 Tabs)
+### 3.2 Authentication Flow
+
+```
+User taps Like/Share/Bookshelf
+         ↓
+Check AuthProvider.isLoggedIn
+         ↓
+    ┌────┴────┐
+    ↓         ↓
+Not Logged   Logged In
+    ↓         ↓
+Navigate    Perform
+to Login    Action
+    ↓
+Login Success → Pop(true) → Perform Action
+```
+
+**Key Files:**
+- `lib/providers/auth_provider.dart` - Auth state management
+- `lib/screens/login_screen.dart` - Login UI with social login
+- `lib/widgets/short_novel_card.dart` - Home page with login check
+- `lib/screens/short_detail_screen.dart` - Reader with login check
+
+### 3.3 Google Sign-In Configuration
+
+**For Web** (index.html):
+```html
+<meta name="google-signin-client_id" content="YOUR_CLIENT_ID">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+```
+
+**Google Cloud Console Setup:**
+1. Add authorized JavaScript origins: `http://localhost:60990`
+2. Add redirect URIs if needed
+3. Run Flutter with fixed port: `flutter run -d chrome --web-port=60990`
+
+### 3.4 Bottom Navigation (5 Tabs)
 
 ```
 ┌─────────┬─────────┬─────────┬─────────┬─────────┐
@@ -104,7 +156,7 @@
 - Tab bar has **text only**, no icons
 - Center **+** is a large blue button
 
-### 3.3 For You Page (TikTok-style)
+### 3.5 For You Page (TikTok-style)
 
 ```
 ┌─────────────────────────────────┐
@@ -125,28 +177,31 @@
      ↑ Swipe up/down to navigate
 ```
 
-**Recommendation Algorithm** (requires login):
-- Track user interactions (likes, saves, reading time)
-- Recommend stories based on user preferences
-- Without login: show trending/random stories
+### 3.6 Reader Screen Actions
 
-### 3.4 Theme Colors
+All actions require login:
+- **Like** - Toggles heart, updates count (needs API persist)
+- **Share** - Opens native share sheet with title/author
+- **Start Reading/Bookshelf** - Adds to user's library (needs API)
+
+### 3.7 Theme Colors
 
 - **Primary**: `#3b82f6` (Blue)
 - **Background**: Black (#000000)
 - **Text**: White/Grey
+- **Like Active**: Red
 
-### 3.5 Getting Started
+### 3.8 Getting Started
 
 ```bash
 cd flutter_app
 flutter pub get
-flutter run -d chrome      # Browser testing
-flutter run -d android     # Android device
-flutter run -d ios         # iOS device (Mac only)
+flutter run -d chrome --web-port=60990  # Browser (fixed port for Google)
+flutter run -d android                   # Android device
+flutter run -d ios                       # iOS device (Mac only)
 ```
 
-### 3.6 API Configuration
+### 3.9 API Configuration
 
 Edit `lib/services/api_service.dart`:
 
@@ -265,8 +320,13 @@ lgbtq, quick-transmigration, survival-apocalypse, system
 # Get dependencies
 flutter pub get
 
+# Clean build (fixes MissingPluginException)
+flutter clean
+flutter pub get
+
 # Run (select device)
 flutter run
+flutter run -d chrome --web-port=60990  # Fixed port for Google Sign-In
 
 # Hot reload
 r  # Press r while running
@@ -306,6 +366,8 @@ flutter build ios --release    # iOS
 4. **No MD Files**: Don't create markdown files unless requested
 5. **English UI**: All app text should be in English
 6. **Use www.butternovel.com**: Avoid 308 redirect issues
+7. **Google Sign-In Port**: Use `--web-port=60990` for consistent port
+8. **Login Required**: Like/Share/Bookshelf actions require login
 
 ---
 
@@ -331,6 +393,13 @@ flutter build ios --release    # iOS
 - `next.config.js` - Next.js configuration
 
 **Frontend-only changes (Flutter) don't require server deployment**, but need app rebuild.
+
+---
+
+## Known Issues
+
+1. **Google Sign-In MissingPluginException**: Run `flutter clean && flutter pub get` to fix
+2. **Port mismatch**: Use `--web-port=60990` to match Google Console config
 
 ---
 
