@@ -600,16 +600,60 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
       );
     }
 
-    // Build comment indicator - simple subscript style
-    String commentIndicator;
+    // Build icon-based comment indicator
+    Widget commentIcon;
     if (commentCount == 0) {
-      commentIndicator = '₍₀₎';
+      commentIcon = Icon(
+        Icons.chat_bubble_outline,
+        size: 14,
+        color: _subtitleColor.withOpacity(0.3),
+      );
     } else if (commentCount >= 99) {
-      commentIndicator = '₍🔥₉₉₊₎';
+      commentIcon = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.local_fire_department, size: 12, color: Color(0xFFef4444)),
+          Text(
+            '99+',
+            style: TextStyle(
+              color: const Color(0xFFef4444),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      );
     } else if (commentCount >= 50) {
-      commentIndicator = '₍🔥$commentCount₎';
+      commentIcon = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.local_fire_department, size: 12, color: Color(0xFFf97316)),
+          Text(
+            '$commentCount',
+            style: TextStyle(
+              color: const Color(0xFFf97316),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      );
     } else {
-      commentIndicator = '₍$commentCount₎';
+      commentIcon = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3b82f6).withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          '$commentCount',
+          style: const TextStyle(
+            color: Color(0xFF3b82f6),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
     }
 
     return Padding(
@@ -619,15 +663,15 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
           style: textStyle,
           children: [
             TextSpan(text: cleanParagraph),
-            TextSpan(
-              text: commentIndicator,
-              style: TextStyle(
-                color: commentCount > 0
-                    ? (commentCount >= 50 ? const Color(0xFFf97316) : const Color(0xFF3b82f6))
-                    : _subtitleColor.withOpacity(0.3),
-                fontSize: _fontSize * 0.65,
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: GestureDetector(
+                onTap: () => _showCommentSheet(index, cleanParagraph),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: commentIcon,
+                ),
               ),
-              recognizer: TapGestureRecognizer()..onTap = () => _showCommentSheet(index, cleanParagraph),
             ),
           ],
         ),
