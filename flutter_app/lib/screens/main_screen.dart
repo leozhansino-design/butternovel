@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/theme_provider.dart';
 import 'for_you_screen.dart';
 import 'genre_screen.dart';
 import 'create_screen.dart';
@@ -26,17 +28,21 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : Colors.white,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.95),
+          color: isDark ? Colors.black.withOpacity(0.95) : Colors.white.withOpacity(0.95),
           border: Border(
             top: BorderSide(
-              color: Colors.grey[800]!,
+              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
               width: 0.5,
             ),
           ),
@@ -47,11 +53,11 @@ class _MainScreenState extends State<MainScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, 'For You'),
-                _buildNavItem(1, 'Genre'),
+                _buildNavItem(0, Icons.home_outlined, 'For You'),
+                _buildNavItem(1, Icons.category_outlined, 'Genre'),
                 _buildCreateButton(),
-                _buildNavItem(3, 'Bookshelf'),
-                _buildNavItem(4, 'Profile'),
+                _buildNavItem(3, Icons.bookmark_outline, 'Bookshelf'),
+                _buildNavItem(4, Icons.person_outline, 'Profile'),
               ],
             ),
           ),
@@ -60,19 +66,30 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, String label) {
+  Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF3b82f6) : Colors.grey,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            fontSize: 12,
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF3b82f6) : Colors.grey,
+              size: 22,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF3b82f6) : Colors.grey,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 10,
+              ),
+            ),
+          ],
         ),
       ),
     );

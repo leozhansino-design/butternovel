@@ -34,27 +34,49 @@ class ShortNovel {
   });
 
   factory ShortNovel.fromJson(Map<String, dynamic> json) {
+    // Safely parse category
+    Category category;
+    if (json['category'] != null && json['category'] is Map<String, dynamic>) {
+      category = Category.fromJson(json['category']);
+    } else {
+      category = Category(id: 0, name: 'Unknown', slug: 'unknown');
+    }
+
+    // Safely parse averageRating
+    double? averageRating;
+    if (json['averageRating'] != null) {
+      if (json['averageRating'] is num) {
+        averageRating = (json['averageRating'] as num).toDouble();
+      } else if (json['averageRating'] is String) {
+        averageRating = double.tryParse(json['averageRating']);
+      }
+    }
+
     return ShortNovel(
-      id: json['id'],
-      title: json['title'],
-      slug: json['slug'],
-      blurb: json['blurb'],
-      coverImage: json['coverImage'],
-      authorName: json['authorName'],
-      shortNovelGenre: json['shortNovelGenre'],
-      readingPreview: json['readingPreview'],
-      viewCount: json['viewCount'] ?? 0,
-      likeCount: json['likeCount'] ?? 0,
-      wordCount: json['wordCount'] ?? 0,
-      averageRating: json['averageRating'] != null
-          ? (json['averageRating'] as num).toDouble()
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      title: json['title']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
+      blurb: json['blurb']?.toString() ?? '',
+      coverImage: json['coverImage']?.toString(),
+      authorName: json['authorName']?.toString() ?? 'Unknown',
+      shortNovelGenre: json['shortNovelGenre']?.toString(),
+      readingPreview: json['readingPreview']?.toString(),
+      viewCount: json['viewCount'] is int ? json['viewCount'] : int.tryParse(json['viewCount']?.toString() ?? '0') ?? 0,
+      likeCount: json['likeCount'] is int ? json['likeCount'] : int.tryParse(json['likeCount']?.toString() ?? '0') ?? 0,
+      wordCount: json['wordCount'] is int ? json['wordCount'] : int.tryParse(json['wordCount']?.toString() ?? '0') ?? 0,
+      averageRating: averageRating,
+      category: category,
+      tags: json['tags'] != null && json['tags'] is List
+          ? (json['tags'] as List)
+              .where((t) => t != null && t is Map<String, dynamic>)
+              .map((t) => Tag.fromJson(t as Map<String, dynamic>))
+              .toList()
           : null,
-      category: Category.fromJson(json['category']),
-      tags: json['tags'] != null
-          ? (json['tags'] as List).map((t) => Tag.fromJson(t)).toList()
-          : null,
-      chapters: json['chapters'] != null
-          ? (json['chapters'] as List).map((c) => Chapter.fromJson(c)).toList()
+      chapters: json['chapters'] != null && json['chapters'] is List
+          ? (json['chapters'] as List)
+              .where((c) => c != null && c is Map<String, dynamic>)
+              .map((c) => Chapter.fromJson(c as Map<String, dynamic>))
+              .toList()
           : null,
     );
   }
@@ -85,9 +107,9 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? 'Unknown',
+      slug: json['slug']?.toString() ?? 'unknown',
     );
   }
 }
@@ -105,9 +127,9 @@ class Tag {
 
   factory Tag.fromJson(Map<String, dynamic> json) {
     return Tag(
-      id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
     );
   }
 }
@@ -129,11 +151,11 @@ class Chapter {
 
   factory Chapter.fromJson(Map<String, dynamic> json) {
     return Chapter(
-      id: json['id'],
-      title: json['title'],
-      chapterNumber: json['chapterNumber'],
-      content: json['content'],
-      wordCount: json['wordCount'] ?? 0,
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      title: json['title']?.toString() ?? '',
+      chapterNumber: json['chapterNumber'] is int ? json['chapterNumber'] : int.tryParse(json['chapterNumber']?.toString() ?? '0') ?? 0,
+      content: json['content']?.toString() ?? '',
+      wordCount: json['wordCount'] is int ? json['wordCount'] : int.tryParse(json['wordCount']?.toString() ?? '0') ?? 0,
     );
   }
 }

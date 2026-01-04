@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/shorts_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/short_novel_card.dart';
 
 class ForYouScreen extends StatefulWidget {
@@ -33,8 +34,11 @@ class _ForYouScreenState extends State<ForYouScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ShortsProvider>(
-      builder: (context, provider, child) {
+    return Consumer2<ShortsProvider, ThemeProvider>(
+      builder: (context, provider, themeProvider, child) {
+        final isDark = themeProvider.isDarkMode;
+        final subtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
         if (provider.isLoading && provider.shorts.isEmpty) {
           return const Center(
             child: CircularProgressIndicator(
@@ -50,7 +54,7 @@ class _ForYouScreenState extends State<ForYouScreen> {
               children: [
                 Text(
                   'Failed to load stories',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                  style: TextStyle(color: subtitleColor, fontSize: 16),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
@@ -67,10 +71,10 @@ class _ForYouScreenState extends State<ForYouScreen> {
         }
 
         if (provider.shorts.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               'No stories yet',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
+              style: TextStyle(color: subtitleColor, fontSize: 16),
             ),
           );
         }

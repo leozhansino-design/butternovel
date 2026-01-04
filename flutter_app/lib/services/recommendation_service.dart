@@ -11,66 +11,123 @@ class RecommendationService {
 
   /// Get list of viewed short novel IDs
   static Future<Set<int>> getViewedIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final viewedJson = prefs.getString(_viewedKey);
-    final timestampsJson = prefs.getString(_viewedTimestampKey);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final viewedJson = prefs.getString(_viewedKey);
+      final timestampsJson = prefs.getString(_viewedTimestampKey);
 
-    if (viewedJson == null) return {};
+      if (viewedJson == null || viewedJson.isEmpty) return {};
 
-    final viewed = Set<int>.from(json.decode(viewedJson) as List);
+      // Safely decode JSON with error handling
+      List<dynamic>? viewedList;
+      try {
+        viewedList = json.decode(viewedJson) as List<dynamic>?;
+      } catch (e) {
+        // If JSON is corrupted, clear it and return empty
+        await prefs.remove(_viewedKey);
+        await prefs.remove(_viewedTimestampKey);
+        return {};
+      }
 
-    // Clean up expired entries
-    if (timestampsJson != null) {
-      final timestamps = Map<String, int>.from(json.decode(timestampsJson));
-      final now = DateTime.now().millisecondsSinceEpoch;
-      final expireMs = _viewedExpireDays * 24 * 60 * 60 * 1000;
+      if (viewedList == null) return {};
 
-      final expiredIds = <int>[];
-      for (final entry in timestamps.entries) {
-        if (now - entry.value > expireMs) {
-          expiredIds.add(int.parse(entry.key));
+      final viewed = <int>{};
+      for (final item in viewedList) {
+        if (item is int) {
+          viewed.add(item);
+        } else if (item is num) {
+          viewed.add(item.toInt());
         }
       }
 
-      // Remove expired entries
-      for (final id in expiredIds) {
-        viewed.remove(id);
-        timestamps.remove(id.toString());
+      // Clean up expired entries
+      if (timestampsJson != null && timestampsJson.isNotEmpty) {
+        try {
+          final decoded = json.decode(timestampsJson);
+          if (decoded is Map) {
+            final timestamps = <String, int>{};
+            decoded.forEach((key, value) {
+              if (key is String && value is num) {
+                timestamps[key] = value.toInt();
+              }
+            });
+
+            final now = DateTime.now().millisecondsSinceEpoch;
+            final expireMs = _viewedExpireDays * 24 * 60 * 60 * 1000;
+
+            final expiredIds = <int>[];
+            for (final entry in timestamps.entries) {
+              if (now - entry.value > expireMs) {
+                final id = int.tryParse(entry.key);
+                if (id != null) expiredIds.add(id);
+              }
+            }
+
+            // Remove expired entries
+            for (final id in expiredIds) {
+              viewed.remove(id);
+              timestamps.remove(id.toString());
+            }
+
+            // Save cleaned data
+            if (expiredIds.isNotEmpty) {
+              await prefs.setString(_viewedKey, json.encode(viewed.toList()));
+              await prefs.setString(_viewedTimestampKey, json.encode(timestamps));
+            }
+          }
+        } catch (e) {
+          // If timestamps are corrupted, just ignore them
+          await prefs.remove(_viewedTimestampKey);
+        }
       }
 
-      // Save cleaned data
-      if (expiredIds.isNotEmpty) {
-        await prefs.setString(_viewedKey, json.encode(viewed.toList()));
-        await prefs.setString(_viewedTimestampKey, json.encode(timestamps));
-      }
+      return viewed;
+    } catch (e) {
+      // If anything fails, return empty set
+      return {};
     }
-
-    return viewed;
   }
 
   /// Mark a short novel as viewed
   static Future<void> markAsViewed(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    final viewed = await getViewedIds();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final viewed = await getViewedIds();
 
-    viewed.add(id);
+      viewed.add(id);
 
-    // Limit history size
-    final viewedList = viewed.toList();
-    if (viewedList.length > _maxViewedHistory) {
-      viewedList.removeRange(0, viewedList.length - _maxViewedHistory);
+      // Limit history size
+      final viewedList = viewed.toList();
+      if (viewedList.length > _maxViewedHistory) {
+        viewedList.removeRange(0, viewedList.length - _maxViewedHistory);
+      }
+
+      // Update timestamps safely
+      var timestamps = <String, int>{};
+      final timestampsJson = prefs.getString(_viewedTimestampKey);
+      if (timestampsJson != null && timestampsJson.isNotEmpty) {
+        try {
+          final decoded = json.decode(timestampsJson);
+          if (decoded is Map) {
+            decoded.forEach((key, value) {
+              if (key is String && value is num) {
+                timestamps[key] = value.toInt();
+              }
+            });
+          }
+        } catch (e) {
+          // If corrupted, start fresh
+          timestamps = <String, int>{};
+        }
+      }
+
+      timestamps[id.toString()] = DateTime.now().millisecondsSinceEpoch;
+
+      await prefs.setString(_viewedKey, json.encode(viewedList));
+      await prefs.setString(_viewedTimestampKey, json.encode(timestamps));
+    } catch (e) {
+      // Silently fail - tracking is not critical
     }
-
-    // Update timestamps
-    final timestampsJson = prefs.getString(_viewedTimestampKey);
-    final timestamps = timestampsJson != null
-        ? Map<String, int>.from(json.decode(timestampsJson))
-        : <String, int>{};
-
-    timestamps[id.toString()] = DateTime.now().millisecondsSinceEpoch;
-
-    await prefs.setString(_viewedKey, json.encode(viewedList));
-    await prefs.setString(_viewedTimestampKey, json.encode(timestamps));
   }
 
   /// Shuffle and filter list to provide diverse recommendations
