@@ -647,13 +647,13 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          // Start Reading / Bookshelf button
+                          // Add to Bookshelf button
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: _handleAddToBookshelf,
                               icon: const Icon(Icons.bookmark_add_outlined, size: 18),
                               label: const Text(
-                                'Start Reading',
+                                'Add to Bookshelf',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                               style: ElevatedButton.styleFrom(
