@@ -96,6 +96,9 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('[Login] Attempting login for: $email');
+      debugPrint('[Login] URL: $_baseUrl/api/mobile/auth/login');
+
       final response = await http.post(
         Uri.parse('$_baseUrl/api/mobile/auth/login'),
         headers: {'Content-Type': 'application/json'},
@@ -105,11 +108,16 @@ class AuthProvider extends ChangeNotifier {
         }),
       );
 
+      debugPrint('[Login] Response status: ${response.statusCode}');
+      debugPrint('[Login] Response body: ${response.body}');
+
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
         final user = User.fromJson(data['user']);
         final token = data['token'] as String;
+
+        debugPrint('[Login] Success! User: ${user.username}, Token: ${token.substring(0, 20)}...');
 
         _user = user;
         _token = token;
@@ -119,11 +127,13 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return {'success': true};
       } else {
+        debugPrint('[Login] Failed: ${data['error']}');
         _isLoading = false;
         notifyListeners();
         return {'success': false, 'error': data['error'] ?? 'Login failed'};
       }
     } catch (e) {
+      debugPrint('[Login] Error: $e');
       _isLoading = false;
       notifyListeners();
       return {'success': false, 'error': 'Network error. Please try again.'};
