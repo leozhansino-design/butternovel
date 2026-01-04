@@ -42,10 +42,10 @@ export async function GET(
         where: { followerId: currentUser.id },
         select: { followingId: true }
       })
-      currentUserFollowing = myFollowing.map(f => f.followingId)
+      currentUserFollowing = myFollowing.map((f: { followingId: string }) => f.followingId)
     }
 
-    const result = following.map(f => ({
+    const result = following.map((f: typeof following[number]) => ({
       id: f.following.id,
       name: f.following.name,
       avatar: f.following.avatar,

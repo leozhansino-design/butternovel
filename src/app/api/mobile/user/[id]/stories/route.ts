@@ -38,7 +38,7 @@ export async function GET(
     })
 
     // Transform to match ShortNovel model
-    const transformedStories = stories.map(story => ({
+    const transformedStories = stories.map((story: typeof stories[number]) => ({
       id: story.id,
       title: story.title,
       slug: story.slug,
