@@ -17,10 +17,19 @@ class _GenreScreenState extends State<GenreScreen> {
   final ScrollController _scrollController = ScrollController();
   String _selectedGenreSlug = 'all';
   String _selectedGenreName = 'All';
+  String _selectedSort = 'popular';
   List<ShortNovel> _novels = [];
   bool _isLoading = false;
   bool _hasMore = true;
   int _currentPage = 1;
+
+  // Sort options
+  static const List<Map<String, String>> sortOptions = [
+    {'value': 'popular', 'label': 'Popular'},
+    {'value': 'trending', 'label': 'Trending'},
+    {'value': 'latest', 'label': 'Latest'},
+    {'value': 'rating', 'label': 'Top Rated'},
+  ];
 
   // Genre data matching web version
   static const List<Map<String, dynamic>> genres = [
@@ -79,12 +88,14 @@ class _GenreScreenState extends State<GenreScreen> {
         novels = await ApiService.fetchShorts(
           page: _currentPage,
           limit: 20,
+          sortBy: _selectedSort,
         );
       } else {
-        novels = await ApiService.fetchShortsByGenre(
-          _selectedGenreSlug,
+        novels = await ApiService.fetchShorts(
           page: _currentPage,
           limit: 20,
+          genre: _selectedGenreSlug,
+          sortBy: _selectedSort,
         );
       }
 
@@ -113,6 +124,21 @@ class _GenreScreenState extends State<GenreScreen> {
     setState(() {
       _selectedGenreSlug = slug;
       _selectedGenreName = name;
+    });
+
+    // Scroll to top
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+
+    _fetchNovels();
+  }
+
+  void _onSortSelected(String sort) {
+    if (sort == _selectedSort) return;
+
+    setState(() {
+      _selectedSort = sort;
     });
 
     // Scroll to top
@@ -200,6 +226,56 @@ class _GenreScreenState extends State<GenreScreen> {
                         ),
                       );
                     },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Sort by row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Sort by:',
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ...sortOptions.map((option) {
+                        final isSelected = _selectedSort == option['value'];
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => _onSortSelected(option['value']!),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFF3b82f6)
+                                    : (isDark ? Colors.grey[800] : Colors.grey[200]),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                option['label']!,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                                  fontSize: 12,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),
