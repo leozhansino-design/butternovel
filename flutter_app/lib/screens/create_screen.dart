@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
+import 'login_screen.dart';
 
 class CreateScreen extends StatefulWidget {
   const CreateScreen({super.key});
@@ -23,14 +25,84 @@ class _CreateScreenState extends State<CreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, AuthProvider>(
+      builder: (context, themeProvider, authProvider, child) {
         final isDark = themeProvider.isDarkMode;
         final bgColor = isDark ? Colors.black : Colors.white;
         final textColor = isDark ? Colors.white : Colors.grey[900]!;
         final subtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
         final cardBgColor = isDark ? Colors.grey[900]! : Colors.grey[100]!;
         final borderColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+
+        // Show login prompt if not logged in
+        if (!authProvider.isLoggedIn) {
+          return Scaffold(
+            backgroundColor: bgColor,
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.edit_note,
+                        size: 64,
+                        color: subtitleColor,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Sign in to create stories',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Share your creativity with the world',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3b82f6),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
 
         return Scaffold(
           backgroundColor: bgColor,

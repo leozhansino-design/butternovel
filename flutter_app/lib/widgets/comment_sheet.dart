@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/auth_provider.dart';
+import '../screens/login_screen.dart';
 
 class CommentSheet extends StatefulWidget {
   final int novelId;
@@ -54,6 +57,17 @@ class _CommentSheetState extends State<CommentSheet> {
     final content = _commentController.text.trim();
     if (content.isEmpty) return;
 
+    // Check login status
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isLoggedIn) {
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (result != true || !mounted) return;
+      // Continue with posting after successful login
+    }
+
     setState(() => _isPosting = true);
 
     final result = await ApiService.postComment(
@@ -71,7 +85,7 @@ class _CommentSheetState extends State<CommentSheet> {
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to post comment. Please login first.')),
+        const SnackBar(content: Text('Failed to post comment.')),
       );
     }
 

@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import '../widgets/comment_sheet.dart';
 import '../widgets/rating_widget.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import 'login_screen.dart';
 
 class ShortDetailScreen extends StatefulWidget {
@@ -38,9 +39,10 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   int _likeCount = 0;
 
   // Reader settings
-  Color _backgroundColor = Colors.black;
+  Color? _backgroundColor;
   double _fontSize = 18;
   bool _showCommentBubbles = true;
+  bool _themeInitialized = false;
 
   // Predefined background colors
   final List<Color> _bgColors = [
@@ -58,6 +60,17 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     _likeCount = widget.novel.likeCount;
     _fetchFullContent();
     _trackView();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize background color based on app theme only once
+    if (!_themeInitialized) {
+      final themeProvider = context.read<ThemeProvider>();
+      _backgroundColor = themeProvider.isDarkMode ? Colors.black : Colors.white;
+      _themeInitialized = true;
+    }
   }
 
   Future<void> _fetchFullContent() async {
@@ -253,7 +266,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: _bgColors.map((color) {
-                          final isSelected = _backgroundColor == color;
+                          final isSelected = _effectiveBackgroundColor == color;
                           final isLight = color.computeLuminance() > 0.5;
                           return GestureDetector(
                             onTap: () {
@@ -368,7 +381,8 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     );
   }
 
-  bool get _isLightBackground => _backgroundColor.computeLuminance() > 0.5;
+  Color get _effectiveBackgroundColor => _backgroundColor ?? Colors.black;
+  bool get _isLightBackground => _effectiveBackgroundColor.computeLuminance() > 0.5;
   Color get _textColor => _isLightBackground ? Colors.grey[900]! : Colors.grey[200]!;
   Color get _subtitleColor => _isLightBackground ? Colors.grey[600]! : Colors.grey[400]!;
 
@@ -384,7 +398,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
         .toList();
 
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: _effectiveBackgroundColor,
       body: Stack(
         children: [
           // Content
@@ -394,7 +408,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
               SliverAppBar(
                 pinned: true,
                 toolbarHeight: 56,
-                backgroundColor: _backgroundColor.withOpacity(0.95),
+                backgroundColor: _effectiveBackgroundColor.withOpacity(0.95),
                 // Automatically handles safe area (notch, status bar)
                 leading: IconButton(
                   icon: Icon(Icons.arrow_back, color: _isLightBackground ? Colors.grey[800] : const Color(0xFF3b82f6)),
@@ -614,7 +628,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
-                  color: _backgroundColor.withOpacity(0.85),
+                  color: _effectiveBackgroundColor.withOpacity(0.85),
                   child: SafeArea(
                     top: false,
                     child: Padding(
