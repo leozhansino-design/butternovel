@@ -6,6 +6,7 @@ import 'dart:ui';
 
 import '../models/short_novel.dart';
 import '../services/api_service.dart';
+import '../services/reading_history_service.dart';
 import '../widgets/comment_sheet.dart';
 import '../widgets/rating_widget.dart';
 import '../providers/auth_provider.dart';
@@ -60,6 +61,11 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     _likeCount = widget.novel.likeCount;
     _fetchFullContent();
     _trackView();
+    _saveToHistory();
+  }
+
+  Future<void> _saveToHistory() async {
+    await ReadingHistoryService.addToHistory(widget.novel);
   }
 
   @override

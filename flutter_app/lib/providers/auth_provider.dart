@@ -332,4 +332,30 @@ class AuthProvider extends ChangeNotifier {
     await _clearAuth();
     notifyListeners();
   }
+
+  /// Update user info locally (after profile update)
+  Future<void> updateUserInfo({
+    String? username,
+    String? avatarUrl,
+  }) async {
+    if (_user == null) return;
+
+    _user = User(
+      id: _user!.id,
+      email: _user!.email,
+      username: username ?? _user!.username,
+      avatarUrl: avatarUrl ?? _user!.avatarUrl,
+    );
+
+    // Save to SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    if (username != null) {
+      await prefs.setString('username', username);
+    }
+    if (avatarUrl != null) {
+      await prefs.setString('avatar_url', avatarUrl);
+    }
+
+    notifyListeners();
+  }
 }
