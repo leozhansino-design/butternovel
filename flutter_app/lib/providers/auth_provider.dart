@@ -214,29 +214,55 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implement proper Google OAuth API endpoint for mobile
-      // For now, this creates a local user - should be replaced with backend call
-      await Future.delayed(const Duration(milliseconds: 500));
+      print('[Google Auth] Attempting Google auth for: $email');
+      print('[Google Auth] URL: $_baseUrl/api/mobile/auth/google');
 
-      final user = User(
-        id: googleId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        email: email,
-        username: displayName ?? email.split('@')[0],
-        avatarUrl: photoUrl,
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/mobile/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'displayName': displayName,
+          'photoUrl': photoUrl,
+          'googleId': googleId,
+        }),
       );
-      final token = 'google_token_${DateTime.now().millisecondsSinceEpoch}';
 
-      _user = user;
-      _token = token;
-      await _saveAuth(user, token);
+      print('[Google Auth] Response status: ${response.statusCode}');
+      print('[Google Auth] Response body: ${response.body}');
 
-      _isLoading = false;
-      notifyListeners();
-      return {'success': true};
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        final token = data['token'] as String;
+        final userData = data['user'];
+
+        final user = User(
+          id: userData['id'].toString(),
+          email: userData['email'] ?? email,
+          username: userData['name'] ?? displayName ?? email.split('@')[0],
+          avatarUrl: userData['avatar'] ?? photoUrl,
+        );
+
+        print('[Google Auth] Success! User: ${user.username}, Token length: ${token.length}');
+
+        _user = user;
+        _token = token;
+        await _saveAuth(user, token);
+
+        _isLoading = false;
+        notifyListeners();
+        return {'success': true};
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return {'success': false, 'error': data['error'] ?? 'Google auth failed'};
+      }
     } catch (e) {
+      print('[Google Auth] Error: $e');
       _isLoading = false;
       notifyListeners();
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Network error. Please try again.'};
     }
   }
 
@@ -249,32 +275,54 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Implement proper Apple Sign-In API endpoint for mobile
-      // For now, this creates a local user - should be replaced with backend call
-      await Future.delayed(const Duration(milliseconds: 500));
+      print('[Apple Auth] Attempting Apple auth, appleId: $appleId');
+      print('[Apple Auth] URL: $_baseUrl/api/mobile/auth/apple');
 
-      // Apple may not provide email on subsequent logins
-      final userEmail = email ?? 'apple_user_${appleId?.substring(0, 8) ?? 'unknown'}@private.apple.com';
-      final username = fullName?.isNotEmpty == true ? fullName! : userEmail.split('@')[0];
-
-      final user = User(
-        id: appleId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        email: userEmail,
-        username: username,
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/mobile/auth/apple'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'fullName': fullName,
+          'appleId': appleId,
+        }),
       );
-      final token = 'apple_token_${DateTime.now().millisecondsSinceEpoch}';
 
-      _user = user;
-      _token = token;
-      await _saveAuth(user, token);
+      print('[Apple Auth] Response status: ${response.statusCode}');
+      print('[Apple Auth] Response body: ${response.body}');
 
-      _isLoading = false;
-      notifyListeners();
-      return {'success': true};
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        final token = data['token'] as String;
+        final userData = data['user'];
+
+        final user = User(
+          id: userData['id'].toString(),
+          email: userData['email'] ?? email ?? 'private@apple.com',
+          username: userData['name'] ?? fullName ?? 'Apple User',
+          avatarUrl: userData['avatar'],
+        );
+
+        print('[Apple Auth] Success! User: ${user.username}, Token length: ${token.length}');
+
+        _user = user;
+        _token = token;
+        await _saveAuth(user, token);
+
+        _isLoading = false;
+        notifyListeners();
+        return {'success': true};
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return {'success': false, 'error': data['error'] ?? 'Apple auth failed'};
+      }
     } catch (e) {
+      print('[Apple Auth] Error: $e');
       _isLoading = false;
       notifyListeners();
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Network error. Please try again.'};
     }
   }
 

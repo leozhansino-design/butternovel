@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
@@ -239,8 +240,29 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
     setState(() => _isSubmitting = true);
 
     // Get fresh token after potential login
-    final token = context.read<AuthProvider>().token;
-    debugPrint('[RatingWidget] Token for API call: ${token != null ? "${token.substring(0, 20)}..." : "NULL"}');
+    final freshAuthProvider = context.read<AuthProvider>();
+    final token = freshAuthProvider.token;
+
+    // Use print for guaranteed console output
+    print('[RatingWidget] === SUBMIT RATING ===');
+    print('[RatingWidget] isLoggedIn after login flow: ${freshAuthProvider.isLoggedIn}');
+    print('[RatingWidget] token is null: ${token == null}');
+    if (token != null) {
+      print('[RatingWidget] token length: ${token.length}');
+      print('[RatingWidget] token preview: ${token.substring(0, min(30, token.length))}...');
+    }
+
+    // CRITICAL: Don't send request without token
+    if (token == null) {
+      print('[RatingWidget] ERROR: Token is null! Cannot submit rating.');
+      setState(() => _isSubmitting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to rate. Token missing.')),
+        );
+      }
+      return;
+    }
 
     final result = await ApiService.rateNovel(
       novelId: widget.novelId,
@@ -248,7 +270,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
       review: _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim(),
       token: token,
     );
-    debugPrint('[RatingWidget] API result: $result');
+    print('[RatingWidget] API result: $result');
 
     if (mounted) {
       setState(() => _isSubmitting = false);
