@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const transformedNotifications = notifications.map(n => ({
+    const transformedNotifications = notifications.map((n: typeof notifications[number]) => ({
       id: n.id,
       type: n.type,
       read: n.read,
