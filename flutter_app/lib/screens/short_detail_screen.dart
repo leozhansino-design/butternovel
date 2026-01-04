@@ -201,32 +201,6 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
     );
   }
 
-  Future<void> _handleAddToBookshelf() async {
-    final authProvider = context.read<AuthProvider>();
-    if (!authProvider.isLoggedIn) {
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-      if (result == true && mounted) {
-        _performAddToBookshelf();
-      }
-      return;
-    }
-    _performAddToBookshelf();
-  }
-
-  void _performAddToBookshelf() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Added to your bookshelf!'),
-        backgroundColor: Colors.grey[800],
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    // TODO: Call API to add to bookshelf
-  }
-
   void _showSettingsSheet() {
     showModalBottomSheet(
       context: context,
@@ -646,43 +620,21 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Add to Bookshelf button
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _handleAddToBookshelf,
-                              icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-                              label: const Text(
-                                'Add to Bookshelf',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3b82f6),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // Like button
+                          // Like/Bookmark button
                           _buildActionButton(
                             icon: _isLiked ? Icons.favorite : Icons.favorite_border,
                             onTap: _handleLike,
                             isActive: _isLiked,
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 16),
                           // Share button
                           _buildActionButton(
                             icon: Icons.share_outlined,
                             onTap: _handleShare,
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 16),
                           // Settings button
                           _buildActionButton(
                             icon: Icons.settings_outlined,
