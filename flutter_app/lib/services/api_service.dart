@@ -419,6 +419,11 @@ class ApiService {
         headers['Authorization'] = 'Bearer $token';
       }
 
+      // Debug logging
+      debugPrint('[RateNovel] novelId: $novelId, score: $score');
+      debugPrint('[RateNovel] token: ${token != null ? "${token!.substring(0, 20)}..." : "null"}');
+      debugPrint('[RateNovel] URL: $baseUrl/api/novels/$novelId/rate');
+
       final response = await http.post(
         Uri.parse('$baseUrl/api/novels/$novelId/rate'),
         headers: headers,
@@ -428,11 +433,16 @@ class ApiService {
         }),
       );
 
+      // Debug logging
+      debugPrint('[RateNovel] Response status: ${response.statusCode}');
+      debugPrint('[RateNovel] Response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body);
       }
       return null;
     } catch (e) {
+      debugPrint('[RateNovel] Error: $e');
       return null;
     }
   }
