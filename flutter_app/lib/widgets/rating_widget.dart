@@ -149,6 +149,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
   double _selectedRating = 0;
   bool _isSubmitting = false;
   bool _hasExistingRating = false;
+  bool _justSubmitted = false;
   String? _existingReview;
   final TextEditingController _reviewController = TextEditingController();
 
@@ -221,12 +222,10 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
         widget.onRated?.call();
         _loadReviews(); // Refresh reviews
         setState(() {
+          _justSubmitted = true;
           _hasExistingRating = true;
           _existingReview = _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim();
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_hasExistingRating ? 'Rating updated!' : 'Rating submitted!')),
-        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -300,6 +299,109 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
   Widget _buildRateTab(bool isDark, Color textColor, Color subtitleColor) {
     final cardBgColor = isDark ? Colors.grey[850] : Colors.grey[100];
     final borderColor = isDark ? Colors.grey[700]! : Colors.grey[300]!;
+
+    // Show success state after submission
+    if (_justSubmitted) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
+            // Success icon
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF22c55e).withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: Color(0xFF22c55e),
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Thanks for rating!',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Show the submitted rating
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                final starValue = (index + 1) * 2;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Icon(
+                    _selectedRating >= starValue ? Icons.star : Icons.star_border,
+                    color: Colors.amber[400],
+                    size: 36,
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Your rating: ${_selectedRating.toInt()}/10',
+              style: TextStyle(
+                color: Colors.amber[400],
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (_existingReview != null && _existingReview!.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your review:',
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _existingReview!,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 32),
+            // Edit button
+            TextButton.icon(
+              onPressed: () => setState(() => _justSubmitted = false),
+              icon: Icon(Icons.edit, color: subtitleColor, size: 18),
+              label: Text(
+                'Edit your rating',
+                style: TextStyle(color: subtitleColor),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
