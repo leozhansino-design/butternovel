@@ -61,8 +61,8 @@ export async function GET(req: NextRequest) {
 
     // Filter to only short novels and format response
     const novels = libraryItems
-      .filter(item => item.novel.isShortNovel)
-      .map(item => ({
+      .filter((item: typeof libraryItems[number]) => item.novel.isShortNovel)
+      .map((item: typeof libraryItems[number]) => ({
         id: item.novel.id,
         title: item.novel.title,
         slug: item.novel.slug,
