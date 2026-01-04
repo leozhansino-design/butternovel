@@ -171,134 +171,18 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                       : RefreshIndicator(
                           onRefresh: _loadStories,
                           child: ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 80),
+                            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
                             itemCount: _stories.length,
                             itemBuilder: (context, index) {
                               final story = _stories[index];
 
-                              return Card(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                color: cardBgColor,
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.all(12),
-                                  leading: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: story.coverImage != null
-                                        ? Image.network(
-                                            story.coverImage!,
-                                            width: 50,
-                                            height: 70,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) => Container(
-                                              width: 50,
-                                              height: 70,
-                                              color: isDark ? Colors.grey[800] : Colors.grey[300],
-                                              child: Icon(Icons.book, color: subtitleColor),
-                                            ),
-                                          )
-                                        : Container(
-                                            width: 50,
-                                            height: 70,
-                                            color: isDark ? Colors.grey[800] : Colors.grey[300],
-                                            child: Icon(Icons.book, color: subtitleColor),
-                                          ),
-                                  ),
-                                  title: Text(
-                                    story.title,
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        story.displayGenre,
-                                        style: TextStyle(color: subtitleColor, fontSize: 12),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.visibility, size: 14, color: subtitleColor),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${story.viewCount}',
-                                            style: TextStyle(color: subtitleColor, fontSize: 12),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Icon(Icons.favorite, size: 14, color: subtitleColor),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${story.likeCount}',
-                                            style: TextStyle(color: subtitleColor, fontSize: 12),
-                                          ),
-                                          if ((story.averageRating ?? 0) > 0) ...[
-                                            const SizedBox(width: 12),
-                                            Icon(Icons.star, size: 14, color: Colors.amber),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              (story.averageRating ?? 0).toStringAsFixed(1),
-                                              style: TextStyle(color: subtitleColor, fontSize: 12),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  trailing: PopupMenuButton<String>(
-                                    icon: Icon(Icons.more_vert, color: subtitleColor),
-                                    color: cardBgColor,
-                                    onSelected: (value) {
-                                      if (value == 'view') {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => ShortDetailScreen(novel: story),
-                                          ),
-                                        );
-                                      } else if (value == 'delete') {
-                                        _deleteStory(story);
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'view',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.visibility, color: textColor, size: 20),
-                                            const SizedBox(width: 8),
-                                            Text('View', style: TextStyle(color: textColor)),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.delete, color: Colors.red, size: 20),
-                                            const SizedBox(width: 8),
-                                            const Text('Delete', style: TextStyle(color: Colors.red)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => ShortDetailScreen(novel: story),
-                                      ),
-                                    );
-                                  },
-                                ),
+                              return _buildStoryCard(
+                                context,
+                                story,
+                                isDark,
+                                textColor,
+                                subtitleColor,
+                                cardBgColor,
                               );
                             },
                           ),
@@ -306,5 +190,180 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
         );
       },
     );
+  }
+
+  Widget _buildStoryCard(
+    BuildContext context,
+    ShortNovel story,
+    bool isDark,
+    Color textColor,
+    Color subtitleColor,
+    Color cardBgColor,
+  ) {
+    final previewColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ShortDetailScreen(novel: story),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardBgColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            // Story info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    story.title,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        story.authorName,
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getGenreColor(story.displayGenre)
+                              .withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          story.displayGenre,
+                          style: TextStyle(
+                            color: _getGenreColor(story.displayGenre),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    story.previewText,
+                    style: TextStyle(
+                      color: previewColor,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  // Stats row
+                  Row(
+                    children: [
+                      Icon(Icons.visibility, size: 14, color: subtitleColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${story.viewCount}',
+                        style: TextStyle(color: subtitleColor, fontSize: 12),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.favorite, size: 14, color: subtitleColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${story.likeCount}',
+                        style: TextStyle(color: subtitleColor, fontSize: 12),
+                      ),
+                      if ((story.averageRating ?? 0) > 0) ...[
+                        const SizedBox(width: 12),
+                        Icon(Icons.star, size: 14, color: Colors.amber),
+                        const SizedBox(width: 4),
+                        Text(
+                          (story.averageRating ?? 0).toStringAsFixed(1),
+                          style: TextStyle(color: subtitleColor, fontSize: 12),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // More options button
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, color: subtitleColor),
+              color: cardBgColor,
+              onSelected: (value) {
+                if (value == 'view') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ShortDetailScreen(novel: story),
+                    ),
+                  );
+                } else if (value == 'delete') {
+                  _deleteStory(story);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'view',
+                  child: Row(
+                    children: [
+                      Icon(Icons.visibility, color: textColor, size: 20),
+                      const SizedBox(width: 8),
+                      Text('View', style: TextStyle(color: textColor)),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: const Row(
+                    children: [
+                      Icon(Icons.delete, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('Delete', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getGenreColor(String genre) {
+    final colors = {
+      'Romance': const Color(0xFFec4899),
+      'Sweet Romance': const Color(0xFFec4899),
+      'Fantasy': const Color(0xFF8b5cf6),
+      'Thriller': const Color(0xFFef4444),
+      'Revenge': const Color(0xFFef4444),
+      'Rebirth': const Color(0xFF8b5cf6),
+      'Billionaire': const Color(0xFFeab308),
+    };
+    return colors[genre] ?? const Color(0xFF3b82f6);
   }
 }

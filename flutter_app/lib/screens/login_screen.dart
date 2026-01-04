@@ -10,6 +10,7 @@ import 'package:crypto/crypto.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,6 +72,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (mounted) {
       if (result['success'] == true) {
+        // Sync token with UserProvider to load library
+        final userProvider = context.read<UserProvider>();
+        userProvider.setToken(authProvider.token);
         Navigator.pop(context, true);
       } else {
         setState(() => _errorMessage = result['error'] as String?);
@@ -104,6 +108,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() => _isGoogleLoading = false);
         if (result['success'] == true) {
+          // Sync token with UserProvider to load library
+          final userProvider = context.read<UserProvider>();
+          userProvider.setToken(authProvider.token);
           Navigator.pop(context, true);
         } else {
           setState(() => _errorMessage = result['error'] as String?);
@@ -161,6 +168,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() => _isAppleLoading = false);
         if (result['success'] == true) {
+          // Sync token with UserProvider to load library
+          final userProvider = context.read<UserProvider>();
+          userProvider.setToken(authProvider.token);
           Navigator.pop(context, true);
         } else {
           setState(() => _errorMessage = result['error'] as String?);

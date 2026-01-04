@@ -870,4 +870,85 @@ class ApiService {
       return false;
     }
   }
+
+  // ==================== Library (Bookshelf) ====================
+
+  /// Get user's library (bookshelf)
+  static Future<List<ShortNovel>> getLibrary({required String token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/library'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['novels'] != null) {
+          return (data['novels'] as List)
+              .map((item) => ShortNovel.fromJson(item))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('[Library] Error fetching library: $e');
+      return [];
+    }
+  }
+
+  /// Add novel to library (bookshelf)
+  static Future<bool> addToLibrary(int novelId, {required String token}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/library'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'novelId': novelId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[Library] Error adding to library: $e');
+      return false;
+    }
+  }
+
+  /// Remove novel from library (bookshelf)
+  static Future<bool> removeFromLibrary(int novelId, {required String token}) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/mobile/library'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'novelId': novelId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[Library] Error removing from library: $e');
+      return false;
+    }
+  }
+
+  /// Check if novel is in library
+  static Future<bool> isInLibrary(int novelId, {required String token}) async {
+    try {
+      final library = await getLibrary(token: token);
+      return library.any((novel) => novel.id == novelId);
+    } catch (e) {
+      return false;
+    }
+  }
 }
