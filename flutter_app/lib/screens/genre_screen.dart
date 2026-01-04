@@ -26,7 +26,6 @@ class _GenreScreenState extends State<GenreScreen> {
   // Sort options
   static const List<Map<String, String>> sortOptions = [
     {'value': 'popular', 'label': 'Popular'},
-    {'value': 'trending', 'label': 'Trending'},
     {'value': 'latest', 'label': 'Latest'},
     {'value': 'rating', 'label': 'Top Rated'},
   ];
