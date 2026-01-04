@@ -620,11 +620,30 @@ class ApiService {
     }
   }
 
+  /// Get current user profile
+  static Future<Map<String, dynamic>?> getProfile({required String token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/profile'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[Profile] Error fetching profile: $e');
+      return null;
+    }
+  }
+
   /// Update user profile
   static Future<Map<String, dynamic>?> updateProfile({
     required String token,
     String? name,
     String? avatar,
+    String? bio,
   }) async {
     try {
       final response = await http.put(
@@ -636,6 +655,7 @@ class ApiService {
         body: json.encode({
           if (name != null) 'name': name,
           if (avatar != null) 'avatar': avatar,
+          if (bio != null) 'bio': bio,
         }),
       );
 
@@ -644,6 +664,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
+      debugPrint('[Profile] Error updating profile: $e');
       return null;
     }
   }

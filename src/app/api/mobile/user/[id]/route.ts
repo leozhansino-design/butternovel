@@ -1,4 +1,4 @@
-// User stats API for mobile app
+// Get user public info by ID
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -19,32 +19,31 @@ export async function GET(
   try {
     const { id: userId } = await context.params
 
-    // Get following count
-    const followingCount = await prisma.follow.count({
-      where: { followerId: userId }
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        bio: true,
+        isWriter: true,
+        createdAt: true,
+      }
     })
 
-    // Get followers count
-    const followersCount = await prisma.follow.count({
-      where: { followingId: userId }
-    })
-
-    // Get bookmarked count (library items)
-    const bookmarkedCount = await prisma.library.count({
-      where: { userId }
-    })
-
-    // Get stories read count (from reading history if tracked)
-    // For now, this is handled client-side
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404, headers: corsHeaders }
+      )
+    }
 
     return NextResponse.json({
-      following: followingCount,
-      followers: followersCount,
-      bookmarked: bookmarkedCount,
-      storiesRead: 0, // Client-side tracking
+      success: true,
+      user
     }, { headers: corsHeaders })
   } catch (error) {
-    console.error('[User Stats] Error:', error)
+    console.error('[Get User] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500, headers: corsHeaders }

@@ -5,12 +5,47 @@ import { authenticateRequest } from '@/lib/mobile-auth'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "PUT, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
+}
+
+// GET current user profile
+export async function GET(request: NextRequest) {
+  try {
+    const { user } = await authenticateRequest(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401, headers: corsHeaders }
+      )
+    }
+
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        bio: true,
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      user: userData
+    }, { headers: corsHeaders })
+  } catch (error) {
+    console.error('[Get Profile] Error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500, headers: corsHeaders }
+    )
+  }
 }
 
 export async function PUT(request: NextRequest) {
@@ -24,7 +59,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, avatar } = body
+    const { name, avatar, bio } = body
 
     // Validate name if provided
     if (name !== undefined) {
@@ -51,6 +86,16 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Validate bio if provided (max 200 characters)
+    if (bio !== undefined && bio !== null) {
+      if (bio.length > 200) {
+        return NextResponse.json(
+          { error: 'Bio must be 200 characters or less' },
+          { status: 400, headers: corsHeaders }
+        )
+      }
+    }
+
     // Handle avatar upload (base64 -> URL)
     let avatarUrl = undefined
     if (avatar && avatar.startsWith('data:image')) {
@@ -71,12 +116,14 @@ export async function PUT(request: NextRequest) {
       data: {
         ...(name !== undefined && { name: name.trim() }),
         ...(avatarUrl !== undefined && { avatar: avatarUrl }),
+        ...(bio !== undefined && { bio: bio || null }),
       },
       select: {
         id: true,
         name: true,
         email: true,
         avatar: true,
+        bio: true,
       }
     })
 

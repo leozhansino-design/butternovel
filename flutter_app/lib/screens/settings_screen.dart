@@ -16,9 +16,13 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _nameController = TextEditingController();
+  final _bioController = TextEditingController();
   bool _isLoading = false;
+  bool _isLoadingProfile = true;
   String? _avatarUrl;
   File? _selectedImage;
+
+  static const int _bioMaxLength = 200;
 
   @override
   void initState() {
@@ -28,11 +32,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _nameController.text = user.username;
       _avatarUrl = user.avatarUrl;
     }
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isLoggedIn || authProvider.token == null) {
+      setState(() => _isLoadingProfile = false);
+      return;
+    }
+
+    try {
+      final result = await ApiService.getProfile(token: authProvider.token!);
+      if (result != null && result['success'] == true) {
+        final user = result['user'];
+        if (mounted) {
+          setState(() {
+            if (user['bio'] != null) {
+              _bioController.text = user['bio'];
+            }
+            _isLoadingProfile = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoadingProfile = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingProfile = false);
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
@@ -85,6 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         token: authProvider.token!,
         name: newName,
         avatar: avatarBase64,
+        bio: _bioController.text.trim(),
       );
 
       if (result != null && result['success'] == true) {
@@ -253,6 +287,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'This is how your name will appear to other users',
+                  style: TextStyle(color: subtitleColor, fontSize: 12),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Bio Section
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Bio',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      '${_bioController.text.length}/$_bioMaxLength',
+                      style: TextStyle(
+                        color: _bioController.text.length > _bioMaxLength
+                            ? Colors.red
+                            : subtitleColor,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _bioController,
+                  style: TextStyle(color: textColor),
+                  maxLines: 3,
+                  maxLength: _bioMaxLength,
+                  onChanged: (value) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Tell others about yourself...',
+                    hintStyle: TextStyle(color: subtitleColor),
+                    filled: true,
+                    fillColor: inputBgColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    counterText: '', // Hide default counter, we show our own
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'A short introduction about yourself',
                   style: TextStyle(color: subtitleColor, fontSize: 12),
                 ),
 
