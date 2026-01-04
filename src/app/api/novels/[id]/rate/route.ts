@@ -111,35 +111,53 @@ export async function POST(
       })
     )
 
-    if (existingRating) {
-      return NextResponse.json(
-        { error: 'You have already rated this novel' },
-        { status: 409 }
-      )
-    }
+    const isUpdate = !!existingRating
 
-    // ⚡ 优化：创建评分记录并更新小说统计 - 使用聚合查询提升性能
+    // ⚡ 优化：创建或更新评分记录并更新小说统计 - 使用聚合查询提升性能
     const result = (await withRetry(async () => {
       // @ts-ignore - Prisma interactive transaction type inference issue
       return await prisma.$transaction(async (tx) => {
-      // 创建评分记录
-      const rating = await tx.rating.create({
-        data: {
-          score,
-          review: review || null,
-          userId: user.id,
-          novelId,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
+      // 创建或更新评分记录
+      const rating = existingRating
+        ? await tx.rating.update({
+            where: {
+              userId_novelId: {
+                userId: user.id,
+                novelId: novelId,
+              },
             },
-          },
-        },
-      })
+            data: {
+              score,
+              review: review || null,
+              updatedAt: new Date(),
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                },
+              },
+            },
+          })
+        : await tx.rating.create({
+            data: {
+              score,
+              review: review || null,
+              userId: user.id,
+              novelId,
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                },
+              },
+            },
+          })
 
       // ⚡ 使用聚合查询一次性计算平均分和总数，避免加载所有评分数据
       const stats = await tx.rating.aggregate({
@@ -173,44 +191,50 @@ export async function POST(
     // ⚡ 清除小说详情缓存（评分数据已更新）
     await invalidateNovelCache(novel.slug)
 
-    // ⭐ 添加贡献度
-    try {
-      const contributionResult = await addRatingContribution(user.id, result.rating.id)
-
-      // 🔧 FIX: Type-safe check for levelUp property
-      if (contributionResult && typeof contributionResult === 'object' && 'levelUp' in contributionResult && contributionResult.levelUp) {
-        // User leveled up - future: could trigger notification
-        console.log('[Rating API] User leveled up:', {
-          userId: user.id,
-          oldLevel: 'oldLevel' in contributionResult ? contributionResult.oldLevel : 'unknown',
-          newLevel: 'newLevel' in contributionResult ? contributionResult.newLevel : 'unknown',
-        })
-      }
-    } catch (error) {
-      // 不影响主流程，只记录错误
-      console.error('[Rating API] Failed to add contribution:', error)
-    }
-
-    // 发送通知给小说作者
-    if (novel.authorId !== user.id) {
+    // ⭐ 添加贡献度 (只有新评分才加贡献度)
+    if (!isUpdate) {
       try {
-        await createNotification({
-          userId: novel.authorId,
-          type: 'NOVEL_RATING',
-          actorId: user.id,
-          data: {
-            novelId: novel.id,
-            novelSlug: novel.slug,
-            novelTitle: novel.title,
-            score,
-          },
-        });
+        const contributionResult = await addRatingContribution(user.id, result.rating.id)
+
+        // 🔧 FIX: Type-safe check for levelUp property
+        if (contributionResult && typeof contributionResult === 'object' && 'levelUp' in contributionResult && contributionResult.levelUp) {
+          // User leveled up - future: could trigger notification
+          console.log('[Rating API] User leveled up:', {
+            userId: user.id,
+            oldLevel: 'oldLevel' in contributionResult ? contributionResult.oldLevel : 'unknown',
+            newLevel: 'newLevel' in contributionResult ? contributionResult.newLevel : 'unknown',
+          })
+        }
       } catch (error) {
-        console.error('[Rating API] Failed to create notification:', error);
+        // 不影响主流程，只记录错误
+        console.error('[Rating API] Failed to add contribution:', error)
+      }
+
+      // 发送通知给小说作者 (只有新评分才通知)
+      if (novel.authorId !== user.id) {
+        try {
+          await createNotification({
+            userId: novel.authorId,
+            type: 'NOVEL_RATING',
+            actorId: user.id,
+            data: {
+              novelId: novel.id,
+              novelSlug: novel.slug,
+              novelTitle: novel.title,
+              score,
+            },
+          });
+        } catch (error) {
+          console.error('[Rating API] Failed to create notification:', error);
+        }
       }
     }
 
-    return NextResponse.json(result, { status: 201, headers: corsHeaders })
+    // 返回结果：新评分返回201，更新返回200
+    return NextResponse.json(
+      { ...result, isUpdate },
+      { status: isUpdate ? 200 : 201, headers: corsHeaders }
+    )
   } catch (error) {
     console.error('[Rating API] Error:', error)
     return NextResponse.json(
