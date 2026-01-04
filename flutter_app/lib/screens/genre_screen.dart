@@ -15,7 +15,8 @@ class GenreScreen extends StatefulWidget {
 
 class _GenreScreenState extends State<GenreScreen> {
   final ScrollController _scrollController = ScrollController();
-  String _selectedGenre = 'All';
+  String _selectedGenreSlug = 'all';
+  String _selectedGenreName = 'All';
   List<ShortNovel> _novels = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -74,14 +75,14 @@ class _GenreScreenState extends State<GenreScreen> {
 
     try {
       List<ShortNovel> novels;
-      if (_selectedGenre == 'All') {
+      if (_selectedGenreSlug == 'all') {
         novels = await ApiService.fetchShorts(
           page: _currentPage,
           limit: 20,
         );
       } else {
         novels = await ApiService.fetchShortsByGenre(
-          _selectedGenre,
+          _selectedGenreSlug,
           page: _currentPage,
           limit: 20,
         );
@@ -106,11 +107,12 @@ class _GenreScreenState extends State<GenreScreen> {
     }
   }
 
-  void _onGenreSelected(String genreName) {
-    if (genreName == _selectedGenre) return;
+  void _onGenreSelected(String slug, String name) {
+    if (slug == _selectedGenreSlug) return;
 
     setState(() {
-      _selectedGenre = genreName;
+      _selectedGenreSlug = slug;
+      _selectedGenreName = name;
     });
 
     // Scroll to top
@@ -161,13 +163,16 @@ class _GenreScreenState extends State<GenreScreen> {
                     itemCount: genres.length,
                     itemBuilder: (context, index) {
                       final genre = genres[index];
-                      final isSelected = _selectedGenre == genre['name'];
+                      final isSelected = _selectedGenreSlug == genre['slug'];
                       final color = Color(genre['color'] as int);
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: GestureDetector(
-                          onTap: () => _onGenreSelected(genre['name'] as String),
+                          onTap: () => _onGenreSelected(
+                            genre['slug'] as String,
+                            genre['name'] as String,
+                          ),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
