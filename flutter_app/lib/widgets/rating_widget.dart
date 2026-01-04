@@ -203,6 +203,9 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
   }
 
   Future<void> _submitRating() async {
+    debugPrint('[RatingWidget] _submitRating called');
+    debugPrint('[RatingWidget] Selected rating: $_selectedRating');
+
     if (_selectedRating < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a rating (minimum 2)')),
@@ -211,12 +214,24 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
     }
 
     final authProvider = context.read<AuthProvider>();
+    debugPrint('[RatingWidget] isLoggedIn: ${authProvider.isLoggedIn}');
+    debugPrint('[RatingWidget] user: ${authProvider.user?.email}');
+    debugPrint('[RatingWidget] token exists: ${authProvider.token != null}');
+    if (authProvider.token != null) {
+      final tokenPreview = authProvider.token!.length > 30
+          ? authProvider.token!.substring(0, 30)
+          : authProvider.token!;
+      debugPrint('[RatingWidget] token preview: $tokenPreview...');
+    }
+
     if (!authProvider.isLoggedIn) {
+      debugPrint('[RatingWidget] Not logged in, showing login screen');
       // Show login screen
       final loginResult = await Navigator.push<bool>(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
+      debugPrint('[RatingWidget] Login result: $loginResult');
       if (loginResult != true || !mounted) return;
       // Re-read auth provider after login
     }
@@ -225,6 +240,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
 
     // Get fresh token after potential login
     final token = context.read<AuthProvider>().token;
+    debugPrint('[RatingWidget] Token for API call: ${token != null ? "${token.substring(0, 20)}..." : "NULL"}');
 
     final result = await ApiService.rateNovel(
       novelId: widget.novelId,
@@ -232,6 +248,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
       review: _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim(),
       token: token,
     );
+    debugPrint('[RatingWidget] API result: $result');
 
     if (mounted) {
       setState(() => _isSubmitting = false);

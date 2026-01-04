@@ -59,6 +59,25 @@ class AuthProvider extends ChangeNotifier {
     final username = prefs.getString('username');
     final avatarUrl = prefs.getString('avatar_url');
 
+    debugPrint('[AuthProvider] Loading saved auth...');
+    debugPrint('[AuthProvider] Token exists: ${token != null}');
+    if (token != null) {
+      debugPrint('[AuthProvider] Token prefix: ${token.length > 20 ? token.substring(0, 20) : token}...');
+    }
+    debugPrint('[AuthProvider] UserId: $userId, Email: $userEmail');
+
+    // Check for invalid/mock tokens from old authentication system
+    if (token != null && (
+        token.startsWith('mock_token_') ||
+        token.startsWith('google_token_') ||
+        token.startsWith('apple_token_') ||
+        !token.contains('.')  // JWT tokens have dots separating parts
+    )) {
+      debugPrint('[AuthProvider] Detected invalid/mock token, clearing auth...');
+      await _clearAuth();
+      return;
+    }
+
     if (token != null && userId != null && userEmail != null) {
       _token = token;
       _user = User(
@@ -67,6 +86,7 @@ class AuthProvider extends ChangeNotifier {
         username: username ?? userEmail.split('@')[0],
         avatarUrl: avatarUrl,
       );
+      debugPrint('[AuthProvider] Auth restored successfully for: $userEmail');
       notifyListeners();
     }
   }
