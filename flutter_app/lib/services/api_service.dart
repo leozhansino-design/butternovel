@@ -382,10 +382,16 @@ class ApiService {
   // ==================== Ratings ====================
 
   /// Get user's rating for a novel
-  static Future<Map<String, dynamic>?> getUserRating(int novelId) async {
+  static Future<Map<String, dynamic>?> getUserRating(int novelId, {String? token}) async {
     try {
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await http.get(
         Uri.parse('$baseUrl/api/novels/$novelId/user-rating'),
+        headers: headers.isNotEmpty ? headers : null,
       );
 
       if (response.statusCode == 200) {
@@ -403,11 +409,19 @@ class ApiService {
     required int novelId,
     required double score,
     String? review,
+    String? token,
   }) async {
     try {
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+      };
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/api/novels/$novelId/rate'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode({
           'score': score,
           if (review != null && review.isNotEmpty) 'review': review,
@@ -443,10 +457,16 @@ class ApiService {
   }
 
   /// Like a review
-  static Future<bool> likeReview(String reviewId) async {
+  static Future<bool> likeReview(String reviewId, {String? token}) async {
     try {
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/api/ratings/$reviewId/like'),
+        headers: headers.isNotEmpty ? headers : null,
       );
       return response.statusCode == 200;
     } catch (e) {

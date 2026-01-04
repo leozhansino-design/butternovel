@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/theme_provider.dart';
+import '../providers/auth_provider.dart';
 
 class RatingWidget extends StatelessWidget {
   final double? averageRating;
@@ -174,7 +175,8 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
   }
 
   Future<void> _checkExistingRating() async {
-    final existing = await ApiService.getUserRating(widget.novelId);
+    final token = context.read<AuthProvider>().token;
+    final existing = await ApiService.getUserRating(widget.novelId, token: token);
     if (existing != null && existing['rating'] != null && mounted) {
       final rating = existing['rating'];
       setState(() {
@@ -207,12 +209,21 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
       return;
     }
 
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to submit a rating')),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     final result = await ApiService.rateNovel(
       novelId: widget.novelId,
       score: _selectedRating,
       review: _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim(),
+      token: authProvider.token,
     );
 
     if (mounted) {
@@ -229,7 +240,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to submit rating. Please login first.'),
+            content: Text('Failed to submit rating. Please try again.'),
           ),
         );
       }
@@ -715,7 +726,8 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
                 onTap: () async {
                   final reviewId = review['id']?.toString();
                   if (reviewId != null) {
-                    await ApiService.likeReview(reviewId);
+                    final token = context.read<AuthProvider>().token;
+                    await ApiService.likeReview(reviewId, token: token);
                     _loadReviews();
                   }
                 },
