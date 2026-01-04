@@ -215,6 +215,13 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   }
 
   void _showSettingsSheet() {
+    final themeProvider = context.read<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+    final sheetBgColor = isDark ? Colors.grey[900]! : Colors.white;
+    final sheetTextColor = isDark ? Colors.white : Colors.grey[900]!;
+    final sheetSubtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final handleColor = isDark ? Colors.grey[700] : Colors.grey[400];
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -225,7 +232,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
               bottom: MediaQuery.of(context).padding.bottom,
             ),
             decoration: BoxDecoration(
-              color: Colors.grey[900],
+              color: sheetBgColor,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
@@ -237,16 +244,16 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[700],
+                    color: handleColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(height: 20),
                 // Title
-                const Text(
+                Text(
                   'Reader Settings',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: sheetTextColor,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -260,7 +267,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                     children: [
                       Text(
                         'Background Color',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        style: TextStyle(color: sheetSubtitleColor, fontSize: 14),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -314,12 +321,12 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         children: [
                           Text(
                             'Font Size',
-                            style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                            style: TextStyle(color: sheetSubtitleColor, fontSize: 14),
                           ),
                           Text(
                             '${_fontSize.toInt()}',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: sheetTextColor,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -329,7 +336,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Text('A', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text('A', style: TextStyle(color: sheetSubtitleColor, fontSize: 12)),
                           Expanded(
                             child: Slider(
                               value: _fontSize,
@@ -337,14 +344,14 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                               max: 28,
                               divisions: 7,
                               activeColor: const Color(0xFF3b82f6),
-                              inactiveColor: Colors.grey[700],
+                              inactiveColor: isDark ? Colors.grey[700] : Colors.grey[300],
                               onChanged: (value) {
                                 setState(() => _fontSize = value);
                                 setSheetState(() {});
                               },
                             ),
                           ),
-                          const Text('A', style: TextStyle(color: Colors.grey, fontSize: 20)),
+                          Text('A', style: TextStyle(color: sheetSubtitleColor, fontSize: 20)),
                         ],
                       ),
                     ],
@@ -359,7 +366,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                     children: [
                       Text(
                         'Show Comment Bubbles',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        style: TextStyle(color: sheetSubtitleColor, fontSize: 14),
                       ),
                       Switch(
                         value: _showCommentBubbles,

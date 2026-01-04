@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/theme_provider.dart';
 
 class RatingWidget extends StatelessWidget {
   final double? averageRating;
@@ -26,12 +28,17 @@ class RatingWidget extends StatelessWidget {
   }
 
   Widget _buildCompact(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+    final bgColor = isDark ? Colors.grey[850]?.withOpacity(0.6) : Colors.grey[200]?.withOpacity(0.8);
+    final subtitleColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
     return GestureDetector(
       onTap: () => _showRatingDialog(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.grey[850]?.withOpacity(0.6),
+          color: bgColor,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -42,7 +49,7 @@ class RatingWidget extends StatelessWidget {
             Text(
               'Rate',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: subtitleColor,
                 fontSize: 12,
               ),
             ),
@@ -53,14 +60,20 @@ class RatingWidget extends StatelessWidget {
   }
 
   Widget _buildFull(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+    final bgColor = isDark ? Colors.grey[850] : Colors.grey[200];
+    final borderColor = isDark ? Colors.grey[700]! : Colors.grey[400]!;
+    final subtitleColor = isDark ? Colors.grey[500] : Colors.grey[600];
+
     return GestureDetector(
       onTap: () => _showRatingDialog(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[850],
+          color: bgColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[700]!),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -78,23 +91,23 @@ class RatingWidget extends StatelessWidget {
               ),
               Text(
                 '/10',
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                style: TextStyle(color: subtitleColor, fontSize: 12),
               ),
               if (totalRatings != null && totalRatings! > 0) ...[
                 const SizedBox(width: 8),
                 Text(
                   '($totalRatings)',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: TextStyle(color: subtitleColor, fontSize: 12),
                 ),
               ],
             ] else ...[
               Text(
                 'Rate',
-                style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                style: TextStyle(color: subtitleColor, fontSize: 14),
               ),
             ],
             const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: Colors.grey[500], size: 18),
+            Icon(Icons.chevron_right, color: subtitleColor, size: 18),
           ],
         ),
       ),
@@ -226,55 +239,68 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[700],
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final isDark = themeProvider.isDarkMode;
+        final bgColor = isDark ? Colors.grey[900]! : Colors.white;
+        final textColor = isDark ? Colors.white : Colors.grey[900]!;
+        final subtitleColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
+        final handleColor = isDark ? Colors.grey[700] : Colors.grey[400];
+
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom,
           ),
-          const SizedBox(height: 16),
-          // Tab bar
-          TabBar(
-            controller: _tabController,
-            indicatorColor: const Color(0xFF3b82f6),
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.grey[500],
-            tabs: const [
-              Tab(text: 'Rate'),
-              Tab(text: 'Reviews'),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: handleColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Tab bar
+              TabBar(
+                controller: _tabController,
+                indicatorColor: const Color(0xFF3b82f6),
+                labelColor: textColor,
+                unselectedLabelColor: subtitleColor,
+                tabs: const [
+                  Tab(text: 'Rate'),
+                  Tab(text: 'Reviews'),
+                ],
+              ),
+              // Tab views
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRateTab(isDark, textColor, subtitleColor),
+                    _buildReviewsTab(isDark, textColor, subtitleColor),
+                  ],
+                ),
+              ),
             ],
           ),
-          // Tab views
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRateTab(),
-                _buildReviewsTab(),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildRateTab() {
+  Widget _buildRateTab(bool isDark, Color textColor, Color subtitleColor) {
+    final cardBgColor = isDark ? Colors.grey[850] : Colors.grey[100];
+    final borderColor = isDark ? Colors.grey[700]! : Colors.grey[300]!;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -282,8 +308,8 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
           // Title
           Text(
             _hasExistingRating ? 'Update Your Rating' : 'Rate this story',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: textColor,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -291,7 +317,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
           const SizedBox(height: 8),
           Text(
             'Tap a star to rate (2-10)',
-            style: TextStyle(color: Colors.grey[500], fontSize: 14),
+            style: TextStyle(color: subtitleColor, fontSize: 14),
           ),
           const SizedBox(height: 24),
           // Star rating (5 stars, each represents 2 points)
@@ -325,7 +351,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
           Text(
             _selectedRating > 0 ? '${_selectedRating.toInt()}/10' : 'Select a rating',
             style: TextStyle(
-              color: _selectedRating > 0 ? Colors.amber[400] : Colors.grey[500],
+              color: _selectedRating > 0 ? Colors.amber[400] : subtitleColor,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -334,17 +360,17 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
           // Optional review input
           Container(
             decoration: BoxDecoration(
-              color: Colors.grey[850],
+              color: cardBgColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[700]!),
+              border: Border.all(color: borderColor),
             ),
             child: TextField(
               controller: _reviewController,
               maxLines: 4,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: 'Write a review (optional)',
-                hintStyle: TextStyle(color: Colors.grey[600]),
+                hintStyle: TextStyle(color: subtitleColor),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -386,7 +412,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
             const SizedBox(height: 12),
             Text(
               'You can update your rating anytime',
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              style: TextStyle(color: subtitleColor, fontSize: 12),
             ),
           ],
         ],
@@ -394,7 +420,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildReviewsTab() {
+  Widget _buildReviewsTab(bool isDark, Color textColor, Color subtitleColor) {
     return Column(
       children: [
         // Sort options
@@ -404,12 +430,12 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
             children: [
               Text(
                 'Sort by:',
-                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                style: TextStyle(color: subtitleColor, fontSize: 14),
               ),
               const SizedBox(width: 12),
-              _buildSortChip('Most Liked', 'likes'),
+              _buildSortChip('Most Liked', 'likes', isDark),
               const SizedBox(width: 8),
-              _buildSortChip('Newest', 'newest'),
+              _buildSortChip('Newest', 'newest', isDark),
             ],
           ),
         ),
@@ -426,16 +452,16 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.rate_review_outlined, color: Colors.grey[600], size: 48),
+                          Icon(Icons.rate_review_outlined, color: subtitleColor, size: 48),
                           const SizedBox(height: 16),
                           Text(
                             'No reviews yet',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                            style: TextStyle(color: subtitleColor, fontSize: 16),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Be the first to write a review!',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                            style: TextStyle(color: subtitleColor, fontSize: 14),
                           ),
                         ],
                       ),
@@ -444,7 +470,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: _reviews.length,
                       itemBuilder: (context, index) {
-                        return _buildReviewItem(_reviews[index]);
+                        return _buildReviewItem(_reviews[index], isDark, textColor, subtitleColor);
                       },
                     ),
         ),
@@ -452,8 +478,11 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildSortChip(String label, String value) {
+  Widget _buildSortChip(String label, String value, bool isDark) {
     final isSelected = _sortBy == value;
+    final unselectedBg = isDark ? Colors.grey[800] : Colors.grey[200];
+    final unselectedText = isDark ? Colors.grey[400] : Colors.grey[700];
+
     return GestureDetector(
       onTap: () {
         if (_sortBy != value) {
@@ -464,13 +493,13 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3b82f6) : Colors.grey[800],
+          color: isSelected ? const Color(0xFF3b82f6) : unselectedBg,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[400],
+            color: isSelected ? Colors.white : unselectedText,
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
           ),
@@ -479,13 +508,16 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildReviewItem(Map<String, dynamic> review) {
+  Widget _buildReviewItem(Map<String, dynamic> review, bool isDark, Color textColor, Color subtitleColor) {
     final user = review['user'] as Map<String, dynamic>?;
     final userName = user?['name'] ?? 'Anonymous';
     final score = (review['score'] as num?)?.toDouble() ?? 0;
     final reviewText = review['review'] as String?;
     final likeCount = review['likeCount'] as int? ?? 0;
     final createdAt = review['createdAt'] as String?;
+    final cardBgColor = isDark ? Colors.grey[850] : Colors.grey[100];
+    final avatarBgColor = isDark ? Colors.grey[700] : Colors.grey[400];
+    final contentColor = isDark ? Colors.grey[300] : Colors.grey[700];
 
     String timeAgo = '';
     if (createdAt != null) {
@@ -508,7 +540,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[850],
+        color: cardBgColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -519,10 +551,10 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: Colors.grey[700],
+                backgroundColor: avatarBgColor,
                 child: Text(
                   userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.grey[800], fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 12),
@@ -532,8 +564,8 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
                   children: [
                     Text(
                       userName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: textColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -556,7 +588,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
                           const SizedBox(width: 8),
                           Text(
                             timeAgo,
-                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                            style: TextStyle(color: subtitleColor, fontSize: 12),
                           ),
                         ],
                       ],
@@ -570,7 +602,7 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
             const SizedBox(height: 12),
             Text(
               reviewText,
-              style: TextStyle(color: Colors.grey[300], fontSize: 14, height: 1.5),
+              style: TextStyle(color: contentColor, fontSize: 14, height: 1.5),
             ),
           ],
           const SizedBox(height: 12),
@@ -593,13 +625,13 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
                           : Icons.favorite_border,
                       color: review['userHasLiked'] == true
                           ? Colors.red
-                          : Colors.grey[500],
+                          : subtitleColor,
                       size: 18,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       likeCount > 0 ? '$likeCount' : 'Like',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                      style: TextStyle(color: subtitleColor, fontSize: 13),
                     ),
                   ],
                 ),
