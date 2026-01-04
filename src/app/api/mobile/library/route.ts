@@ -1,7 +1,7 @@
 // src/app/api/mobile/library/route.ts
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyMobileToken } from '@/lib/mobile-auth'
+import { authenticateRequest } from '@/lib/mobile-auth'
 
 // CORS headers for mobile app
 const corsHeaders = {
@@ -15,27 +15,17 @@ export async function OPTIONS() {
 }
 
 // GET - Get user's library (bookshelf)
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('Authorization')
-    const token = authHeader?.replace('Bearer ', '')
-
-    if (!token) {
+    const { user } = await authenticateRequest(req)
+    if (!user) {
       return NextResponse.json(
         { error: 'Authorization required' },
         { status: 401, headers: corsHeaders }
       )
     }
 
-    const payload = await verifyMobileToken(token)
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401, headers: corsHeaders }
-      )
-    }
-
-    const userId = payload.id as string
+    const userId = user.id
 
     // Get library items with novel details
     const libraryItems = await prisma.library.findMany({
@@ -103,27 +93,17 @@ export async function GET(req: Request) {
 }
 
 // POST - Add to library
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('Authorization')
-    const token = authHeader?.replace('Bearer ', '')
-
-    if (!token) {
+    const { user } = await authenticateRequest(req)
+    if (!user) {
       return NextResponse.json(
         { error: 'Authorization required' },
         { status: 401, headers: corsHeaders }
       )
     }
 
-    const payload = await verifyMobileToken(token)
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401, headers: corsHeaders }
-      )
-    }
-
-    const userId = payload.id as string
+    const userId = user.id
     const { novelId } = await req.json()
 
     if (!novelId) {
@@ -180,27 +160,17 @@ export async function POST(req: Request) {
 }
 
 // DELETE - Remove from library
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('Authorization')
-    const token = authHeader?.replace('Bearer ', '')
-
-    if (!token) {
+    const { user } = await authenticateRequest(req)
+    if (!user) {
       return NextResponse.json(
         { error: 'Authorization required' },
         { status: 401, headers: corsHeaders }
       )
     }
 
-    const payload = await verifyMobileToken(token)
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401, headers: corsHeaders }
-      )
-    }
-
-    const userId = payload.id as string
+    const userId = user.id
     const { novelId } = await req.json()
 
     if (!novelId) {
