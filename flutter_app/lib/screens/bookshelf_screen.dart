@@ -216,6 +216,8 @@ class BookshelfScreen extends StatelessWidget {
     Color subtitleColor,
     Color cardBgColor,
   ) {
+    final previewColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -246,24 +248,24 @@ class BookshelfScreen extends StatelessWidget {
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    novel.authorName,
-                    style: TextStyle(
-                      color: subtitleColor,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
                   Row(
                     children: [
+                      Text(
+                        novel.authorName,
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 3,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: _getGenreColor(novel.displayGenre)
@@ -279,21 +281,18 @@ class BookshelfScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.favorite,
-                        size: 14,
-                        color: Colors.red[400],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${novel.likeCount}',
-                        style: TextStyle(
-                          color: subtitleColor,
-                          fontSize: 12,
-                        ),
-                      ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    novel.previewText,
+                    style: TextStyle(
+                      color: previewColor,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
