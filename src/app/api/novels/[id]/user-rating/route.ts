@@ -2,7 +2,7 @@
 // 获取当前用户对该小说的评分状态
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { authenticateRequest } from '@/lib/mobile-auth'
 import { prisma } from '@/lib/prisma'
 
 // CORS headers for mobile app
@@ -21,12 +21,13 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
+    // Use mobile-compatible auth
+    const { user } = await authenticateRequest(request)
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json(
         { hasRated: false, rating: null },
-        { status: 200 }
+        { status: 200, headers: corsHeaders }
       )
     }
 
@@ -36,7 +37,7 @@ export async function GET(
     if (isNaN(novelId)) {
       return NextResponse.json(
         { error: 'Invalid novel ID' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -44,7 +45,7 @@ export async function GET(
     const rating = await prisma.rating.findUnique({
       where: {
         userId_novelId: {
-          userId: session.user.id,
+          userId: user.id,
           novelId,
         },
       },
@@ -60,17 +61,18 @@ export async function GET(
       return NextResponse.json({
         hasRated: false,
         rating: null,
-      })
+      }, { headers: corsHeaders })
     }
 
     return NextResponse.json({
       hasRated: true,
       rating,
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
+    console.error('[User Rating API] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
