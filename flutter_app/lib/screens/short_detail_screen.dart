@@ -10,6 +10,7 @@ import '../widgets/comment_sheet.dart';
 import '../widgets/rating_widget.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/user_provider.dart';
 import 'login_screen.dart';
 
 class ShortDetailScreen extends StatefulWidget {
@@ -34,8 +35,7 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   List<ShortNovel> _similarNovels = [];
   bool _loadingSimilar = false;
 
-  // Like state
-  bool _isLiked = false;
+  // Like count (local for display)
   int _likeCount = 0;
 
   // Reader settings
@@ -184,11 +184,32 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
   }
 
   void _performLike() {
+    final userProvider = context.read<UserProvider>();
+    final wasLiked = userProvider.isLiked(widget.novel.id);
+
+    // Toggle like in UserProvider (pass novel for bookshelf)
+    userProvider.toggleLike(widget.novel.id, novel: widget.novel);
+
+    // Update local count
     setState(() {
-      _isLiked = !_isLiked;
-      _likeCount += _isLiked ? 1 : -1;
+      if (wasLiked) {
+        _likeCount--;
+      } else {
+        _likeCount++;
+      }
     });
-    // TODO: Call API to persist like
+
+    // Call API to persist like
+    ApiService.toggleLike(widget.novel.id);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(!wasLiked ? 'Added to bookshelf' : 'Removed from bookshelf'),
+        backgroundColor: Colors.grey[800],
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _handleShare() async {
@@ -640,28 +661,33 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                     top: false,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Like/Bookmark button
-                          _buildActionButton(
-                            icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-                            onTap: _handleLike,
-                            isActive: _isLiked,
-                          ),
-                          const SizedBox(width: 16),
-                          // Share button
-                          _buildActionButton(
-                            icon: Icons.share_outlined,
-                            onTap: _handleShare,
-                          ),
-                          const SizedBox(width: 16),
-                          // Settings button
-                          _buildActionButton(
-                            icon: Icons.settings_outlined,
-                            onTap: _showSettingsSheet,
-                          ),
-                        ],
+                      child: Consumer<UserProvider>(
+                        builder: (context, userProvider, child) {
+                          final isLiked = userProvider.isLiked(widget.novel.id);
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Like/Bookmark button
+                              _buildActionButton(
+                                icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                                onTap: _handleLike,
+                                isActive: isLiked,
+                              ),
+                              const SizedBox(width: 16),
+                              // Share button
+                              _buildActionButton(
+                                icon: Icons.share_outlined,
+                                onTap: _handleShare,
+                              ),
+                              const SizedBox(width: 16),
+                              // Settings button
+                              _buildActionButton(
+                                icon: Icons.settings_outlined,
+                                onTap: _showSettingsSheet,
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),

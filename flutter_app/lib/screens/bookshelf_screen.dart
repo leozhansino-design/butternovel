@@ -4,59 +4,24 @@ import 'package:provider/provider.dart';
 import '../models/short_novel.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
-import '../services/api_service.dart';
+import '../providers/user_provider.dart';
 import 'login_screen.dart';
 import 'short_detail_screen.dart';
 
-class BookshelfScreen extends StatefulWidget {
+class BookshelfScreen extends StatelessWidget {
   const BookshelfScreen({super.key});
 
-  @override
-  State<BookshelfScreen> createState() => _BookshelfScreenState();
-}
-
-class _BookshelfScreenState extends State<BookshelfScreen> {
-  List<ShortNovel> _likedStories = [];
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLikedStories();
-  }
-
-  Future<void> _loadLikedStories() async {
-    final authProvider = context.read<AuthProvider>();
-    if (!authProvider.isLoggedIn) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      // For now, fetch some stories as placeholder
-      // In a real app, this would fetch the user's liked/saved stories
-      final stories = await ApiService.fetchShorts(limit: 10);
-      if (mounted) {
-        setState(() {
-          _likedStories = stories;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeProvider, AuthProvider>(
-      builder: (context, themeProvider, authProvider, child) {
+    return Consumer3<ThemeProvider, AuthProvider, UserProvider>(
+      builder: (context, themeProvider, authProvider, userProvider, child) {
         final isDark = themeProvider.isDarkMode;
         final bgColor = isDark ? Colors.black : Colors.white;
         final textColor = isDark ? Colors.white : Colors.grey[900]!;
         final subtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
         final cardBgColor = isDark ? Colors.grey[900]! : Colors.grey[100]!;
+        final likedStories = userProvider.likedNovels;
 
         // Not logged in state
         if (!authProvider.isLoggedIn) {
@@ -113,16 +78,13 @@ class _BookshelfScreenState extends State<BookshelfScreen> {
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton(
-                              onPressed: () async {
-                                final result = await Navigator.push<bool>(
+                              onPressed: () {
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => const LoginScreen(),
                                   ),
                                 );
-                                if (result == true) {
-                                  _loadLikedStories();
-                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3b82f6),
@@ -175,7 +137,7 @@ class _BookshelfScreenState extends State<BookshelfScreen> {
                       ),
                       const Spacer(),
                       Text(
-                        '${_likedStories.length} stories',
+                        '${likedStories.length} stories',
                         style: TextStyle(
                           color: subtitleColor,
                           fontSize: 14,
@@ -186,31 +148,22 @@ class _BookshelfScreenState extends State<BookshelfScreen> {
                 ),
                 // Content
                 Expanded(
-                  child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF3b82f6),
-                          ),
-                        )
-                      : _likedStories.isEmpty
-                          ? _buildEmptyState(textColor, subtitleColor)
-                          : RefreshIndicator(
-                              onRefresh: _loadLikedStories,
-                              color: const Color(0xFF3b82f6),
-                              child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                itemCount: _likedStories.length,
-                                itemBuilder: (context, index) {
-                                  return _buildStoryCard(
-                                    _likedStories[index],
-                                    isDark,
-                                    textColor,
-                                    subtitleColor,
-                                    cardBgColor,
-                                  );
-                                },
-                              ),
-                            ),
+                  child: likedStories.isEmpty
+                      ? _buildEmptyState(textColor, subtitleColor)
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: likedStories.length,
+                          itemBuilder: (context, index) {
+                            return _buildStoryCard(
+                              context,
+                              likedStories[index],
+                              isDark,
+                              textColor,
+                              subtitleColor,
+                              cardBgColor,
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
@@ -242,7 +195,7 @@ class _BookshelfScreenState extends State<BookshelfScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Stories you like will appear here',
+              'Tap the heart icon on stories to add them here',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: subtitleColor,
@@ -256,6 +209,7 @@ class _BookshelfScreenState extends State<BookshelfScreen> {
   }
 
   Widget _buildStoryCard(
+    BuildContext context,
     ShortNovel novel,
     bool isDark,
     Color textColor,

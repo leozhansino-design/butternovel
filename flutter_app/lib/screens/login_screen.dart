@@ -22,10 +22,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _usernameController = TextEditingController();
 
   bool _isLogin = true;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   String? _errorMessage;
   bool _isGoogleLoading = false;
   bool _isAppleLoading = false;
@@ -41,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _usernameController.dispose();
     super.dispose();
   }
@@ -402,6 +405,50 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 20),
+
+                    // Confirm password field (only for register)
+                    if (!_isLogin) ...[
+                      Text(
+                        'Confirm Password',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
+                        style: TextStyle(color: textColor),
+                        decoration: _buildInputDecoration(
+                          hintText: 'Confirm your password',
+                          prefixIcon: Icons.lock_outline,
+                          subtitleColor: subtitleColor,
+                          cardBgColor: cardBgColor,
+                          borderColor: borderColor,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                              color: subtitleColor,
+                            ),
+                            onPressed: () {
+                              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 32),
 
                     // Submit button

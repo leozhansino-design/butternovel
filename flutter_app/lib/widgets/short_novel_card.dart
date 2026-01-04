@@ -5,9 +5,11 @@ import 'package:share_plus/share_plus.dart';
 import '../models/short_novel.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/user_provider.dart';
 import '../screens/short_detail_screen.dart';
 import '../screens/search_screen.dart';
 import '../screens/login_screen.dart';
+import '../services/api_service.dart';
 
 class ShortNovelCard extends StatefulWidget {
   final ShortNovel novel;
@@ -24,7 +26,6 @@ class ShortNovelCard extends StatefulWidget {
 }
 
 class _ShortNovelCardState extends State<ShortNovelCard> {
-  bool _isLiked = false;
   int _likeCount = 0;
 
   @override
@@ -54,21 +55,27 @@ class _ShortNovelCardState extends State<ShortNovelCard> {
   }
 
   void _performLike() {
+    final userProvider = context.read<UserProvider>();
+    final wasLiked = userProvider.isLiked(widget.novel.id);
+
+    // Toggle like in UserProvider (pass novel for bookshelf)
+    userProvider.toggleLike(widget.novel.id, novel: widget.novel);
+
+    // Update local count
     setState(() {
-      _isLiked = !_isLiked;
-      if (_isLiked) {
-        _likeCount++;
-      } else {
+      if (wasLiked) {
         _likeCount--;
+      } else {
+        _likeCount++;
       }
     });
 
-    // TODO: Call API to like/unlike
-    // ApiService.likeShort(widget.novel.id);
+    // Call API to persist like
+    ApiService.toggleLike(widget.novel.id);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isLiked ? 'Added to favorites' : 'Removed from favorites'),
+        content: Text(!wasLiked ? 'Added to bookshelf' : 'Removed from bookshelf'),
         backgroundColor: Colors.grey[800],
         duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
@@ -105,13 +112,14 @@ class _ShortNovelCardState extends State<ShortNovelCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, UserProvider>(
+      builder: (context, themeProvider, userProvider, child) {
         final isDark = themeProvider.isDarkMode;
         final bgColor = isDark ? Colors.black : Colors.white;
         final textColor = isDark ? Colors.white : Colors.grey[900]!;
         final subtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
         final cardBgColor = isDark ? Colors.grey[800]?.withOpacity(0.6) : Colors.grey[300]?.withOpacity(0.8);
+        final isLiked = userProvider.isLiked(widget.novel.id);
 
         return Container(
           color: bgColor,
@@ -287,14 +295,14 @@ class _ShortNovelCardState extends State<ShortNovelCard> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: _isLiked
+                              color: isLiked
                                   ? Colors.red.withOpacity(0.2)
                                   : cardBgColor,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              _isLiked ? Icons.favorite : Icons.favorite_border,
-                              color: _isLiked ? Colors.red : textColor,
+                              isLiked ? Icons.favorite : Icons.favorite_border,
+                              color: isLiked ? Colors.red : textColor,
                               size: 22,
                             ),
                           ),
