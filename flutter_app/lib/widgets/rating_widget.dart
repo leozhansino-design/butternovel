@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import '../screens/login_screen.dart';
 
 class RatingWidget extends StatelessWidget {
   final double? averageRating;
@@ -211,19 +212,25 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
 
     final authProvider = context.read<AuthProvider>();
     if (!authProvider.isLoggedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to submit a rating')),
+      // Show login screen
+      final loginResult = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-      return;
+      if (loginResult != true || !mounted) return;
+      // Re-read auth provider after login
     }
 
     setState(() => _isSubmitting = true);
+
+    // Get fresh token after potential login
+    final token = context.read<AuthProvider>().token;
 
     final result = await ApiService.rateNovel(
       novelId: widget.novelId,
       score: _selectedRating,
       review: _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim(),
-      token: authProvider.token,
+      token: token,
     );
 
     if (mounted) {
@@ -724,6 +731,15 @@ class _RatingSheetState extends State<RatingSheet> with SingleTickerProviderStat
             children: [
               GestureDetector(
                 onTap: () async {
+                  final authProvider = context.read<AuthProvider>();
+                  if (!authProvider.isLoggedIn) {
+                    final loginResult = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                    if (loginResult != true || !mounted) return;
+                  }
+
                   final reviewId = review['id']?.toString();
                   if (reviewId != null) {
                     final token = context.read<AuthProvider>().token;
