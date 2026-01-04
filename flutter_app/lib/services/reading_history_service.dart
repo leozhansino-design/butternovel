@@ -78,6 +78,7 @@ class ReadingHistoryService {
 
   /// Convert history item to ShortNovel (for display)
   static ShortNovel historyItemToNovel(Map<String, dynamic> item) {
+    final genre = item['shortNovelGenre'] ?? 'General';
     return ShortNovel(
       id: item['id'] ?? 0,
       title: item['title'] ?? '',
@@ -85,11 +86,16 @@ class ReadingHistoryService {
       blurb: item['blurb'] ?? '',
       coverImage: item['coverImage'],
       authorName: item['authorName'] ?? 'Unknown',
-      shortNovelGenre: item['shortNovelGenre'] ?? 'General',
+      shortNovelGenre: genre,
       viewCount: item['viewCount'] ?? 0,
       likeCount: item['likeCount'] ?? 0,
       wordCount: item['wordCount'] ?? 0,
       averageRating: (item['averageRating'] ?? 0).toDouble(),
+      category: Category(
+        id: 0,
+        name: genre,
+        slug: genre.toString().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-'),
+      ),
     );
   }
 }

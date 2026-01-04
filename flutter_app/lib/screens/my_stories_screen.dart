@@ -220,7 +220,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                                     children: [
                                       const SizedBox(height: 4),
                                       Text(
-                                        story.shortNovelGenre,
+                                        story.displayGenre,
                                         style: TextStyle(color: subtitleColor, fontSize: 12),
                                       ),
                                       const SizedBox(height: 4),
@@ -239,12 +239,12 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                                             '${story.likeCount}',
                                             style: TextStyle(color: subtitleColor, fontSize: 12),
                                           ),
-                                          if (story.averageRating > 0) ...[
+                                          if ((story.averageRating ?? 0) > 0) ...[
                                             const SizedBox(width: 12),
                                             Icon(Icons.star, size: 14, color: Colors.amber),
                                             const SizedBox(width: 4),
                                             Text(
-                                              story.averageRating.toStringAsFixed(1),
+                                              (story.averageRating ?? 0).toStringAsFixed(1),
                                               style: TextStyle(color: subtitleColor, fontSize: 12),
                                             ),
                                           ],
