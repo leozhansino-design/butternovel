@@ -595,4 +595,381 @@ class ApiService {
       return [];
     }
   }
+
+  // ==================== User Profile ====================
+
+  /// Get user's profile stats
+  static Future<Map<String, dynamic>> getUserStats(String userId, {String? token}) async {
+    try {
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/$userId/stats'),
+        headers: headers.isNotEmpty ? headers : null,
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return {'storiesRead': 0, 'following': 0, 'followers': 0, 'bookmarked': 0};
+    } catch (e) {
+      return {'storiesRead': 0, 'following': 0, 'followers': 0, 'bookmarked': 0};
+    }
+  }
+
+  /// Get current user profile
+  static Future<Map<String, dynamic>?> getProfile({required String token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/profile'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[Profile] Error fetching profile: $e');
+      return null;
+    }
+  }
+
+  /// Update user profile
+  static Future<Map<String, dynamic>?> updateProfile({
+    required String token,
+    String? name,
+    String? avatar,
+    String? bio,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/mobile/user/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          if (name != null) 'name': name,
+          if (avatar != null) 'avatar': avatar,
+          if (bio != null) 'bio': bio,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[Profile] Error updating profile: $e');
+      return null;
+    }
+  }
+
+  // ==================== User Stories ====================
+
+  /// Get user's published stories
+  static Future<List<ShortNovel>> getUserStories(String userId, {String? token}) async {
+    try {
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/$userId/stories'),
+        headers: headers.isNotEmpty ? headers : null,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['stories'] != null) {
+          return (data['stories'] as List)
+              .map((item) => ShortNovel.fromJson(item))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Publish a new story
+  static Future<Map<String, dynamic>> publishStory({
+    required String token,
+    required String title,
+    required String content,
+    required String genre,
+    String? blurb,
+    String? coverImage,
+    List<String>? tags,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/stories/publish'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'title': title,
+          'content': content,
+          'genre': genre,
+          if (blurb != null) 'blurb': blurb,
+          if (coverImage != null) 'coverImage': coverImage,
+          if (tags != null) 'tags': tags,
+        }),
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 201) {
+        return {'success': true, 'story': data['story']};
+      }
+      return {'success': false, 'error': data['error'] ?? 'Failed to publish'};
+    } catch (e) {
+      return {'success': false, 'error': 'Network error'};
+    }
+  }
+
+  /// Delete a story
+  static Future<bool> deleteStory(int storyId, {required String token}) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/mobile/stories/$storyId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ==================== Notifications ====================
+
+  /// Get user notifications
+  static Future<List<Map<String, dynamic>>> getNotifications({
+    required String token,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/notifications?page=$page&limit=$limit'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['notifications'] != null) {
+          return List<Map<String, dynamic>>.from(data['notifications']);
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Mark notification as read
+  static Future<bool> markNotificationRead(String notificationId, {required String token}) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/mobile/notifications/$notificationId/read'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Mark all notifications as read
+  static Future<bool> markAllNotificationsRead({required String token}) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/mobile/notifications/read-all'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Get unread notification count
+  static Future<int> getUnreadNotificationCount({required String token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/notifications/unread-count'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['count'] ?? 0;
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  // ==================== Following ====================
+
+  /// Get user's following list
+  static Future<List<Map<String, dynamic>>> getFollowing(String userId, {String? token}) async {
+    try {
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/$userId/following'),
+        headers: headers.isNotEmpty ? headers : null,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data['following'] ?? []);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Get user's followers list
+  static Future<List<Map<String, dynamic>>> getFollowers(String userId, {String? token}) async {
+    try {
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/$userId/followers'),
+        headers: headers.isNotEmpty ? headers : null,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data['followers'] ?? []);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Follow a user
+  static Future<bool> followUser(String userId, {required String token}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/user/$userId/follow'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Unfollow a user
+  static Future<bool> unfollowUser(String userId, {required String token}) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/mobile/user/$userId/follow'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ==================== Library (Bookshelf) ====================
+
+  /// Get user's library (bookshelf)
+  static Future<List<ShortNovel>> getLibrary({required String token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/library'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['novels'] != null) {
+          return (data['novels'] as List)
+              .map((item) => ShortNovel.fromJson(item))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('[Library] Error fetching library: $e');
+      return [];
+    }
+  }
+
+  /// Add novel to library (bookshelf)
+  static Future<bool> addToLibrary(int novelId, {required String token}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mobile/library'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'novelId': novelId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[Library] Error adding to library: $e');
+      return false;
+    }
+  }
+
+  /// Remove novel from library (bookshelf)
+  static Future<bool> removeFromLibrary(int novelId, {required String token}) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/mobile/library'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'novelId': novelId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[Library] Error removing from library: $e');
+      return false;
+    }
+  }
+
+  /// Check if novel is in library
+  static Future<bool> isInLibrary(int novelId, {required String token}) async {
+    try {
+      final library = await getLibrary(token: token);
+      return library.any((novel) => novel.id == novelId);
+    } catch (e) {
+      return false;
+    }
+  }
 }

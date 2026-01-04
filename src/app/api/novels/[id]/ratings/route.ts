@@ -8,6 +8,17 @@ import { errorResponse, ErrorCode } from '@/lib/api-response'
 import { auth } from '@/lib/auth'
 import crypto from 'crypto'
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // 生成游客ID
 function generateGuestId(ipAddress: string, userAgent: string): string {
   const data = `${ipAddress}:${userAgent}`
@@ -165,8 +176,11 @@ export async function GET(
     return NextResponse.json({
       ratings: ratingsWithLikeStatus,
       pagination,
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
-    return errorResponse('Failed to fetch ratings', ErrorCode.INTERNAL_ERROR)
+    return NextResponse.json(
+      { error: 'Failed to fetch ratings' },
+      { status: 500, headers: corsHeaders }
+    )
   }
 }

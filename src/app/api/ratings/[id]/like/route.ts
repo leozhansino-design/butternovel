@@ -5,6 +5,17 @@ import { prisma } from '@/lib/prisma'
 import { createNotification, deleteLikeNotification } from '@/lib/notification-service'
 import crypto from 'crypto'
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // 生成游客ID
 function generateGuestId(ipAddress: string, userAgent: string): string {
   const data = `${ipAddress}:${userAgent}`
@@ -50,7 +61,7 @@ export async function POST(
     if (!rating) {
       return NextResponse.json(
         { error: 'Rating not found' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       )
     }
 
@@ -95,7 +106,7 @@ export async function POST(
       return NextResponse.json({
         liked: false,
         likeCount: updatedRating?.likeCount || 0
-      })
+      }, { headers: corsHeaders })
     } else {
       // 未点赞，添加点赞
       await prisma.$transaction([
@@ -140,12 +151,12 @@ export async function POST(
       return NextResponse.json({
         liked: true,
         likeCount: updatedRating?.likeCount || 0
-      })
+      }, { headers: corsHeaders })
     }
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to toggle like' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
@@ -176,11 +187,11 @@ export async function GET(
 
     return NextResponse.json({
       liked: !!existingLike
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to check like status' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }

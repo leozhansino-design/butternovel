@@ -1,3 +1,4 @@
+// Like/unlike a short novel
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
@@ -14,6 +15,7 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
+// POST - Toggle like
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -34,25 +36,14 @@ export async function POST(
     const session = mobileUser ? null : await auth()
     const userId = mobileUser?.id || session?.user?.id
 
-    // For now, we'll use likeCount as recommend count
-    // In a full implementation, you'd track individual recommendations per user
-
     if (!userId) {
-      // Guest user - just increment temporarily (won't persist)
-      const novel = await prisma.novel.findUnique({
-        where: { id: novelId },
-        select: { likeCount: true }
-      })
-
-      return NextResponse.json({
-        success: true,
-        isRecommended: true,
-        recommendCount: (novel?.likeCount || 0) + 1,
-        message: 'Sign in to save your recommendation'
-      }, { headers: corsHeaders })
+      return NextResponse.json(
+        { success: false, message: 'Please sign in to like' },
+        { status: 401, headers: corsHeaders }
+      )
     }
 
-    // Check if user already liked/recommended this novel
+    // Check if user already liked this novel
     const existingLike = await prisma.novelLike.findUnique({
       where: {
         userId_novelId: {
@@ -62,11 +53,11 @@ export async function POST(
       }
     })
 
-    let isRecommended: boolean
-    let recommendCount: number
+    let isLiked: boolean
+    let likeCount: number
 
     if (existingLike) {
-      // Remove recommendation
+      // Remove like
       await prisma.$transaction([
         prisma.novelLike.delete({
           where: {
@@ -87,10 +78,10 @@ export async function POST(
         select: { likeCount: true }
       })
 
-      isRecommended = false
-      recommendCount = novel?.likeCount || 0
+      isLiked = false
+      likeCount = novel?.likeCount || 0
     } else {
-      // Add recommendation
+      // Add like
       await prisma.$transaction([
         prisma.novelLike.create({
           data: {
@@ -109,20 +100,71 @@ export async function POST(
         select: { likeCount: true }
       })
 
-      isRecommended = true
-      recommendCount = novel?.likeCount || 0
+      isLiked = true
+      likeCount = novel?.likeCount || 0
     }
 
     return NextResponse.json({
       success: true,
-      isRecommended,
-      recommendCount
+      isLiked,
+      likeCount
     }, { headers: corsHeaders })
 
   } catch (error) {
-    console.error('Recommend API error:', error)
+    console.error('Like API error:', error)
     return NextResponse.json(
-      { success: false, message: 'Failed to process recommendation' },
+      { success: false, message: 'Failed to process like' },
+      { status: 500, headers: corsHeaders }
+    )
+  }
+}
+
+// GET - Check like status
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const novelId = parseInt(id)
+
+    if (isNaN(novelId)) {
+      return NextResponse.json(
+        { success: false, isLiked: false },
+        { status: 400, headers: corsHeaders }
+      )
+    }
+
+    // Try mobile auth first, then fall back to session auth
+    const { user: mobileUser } = await authenticateRequest(request)
+    const session = mobileUser ? null : await auth()
+    const userId = mobileUser?.id || session?.user?.id
+
+    if (!userId) {
+      return NextResponse.json({
+        success: true,
+        isLiked: false
+      }, { headers: corsHeaders })
+    }
+
+    const existingLike = await prisma.novelLike.findUnique({
+      where: {
+        userId_novelId: {
+          userId,
+          novelId
+        }
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      isLiked: !!existingLike
+    }, { headers: corsHeaders })
+
+  } catch (error) {
+    console.error('Like status API error:', error)
+    return NextResponse.json(
+      { success: false, isLiked: false },
       { status: 500, headers: corsHeaders }
     )
   }
