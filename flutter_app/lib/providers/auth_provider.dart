@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class User {
-  final int id;
+  final String id;
   final String email;
   final String username;
   final String? avatarUrl;
@@ -16,10 +18,10 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as int,
-      email: json['email'] as String,
-      username: json['username'] as String? ?? json['email'].split('@')[0],
-      avatarUrl: json['avatarUrl'] as String?,
+      id: json['id']?.toString() ?? '',
+      email: json['email'] as String? ?? '',
+      username: json['name'] as String? ?? json['username'] as String? ?? json['email']?.toString().split('@')[0] ?? 'User',
+      avatarUrl: json['avatar'] as String? ?? json['avatarUrl'] as String?,
     );
   }
 
@@ -34,6 +36,8 @@ class User {
 }
 
 class AuthProvider extends ChangeNotifier {
+  static const String _baseUrl = 'https://www.butternovel.com';
+
   User? _user;
   String? _token;
   bool _isLoading = false;
@@ -50,9 +54,10 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _loadSavedAuth() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-    final userId = prefs.getInt('user_id');
+    final userId = prefs.getString('user_id');
     final userEmail = prefs.getString('user_email');
     final username = prefs.getString('username');
+    final avatarUrl = prefs.getString('avatar_url');
 
     if (token != null && userId != null && userEmail != null) {
       _token = token;
@@ -60,6 +65,7 @@ class AuthProvider extends ChangeNotifier {
         id: userId,
         email: userEmail,
         username: username ?? userEmail.split('@')[0],
+        avatarUrl: avatarUrl,
       );
       notifyListeners();
     }
@@ -68,9 +74,12 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _saveAuth(User user, String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
-    await prefs.setInt('user_id', user.id);
+    await prefs.setString('user_id', user.id);
     await prefs.setString('user_email', user.email);
     await prefs.setString('username', user.username);
+    if (user.avatarUrl != null) {
+      await prefs.setString('avatar_url', user.avatarUrl!);
+    }
   }
 
   Future<void> _clearAuth() async {
@@ -79,6 +88,7 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove('user_id');
     await prefs.remove('user_email');
     await prefs.remove('username');
+    await prefs.remove('avatar_url');
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -86,18 +96,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Replace with actual API call
-      // For now, simulate login
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/mobile/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'identifier': email,
+          'password': password,
+        }),
+      );
 
-      // Simulate successful login
-      if (email.isNotEmpty && password.length >= 6) {
-        final user = User(
-          id: 1,
-          email: email,
-          username: email.split('@')[0],
-        );
-        final token = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        final user = User.fromJson(data['user']);
+        final token = data['token'] as String;
 
         _user = user;
         _token = token;
@@ -109,12 +121,12 @@ class AuthProvider extends ChangeNotifier {
       } else {
         _isLoading = false;
         notifyListeners();
-        return {'success': false, 'error': 'Invalid email or password'};
+        return {'success': false, 'error': data['error'] ?? 'Login failed'};
       }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Network error. Please try again.'};
     }
   }
 
@@ -127,17 +139,21 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Replace with actual API call
-      await Future.delayed(const Duration(seconds: 1));
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/mobile/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'password': password,
+          'name': username,
+        }),
+      );
 
-      // Simulate successful registration
-      if (email.isNotEmpty && password.length >= 6 && username.isNotEmpty) {
-        final user = User(
-          id: DateTime.now().millisecondsSinceEpoch,
-          email: email,
-          username: username,
-        );
-        final token = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
+      final data = json.decode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
+        final user = User.fromJson(data['user']);
+        final token = data['token'] as String;
 
         _user = user;
         _token = token;
@@ -149,12 +165,12 @@ class AuthProvider extends ChangeNotifier {
       } else {
         _isLoading = false;
         notifyListeners();
-        return {'success': false, 'error': 'Please fill all fields correctly'};
+        return {'success': false, 'error': data['error'] ?? 'Registration failed'};
       }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Network error. Please try again.'};
     }
   }
 
@@ -168,11 +184,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Replace with actual API call to backend
+      // TODO: Implement proper Google OAuth API endpoint for mobile
+      // For now, this creates a local user - should be replaced with backend call
       await Future.delayed(const Duration(milliseconds: 500));
 
       final user = User(
-        id: googleId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+        id: googleId ?? DateTime.now().millisecondsSinceEpoch.toString(),
         email: email,
         username: displayName ?? email.split('@')[0],
         avatarUrl: photoUrl,
@@ -202,7 +219,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: Replace with actual API call to backend
+      // TODO: Implement proper Apple Sign-In API endpoint for mobile
+      // For now, this creates a local user - should be replaced with backend call
       await Future.delayed(const Duration(milliseconds: 500));
 
       // Apple may not provide email on subsequent logins
@@ -210,7 +228,7 @@ class AuthProvider extends ChangeNotifier {
       final username = fullName?.isNotEmpty == true ? fullName! : userEmail.split('@')[0];
 
       final user = User(
-        id: appleId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+        id: appleId ?? DateTime.now().millisecondsSinceEpoch.toString(),
         email: userEmail,
         username: username,
       );
