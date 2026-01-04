@@ -6,6 +6,17 @@ import { SignJWT } from 'jose'
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
 
+// CORS headers for mobile app
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -15,7 +26,7 @@ export async function POST(req: Request) {
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -24,7 +35,7 @@ export async function POST(req: Request) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -32,7 +43,7 @@ export async function POST(req: Request) {
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'Password must be at least 6 characters' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -42,7 +53,7 @@ export async function POST(req: Request) {
     if (normalizedName === 'butterpicks' || normalizedName.includes('butterpicks')) {
       return NextResponse.json(
         { error: 'This name is reserved. Please choose a different name.' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -54,7 +65,7 @@ export async function POST(req: Request) {
     if (existingEmail) {
       return NextResponse.json(
         { error: 'Email already registered' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -67,7 +78,7 @@ export async function POST(req: Request) {
       if (existingName) {
         return NextResponse.json(
           { error: 'Username already taken' },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         )
       }
     }
@@ -102,6 +113,8 @@ export async function POST(req: Request) {
       .setExpirationTime('30d')
       .sign(secret)
 
+    console.log('[Mobile Register] User created:', user.id)
+
     return NextResponse.json({
       success: true,
       token,
@@ -111,7 +124,7 @@ export async function POST(req: Request) {
         name: user.name,
         avatar: user.avatar,
       }
-    }, { status: 201 })
+    }, { status: 201, headers: corsHeaders })
   } catch (error) {
     console.error('[Mobile Register] Error:', error)
 
@@ -121,14 +134,14 @@ export async function POST(req: Request) {
       if (prismaError.code === 'P2002') {
         return NextResponse.json(
           { error: 'Email or username already registered' },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         )
       }
     }
 
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }

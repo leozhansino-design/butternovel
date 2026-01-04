@@ -436,9 +436,21 @@ class ApiService {
       // Debug logging
       debugPrint('[RateNovel] Response status: ${response.statusCode}');
       debugPrint('[RateNovel] Response body: ${response.body}');
+      debugPrint('[RateNovel] Response headers: ${response.headers}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body);
+      }
+
+      // Log error details for debugging
+      if (response.statusCode == 401) {
+        debugPrint('[RateNovel] 401 Unauthorized - Check token validity');
+        try {
+          final errorData = json.decode(response.body);
+          debugPrint('[RateNovel] Error details: $errorData');
+        } catch (e) {
+          debugPrint('[RateNovel] Could not parse error body');
+        }
       }
       return null;
     } catch (e) {
