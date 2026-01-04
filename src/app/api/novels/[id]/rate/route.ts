@@ -2,7 +2,7 @@
 // 评分 API - 提交评分+评论
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { authenticateRequest } from '@/lib/mobile-auth'
 import { prisma } from '@/lib/prisma'
 import { withRetry } from '@/lib/db-utils'
 import { validateWithSchema, ratingSchema } from '@/lib/validators'
@@ -26,12 +26,13 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
+    // Use mobile-compatible auth that supports both session and JWT
+    const { user, error: authError } = await authenticateRequest(request)
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please login to rate' },
-        { status: 401 }
+        { error: authError || 'Unauthorized - Please login to rate' },
+        { status: 401, headers: corsHeaders }
       )
     }
 
@@ -50,7 +51,7 @@ export async function POST(
     // 🔍 记录请求数据用于调试
     console.log('[Rating API] Request data:', {
       novelId,
-      userId: session.user.id,
+      userId: user.id,
       body
     })
 
@@ -60,7 +61,7 @@ export async function POST(
       // 🔍 详细记录验证失败的原因
       console.error('[Rating API] Validation failed:', {
         novelId,
-        userId: session.user.id,
+        userId: user.id,
         body,
         error: validation.error,
         details: validation.details
@@ -103,7 +104,7 @@ export async function POST(
       prisma.rating.findUnique({
         where: {
           userId_novelId: {
-            userId: session.user.id,
+            userId: user.id,
             novelId: novelId,
           },
         },
@@ -126,7 +127,7 @@ export async function POST(
         data: {
           score,
           review: review || null,
-          userId: session.user.id,
+          userId: user.id,
           novelId,
         },
         include: {
@@ -174,13 +175,13 @@ export async function POST(
 
     // ⭐ 添加贡献度
     try {
-      const contributionResult = await addRatingContribution(session.user.id, result.rating.id)
+      const contributionResult = await addRatingContribution(user.id, result.rating.id)
 
       // 🔧 FIX: Type-safe check for levelUp property
       if (contributionResult && typeof contributionResult === 'object' && 'levelUp' in contributionResult && contributionResult.levelUp) {
         // User leveled up - future: could trigger notification
         console.log('[Rating API] User leveled up:', {
-          userId: session.user.id,
+          userId: user.id,
           oldLevel: 'oldLevel' in contributionResult ? contributionResult.oldLevel : 'unknown',
           newLevel: 'newLevel' in contributionResult ? contributionResult.newLevel : 'unknown',
         })
@@ -191,12 +192,12 @@ export async function POST(
     }
 
     // 发送通知给小说作者
-    if (novel.authorId !== session.user.id) {
+    if (novel.authorId !== user.id) {
       try {
         await createNotification({
           userId: novel.authorId,
           type: 'NOVEL_RATING',
-          actorId: session.user.id,
+          actorId: user.id,
           data: {
             novelId: novel.id,
             novelSlug: novel.slug,
@@ -209,11 +210,12 @@ export async function POST(
       }
     }
 
-    return NextResponse.json(result, { status: 201 })
+    return NextResponse.json(result, { status: 201, headers: corsHeaders })
   } catch (error) {
+    console.error('[Rating API] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
