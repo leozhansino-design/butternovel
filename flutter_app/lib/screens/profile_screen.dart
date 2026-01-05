@@ -173,6 +173,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             isLoggedIn ? (user?.email ?? '') : 'Not signed in',
                             style: TextStyle(color: subtitleColor),
                           ),
+                          // Bio
+                          if (isLoggedIn && user?.bio != null && user!.bio!.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              child: Text(
+                                user.bio!,
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

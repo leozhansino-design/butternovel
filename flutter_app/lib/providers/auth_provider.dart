@@ -8,12 +8,14 @@ class User {
   final String email;
   final String username;
   final String? avatarUrl;
+  final String? bio;
 
   User({
     required this.id,
     required this.email,
     required this.username,
     this.avatarUrl,
+    this.bio,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class User {
       email: json['email'] as String? ?? '',
       username: json['name'] as String? ?? json['username'] as String? ?? json['email']?.toString().split('@')[0] ?? 'User',
       avatarUrl: json['avatar'] as String? ?? json['avatarUrl'] as String?,
+      bio: json['bio'] as String?,
     );
   }
 
@@ -31,6 +34,7 @@ class User {
       'email': email,
       'username': username,
       'avatarUrl': avatarUrl,
+      'bio': bio,
     };
   }
 }
@@ -58,6 +62,7 @@ class AuthProvider extends ChangeNotifier {
     final userEmail = prefs.getString('user_email');
     final username = prefs.getString('username');
     final avatarUrl = prefs.getString('avatar_url');
+    final bio = prefs.getString('user_bio');
 
     debugPrint('[AuthProvider] Loading saved auth...');
     debugPrint('[AuthProvider] Token exists: ${token != null}');
@@ -85,6 +90,7 @@ class AuthProvider extends ChangeNotifier {
         email: userEmail,
         username: username ?? userEmail.split('@')[0],
         avatarUrl: avatarUrl,
+        bio: bio,
       );
       debugPrint('[AuthProvider] Auth restored successfully for: $userEmail');
       notifyListeners();
@@ -100,6 +106,9 @@ class AuthProvider extends ChangeNotifier {
     if (user.avatarUrl != null) {
       await prefs.setString('avatar_url', user.avatarUrl!);
     }
+    if (user.bio != null) {
+      await prefs.setString('user_bio', user.bio!);
+    }
   }
 
   Future<void> _clearAuth() async {
@@ -109,6 +118,7 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove('user_email');
     await prefs.remove('username');
     await prefs.remove('avatar_url');
+    await prefs.remove('user_bio');
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -337,6 +347,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> updateUserInfo({
     String? username,
     String? avatarUrl,
+    String? bio,
   }) async {
     if (_user == null) return;
 
@@ -345,6 +356,7 @@ class AuthProvider extends ChangeNotifier {
       email: _user!.email,
       username: username ?? _user!.username,
       avatarUrl: avatarUrl ?? _user!.avatarUrl,
+      bio: bio ?? _user!.bio,
     );
 
     // Save to SharedPreferences
@@ -354,6 +366,9 @@ class AuthProvider extends ChangeNotifier {
     }
     if (avatarUrl != null) {
       await prefs.setString('avatar_url', avatarUrl);
+    }
+    if (bio != null) {
+      await prefs.setString('user_bio', bio);
     }
 
     notifyListeners();

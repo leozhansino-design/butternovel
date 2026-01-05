@@ -44,6 +44,7 @@ export async function POST(req: Request) {
         email: true,
         name: true,
         avatar: true,
+        bio: true,
         googleId: true,
       }
     })
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
             email: true,
             name: true,
             avatar: true,
+            bio: true,
             googleId: true,
           }
         })
@@ -76,6 +78,7 @@ export async function POST(req: Request) {
             email: true,
             name: true,
             avatar: true,
+            bio: true,
             googleId: true,
           }
         })
@@ -107,6 +110,7 @@ export async function POST(req: Request) {
           email: true,
           name: true,
           avatar: true,
+          bio: true,
           googleId: true,
         }
       })
@@ -136,6 +140,7 @@ export async function POST(req: Request) {
         email: user.email,
         name: user.name,
         avatar: user.avatar,
+        bio: user.bio,
       }
     }, { headers: corsHeaders })
   } catch (error) {

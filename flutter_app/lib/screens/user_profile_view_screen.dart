@@ -33,7 +33,9 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
   Map<String, dynamic>? _stats;
   List<ShortNovel> _stories = [];
   List<ShortNovel> _bookshelf = [];
-  bool _isLoading = true;
+  bool _isLoadingProfile = true;
+  bool _isLoadingStories = true;
+  bool _isLoadingBookshelf = true;
   bool _isFollowing = false;
   bool _isFollowLoading = false;
 
@@ -66,35 +68,69 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
   Future<void> _loadUserData() async {
     final token = context.read<AuthProvider>().token;
 
-    // Load user info, stats, stories in parallel
-    final results = await Future.wait([
-      ApiService.getUserInfo(widget.userId),
-      ApiService.getUserStats(widget.userId, token: token),
-      ApiService.getUserStories(widget.userId, token: token),
-      ApiService.getUserBookshelf(widget.userId, token: token),
-    ]);
+    // Phase 1: Load profile info and stats first (fast)
+    _loadProfileInfo(token);
 
-    if (mounted) {
-      final stories = results[2] as List<ShortNovel>;
-      final bookshelf = results[3] as List<ShortNovel>;
+    // Phase 2: Load stories and bookshelf in parallel (can be slow)
+    _loadStoriesAndBookshelf(token);
+  }
 
-      setState(() {
-        _userInfo = results[0] as Map<String, dynamic>?;
-        _stats = results[1] as Map<String, dynamic>;
-        _stories = stories;
-        _bookshelf = bookshelf;
-        _isFollowing = _stats?['isFollowing'] == true;
-        _isLoading = false;
+  Future<void> _loadProfileInfo(String? token) async {
+    try {
+      final results = await Future.wait([
+        ApiService.getUserInfo(widget.userId),
+        ApiService.getUserStats(widget.userId, token: token),
+      ]);
 
-        // Initialize pagination
-        _storiesPage = 1;
-        _bookshelfPage = 1;
-        _displayedStories = stories.take(_pageSize).toList();
-        _displayedBookshelf = bookshelf.take(_pageSize).toList();
-        _storiesHasMore = stories.length > _pageSize;
-        _bookshelfHasMore = bookshelf.length > _pageSize;
-      });
+      if (mounted) {
+        setState(() {
+          _userInfo = results[0] as Map<String, dynamic>?;
+          _stats = results[1] as Map<String, dynamic>;
+          _isFollowing = _stats?['isFollowing'] == true;
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingProfile = false);
+      }
     }
+  }
+
+  Future<void> _loadStoriesAndBookshelf(String? token) async {
+    // Load stories
+    ApiService.getUserStories(widget.userId, token: token).then((stories) {
+      if (mounted) {
+        setState(() {
+          _stories = stories;
+          _storiesPage = 1;
+          _displayedStories = stories.take(_pageSize).toList();
+          _storiesHasMore = stories.length > _pageSize;
+          _isLoadingStories = false;
+        });
+      }
+    }).catchError((e) {
+      if (mounted) {
+        setState(() => _isLoadingStories = false);
+      }
+    });
+
+    // Load bookshelf
+    ApiService.getUserBookshelf(widget.userId, token: token).then((bookshelf) {
+      if (mounted) {
+        setState(() {
+          _bookshelf = bookshelf;
+          _bookshelfPage = 1;
+          _displayedBookshelf = bookshelf.take(_pageSize).toList();
+          _bookshelfHasMore = bookshelf.length > _pageSize;
+          _isLoadingBookshelf = false;
+        });
+      }
+    }).catchError((e) {
+      if (mounted) {
+        setState(() => _isLoadingBookshelf = false);
+      }
+    });
   }
 
   void _loadMoreStories() {
@@ -188,9 +224,7 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
 
         return Scaffold(
           backgroundColor: bgColor,
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : NestedScrollView(
+          body: NestedScrollView(
                   headerSliverBuilder: (context, innerBoxIsScrolled) {
                     return [
                       // App Bar
@@ -272,7 +306,7 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
                                 SizedBox(
                                   width: 140,
                                   child: ElevatedButton(
-                                    onPressed: _isFollowLoading ? null : _toggleFollow,
+                                    onPressed: (_isFollowLoading || _isLoadingProfile) ? null : _toggleFollow,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: _isFollowing
                                           ? cardBgColor
@@ -287,7 +321,7 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
                                             : BorderSide.none,
                                       ),
                                     ),
-                                    child: _isFollowLoading
+                                    child: (_isFollowLoading || _isLoadingProfile)
                                         ? const SizedBox(
                                             width: 16,
                                             height: 16,
@@ -321,17 +355,17 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               _buildStatItem(
-                                '${_stories.length}',
+                                _isLoadingStories ? '-' : '${_stories.length}',
                                 'Stories',
                                 textColor,
                                 subtitleColor,
                               ),
                               _buildStatItem(
-                                '${_stats?['following'] ?? 0}',
+                                _isLoadingProfile ? '-' : '${_stats?['following'] ?? 0}',
                                 'Following',
                                 textColor,
                                 subtitleColor,
-                                onTap: () {
+                                onTap: _isLoadingProfile ? null : () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -344,11 +378,11 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
                                 },
                               ),
                               _buildStatItem(
-                                '${_stats?['followers'] ?? 0}',
+                                _isLoadingProfile ? '-' : '${_stats?['followers'] ?? 0}',
                                 'Followers',
                                 textColor,
                                 subtitleColor,
-                                onTap: () {
+                                onTap: _isLoadingProfile ? null : () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -399,27 +433,39 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
                     controller: _tabController,
                     children: [
                       // Stories Tab
-                      _buildStoriesList(
-                        _displayedStories,
-                        textColor,
-                        subtitleColor,
-                        cardBgColor,
-                        hasMore: _storiesHasMore,
-                        isLoading: _isLoadingMoreStories,
-                        onLoadMore: _loadMoreStories,
-                        emptyMessage: 'No stories yet',
-                      ),
+                      _isLoadingStories
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF3b82f6),
+                              ),
+                            )
+                          : _buildStoriesList(
+                              _displayedStories,
+                              textColor,
+                              subtitleColor,
+                              cardBgColor,
+                              hasMore: _storiesHasMore,
+                              isLoading: _isLoadingMoreStories,
+                              onLoadMore: _loadMoreStories,
+                              emptyMessage: 'No stories yet',
+                            ),
                       // Bookshelf Tab
-                      _buildStoriesList(
-                        _displayedBookshelf,
-                        textColor,
-                        subtitleColor,
-                        cardBgColor,
-                        hasMore: _bookshelfHasMore,
-                        isLoading: _isLoadingMoreBookshelf,
-                        onLoadMore: _loadMoreBookshelf,
-                        emptyMessage: 'Bookshelf is empty',
-                      ),
+                      _isLoadingBookshelf
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF3b82f6),
+                              ),
+                            )
+                          : _buildStoriesList(
+                              _displayedBookshelf,
+                              textColor,
+                              subtitleColor,
+                              cardBgColor,
+                              hasMore: _bookshelfHasMore,
+                              isLoading: _isLoadingMoreBookshelf,
+                              onLoadMore: _loadMoreBookshelf,
+                              emptyMessage: 'Bookshelf is empty',
+                            ),
                     ],
                   ),
                 ),
