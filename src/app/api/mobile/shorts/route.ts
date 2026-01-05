@@ -66,11 +66,6 @@ export async function GET(request: NextRequest) {
           coverImage: true,
           authorName: true,
           authorId: true,
-          author: {
-            select: {
-              avatar: true,
-            },
-          },
           shortNovelGenre: true,
           readingPreview: true,
           viewCount: true,
@@ -103,6 +98,20 @@ export async function GET(request: NextRequest) {
       prisma.novel.count({ where }),
     ]);
 
+    // Get author avatars separately to avoid relation issues with null authorId
+    const authorIds = shorts
+      .map((s: (typeof shorts)[number]) => s.authorId)
+      .filter((id: string | null): id is string => id !== null);
+
+    const authors = authorIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: authorIds } },
+          select: { id: true, avatar: true }
+        })
+      : [];
+
+    const authorAvatarMap = new Map(authors.map((a: { id: string; avatar: string | null }) => [a.id, a.avatar]));
+
     // Transform data to include extended preview (up to 5000 chars for large screens)
     const transformedShorts = shorts.map(
       (short: (typeof shorts)[number]) => {
@@ -116,8 +125,7 @@ export async function GET(request: NextRequest) {
 
         return {
           ...short,
-          authorAvatar: short.author?.avatar || null,
-          author: undefined, // Don't send nested author object
+          authorAvatar: short.authorId ? authorAvatarMap.get(short.authorId) || null : null,
           // Use first chapter content as extended preview, fallback to readingPreview
           readingPreview: extendedPreview || short.readingPreview || short.blurb,
           chapters: undefined, // Don't send raw chapters to reduce payload

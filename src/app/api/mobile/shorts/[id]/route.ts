@@ -50,11 +50,6 @@ export async function GET(
         coverImage: true,
         authorName: true,
         authorId: true,
-        author: {
-          select: {
-            avatar: true,
-          },
-        },
         shortNovelGenre: true,
         readingPreview: true,
         viewCount: true,
@@ -105,6 +100,16 @@ export async function GET(
       );
     }
 
+    // Get author avatar separately if authorId exists
+    let authorAvatar: string | null = null;
+    if (novel.authorId) {
+      const author = await prisma.user.findUnique({
+        where: { id: novel.authorId },
+        select: { avatar: true }
+      });
+      authorAvatar = author?.avatar || null;
+    }
+
     // Increment view count asynchronously
     prisma.novel
       .update({
@@ -116,8 +121,7 @@ export async function GET(
     // Transform response to include authorAvatar at top level
     const responseData = {
       ...novel,
-      authorAvatar: novel.author?.avatar || null,
-      author: undefined, // Don't send nested author object
+      authorAvatar,
     };
 
     return NextResponse.json(
