@@ -636,17 +636,17 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return tabBar;
+    return SizedBox.expand(child: tabBar);
   }
 
   @override
-  double get maxExtent => 56;
+  double get maxExtent => 48;
 
   @override
-  double get minExtent => 56;
+  double get minExtent => 48;
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return false;
+    return true;
   }
 }
