@@ -1,6 +1,7 @@
 // User stats API for mobile app
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { authenticateRequest } from '@/lib/mobile-auth'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +20,9 @@ export async function GET(
   try {
     const { id: userId } = await context.params
 
+    // Get current user from token (if logged in)
+    const { user: currentUser } = await authenticateRequest(request)
+
     // Get following count
     const followingCount = await prisma.follow.count({
       where: { followerId: userId }
@@ -34,14 +38,24 @@ export async function GET(
       where: { userId }
     })
 
-    // Get stories read count (from reading history if tracked)
-    // For now, this is handled client-side
+    // Check if current user is following this user
+    let isFollowing = false
+    if (currentUser && currentUser.id !== userId) {
+      const followRecord = await prisma.follow.findFirst({
+        where: {
+          followerId: currentUser.id,
+          followingId: userId
+        }
+      })
+      isFollowing = !!followRecord
+    }
 
     return NextResponse.json({
       following: followingCount,
       followers: followersCount,
       bookmarked: bookmarkedCount,
       storiesRead: 0, // Client-side tracking
+      isFollowing,
     }, { headers: corsHeaders })
   } catch (error) {
     console.error('[User Stats] Error:', error)

@@ -402,14 +402,9 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.75,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
+    // Use compact list view instead of grid
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: stories.length,
       itemBuilder: (context, index) {
         final novel = stories[index];
@@ -434,82 +429,85 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
         );
       },
       child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: cardBgColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Genre tag
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3b82f6).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                novel.displayGenre,
-                style: const TextStyle(
-                  color: Color(0xFF3b82f6),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Title
-            Text(
-              novel.title,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
-            // Preview
-            Text(
-              novel.previewText,
-              style: TextStyle(
-                color: subtitleColor,
-                fontSize: 12,
-                height: 1.4,
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            // Stats
-            Row(
-              children: [
-                if (novel.averageRating != null && novel.averageRating! > 0) ...[
-                  Icon(Icons.star, size: 12, color: Colors.amber[400]),
-                  const SizedBox(width: 2),
-                  Text(
-                    novel.averageRating!.toStringAsFixed(1),
-                    style: TextStyle(
-                      color: Colors.amber[400],
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Genre tag
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3b82f6).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      novel.displayGenre,
+                      style: const TextStyle(
+                        color: Color(0xFF3b82f6),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                ],
-                Icon(Icons.visibility_outlined, size: 12, color: subtitleColor),
-                const SizedBox(width: 2),
-                Text(
-                  _formatCount(novel.viewCount),
-                  style: TextStyle(
-                    color: subtitleColor,
-                    fontSize: 11,
+                  const SizedBox(height: 6),
+                  // Title
+                  Text(
+                    novel.title,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  // Stats row
+                  Row(
+                    children: [
+                      if (novel.averageRating != null && novel.averageRating! > 0) ...[
+                        Icon(Icons.star, size: 12, color: Colors.amber[400]),
+                        const SizedBox(width: 2),
+                        Text(
+                          novel.averageRating!.toStringAsFixed(1),
+                          style: TextStyle(
+                            color: Colors.amber[400],
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Icon(Icons.visibility_outlined, size: 12, color: subtitleColor),
+                      const SizedBox(width: 2),
+                      Text(
+                        _formatCount(novel.viewCount),
+                        style: TextStyle(color: subtitleColor, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Arrow
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Icon(
+                Icons.chevron_right,
+                color: subtitleColor,
+                size: 20,
+              ),
             ),
           ],
         ),
