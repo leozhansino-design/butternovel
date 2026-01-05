@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import 'user_profile_view_screen.dart';
 
 enum FollowListType { following, followers }
 
@@ -116,6 +117,18 @@ class _FollowListScreenState extends State<FollowListScreen> {
                               user['id']?.toString() == context.read<AuthProvider>().user?.id;
 
                           return ListTile(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => UserProfileViewScreen(
+                                    userId: user['id'].toString(),
+                                    userName: user['name'],
+                                    userAvatar: user['avatar'],
+                                  ),
+                                ),
+                              );
+                            },
                             leading: CircleAvatar(
                               backgroundColor: cardBgColor,
                               backgroundImage: user['avatar'] != null

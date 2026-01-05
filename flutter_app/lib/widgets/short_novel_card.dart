@@ -9,6 +9,7 @@ import '../providers/user_provider.dart';
 import '../screens/short_detail_screen.dart';
 import '../screens/search_screen.dart';
 import '../screens/login_screen.dart';
+import '../screens/user_profile_view_screen.dart';
 import '../services/api_service.dart';
 
 class ShortNovelCard extends StatefulWidget {
@@ -158,11 +159,33 @@ class _ShortNovelCardState extends State<ShortNovelCard> {
                     // Author, Tag, and Search on same row
                     Row(
                       children: [
-                        Text(
-                          'by ${widget.novel.authorName}',
-                          style: TextStyle(
-                            color: subtitleColor,
-                            fontSize: 13,
+                        GestureDetector(
+                          onTap: widget.novel.authorId != null
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => UserProfileViewScreen(
+                                        userId: widget.novel.authorId!,
+                                        userName: widget.novel.authorName,
+                                        userAvatar: widget.novel.authorAvatar,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          child: Text(
+                            'by ${widget.novel.authorName}',
+                            style: TextStyle(
+                              color: widget.novel.authorId != null
+                                  ? const Color(0xFF3b82f6)
+                                  : subtitleColor,
+                              fontSize: 13,
+                              decoration: widget.novel.authorId != null
+                                  ? TextDecoration.underline
+                                  : null,
+                              decorationColor: const Color(0xFF3b82f6),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),

@@ -13,6 +13,7 @@ import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/user_provider.dart';
 import 'login_screen.dart';
+import 'user_profile_view_screen.dart';
 
 class ShortDetailScreen extends StatefulWidget {
   final ShortNovel novel;
@@ -522,10 +523,34 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Author
-                      Text(
-                        'by ${novel.authorName}',
-                        style: TextStyle(color: _subtitleColor),
+                      // Author (clickable)
+                      GestureDetector(
+                        onTap: novel.authorId != null
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => UserProfileViewScreen(
+                                      userId: novel.authorId!,
+                                      userName: novel.authorName,
+                                      userAvatar: novel.authorAvatar,
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
+                        child: Text(
+                          'by ${novel.authorName}',
+                          style: TextStyle(
+                            color: novel.authorId != null
+                                ? const Color(0xFF3b82f6)
+                                : _subtitleColor,
+                            decoration: novel.authorId != null
+                                ? TextDecoration.underline
+                                : null,
+                            decorationColor: const Color(0xFF3b82f6),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       // Tags
@@ -985,15 +1010,37 @@ class _ShortDetailScreenState extends State<ShortDetailScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            // Author
-            Text(
-              'by ${novel.authorName}',
-              style: TextStyle(
-                color: _subtitleColor,
-                fontSize: 11,
+            // Author (clickable)
+            GestureDetector(
+              onTap: novel.authorId != null
+                  ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => UserProfileViewScreen(
+                            userId: novel.authorId!,
+                            userName: novel.authorName,
+                            userAvatar: novel.authorAvatar,
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
+              child: Text(
+                'by ${novel.authorName}',
+                style: TextStyle(
+                  color: novel.authorId != null
+                      ? const Color(0xFF3b82f6)
+                      : _subtitleColor,
+                  fontSize: 11,
+                  decoration: novel.authorId != null
+                      ? TextDecoration.underline
+                      : null,
+                  decorationColor: const Color(0xFF3b82f6),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
             const Spacer(),
             // Preview text

@@ -4,7 +4,9 @@ class ShortNovel {
   final String slug;
   final String blurb;
   final String? coverImage;
+  final String? authorId;
   final String authorName;
+  final String? authorAvatar;
   final String? shortNovelGenre;
   final String? readingPreview;
   final int viewCount;
@@ -21,7 +23,9 @@ class ShortNovel {
     required this.slug,
     required this.blurb,
     this.coverImage,
+    this.authorId,
     required this.authorName,
+    this.authorAvatar,
     this.shortNovelGenre,
     this.readingPreview,
     required this.viewCount,
@@ -58,7 +62,9 @@ class ShortNovel {
       slug: json['slug']?.toString() ?? '',
       blurb: json['blurb']?.toString() ?? '',
       coverImage: json['coverImage']?.toString(),
+      authorId: json['authorId']?.toString(),
       authorName: json['authorName']?.toString() ?? 'Unknown',
+      authorAvatar: json['authorAvatar']?.toString(),
       shortNovelGenre: json['shortNovelGenre']?.toString(),
       readingPreview: json['readingPreview']?.toString(),
       viewCount: json['viewCount'] is int ? json['viewCount'] : int.tryParse(json['viewCount']?.toString() ?? '0') ?? 0,

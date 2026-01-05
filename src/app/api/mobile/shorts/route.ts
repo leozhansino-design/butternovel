@@ -66,6 +66,11 @@ export async function GET(request: NextRequest) {
           coverImage: true,
           authorName: true,
           authorId: true,
+          author: {
+            select: {
+              avatar: true,
+            },
+          },
           shortNovelGenre: true,
           readingPreview: true,
           viewCount: true,
@@ -111,6 +116,8 @@ export async function GET(request: NextRequest) {
 
         return {
           ...short,
+          authorAvatar: short.author?.avatar || null,
+          author: undefined, // Don't send nested author object
           // Use first chapter content as extended preview, fallback to readingPreview
           readingPreview: extendedPreview || short.readingPreview || short.blurb,
           chapters: undefined, // Don't send raw chapters to reduce payload

@@ -598,6 +598,54 @@ class ApiService {
 
   // ==================== User Profile ====================
 
+  /// Get public user info by ID
+  static Future<Map<String, dynamic>?> getUserInfo(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['user'] != null) {
+          return data['user'];
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[UserInfo] Error fetching user info: $e');
+      return null;
+    }
+  }
+
+  /// Get user's public bookshelf
+  static Future<List<ShortNovel>> getUserBookshelf(String userId, {String? token}) async {
+    try {
+      final headers = <String, String>{};
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/mobile/user/$userId/bookshelf'),
+        headers: headers.isNotEmpty ? headers : null,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['novels'] != null) {
+          return (data['novels'] as List)
+              .map((item) => ShortNovel.fromJson(item))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('[Bookshelf] Error fetching user bookshelf: $e');
+      return [];
+    }
+  }
+
   /// Get user's profile stats
   static Future<Map<String, dynamic>> getUserStats(String userId, {String? token}) async {
     try {
