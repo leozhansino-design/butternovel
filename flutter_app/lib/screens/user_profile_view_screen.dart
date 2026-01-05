@@ -37,6 +37,19 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
   bool _isFollowing = false;
   bool _isFollowLoading = false;
 
+  // Pagination state
+  static const int _pageSize = 20;
+  int _storiesPage = 1;
+  int _bookshelfPage = 1;
+  bool _storiesHasMore = true;
+  bool _bookshelfHasMore = true;
+  bool _isLoadingMoreStories = false;
+  bool _isLoadingMoreBookshelf = false;
+
+  // Displayed items (paginated)
+  List<ShortNovel> _displayedStories = [];
+  List<ShortNovel> _displayedBookshelf = [];
+
   @override
   void initState() {
     super.initState();
@@ -62,15 +75,60 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
     ]);
 
     if (mounted) {
+      final stories = results[2] as List<ShortNovel>;
+      final bookshelf = results[3] as List<ShortNovel>;
+
       setState(() {
         _userInfo = results[0] as Map<String, dynamic>?;
         _stats = results[1] as Map<String, dynamic>;
-        _stories = results[2] as List<ShortNovel>;
-        _bookshelf = results[3] as List<ShortNovel>;
+        _stories = stories;
+        _bookshelf = bookshelf;
         _isFollowing = _stats?['isFollowing'] == true;
         _isLoading = false;
+
+        // Initialize pagination
+        _storiesPage = 1;
+        _bookshelfPage = 1;
+        _displayedStories = stories.take(_pageSize).toList();
+        _displayedBookshelf = bookshelf.take(_pageSize).toList();
+        _storiesHasMore = stories.length > _pageSize;
+        _bookshelfHasMore = bookshelf.length > _pageSize;
       });
     }
+  }
+
+  void _loadMoreStories() {
+    if (_isLoadingMoreStories || !_storiesHasMore) return;
+
+    setState(() => _isLoadingMoreStories = true);
+
+    final start = _storiesPage * _pageSize;
+    final end = start + _pageSize;
+    final moreItems = _stories.skip(start).take(_pageSize).toList();
+
+    setState(() {
+      _displayedStories.addAll(moreItems);
+      _storiesPage++;
+      _storiesHasMore = end < _stories.length;
+      _isLoadingMoreStories = false;
+    });
+  }
+
+  void _loadMoreBookshelf() {
+    if (_isLoadingMoreBookshelf || !_bookshelfHasMore) return;
+
+    setState(() => _isLoadingMoreBookshelf = true);
+
+    final start = _bookshelfPage * _pageSize;
+    final end = start + _pageSize;
+    final moreItems = _bookshelf.skip(start).take(_pageSize).toList();
+
+    setState(() {
+      _displayedBookshelf.addAll(moreItems);
+      _bookshelfPage++;
+      _bookshelfHasMore = end < _bookshelf.length;
+      _isLoadingMoreBookshelf = false;
+    });
   }
 
   Future<void> _toggleFollow() async {
@@ -120,7 +178,6 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
         final textColor = isDark ? Colors.white : Colors.grey[900]!;
         final subtitleColor = isDark ? Colors.grey[500]! : Colors.grey[600]!;
         final cardBgColor = isDark ? Colors.grey[900]! : Colors.grey[100]!;
-        final avatarBgColor = isDark ? Colors.grey[700]! : Colors.grey[300]!;
 
         final currentUserId = context.read<AuthProvider>().user?.id;
         final isOwnProfile = currentUserId == widget.userId;
@@ -131,28 +188,28 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
 
         return Scaffold(
           backgroundColor: bgColor,
-          appBar: AppBar(
-            backgroundColor: bgColor,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: textColor),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Text(
-              userName,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-            ),
-          ),
           body: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                  onRefresh: _loadUserData,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      children: [
-                        // Profile Header
-                        Padding(
+              : NestedScrollView(
+                  headerSliverBuilder: (context, innerBoxIsScrolled) {
+                    return [
+                      // App Bar
+                      SliverAppBar(
+                        backgroundColor: bgColor,
+                        elevation: 0,
+                        pinned: true,
+                        leading: IconButton(
+                          icon: Icon(Icons.arrow_back, color: textColor),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        title: Text(
+                          userName,
+                          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      // Profile Header
+                      SliverToBoxAdapter(
+                        child: Padding(
                           padding: const EdgeInsets.all(20),
                           child: Column(
                             children: [
@@ -250,8 +307,10 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
                             ],
                           ),
                         ),
-                        // Stats Row
-                        Container(
+                      ),
+                      // Stats Row
+                      SliverToBoxAdapter(
+                        child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 20),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -304,43 +363,64 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
                             ],
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        // Tab Bar
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: TabBar(
-                            controller: _tabController,
-                            labelColor: textColor,
-                            unselectedLabelColor: subtitleColor,
-                            indicatorColor: const Color(0xFF3b82f6),
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            dividerColor: Colors.transparent,
-                            tabs: const [
-                              Tab(text: 'Stories'),
-                              Tab(text: 'Bookshelf'),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Tab Content
-                        SizedBox(
-                          height: 400, // Fixed height for tab content
-                          child: TabBarView(
-                            controller: _tabController,
-                            children: [
-                              // Stories Tab
-                              _buildStoriesGrid(_stories, textColor, subtitleColor, cardBgColor),
-                              // Bookshelf Tab
-                              _buildStoriesGrid(_bookshelf, textColor, subtitleColor, cardBgColor),
-                            ],
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                      // Tab Bar
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _TabBarDelegate(
+                          tabBar: Container(
+                            color: bgColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: cardBgColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: TabBar(
+                                controller: _tabController,
+                                labelColor: textColor,
+                                unselectedLabelColor: subtitleColor,
+                                indicatorColor: const Color(0xFF3b82f6),
+                                indicatorSize: TabBarIndicatorSize.tab,
+                                dividerColor: Colors.transparent,
+                                tabs: const [
+                                  Tab(text: 'Stories'),
+                                  Tab(text: 'Bookshelf'),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ];
+                  },
+                  body: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Stories Tab
+                      _buildStoriesList(
+                        _displayedStories,
+                        textColor,
+                        subtitleColor,
+                        cardBgColor,
+                        hasMore: _storiesHasMore,
+                        isLoading: _isLoadingMoreStories,
+                        onLoadMore: _loadMoreStories,
+                        emptyMessage: 'No stories yet',
+                      ),
+                      // Bookshelf Tab
+                      _buildStoriesList(
+                        _displayedBookshelf,
+                        textColor,
+                        subtitleColor,
+                        cardBgColor,
+                        hasMore: _bookshelfHasMore,
+                        isLoading: _isLoadingMoreBookshelf,
+                        onLoadMore: _loadMoreBookshelf,
+                        emptyMessage: 'Bookshelf is empty',
+                      ),
+                    ],
                   ),
                 ),
         );
@@ -380,12 +460,16 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
     );
   }
 
-  Widget _buildStoriesGrid(
+  Widget _buildStoriesList(
     List<ShortNovel> stories,
     Color textColor,
     Color subtitleColor,
-    Color cardBgColor,
-  ) {
+    Color cardBgColor, {
+    required bool hasMore,
+    required bool isLoading,
+    required VoidCallback onLoadMore,
+    required String emptyMessage,
+  }) {
     if (stories.isEmpty) {
       return Center(
         child: Column(
@@ -394,7 +478,7 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
             Icon(Icons.book_outlined, size: 48, color: subtitleColor),
             const SizedBox(height: 12),
             Text(
-              'No stories yet',
+              emptyMessage,
               style: TextStyle(color: subtitleColor, fontSize: 16),
             ),
           ],
@@ -402,14 +486,32 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
       );
     }
 
-    // Use compact list view instead of grid
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: stories.length,
-      itemBuilder: (context, index) {
-        final novel = stories[index];
-        return _buildStoryCard(novel, textColor, subtitleColor, cardBgColor);
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is ScrollEndNotification &&
+            notification.metrics.pixels >= notification.metrics.maxScrollExtent - 100) {
+          onLoadMore();
+        }
+        return false;
       },
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: stories.length + (hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == stories.length) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: isLoading
+                    ? const CircularProgressIndicator(strokeWidth: 2)
+                    : const SizedBox.shrink(),
+              ),
+            );
+          }
+          final novel = stories[index];
+          return _buildStoryCard(novel, textColor, subtitleColor, cardBgColor);
+        },
+      ),
     );
   }
 
@@ -523,5 +625,28 @@ class _UserProfileViewScreenState extends State<UserProfileViewScreen>
       return '${(count / 1000).toStringAsFixed(1)}K';
     }
     return count.toString();
+  }
+}
+
+// Delegate for pinned tab bar
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget tabBar;
+
+  _TabBarDelegate({required this.tabBar});
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return tabBar;
+  }
+
+  @override
+  double get maxExtent => 56;
+
+  @override
+  double get minExtent => 56;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return false;
   }
 }
