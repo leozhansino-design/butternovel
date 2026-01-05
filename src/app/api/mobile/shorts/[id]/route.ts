@@ -50,6 +50,11 @@ export async function GET(
         coverImage: true,
         authorName: true,
         authorId: true,
+        author: {
+          select: {
+            avatar: true,
+          },
+        },
         shortNovelGenre: true,
         readingPreview: true,
         viewCount: true,
@@ -108,10 +113,17 @@ export async function GET(
       })
       .catch((err: unknown) => console.error("Failed to increment view count:", err));
 
+    // Transform response to include authorAvatar at top level
+    const responseData = {
+      ...novel,
+      authorAvatar: novel.author?.avatar || null,
+      author: undefined, // Don't send nested author object
+    };
+
     return NextResponse.json(
       {
         success: true,
-        data: novel,
+        data: responseData,
       },
       { headers: corsHeaders }
     );
